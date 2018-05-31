@@ -58,6 +58,14 @@ $(LIBRARY): $(OBJS)
 ./GFS_layer/GFS_diagnostics.o : ./GFS_layer/GFS_diagnostics.F90
 	$(FC) $(FFLAGS) $(OTHER_FFLAGS) -O0 -c $< -o $@
 
+# Do preprocessing of the IPD-CCPP driver in two steps to be
+# able to look at the actual .f90 file that gets compiled
+ifneq (,$(findstring CCPP,$(CPPDEFS)))
+./IPD_CCPP_driver.o: ./IPD_CCPP_driver.F90
+	$(CPP) $(CPPDEFS) $(CPPFLAGS) $< > $*.tmp.f90
+	$(FC) $(FFLAGS) $(OTHER_FFLAGS) -c $*.tmp.f90 -o $@
+endif
+
 .PHONY: clean
 clean:
 	@echo "Cleaning ipd  ... "
