@@ -14,11 +14,24 @@ module module_physics_driver
                                    GFS_sfcprop_type, GFS_coupling_type, &
                                    GFS_control_type, GFS_grid_type,     &
                                    GFS_tbd_type,     GFS_cldprop_type,  &
+#ifdef CCPP
+                                   GFS_radtend_type, GFS_diag_type,     &
+                                   GFS_interstitial_type
+#else
                                    GFS_radtend_type, GFS_diag_type
+#endif
   use gfdl_cloud_microphys_mod, only: gfdl_cloud_microphys_driver
   use module_mp_thompson,    only: mp_gt_driver
   use module_mp_wsm6,        only: wsm6
   use funcphys,              only: ftdp
+
+#ifdef CCPP
+  use ccpp_api,              only: ccpp_physics_run
+  use CCPP_data,             only: cdata_block
+#ifdef OPENMP
+  use omp_lib
+#endif
+#endif
 
   implicit none
 
@@ -61,6 +74,9 @@ module module_physics_driver
 !     type(GFS_cldprop_type),         intent(inout) :: Cldprop          !
 !     type(GFS_radtend_type),         intent(inout) :: Radtend          !
 !     type(GFS_diag_type),            intent(inout) :: Diag             !
+#ifdef CCPP
+!     type(GFS_interstitial_type),    intent(inout) :: Interstitial(:)  !
+#endif
 !                                                                       !
 !  subprograms called:                                                  !
 !                                                                       !
@@ -401,7 +417,11 @@ module module_physics_driver
 
     subroutine GFS_physics_driver                                 &
                    (Model, Statein, Stateout, Sfcprop, Coupling,  &
+#ifdef CCPP
+                   Grid, Tbd, Cldprop, Radtend, Diag, Interstitial)
+#else
                    Grid, Tbd, Cldprop, Radtend, Diag)
+#endif
 
       implicit none
 !
@@ -426,6 +446,9 @@ module module_physics_driver
       type(GFS_cldprop_type),         intent(inout) :: Cldprop
       type(GFS_radtend_type),         intent(inout) :: Radtend
       type(GFS_diag_type),            intent(inout) :: Diag
+#ifdef CCPP
+      type(GFS_interstitial_type),    intent(inout) :: Interstitial(:)
+#endif
 #else
       type(GFS_control_type),         intent(in)    :: Model
       type(GFS_statein_type),         intent(inout) :: Statein
@@ -437,6 +460,9 @@ module module_physics_driver
       type(GFS_cldprop_type),         intent(inout) :: Cldprop
       type(GFS_radtend_type),         intent(inout) :: Radtend
       type(GFS_diag_type),            intent(inout) :: Diag
+#ifdef CCPP
+      type(GFS_interstitial_type),    intent(inout) :: Interstitial(:)
+#endif
 #endif
 !
 !  ---  local variables
@@ -558,6 +584,16 @@ module module_physics_driver
 !     real(kind=kind_phys), allocatable, dimension(:) ::  nwfa2d    
       real(kind=kind_phys), parameter :: liqm = 4./3.*con_pi*1.e-12,    &
                               icem = 4./3.*con_pi*3.2768*1.e-14*890.
+#ifdef CCPP
+      integer :: nb
+      integer :: nt
+      integer :: ierr
+      character(len=512) :: errmsg
+      integer            :: errflg
+
+      errmsg = ''
+      errflg = 0
+#endif
 
 !
 !===> ...  begin here
@@ -3027,8 +3063,61 @@ module module_physics_driver
 
 !  Legacy routine which determines convectve clouds - should be removed at some point
 
+#ifdef CCPP
+! DH* Uncomment either option A or B for Intel (for GNU/PGI, only option B works).
+! It doesn't make sense to me to implement a CPP flag for this, since option A
+! will only be used as a debugging step in case the call to ccpp_physics_run leads
+! to different results. *DH
+!! OPTION A BEGIN - works for Intel
+!#ifdef __INTEL_COMPILER
+!      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling cnvc90_run through option A'
+!      call cnvc90_mp_cnvc90_run(Model%clstp, im, ix, Diag%rainc, kbot, ktop, levs, Statein%prsi,   &
+!                                Tbd%acv, Tbd%acvb, Tbd%acvt, Cldprop%cv, Cldprop%cvb, Cldprop%cvt, &
+!                                errmsg, errflg)
+!#else
+!      write(0,*) "ERROR, CCPP option A only works with Intel compiler"
+!      call sleep(2)
+!      stop
+!#endif
+!! OPTION A END
+! OPTION B BEGIN
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling cnvc90_run through option B'
+      nb = Tbd%blkno
+#ifdef OPENMP
+      nt = OMP_GET_THREAD_NUM() + 1
+#else
+      nt = 1
+#endif
+      ! Copy local variables from driver to appropriate interstitial variables
+      Interstitial(nt)%im = im             ! intent(in)
+      Interstitial(nt)%ix = ix             ! intent(in)
+      !Diag%rainc                          ! intent(in)
+      Interstitial(nt)%kbot = kbot         ! intent(in)
+      Interstitial(nt)%ktop = ktop         ! intent(in)
+      !IPD_Control%levs = levs             ! intent(in)
+      !Statein%prsi                        ! intent(in)
+      !Tbd%acv                             ! intent(inout)
+      !Tbd%acvb                            ! intent(inout)
+      !Tbd%acvt                            ! intent(inout)
+      !Cldprop%cv                          ! intent(inout)
+      !Cldprop%cvb                         ! intent(inout)
+      !Cldprop%cvt                         ! intent(inout)
+      Interstitial(nt)%errmsg = errmsg     ! intent(out)
+      Interstitial(nt)%errflg = errflg     ! intent(out)
+      call ccpp_physics_run(cdata_block(nb,nt), scheme_name="cnvc90", ierr=ierr)
+      ! Copy back intent(inout) interstitial variables to local variables in driver
+      errmsg = trim(Interstitial(nt)%errmsg)
+      errflg = Interstitial(nt)%errflg
+! OPTION B END
+      if (errflg/=0) then
+          write(0,*) 'Error in call to cnvc90_mp_cnvc90_run: ' // trim(errmsg)
+          stop
+      end if
+#else
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of cnvc90'
       call cnvc90 (Model%clstp, im, ix, Diag%rainc, kbot, ktop, levs, Statein%prsi,  &
                    Tbd%acv, Tbd%acvb, Tbd%acvt, Cldprop%cv, Cldprop%cvb, Cldprop%cvt)
+#endif
 
       if (Model%moist_adj) then       ! moist convective adjustment
 !                                     ---------------------------
