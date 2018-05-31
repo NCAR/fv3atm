@@ -387,10 +387,12 @@
 !! control parameter ioznflg=0)
       logical :: loz1st =.true.
 
+#ifndef CCPP
 !> optional extra top layer on top of low ceiling models
 !!\n LTP=0: no extra top layer
       integer, parameter :: LTP = 0   ! no extra top layer
 !     integer, parameter :: LTP = 1   ! add an extra top layer
+#endif
 
 !> control flag for extra top layer
       logical, parameter :: lextop = (LTP > 0)
@@ -1018,27 +1020,6 @@
 
       implicit none
 
-! DH* gfortran correctly throws an error if the intent() declarations
-! for arguments differ between the actual routine (here) and the dummy
-! interface routine (IPD_func0d_proc in IPD_typedefs.F90):
-!
-! Error: Interface mismatch in procedure pointer assignment at (1): INTENT mismatch in argument 'control'
-!
-! Since IPD_func0d_proc declares all arguments as intent(inout), we
-! need to do the same here - however, this way we are loosing the
-! valuable information on the actual intent to this routine. *DH
-#ifdef __GFORTRAN__
-      type(GFS_control_type),         intent(inout) :: Model
-      type(GFS_statein_type),         intent(inout) :: Statein
-      type(GFS_stateout_type),        intent(inout) :: Stateout
-      type(GFS_sfcprop_type),         intent(inout) :: Sfcprop
-      type(GFS_coupling_type),        intent(inout) :: Coupling
-      type(GFS_grid_type),            intent(inout) :: Grid
-      type(GFS_tbd_type),             intent(inout) :: Tbd
-      type(GFS_cldprop_type),         intent(inout) :: Cldprop
-      type(GFS_radtend_type),         intent(inout) :: Radtend
-      type(GFS_diag_type),            intent(inout) :: Diag
-#else
       type(GFS_control_type),         intent(in)    :: Model
       type(GFS_statein_type),         intent(in)    :: Statein
       type(GFS_stateout_type),        intent(inout) :: Stateout
@@ -1049,7 +1030,7 @@
       type(GFS_cldprop_type),         intent(in)    :: Cldprop
       type(GFS_radtend_type),         intent(inout) :: Radtend
       type(GFS_diag_type),            intent(inout) :: Diag
-#endif
+        
 
 ! =================   subprogram documentation block   ================ !
 !                                                                       !
