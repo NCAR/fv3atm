@@ -94,7 +94,7 @@ module fv_mapz_mod
   use fv_cmp_mod,        only: qs_init, fv_sat_adj
 #ifdef CCPP
   use ccpp_api,          only: ccpp_initialized, ccpp_physics_run
-  use IPD_CCPP_driver,   only: ccpp_cdata => cdata
+  use CCPP_data,         only: ccpp_cdata => cdata_domain
 #endif
 
   implicit none
