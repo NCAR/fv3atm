@@ -344,7 +344,13 @@
                                            GFS_tbd_type,                 &
                                            GFS_cldprop_type,             &
                                            GFS_radtend_type,             &
+#ifdef CCPP
+                                           GFS_diag_type,                &
+                                           GFS_interstitial_type,        &
+                                           LTP
+#else
                                            GFS_diag_type
+#endif
 
       use module_physics_driver,     only: dgamln, cdfgam, cdfnor
 !
@@ -1016,10 +1022,38 @@
 !-----------------------------------
       subroutine GFS_radiation_driver                             &
          (Model, Statein, Stateout, Sfcprop, Coupling, Grid, Tbd, &
+#ifdef CCPP
+          Cldprop, Radtend, Diag, Interstitial)
+#else
           Cldprop, Radtend, Diag)
+#endif
 
       implicit none
 
+! DH* gfortran correctly throws an error if the intent() declarations
+! for arguments differ between the actual routine (here) and the dummy
+! interface routine (IPD_func0d_proc in IPD_typedefs.F90):
+!
+! Error: Interface mismatch in procedure pointer assignment at (1): INTENT mismatch in argument 'control'
+!
+! Since IPD_func0d_proc declares all arguments as intent(inout), we
+! need to do the same here - however, this way we are loosing the
+! valuable information on the actual intent to this routine. *DH
+#ifdef __GFORTRAN__
+      type(GFS_control_type),         intent(inout) :: Model
+      type(GFS_statein_type),         intent(inout) :: Statein
+      type(GFS_stateout_type),        intent(inout) :: Stateout
+      type(GFS_sfcprop_type),         intent(inout) :: Sfcprop
+      type(GFS_coupling_type),        intent(inout) :: Coupling
+      type(GFS_grid_type),            intent(inout) :: Grid
+      type(GFS_tbd_type),             intent(inout) :: Tbd
+      type(GFS_cldprop_type),         intent(inout) :: Cldprop
+      type(GFS_radtend_type),         intent(inout) :: Radtend
+      type(GFS_diag_type),            intent(inout) :: Diag
+#ifdef CCPP
+      type(GFS_interstitial_type),    intent(inout) :: Interstitial(:)
+#endif
+#else
       type(GFS_control_type),         intent(in)    :: Model
       type(GFS_statein_type),         intent(in)    :: Statein
       type(GFS_stateout_type),        intent(inout) :: Stateout
@@ -1030,7 +1064,10 @@
       type(GFS_cldprop_type),         intent(in)    :: Cldprop
       type(GFS_radtend_type),         intent(inout) :: Radtend
       type(GFS_diag_type),            intent(inout) :: Diag
-        
+#ifdef CCPP
+      type(GFS_interstitial_type),    intent(inout) :: Interstitial(:)
+#endif
+#endif
 
 ! =================   subprogram documentation block   ================ !
 !                                                                       !
