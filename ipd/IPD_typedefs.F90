@@ -11,7 +11,8 @@ module IPD_typedefs
                                        cldprop_type,  radtend_type,          &
 #ifdef CCPP
                                        intdiag_type,                         &
-                                       IPD_fastphys_type => fastphys_type
+                                       IPD_fastphys_type => fastphys_type,   &
+                                       IPD_interstitial_type => interstitial_type
 #else
                                        intdiag_type
 #endif
@@ -38,10 +39,19 @@ module IPD_typedefs
     subroutine IPD_func0d_proc (Control, Statein, Stateout,  &
                                 Sfcprop, Coupling, Grid,     &
                                 Tbd, Cldprop, Radtend,       &
+#ifdef CCPP
+                                Intdiag, Interstitial)
+#else
                                 Intdiag)
+#endif
       import :: IPD_control_type, statein_type, stateout_type,    &
                 sfcprop_type, coupling_type, grid_type, tbd_type, & 
+#ifdef CCPP
+                cldprop_type, radtend_type, intdiag_type,         &
+                IPD_interstitial_type
+#else
                 cldprop_type, radtend_type, intdiag_type
+#endif
       type(IPD_control_type), intent(inout) :: Control
       type(statein_type),     intent(inout) :: Statein
       type(stateout_type),    intent(inout) :: Stateout
@@ -52,14 +62,26 @@ module IPD_typedefs
       type(cldprop_type),     intent(inout) :: Cldprop
       type(radtend_type),     intent(inout) :: Radtend
       type(intdiag_type),     intent(inout) :: Intdiag
+#ifdef CCPP
+      type(IPD_interstitial_type), intent(inout) :: Interstitial(:)
+#endif
     end subroutine IPD_func0d_proc
     subroutine IPD_func1d_proc (Control, Statein, Stateout,  &
                                 Sfcprop, Coupling, Grid,     &
                                 Tbd, Cldprop, Radtend,       &
+#ifdef CCPP
+                                Intdiag, Interstitial)
+#else
                                 Intdiag)
+#endif
       import :: IPD_control_type, statein_type, stateout_type,    &
                 sfcprop_type, coupling_type, grid_type, tbd_type, & 
+#ifdef CCPP
+                cldprop_type, radtend_type, intdiag_type,         &
+                IPD_interstitial_type
+#else
                 cldprop_type, radtend_type, intdiag_type
+#endif
       type(IPD_control_type), intent(inout) :: Control
       type(statein_type),     intent(inout) :: Statein(:)
       type(stateout_type),    intent(inout) :: Stateout(:)
@@ -70,6 +92,9 @@ module IPD_typedefs
       type(cldprop_type),     intent(inout) :: Cldprop(:)
       type(radtend_type),     intent(inout) :: Radtend(:)
       type(intdiag_type),     intent(inout) :: Intdiag(:)
+#ifdef CCPP
+      type(IPD_interstitial_type), intent(inout) :: Interstitial(:)
+#endif
     end subroutine IPD_func1d_proc
   end interface
 
@@ -120,6 +145,7 @@ module IPD_typedefs
   public IPD_init_type
 #ifdef CCPP
   public IPD_fastphys_type
+  public IPD_interstitial_type
 #endif
 
   CONTAINS

@@ -21,6 +21,12 @@ FFLAGS   += -I../fms -I../fms/include -I../cpl
 
 CPPDEFS += -DNEW_TAUCTMAX -DSMALL_PE -DNEMS_GSM -DINTERNAL_FILE_NML
 
+ifneq (,$(findstring CCPP,$(CPPDEFS)))
+    CCPP_DATA = ./CCPP_layer/CCPP_data.F90
+else
+    CCPP_DATA =
+endif
+
 SRCS_f   =  \
 	   ./physics/cnvc90.f                                                        \
 	   ./physics/co2hc.f                                                         \
@@ -145,6 +151,7 @@ SRCS_F90 = \
 	   ./physics/module_mp_radar.F90     				             \
 	   ./physics/module_mp_thompson_gfs.F90                                      \
 	   ./physics/module_mp_wsm6_fv3.F90                                          \
+	   $(CCPP_DATA)                                                              \
 	   ./GFS_layer/GFS_abstraction_layer.F90 				     \
 	   ./GFS_layer/GFS_diagnostics.F90       				     \
 	   ./GFS_layer/GFS_driver.F90            				     \

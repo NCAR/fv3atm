@@ -13,7 +13,8 @@ module physics_abstraction_layer
                              radtend_type     =>  GFS_radtend_type,  &
 #ifdef CCPP
                              intdiag_type     =>  GFS_diag_type,     &
-                             fastphys_type    =>  GFS_fastphys_type
+                             fastphys_type    =>  GFS_fastphys_type, &
+                             interstitial_type=>  GFS_interstitial_type
 #else
                              intdiag_type     =>  GFS_diag_type
 #endif
@@ -29,7 +30,12 @@ module physics_abstraction_layer
                              time_vary_step   =>  GFS_time_vary_step,   &
                              radiation_step1  =>  GFS_radiation_driver, &
                              physics_step1    =>  GFS_physics_driver,   &
+#ifdef CCPP
+                             physics_step2    =>  GFS_stochastic_driver,&
+                             finalize         =>  GFS_finalize
+#else
                              physics_step2    =>  GFS_stochastic_driver
+#endif
 
   integer :: num_time_vary_steps  = 1
   integer :: num_rad_steps  = 1
@@ -58,6 +64,7 @@ module physics_abstraction_layer
   public  diagnostic_type
 #ifdef CCPP
   public  fastphys_type
+  public  interstitial_type
 #endif
 
 !------------------

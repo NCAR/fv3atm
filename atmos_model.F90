@@ -84,14 +84,18 @@ use IPD_typedefs,       only: IPD_init_type, IPD_control_type, &
                               IPD_data_type, IPD_diag_type,    &
                               IPD_restart_type, IPD_kind_phys, &
 #ifdef CCPP
-                              IPD_func0d_proc, IPD_func1d_proc,&
-                              IPD_fastphys_type
+                              IPD_interstitial_type,           &
+                              IPD_fastphys_type,               &
+                              IPD_func0d_proc, IPD_func1d_proc
 #else
                               IPD_func0d_proc, IPD_func1d_proc
 #endif
-use IPD_driver,         only: IPD_initialize, IPD_step
+
 #ifdef CCPP
+use IPD_driver,         only: IPD_initialize, IPD_step, IPD_finalize
 use IPD_CCPP_driver,    only: IPD_CCPP_step
+#else
+use IPD_driver,         only: IPD_initialize, IPD_step
 #endif
 use physics_abstraction_layer, only: time_vary_step, radiation_step1, physics_step1, physics_step2
 use FV3GFS_io_mod,      only: FV3GFS_restart_read, FV3GFS_restart_write, &
@@ -174,7 +178,8 @@ type(IPD_data_type),    allocatable :: IPD_Data(:)  ! number of blocks
 type(IPD_diag_type),    target      :: IPD_Diag(DIAG_SIZE)
 type(IPD_restart_type)              :: IPD_Restart
 #ifdef CCPP
-type(IPD_fastphys_type)             :: IPD_Fastphys
+type(IPD_fastphys_type),                   target :: IPD_Fastphys
+type(IPD_interstitial_type) , allocatable, target :: IPD_Interstitial(:) ! number of threads
 #endif
 
 !--------------
@@ -251,7 +256,11 @@ subroutine update_atmos_radiation_physics (Atmos)
 !--- execute the IPD atmospheric setup step
       call mpp_clock_begin(setupClock)
       Func1d => time_vary_step
+#ifdef CCPP
+      call IPD_step (IPD_Control, IPD_Data(:), IPD_Diag, IPD_Restart, IPD_Interstitial, IPD_func1d=Func1d)
+#else
       call IPD_step (IPD_Control, IPD_Data(:), IPD_Diag, IPD_Restart, IPD_func1d=Func1d)
+#endif
 !--- if coupled, assign coupled fields
       if( IPD_Control%cplflx ) then
 !        print *,'in atmos_model,nblks=',Atm_block%nblks
@@ -272,10 +281,18 @@ subroutine update_atmos_radiation_physics (Atmos)
       Func0d => radiation_step1
 !$OMP parallel do default (none)       &
 !$OMP            schedule (dynamic,1), &
+#ifdef CCPP
+!$OMP            shared   (Atm_block, IPD_Control, IPD_Data, IPD_Diag, IPD_Restart, IPD_Interstitial, Func0d) &
+#else
 !$OMP            shared   (Atm_block, IPD_Control, IPD_Data, IPD_Diag, IPD_Restart, Func0d) &
+#endif
 !$OMP            private  (nb)
       do nb = 1,Atm_block%nblks
+#ifdef CCPP
+        call IPD_step (IPD_Control, IPD_Data(nb:nb), IPD_Diag, IPD_Restart, IPD_Interstitial, IPD_func0d=Func0d)
+#else
         call IPD_step (IPD_Control, IPD_Data(nb:nb), IPD_Diag, IPD_Restart, IPD_func0d=Func0d)
+#endif
       enddo
       call mpp_clock_end(radClock)
 
@@ -292,10 +309,18 @@ subroutine update_atmos_radiation_physics (Atmos)
       Func0d => physics_step1
 !$OMP parallel do default (none) &
 !$OMP            schedule (dynamic,1), &
+#ifdef CCPP
+!$OMP            shared   (Atm_block, IPD_Control, IPD_Data, IPD_Diag, IPD_Restart, IPD_Interstitial, Func0d) &
+#else
 !$OMP            shared   (Atm_block, IPD_Control, IPD_Data, IPD_Diag, IPD_Restart, Func0d) &
+#endif
 !$OMP            private  (nb)
       do nb = 1,Atm_block%nblks
+#ifdef CCPP
+        call IPD_step (IPD_Control, IPD_Data(nb:nb), IPD_Diag, IPD_Restart, IPD_Interstitial, IPD_func0d=Func0d)
+#else
         call IPD_step (IPD_Control, IPD_Data(nb:nb), IPD_Diag, IPD_Restart, IPD_func0d=Func0d)
+#endif
       enddo
       call mpp_clock_end(physClock)
 
@@ -312,10 +337,18 @@ subroutine update_atmos_radiation_physics (Atmos)
       Func0d => physics_step2
 !$OMP parallel do default (none) &
 !$OMP            schedule (dynamic,1), &
+#ifdef CCPP
+!$OMP            shared   (Atm_block, IPD_Control, IPD_Data, IPD_Diag, IPD_Restart, IPD_Interstitial, Func0d) &
+#else
 !$OMP            shared   (Atm_block, IPD_Control, IPD_Data, IPD_Diag, IPD_Restart, Func0d) &
+#endif
 !$OMP            private  (nb)
       do nb = 1,Atm_block%nblks
+#ifdef CCPP
+        call IPD_step (IPD_Control, IPD_Data(nb:nb), IPD_Diag, IPD_Restart, IPD_Interstitial, IPD_func0d=Func0d)
+#else
         call IPD_step (IPD_Control, IPD_Data(nb:nb), IPD_Diag, IPD_Restart, IPD_func0d=Func0d)
+#endif
       enddo
       call mpp_clock_end(physClock)
 
@@ -341,6 +374,12 @@ subroutine update_atmos_radiation_physics (Atmos)
 
 subroutine atmos_model_init (Atmos, Time_init, Time, Time_step)
 
+#ifdef CCPP
+#ifdef OPENMP
+  use omp_lib
+#endif
+#endif
+
   type (atmos_data_type), intent(inout) :: Atmos
   type (time_type), intent(in) :: Time_init, Time, Time_step
 !--- local variables ---
@@ -362,6 +401,10 @@ subroutine atmos_model_init (Atmos, Time_init, Time, Time_step)
   integer              :: bdat(8), cdat(8)
   integer              :: ntracers, maxhf, maxh
   character(len=32), allocatable, target :: tracer_names(:)
+#ifdef CCPP
+  integer :: nthrds
+#endif
+
 !-----------------------------------------------------------------------
 
 !---- set the atmospheric model time ------
@@ -417,6 +460,14 @@ subroutine atmos_model_init (Atmos, Time_init, Time, Time_step)
    
    allocate(DYCORE_Data(Atm_block%nblks))
    allocate(IPD_Data(Atm_block%nblks))
+#ifdef CCPP
+#ifdef OPENMP
+   nthrds = omp_get_max_threads()
+#else
+   nthrds = 1
+#endif
+   allocate(IPD_Interstitial(nthrds))
+#endif
 
 !--- update IPD_Control%jdat(8)
    bdat(:) = 0
@@ -469,14 +520,21 @@ subroutine atmos_model_init (Atmos, Time_init, Time, Time_step)
 #endif
 
 #ifdef CCPP
-! DH* for testing of CCPP integration
-  ! Fast physics runs over all blocks, initialize here to avoid changing all the interfaces down to GFS_driver
-   call IPD_Fastphys%create()
-   call IPD_CCPP_step (step="init", IPD_Control=IPD_Control, IPD_Fastphys=IPD_Fastphys, ccpp_suite=trim(ccpp_suite), ierr=ierr)
+   call IPD_initialize (IPD_Control, IPD_Data, IPD_Diag, IPD_Restart, IPD_fastphys, IPD_Interstitial, Init_parm)
+#else
+   call IPD_initialize (IPD_Control, IPD_Data, IPD_Diag, IPD_Restart, Init_parm)
+#endif
+
+#ifdef CCPP
+   call IPD_CCPP_step (step="init", IPD_Control=IPD_Control, IPD_Data=IPD_Data, &
+                                    IPD_Diag=IPD_Diag, IPD_Restart=IPD_Restart, &
+                                    IPD_Interstitial=IPD_Interstitial,          &
+                                    IPD_Fastphys=IPD_Fastphys,                  &
+                                    nblks=Atm_block%nblks,                      &
+                                    ccpp_suite=trim(ccpp_suite), ierr=ierr)
    if (ierr/=0)  call mpp_error(FATAL, 'Call to IPD-CCPP init step failed')
 #endif
 
-   call IPD_initialize (IPD_Control, IPD_Data, IPD_Diag, IPD_Restart, Init_parm)
    Atmos%Diag => IPD_Diag
 
    Atm(mytile)%flagstruct%do_skeb = IPD_Control%do_skeb
@@ -667,7 +725,7 @@ subroutine atmos_model_end (Atmos)
                                IPD_Control, Atmos%domain)
 
 #ifdef CCPP
-   call IPD_CCPP_step (step="finalize", ierr=ierr)
+   call IPD_CCPP_step (step="finalize", nblks=Atm_block%nblks, ierr=ierr)
    if (ierr/=0)  call mpp_error(FATAL, 'Call to IPD-CCPP finalize step failed')
 #endif
 

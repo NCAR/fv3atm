@@ -6,7 +6,13 @@ module GFS_driver
                                       GFS_sfcprop_type, GFS_coupling_type, &
                                       GFS_control_type, GFS_grid_type,     &
                                       GFS_tbd_type,     GFS_cldprop_type,  &
+#ifdef CCPP
+                                      GFS_radtend_type, GFS_diag_type,     &
+                                      GFS_fastphys_type,                   &
+                                      GFS_interstitial_type
+#else
                                       GFS_radtend_type, GFS_diag_type
+#endif
   use module_radiation_driver,  only: GFS_radiation_driver, radupdate
   use module_physics_driver,    only: GFS_physics_driver
   use module_radsw_parameters,  only: topfsw_type, sfcfsw_type
@@ -93,7 +99,9 @@ module GFS_driver
   public  GFS_radiation_driver        !< radiation_driver (was grrad)
   public  GFS_physics_driver          !< physics_driver (was gbphys)
   public  GFS_stochastic_driver       !< stochastic physics
-
+#ifdef CCPP
+  public  GFS_finalize
+#endif
 
   CONTAINS
 !*******************************************************************************************
@@ -104,7 +112,15 @@ module GFS_driver
 !--------------
   subroutine GFS_initialize (Model, Statein, Stateout, Sfcprop,     &
                              Coupling, Grid, Tbd, Cldprop, Radtend, & 
+#ifdef CCPP
+                             Diag, Fastphys, Interstitial, Init_parm)
+#else
                              Diag, Init_parm)
+#endif
+
+#ifdef OPENMP
+    use omp_lib
+#endif
 
 !   use module_microphysics, only: gsmconst
     use cldwat2m_micro,      only: ini_micro
@@ -126,11 +142,19 @@ module GFS_driver
     type(GFS_cldprop_type),   intent(inout) :: Cldprop(:)
     type(GFS_radtend_type),   intent(inout) :: Radtend(:)
     type(GFS_diag_type),      intent(inout) :: Diag(:)
+#ifdef CCPP
+    type(GFS_fastphys_type),  intent(inout) :: Fastphys
+    type(GFS_interstitial_type), intent(inout) :: Interstitial(:)
+#endif
     type(GFS_init_type),      intent(in)    :: Init_parm
 
     !--- local variables
     integer :: nb
     integer :: nblks
+#ifdef CCPP
+    integer :: nt
+    integer :: nthrds
+#endif
     integer :: ntrac
     integer :: ix
     real(kind=kind_phys), allocatable :: si(:)
@@ -141,7 +165,6 @@ module GFS_driver
     ntrac = size(Init_parm%tracer_names)
     allocate (blksz(nblks))
     blksz(:) = Init_parm%blksz(:)
-    !--- initializing stochastic physics
 
     !--- set control properties (including namelist read)
     call Model%init (Init_parm%nlunit, Init_parm%fn_nml,           &
@@ -153,15 +176,19 @@ module GFS_driver
                      Init_parm%dt_dycore, Init_parm%dt_phys,       &
                      Init_parm%bdat, Init_parm%cdat,               &
                      Init_parm%tracer_names,                       &
+#ifdef CCPP
+                     Init_parm%input_nml_file, Init_parm%blksz)
+#else
                      Init_parm%input_nml_file)
-
+#endif
 
     call read_o3data  (Model%ntoz, Model%me, Model%master)
     call read_h2odata (Model%h2o_phys, Model%me, Model%master)
 
+    !--- initializing stochastic physics
     call init_stochastic_physics(Model,Init_parm,nblks,Grid)
-
     if(Model%me == Model%master) print*,'do_skeb=',Model%do_skeb
+
     do nb = 1,nblks
       ix = Init_parm%blksz(nb)
 !     write(0,*)' ix in gfs_driver=',ix,' nb=',nb
@@ -170,13 +197,38 @@ module GFS_driver
       call Sfcprop  (nb)%create (ix, Model)
       call Coupling (nb)%create (ix, Model)
       call Grid     (nb)%create (ix, Model)
+#ifdef CCPP
+      call Tbd      (nb)%create (ix, nb, Model)
+#else
       call Tbd      (nb)%create (ix, Model)
+#endif
       call Cldprop  (nb)%create (ix, Model)
       call Radtend  (nb)%create (ix, Model)
 !--- internal representation of diagnostics
       call Diag     (nb)%create (ix, Model)
     enddo
 
+#ifdef CCPP
+
+#ifdef OPENMP
+    nthrds = omp_get_max_threads()
+#else
+    nthrds = 1
+#endif
+
+! Initialize the Fastphys data type - independent of blocks/threads
+    call Fastphys%create()
+
+! Initialize the Interstitial data type in parallel so that
+! each thread creates (touches) its Interstitial(nt) first
+!$OMP parallel do default (shared) &
+!$OMP            schedule (static,1) &
+!$OMP            private  (nt)
+    do nt=1,nthrds
+      call Interstitial (nt)%create (maxval(Init_parm%blksz), Model)
+    enddo
+!$OMP end parallel do
+#endif
 
     !--- populate the grid components
     call GFS_grid_populate (Grid, Init_parm%xlon, Init_parm%xlat, Init_parm%area)
@@ -188,7 +240,7 @@ module GFS_driver
     !--- read in and initialize ozone and water
     if (Model%ntoz > 0) then
       do nb = 1, nblks
-          call setindxoz (Init_parm%blksz(nb), Grid(nb)%xlat_d, Grid(nb)%jindx1_o3, &
+        call setindxoz (Init_parm%blksz(nb), Grid(nb)%xlat_d, Grid(nb)%jindx1_o3, &
                         Grid(nb)%jindx2_o3, Grid(nb)%ddy_o3)
       enddo
     endif
@@ -303,7 +355,7 @@ module GFS_driver
 
     !--- sncovr may not exist in ICs from chgres.
     !--- FV3GFS handles this as part of the IC ingest
-    !--- this note is placed here alertng users to study
+    !--- this note is placed here to alert users to study
     !--- the FV3GFS_io.F90 module
 
   end subroutine GFS_initialize
@@ -320,7 +372,11 @@ module GFS_driver
 !      6) performs surface data cycling via the GFS gcycle routine
 !-------------------------------------------------------------------------
   subroutine GFS_time_vary_step (Model, Statein, Stateout, Sfcprop, Coupling, & 
+#ifdef CCPP
+                                 Grid, Tbd, Cldprop, Radtend, Diag, Interstitial)
+#else
                                  Grid, Tbd, Cldprop, Radtend, Diag)
+#endif
 
     implicit none
 
@@ -335,6 +391,10 @@ module GFS_driver
     type(GFS_cldprop_type),   intent(inout) :: Cldprop(:)
     type(GFS_radtend_type),   intent(inout) :: Radtend(:)
     type(GFS_diag_type),      intent(inout) :: Diag(:)
+#ifdef CCPP
+    type(GFS_interstitial_type), intent(inout) :: Interstitial(:)
+#endif
+
     !--- local variables
     integer :: nb, nblks, k
     real(kind=kind_phys) :: rinc(5)
@@ -438,7 +498,11 @@ module GFS_driver
 !      6) performs surface data cycling via the GFS gcycle routine
 !-------------------------------------------------------------------------
   subroutine GFS_stochastic_driver (Model, Statein, Stateout, Sfcprop, Coupling, &
+#ifdef CCPP
+                                    Grid, Tbd, Cldprop, Radtend, Diag, Interstitial)
+#else
                                     Grid, Tbd, Cldprop, Radtend, Diag)
+#endif
 
     implicit none
 
@@ -463,6 +527,9 @@ module GFS_driver
     type(GFS_cldprop_type),         intent(inout) :: Cldprop
     type(GFS_radtend_type),         intent(inout) :: Radtend
     type(GFS_diag_type),            intent(inout) :: Diag
+#ifdef CCPP
+    type(GFS_interstitial_type), intent(inout) :: Interstitial(:)
+#endif
 #else
     type(GFS_control_type),   intent(in   ) :: Model
     type(GFS_statein_type),   intent(in   ) :: Statein
@@ -474,6 +541,9 @@ module GFS_driver
     type(GFS_cldprop_type),   intent(in   ) :: Cldprop
     type(GFS_radtend_type),   intent(in   ) :: Radtend
     type(GFS_diag_type),      intent(inout) :: Diag
+#ifdef CCPP
+    type(GFS_interstitial_type), intent(inout) :: Interstitial(:)
+#endif
 #endif
     !--- local variables
     integer :: k, i
@@ -746,6 +816,14 @@ module GFS_driver
     enddo
 
   end subroutine GFS_grid_populate
+
+#ifdef CCPP
+!-------------
+! GFS finalize
+!-------------
+  subroutine GFS_finalize ()
+  end subroutine GFS_finalize
+#endif
 
 end module GFS_driver
 
