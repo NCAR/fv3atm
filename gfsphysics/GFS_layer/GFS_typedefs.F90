@@ -293,69 +293,74 @@ module GFS_typedefs
 !---------------------------------------------------------------------------------------
 #if 0
 !! \section arg_table_GFS_sfcprop_type
-!! | local_name                     | standard_name                                                          | long_name                                            | units         | rank | type    |    kind   | intent | optional |
-!! |--------------------------------|------------------------------------------------------------------------|------------------------------------------------------|---------------|------|---------|-----------|--------|----------|
-!! | IPD_Data(nb)%Sfcprop%slmsk     | sea_land_ice_mask_real                                                 | landmask: sea/land/ice=0/1/2                         | flag          |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%tsfc      | surface_skin_temperature                                               | ocean surface skin temperature                       | K             |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%tisfc     | sea_ice_temperature                                                    | sea uce surface skin temperature                     | K             |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%snowd     | surface_snow_thickness_water_equivalent                                | water equivalent snow depth over land                | mm            |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%zorl      | surface_roughness_length                                               | surface roughness length                             | cm            |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%fice      | sea_ice_concentration                                                  | ice fraction over open water                         | frac          |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%hprim     |                                                                        | topographic standard deviation                       | m             |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%hprime    | statistical_measures_of_subgrid_orography                              | orographic metrics                                   | various       |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%sncovr    | surface_snow_area_fraction_for_diagnostics                             | surface snow area fraction                           | frac          |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%snoalb    | upper_bound_on_max_albedo_over_deep_snow                               | maximum snow albedo                                  | frac          |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%alvsf     |                                                                        | mean vis albedo with strong cosz dependency          | frac          |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%alnsf     |                                                                        | mean nir albedo with strong cosz dependency          | frac          |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%alvwf     |                                                                        | mean vis albedo with weak cosz dependency            | frac          |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%alnwf     |                                                                        | mean nir albedo with weak cosz dependency            | frac          |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%facsf     |                                                                        | fractional coverage with strong cosz dependency      | frac          |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%facwf     |                                                                        | fractional coverage with weak cosz dependency        | frac          |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%slope     |                                                                        | sfc slope type for lsm                               |               |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%shdmin    | minimum_vegetation_area_fraction                                       | min fractional coverage of green vegetation          | frac          |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%shdmax    | maximum_vegetation_area_fraction                                       | max fractional coverage of green vegetation          | frac          |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%tg3       | deep_soil_temperature                                                  | deep soil temperature                                | K             |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%vfrac     |                                                                        | vegetation fraction for lsm                          | frac          |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%vtype     |                                                                        | vegetation type for lsm                              | index         |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%stype     |                                                                        | soil type                                            | index         |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%uustar    | surface_friction_velocity                                              | boundary layer parameter                             | m s-1         |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%oro       | orography                                                              | orography                                            | m             |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%oro_uf    | orography_unfiltered                                                   | unfiltered orography                                 | m             |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%hice      | sea_ice_thickness                                                      | sea ice thickness                                    | m             |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%weasd     | water_equivalent_accumulated_snow_depth                                | water equiv of acc snow depth over land and sea ice  | mm            |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%canopy    | canopy_water_amount                                                    | canopy water amount                                  | kg m-2        |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%ffmm      | Monin-Obukhov_similarity_function_for_momentum                         | Monin-Obukhov similarity function for momentum       | none          |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%ffhh      | Monin-Obukhov_similarity_function_for_heat                             | Monin-Obukhov similarity function for heat           | none          |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%f10m      | ratio_of_wind_at_lowest_model_layer_and_wind_at_10m                    | ratio of sigma level 1 wind and 10m wind             | ratio         |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%tprcp     | nonnegative_lwe_thickness_of_precipitation_amount_on_dynamics_timestep | total precipitation amount in each time step         | m             |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%srflag    | flag_for_precipitation_type                                            | snow/rain flag for precipitation                     | flag          |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%slc       | volume_fraction_of_unfrozen_soil_moisture                              | liquid soil moisture                                 | frac          |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%smc       | volume_fraction_of_soil_moisture                                       | total soil moisture                                  | frac          |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%stc       | soil_temperature                                                       | soil temperature                                     | K             |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%t2m       | temperature_at_2m                                                      | 2 meter temperature                                  | K             |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%q2m       | specific_humidity_at_2m                                                | 2 meter specific humidity                            | kg kg-1       |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%tref      | sea_surface_reference_temperature                                      | sea surface reference temperature                    | K             |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%z_c       | sub-layer_cooling_thickness                                            | sub-layer cooling thickness                          | m             |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%c_0       | coefficient_c_0                                                        | coefficient 1 to calculate d(Tz)/d(Ts)               | none          |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%c_d       | coefficient_c_d                                                        | coefficient 2 to calculate d(Tz)/d(Ts)               | none          |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%w_0       | coefficient_w_0                                                        | coefficient 3 to calculate d(Tz)/d(Ts)               | none          |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%w_d       | coefficient_w_d                                                        | coefficient 4 to calculate d(Tz)/d(Ts)               | none          |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%xt        | diurnal_thermocline_layer_heat_content                                 | heat content in diurnal thermocline layer            | K m           |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%xs        | sea_water_salinity                                                     | salinity  content in diurnal thermocline layer       | ppt m         |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%xu        | diurnal_thermocline_layer_x_current                                    | u-current content in diurnal thermocline layer       | m2 s-1        |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%xv        | diurnal_thermocline_layer_y_current                                    | v-current content in diurnal thermocline layer       | m2 s-1        |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%xz        | diurnal_thermocline_layer_thickness                                    | diurnal thermocline layer thickness                  | m             |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%zm        | ocean_mixed_layer_thickness                                            | mixed layer thickness                                | m             |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%xtts      | sensitivity_of_dtl_heat_content_to_surface_temperature                 | d(xt)/d(ts)                                          | m             |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%xzts      | sensitivity_of_dtl_thickness_to_surface_temperature                    | d(xz)/d(ts)                                          | m K-1         |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%d_conv    | free_convection_layer_thickness                                        | thickness of free convection layer (FCL)             | m             |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%ifd       | index_of_dtlm_start                                                    | index to start dtlm run or not                       | index         |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%dt_cool   | sub-layer_cooling_amount                                               | sub-layer cooling amount                             | K             |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%qrain     | sensible_heat_flux_due_to_rainfall                                     | sensible heat flux due to rainfall                   | W             |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%sh2o      | volume_fraction_of_unfrozen_soil_moisture_for_land_surface_model       | volume fraction of unfrozen soil moisture for lsm    | frac          |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%smois     | volume_fraction_of_soil_moisture_for_land_surface_model                | volumetric fraction of soil moisture for lsm         | frac          |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%tslb      | soil_temperature_for_land_surface_model                                | soil temperature for land surface model              | K             |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%zs        | depth_of_soil_levels_for_land_surface_model                            | depth of soil levels for land surface model          | m             |    1 | real    | kind_phys | none   | F        |
+!! | local_name                       | standard_name                                                          | long_name                                              | units         | rank | type    |    kind   | intent | optional |
+!! |----------------------------------|------------------------------------------------------------------------|--------------------------------------------------------|---------------|------|---------|-----------|--------|----------|
+!! | IPD_Data(nb)%Sfcprop%slmsk       | sea_land_ice_mask_real                                                 | landmask: sea/land/ice=0/1/2                           | flag          |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%tsfc        | surface_skin_temperature                                               | ocean surface skin temperature                         | K             |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%tisfc       | sea_ice_temperature                                                    | sea uce surface skin temperature                       | K             |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%snowd       | surface_snow_thickness_water_equivalent                                | water equivalent snow depth over land                  | mm            |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%zorl        | surface_roughness_length                                               | surface roughness length                               | cm            |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%fice        | sea_ice_concentration                                                  | ice fraction over open water                           | frac          |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%hprim       |                                                                        | topographic standard deviation                         | m             |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%hprime      | statistical_measures_of_subgrid_orography                              | orographic metrics                                     | various       |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%sncovr      | surface_snow_area_fraction_for_diagnostics                             | surface snow area fraction                             | frac          |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%snoalb      | upper_bound_on_max_albedo_over_deep_snow                               | maximum snow albedo                                    | frac          |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%alvsf       |                                                                        | mean vis albedo with strong cosz dependency            | frac          |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%alnsf       |                                                                        | mean nir albedo with strong cosz dependency            | frac          |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%alvwf       |                                                                        | mean vis albedo with weak cosz dependency              | frac          |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%alnwf       |                                                                        | mean nir albedo with weak cosz dependency              | frac          |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%facsf       |                                                                        | fractional coverage with strong cosz dependency        | frac          |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%facwf       |                                                                        | fractional coverage with weak cosz dependency          | frac          |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%slope       |                                                                        | sfc slope type for lsm                                 |               |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%shdmin      | minimum_vegetation_area_fraction                                       | min fractional coverage of green vegetation            | frac          |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%shdmax      | maximum_vegetation_area_fraction                                       | max fractional coverage of green vegetation            | frac          |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%tg3         | deep_soil_temperature                                                  | deep soil temperature                                  | K             |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%vfrac       |                                                                        | vegetation fraction for lsm                            | frac          |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%vtype       |                                                                        | vegetation type for lsm                                | index         |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%stype       |                                                                        | soil type                                              | index         |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%uustar      | surface_friction_velocity                                              | boundary layer parameter                               | m s-1         |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%oro         | orography                                                              | orography                                              | m             |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%oro_uf      | orography_unfiltered                                                   | unfiltered orography                                   | m             |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%hice        | sea_ice_thickness                                                      | sea ice thickness                                      | m             |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%weasd       | water_equivalent_accumulated_snow_depth                                | water equiv of acc snow depth over land and sea ice    | mm            |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%canopy      | canopy_water_amount                                                    | canopy water amount                                    | kg m-2        |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%ffmm        | Monin-Obukhov_similarity_function_for_momentum                         | Monin-Obukhov similarity function for momentum         | none          |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%ffhh        | Monin-Obukhov_similarity_function_for_heat                             | Monin-Obukhov similarity function for heat             | none          |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%f10m        | ratio_of_wind_at_lowest_model_layer_and_wind_at_10m                    | ratio of sigma level 1 wind and 10m wind               | ratio         |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%tprcp       | nonnegative_lwe_thickness_of_precipitation_amount_on_dynamics_timestep | total precipitation amount in each time step           | m             |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%srflag      | flag_for_precipitation_type                                            | snow/rain flag for precipitation                       | flag          |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%slc         | volume_fraction_of_unfrozen_soil_moisture                              | liquid soil moisture                                   | frac          |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%smc         | volume_fraction_of_soil_moisture                                       | total soil moisture                                    | frac          |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%stc         | soil_temperature                                                       | soil temperature                                       | K             |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%t2m         | temperature_at_2m                                                      | 2 meter temperature                                    | K             |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%q2m         | specific_humidity_at_2m                                                | 2 meter specific humidity                              | kg kg-1       |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%tref        | sea_surface_reference_temperature                                      | sea surface reference temperature                      | K             |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%z_c         | sub-layer_cooling_thickness                                            | sub-layer cooling thickness                            | m             |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%c_0         | coefficient_c_0                                                        | coefficient 1 to calculate d(Tz)/d(Ts)                 | none          |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%c_d         | coefficient_c_d                                                        | coefficient 2 to calculate d(Tz)/d(Ts)                 | none          |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%w_0         | coefficient_w_0                                                        | coefficient 3 to calculate d(Tz)/d(Ts)                 | none          |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%w_d         | coefficient_w_d                                                        | coefficient 4 to calculate d(Tz)/d(Ts)                 | none          |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%xt          | diurnal_thermocline_layer_heat_content                                 | heat content in diurnal thermocline layer              | K m           |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%xs          | sea_water_salinity                                                     | salinity  content in diurnal thermocline layer         | ppt m         |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%xu          | diurnal_thermocline_layer_x_current                                    | u-current content in diurnal thermocline layer         | m2 s-1        |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%xv          | diurnal_thermocline_layer_y_current                                    | v-current content in diurnal thermocline layer         | m2 s-1        |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%xz          | diurnal_thermocline_layer_thickness                                    | diurnal thermocline layer thickness                    | m             |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%zm          | ocean_mixed_layer_thickness                                            | mixed layer thickness                                  | m             |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%xtts        | sensitivity_of_dtl_heat_content_to_surface_temperature                 | d(xt)/d(ts)                                            | m             |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%xzts        | sensitivity_of_dtl_thickness_to_surface_temperature                    | d(xz)/d(ts)                                            | m K-1         |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%d_conv      | free_convection_layer_thickness                                        | thickness of free convection layer (FCL)               | m             |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%ifd         | index_of_dtlm_start                                                    | index to start dtlm run or not                         | index         |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%dt_cool     | sub-layer_cooling_amount                                               | sub-layer cooling amount                               | K             |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%qrain       | sensible_heat_flux_due_to_rainfall                                     | sensible heat flux due to rainfall                     | W             |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%sh2o        | volume_fraction_of_unfrozen_soil_moisture_for_land_surface_model       | volume fraction of unfrozen soil moisture for lsm      | frac          |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%smois       | volume_fraction_of_soil_moisture_for_land_surface_model                | volumetric fraction of soil moisture for lsm           | frac          |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%tslb        | soil_temperature_for_land_surface_model                                | soil temperature for land surface model                | K             |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%zs          | depth_of_soil_levels_for_land_surface_model                            | depth of soil levels for land surface model            | m             |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%clw_surf    | cloud_condensed_water_mixing_ratio_at_surface                          | moist cloud water mixing ratio at surface              | kg kg-1       |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%cndm_surf   | surface_condensation_mass                                              | surface condensation mass                              | kg m-2        |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%flag_frsoil | flag_for_frozen_soil_physics                                           | flag for frozen soil physics (RUC)                     | flag          |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%rhofr       | density_of_frozen_precipitation                                        | density of frozen precipitation                        | kg m-3        |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%tsnow       | snow_temperature_bottom_first_layer                                    | snow temperature at the bottom of the first soil layer | K             |    1 | real    | kind_phys | none   | F        |
 !!
 #endif
   type GFS_sfcprop_type
@@ -431,11 +436,19 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: dt_cool(:)   => null()  !< nst_fld%dt_cool Sub layer cooling amount
     real (kind=kind_phys), pointer :: qrain  (:)   => null()  !< nst_fld%qrain   sensible heat flux due to rainfall (watts)
 
+#ifdef CCPP
     ! Soil properties for land-surface model (if number of levels different from NOAH 4-layer model)
-    real (kind=kind_phys), pointer :: sh2o(:,:)    => null()  !< volume fraction of unfrozen soil moisture for lsm
-    real (kind=kind_phys), pointer :: smois(:,:)   => null()  !< volumetric fraction of soil moisture for lsm
-    real (kind=kind_phys), pointer :: tslb(:,:)    => null()  !< soil temperature for land surface model
-    real (kind=kind_phys), pointer :: zs(:)        => null()  !< depth of soil levels for land surface model
+    real (kind=kind_phys), pointer :: sh2o(:,:)      => null()  !< volume fraction of unfrozen soil moisture for lsm
+    real (kind=kind_phys), pointer :: smois(:,:)     => null()  !< volumetric fraction of soil moisture for lsm
+    real (kind=kind_phys), pointer :: tslb(:,:)      => null()  !< soil temperature for land surface model
+    real (kind=kind_phys), pointer :: zs(:)          => null()  !< depth of soil levels for land surface model
+    !
+    real (kind=kind_phys), pointer :: clw_surf(:)    => null()  !< RUC LSM: moist cloud water mixing ratio at surface
+    real (kind=kind_phys), pointer :: cndm_surf(:)   => null()  !< RUC LSM: surface condensation mass
+    real (kind=kind_phys), pointer :: flag_frsoil(:) => null()  !< RUC LSM: flag for frozen soil physics
+    real (kind=kind_phys), pointer :: rhofr(:)       => null()  !< RUC LSM: density of frozen precipitation
+    real (kind=kind_phys), pointer :: tsnow(:)       => null()  !< RUC LSM: snow temperature at the bottom of the first soil layer
+#endif
 
     contains
       procedure :: create  => sfcprop_create  !<   allocate array data
@@ -704,7 +717,8 @@ module GFS_typedefs
 !! | IPD_Control%lwhtr                    |                                                                               | flag to output lw heating rate (Radtend%lwhc)           |               |    0 | logical   |           | none   | F        |
 !! | IPD_Control%swhtr                    |                                                                               | flag to output sw heating rate (Radtend%swhc)           |               |    0 | logical   |           | none   | F        |
 !! | IPD_Control%ncld                     | number_of_hydrometeors                                                        | choice of cloud scheme / number of hydrometeors         | count         |    0 | integer   |           | none   | F        |
-!! | IPD_Control%imp_physics              |                                                                               | choice of microphysics scheme                           |               |    0 | integer   |           | none   | F        |
+!! | IPD_Control%imp_physics              | flag_for_microphysics_scheme                                                  | choice of microphysics scheme                           | flag          |    0 | integer   |           | none   | F        |
+!! | IPD_Control%imp_physics_thompson     | flag_for_thompson_microphysics_scheme                                         | choice of Thompson microphysics scheme                  | flag          |    0 | integer   |           | none   | F        |
 !! | IPD_Control%psautco                  | coefficient_from_cloud_ice_to_snow                                            | auto conversion coeff from ice to snow                  | none          |    1 | real      | kind_phys | none   | F        |
 !! | IPD_Control%prautco                  | coefficient_from_cloud_water_to_rain                                          | auto conversion coeff from cloud to rain                | none          |    1 | real      | kind_phys | none   | F        |
 !! | IPD_Control%evpco                    | coefficient_for_evaporation_of_rainfall                                       | coeff for evaporation of largescale rain                | none          |    0 | real      | kind_phys | none   | F        |
@@ -735,7 +749,8 @@ module GFS_typedefs
 !! | IPD_Control%ltaerosol                | flag_for_aerosol_physics                                                      | flag for aerosol physics                                | flag          |    0 | logical   |           | none   | F        |
 !! | IPD_Control%lradar                   | flag_for_radar_reflectivity                                                   | flag for radar reflectivity                             | flag          |    0 | logical   |           | none   | F        |
 !! | IPD_Control%lgfdlmprad               |                                                                               | flag for GFDL mp scheme and radiation consistency       |               |    0 | logical   |           | none   | F        |
-!! | IPD_Control%lsm                      | flag_for_land_surface_scheme                                                  | flag for land surface model lsm=1 for noah lsm          | flag          |    0 | integer   |           | none   | F        |
+!! | IPD_Control%lsm                      | flag_for_land_surface_scheme                                                  | flag for land surface model                             | flag          |    0 | integer   |           | none   | F        |
+!! | IPD_Control%lsm_ruc                  | flag_for_ruc_land_surface_scheme                                              | flag for RUC land surface model                         | flag          |    0 | integer   |           | none   | F        |
 !! | IPD_Control%lsoil                    | soil_vertical_dimension                                                       | number of soil layers                                   | count         |    0 | integer   |           | none   | F        |
 !! | IPD_Control%lsoil_lsm                | soil_vertical_dimension_for_land_surface_model                                | number of soil layers for land surface model            | count         |    0 | integer   |           | none   | F        |
 !! | IPD_Control%ivegsrc                  | vegetation_type                                                               | land use classification                                 | index         |    0 | integer   |           | none   | F        |
@@ -970,6 +985,7 @@ module GFS_typedefs
     integer              :: ncld            !< choice of cloud scheme
     !--- new microphysical switch
     integer              :: imp_physics        !< choice of microphysics scheme
+    integer              :: imp_physics_thompson = 8 !< choice of Thompson microphysics scheme
     !--- Z-C microphysical parameters
     real(kind=kind_phys) :: psautco(2)         !< [in] auto conversion coeff from ice to snow
     real(kind=kind_phys) :: prautco(2)         !< [in] auto conversion coeff from cloud to rain
@@ -1014,9 +1030,12 @@ module GFS_typedefs
     logical              :: lgfdlmprad      !< flag for GFDL mp scheme and radiation consistency
 
     !--- land/surface model parameters
-    integer              :: lsm             !< flag for land surface model lsm=1 for noah lsm
+    integer              :: lsm             !< flag for land surface model
+    integer              :: lsm_ruc=2       !< flag for RUC land surface model
     integer              :: lsoil           !< number of soil layers
+#ifdef CCPP
     integer              :: lsoil_lsm       !< number of soil layers internal to land surface model
+#endif
     integer              :: ivegsrc         !< ivegsrc = 0   => USGS,
                                             !< ivegsrc = 1   => IGBP (20 category)
                                             !< ivegsrc = 2   => UMD  (13 category)
@@ -1720,9 +1739,7 @@ module GFS_typedefs
 !! | IPD_Interstitial(nt)%clw                           | convective_transportable_tracers                                                               | array to contain cloud water and other convective trans. tracers                    | kg kg-1       |    3 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%clw(:,:,1)                    | cloud_ice_mixing_ratio                                                                         | moist cloud ice mixing ratio                                                        | kg kg-1       |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%clw(:,:,2)                    | cloud_liquid_water_mixing_ratio                                                                | moist cloud water mixing ratio                                                      | kg kg-1       |    2 | real        | kind_phys | none   | F        |
-!! | IPD_Interstitial(nt)%clw_surf                      | cloud_condensed_water_mixing_ratio_at_surface                                                  | moist cloud water mixing ratio at surface                                           | kg kg-1       |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%clx                           | fraction_of_grid_box_with_subgrid_orography_higher_than_critical_height                        | frac. of grid box with by subgrid orography higher than critical height             | frac          |    2 | real        | kind_phys | none   | F        |
-!! | IPD_Interstitial(nt)%cndm_surf                     | surface_condensation_mass                                                                      | surface condensation mass                                                           | kg m-2        |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%cnvc                          | convective_cloud_cover                                                                         | convective cloud cover                                                              | frac          |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%cnvw                          | convective_cloud_water_mixing_ratio                                                            | moist convective cloud water mixing ratio                                           | kg kg-1       |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%cumabs                        | maximum_column_heating_rate                                                                    | maximum heating rate in column                                                      | K s-1         |    1 | real        | kind_phys | none   | F        |
@@ -1765,7 +1782,6 @@ module GFS_typedefs
 !! | IPD_Interstitial(nt)%fh2                           | Monin-Obukhov_similarity_function_for_heat_at_2m                                               | Monin-Obukhov similarity parameter for heat at 2m                                   | none          |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%flag_guess                    | flag_for_guess_run                                                                             | flag for guess run                                                                  | flag          |    1 | logical     |           | none   | F        |
 !! | IPD_Interstitial(nt)%flag_iter                     | flag_for_iteration                                                                             | flag for iteration                                                                  | flag          |    1 | logical     |           | none   | F        |
-!! | IPD_Interstitial(nt)%flag_frsoil                   | flag_for_frozen_soil_physics                                                                   | flag for frozen soil physics (RUC)                                                  | flag          |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%fm10                          | Monin-Obukhov_similarity_function_for_momentum_at_10m                                          | Monin-Obukhov similarity parameter for momentum at 10m                              | none          |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%frain                         | dynamics_to_physics_timestep_ratio                                                             | ratio of dynamics timestep to physics timestep                                      | none          |    0 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%gabsbdlw                      | surface_downwelling_longwave_flux_absorbed_by_ground                                           | total sky surface downward longwave flux absorbed by the ground                     | W m-2         |    1 | real        | kind_phys | none   | F        |
@@ -1833,7 +1849,6 @@ module GFS_typedefs
 !! | IPD_Interstitial(nt)%rhcbot                        | critical_relative_humidity_at_surface                                                          | critical relative humidity at the surface                                           | frac          |    0 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%rhcpbl                        | critical_relative_humidity_at_PBL_top                                                          | critical relative humidity at the PBL top                                           | frac          |    0 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%rhctop                        | critical_relative_humidity_at_top_of_atmosphere                                                | critical relative humidity at the top of atmosphere                                 | frac          |    0 | real        | kind_phys | none   | F        |
-!! | IPD_Interstitial(nt)%rhofr                         | density_of_frozen_precipitation                                                                | density of frozen precipitation                                                     | kg m-3        |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%runoff                        | surface_runoff_flux                                                                            | surface runoff flux                                                                 | g m-2 s-1     |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%save_qcw                      | cloud_condensed_water_mixing_ratio_save                                                        | moist cloud condensed water mixing ratio before entering a physics scheme           | kg kg-1       |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%save_qv                       | water_vapor_specific_humidity_save                                                             | water vapor specific humidity before entering a physics scheme                      | kg kg-1       |    2 | real        | kind_phys | none   | F        |
@@ -1866,7 +1881,6 @@ module GFS_typedefs
 !! | IPD_Interstitial(nt)%tseal                         | surface_skin_temperature_for_nsst                                                              | ocean surface skin temperature                                                      | K             |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%tsfa                          | surface_air_temperature_for_radiation                                                          | lowest model layer air temperature for radiation                                    | K             |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%tsfg                          | surface_ground_temperature_for_radiation                                                       | surface ground temperature for radiation                                            | K             |    1 | real        | kind_phys | none   | F        |
-!! | IPD_Interstitial(nt)%tsnow                         | snow_temperature_bottom_first_layer                                                            | snow temperature at the bottom of the first soil layer                              | K             |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%tsurf                         | surface_skin_temperature_after_iteration                                                       | surface skin temperature after iteration                                            | K             |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%tracers_water                 | number_of_water_tracers                                                                        | number of water-related tracers                                                     | count         |    0 | integer     |           | none   | F        |
 !! | IPD_Interstitial(nt)%ud_mf                         | instantaneous_atmosphere_updraft_convective_mass_flux                                          | (updraft mass flux) * delt                                                          | kg m-2        |    2 | real        | kind_phys | none   | F        |
@@ -1903,9 +1917,7 @@ module GFS_typedefs
     real (kind=kind_phys), pointer      :: cld1d(:)         => null()  !<
     real (kind=kind_phys), pointer      :: clouds(:,:,:)    => null()  !<
     real (kind=kind_phys), pointer      :: clw(:,:,:)       => null()  !<
-    real (kind=kind_phys), pointer      :: clw_surf(:)      => null()  !<
     real (kind=kind_phys), pointer      :: clx(:,:)         => null()  !<
-    real (kind=kind_phys), pointer      :: cndm_surf(:)     => null()  !<
     real (kind=kind_phys), pointer      :: cnvc(:,:)        => null()  !<
     real (kind=kind_phys), pointer      :: cnvw(:,:)        => null()  !<
     real (kind=kind_phys), pointer      :: cumabs(:)        => null()  !<
@@ -1941,7 +1953,6 @@ module GFS_typedefs
     real (kind=kind_phys), pointer      :: fh2(:)           => null()  !<
     logical,               pointer      :: flag_guess(:)    => null()  !<
     logical,               pointer      :: flag_iter(:)     => null()  !<
-    real (kind=kind_phys), pointer      :: flag_frsoil(:)   => null()  !<
     real (kind=kind_phys), pointer      :: fm10(:)          => null()  !<
     real (kind=kind_phys)               :: frain                       !<
     real (kind=kind_phys), pointer      :: gabsbdlw(:)      => null()  !<
@@ -1999,7 +2010,6 @@ module GFS_typedefs
     real (kind=kind_phys)               :: rhcbot                      !<
     real (kind=kind_phys)               :: rhcpbl                      !<
     real (kind=kind_phys)               :: rhctop                      !<
-    real (kind=kind_phys), pointer      :: rhofr(:)         => null()  !<
     real (kind=kind_phys), pointer      :: runoff(:)        => null()  !<
     real (kind=kind_phys), pointer      :: save_qcw(:,:)    => null()  !<
     real (kind=kind_phys), pointer      :: save_qv(:,:)     => null()  !<
@@ -2029,7 +2039,6 @@ module GFS_typedefs
     real (kind=kind_phys), pointer      :: tseal(:)         => null()  !<
     real (kind=kind_phys), pointer      :: tsfa(:)          => null()  !<
     real (kind=kind_phys), pointer      :: tsfg(:)          => null()  !<
-    real (kind=kind_phys), pointer      :: tsnow(:)         => null()  !<
     real (kind=kind_phys), pointer      :: tsurf(:)         => null()  !<
     real (kind=kind_phys), pointer      :: ud_mf(:,:)       => null()  !<
     integer, pointer                    :: vegtype(:)       => null()  !<
@@ -2298,15 +2307,30 @@ module GFS_typedefs
       Sfcprop%qrain   = zero
     endif
 
-    ! For land surface models with different numbers of levels than the four NOAH levels
-    allocate (Sfcprop%sh2o  (IM,Model%lsoil_lsm))
-    allocate (Sfcprop%smois (IM,Model%lsoil_lsm))
-    allocate (Sfcprop%tslb  (IM,Model%lsoil_lsm))
-    allocate (Sfcprop%zs    (Model%lsoil_lsm))
-    Sfcprop%sh2o  = clear_val
-    Sfcprop%smois = clear_val
-    Sfcprop%tslb  = clear_val
-    Sfcprop%zs    = clear_val
+#ifdef CCPP
+    if (Model%lsm == Model%lsm_ruc) then
+       ! For land surface models with different numbers of levels than the four NOAH levels
+       allocate (Sfcprop%sh2o        (IM,Model%lsoil_lsm))
+       allocate (Sfcprop%smois       (IM,Model%lsoil_lsm))
+       allocate (Sfcprop%tslb        (IM,Model%lsoil_lsm))
+       allocate (Sfcprop%zs          (Model%lsoil_lsm))
+       allocate (Sfcprop%clw_surf    (IM))
+       allocate (Sfcprop%cndm_surf   (IM))
+       allocate (Sfcprop%flag_frsoil (IM))
+       allocate (Sfcprop%rhofr       (IM))
+       allocate (Sfcprop%tsnow       (IM))
+       !
+       Sfcprop%sh2o        = clear_val
+       Sfcprop%smois       = clear_val
+       Sfcprop%tslb        = clear_val
+       Sfcprop%zs          = clear_val
+       Sfcprop%clw_surf    = clear_val
+       Sfcprop%cndm_surf   = clear_val
+       Sfcprop%flag_frsoil = clear_val
+       Sfcprop%rhofr       = clear_val
+       Sfcprop%tsnow       = clear_val
+    end if
+#endif
 
   end subroutine sfcprop_create
 
@@ -2517,7 +2541,7 @@ module GFS_typedefs
     endif
 
     !--- needed for Thompson's aerosol option
-    if(Model%imp_physics == 8.and.Model%ltaerosol) then
+    if(Model%imp_physics == Model%imp_physics_thompson .and. Model%ltaerosol) then
       allocate (Coupling%nwfa2d (IM))
       Coupling%nwfa2d   = clear_val
     endif
@@ -2638,8 +2662,8 @@ module GFS_typedefs
     logical              :: swhtr          = .true.          !< flag to output sw heating rate (Radtend%swhc)
 
 !--- Z-C microphysical parameters
-    integer              :: ncld           =  1                 !< cnoice of cloud scheme
-    integer              :: imp_physics    =  99                !< cnoice of cloud scheme
+    integer              :: ncld           =  1                 !< choice of cloud scheme
+    integer              :: imp_physics    =  99                !< choice of cloud scheme
     real(kind=kind_phys) :: psautco(2)     = (/6.0d-4,3.0d-4/)  !< [in] auto conversion coeff from ice to snow
     real(kind=kind_phys) :: prautco(2)     = (/1.0d-4,1.0d-4/)  !< [in] auto conversion coeff from cloud to rain
     real(kind=kind_phys) :: evpco          = 2.0d-5             !< [in] coeff for evaporation of largescale rain
@@ -2677,9 +2701,11 @@ module GFS_typedefs
     logical              :: lgfdlmprad     = .false.            !< flag for GFDLMP radiation interaction
 
     !--- land/surface model parameters
-    integer              :: lsm            =  1              !< flag for land surface model to use =0  for osu lsm; =1  for noah lsm
+    integer              :: lsm            =  1              !< flag for land surface model to use =0  for osu lsm; =1  for noah lsm; =2  for RUC lsm
     integer              :: lsoil          =  4              !< number of soil layers
+#ifdef CCPP
     integer              :: lsoil_lsm      =  -1             !< number of soil layers internal to land surface model; -1 use lsoil
+#endif
     integer              :: ivegsrc        =  2              !< ivegsrc = 0   => USGS,
                                                              !< ivegsrc = 1   => IGBP (20 category)
                                                              !< ivegsrc = 2   => UMD  (13 category)
@@ -2845,7 +2871,11 @@ module GFS_typedefs
                                mg_ncnst, mg_ninst, mg_ngnst, sed_supersat, do_sb_physics,   &
                                ltaerosol, lradar, lgfdlmprad,                               &
                           !--- land/surface model control
+#ifdef CCPP
                                lsm, lsoil, lsoil_lsm, nmtvr, ivegsrc, mom4ice, use_ufo,     &
+#else
+                               lsm, lsoil, nmtvr, ivegsrc, mom4ice, use_ufo,                &
+#endif
                           !--- physical parameterizations
                                ras, trans_trac, old_monin, cnvgwd, mstrat, moist_adj,       &
                                cscnv, cal_pre, do_aw, do_shoc, shocaftcnv, shoc_cld,        &
@@ -3024,11 +3054,13 @@ module GFS_typedefs
 !--- land/surface model parameters
     Model%lsm              = lsm
     Model%lsoil            = lsoil
+#ifdef CCPP
     if (lsoil_lsm==-1) then
       Model%lsoil_lsm      = lsoil
     else
       Model%lsoil_lsm      = lsoil_lsm
     end if
+#endif
     Model%ivegsrc          = ivegsrc
     Model%isot             = isot
     Model%mom4ice          = mom4ice
@@ -3240,6 +3272,14 @@ module GFS_typedefs
     if (Model%me == Model%master) then
       if (Model%lsm == 1) then
         print *,' NOAH Land Surface Model used'
+#ifdef CCPP
+      elseif (Model%lsm == Model%lsm_ruc) then
+        print *,' RUC Land Surface Model used'
+#else
+      elseif (Model%lsm == Model%lsm_ruc) then
+        print *,' RUC Land Surface Model only available through CCPP - job aborted'
+        stop
+#endif
       elseif (Model%lsm == 0) then
         print *,' OSU no longer supported - job aborted'
         stop
@@ -3354,19 +3394,20 @@ module GFS_typedefs
       Model%ncnd    = 5
       if (Model%me == Model%master) print *,' Using wsm6 microphysics'
 
-    elseif (Model%imp_physics == 8) then !Thompson microphysics
+    elseif (Model%imp_physics == Model%imp_physics_thompson) then !Thompson microphysics
       Model%npdf3d  = 0
       Model%num_p3d = 3
       Model%num_p2d = 1
       Model%pdfcld  = .false.
       Model%shcnvcw = .false.
       Model%ncnd    = 5
-!      if(Model%ltaerosol) then
-!         Model%ltaerosol=.false.
-!         if (Model%me == Model%master) print *, &
-!           'ltaerosol does not currently work with Thompson MP. ltaerosol is set to false'
-!      endif
-
+#ifndef CCPP
+      if(Model%ltaerosol) then
+         Model%ltaerosol=.false.
+         if (Model%me == Model%master) print *, &
+           'ltaerosol currently only works with CCPP version of Thompson MP, resetting ltaerosol to false'
+      endif
+#endif
       if (Model%me == Model%master) print *,' Using Thompson double moment', &
                                           ' microphysics',' ltaerosol = ',Model%ltaerosol, &
                                           ' lradar =',Model%lradar,Model%num_p3d,Model%num_p2d
@@ -3569,7 +3610,7 @@ module GFS_typedefs
         print *, ' wminco            : ', Model%wminco
         print *, ' '
       endif
-      if (Model%imp_physics == 6 .or. Model%imp_physics == 8) then
+      if (Model%imp_physics == 6 .or. Model%imp_physics == Model%imp_physics_thompson) then
         print *, ' Thompson microphysical parameters'
         print *, ' ltaerosol         : ', Model%ltaerosol
         print *, ' lradar            : ', Model%lradar
@@ -3592,7 +3633,9 @@ module GFS_typedefs
       print *, 'land/surface model parameters'
       print *, ' lsm               : ', Model%lsm
       print *, ' lsoil             : ', Model%lsoil
+#ifdef CCPP
       print *, ' lsoil_lsm         : ', Model%lsoil_lsm
+#endif
       print *, ' ivegsrc           : ', Model%ivegsrc
       print *, ' isot              : ', Model%isot
       print *, ' mom4ice           : ', Model%mom4ice
@@ -4253,9 +4296,7 @@ module GFS_typedefs
     allocate (Interstitial%cld1d      (IM))
     allocate (Interstitial%clouds     (IM,Model%levr+LTP,NF_CLDS))
     allocate (Interstitial%clw        (IM,Model%levs,Interstitial%tracers_total+2))
-    allocate (Interstitial%clw_surf   (IM))
     allocate (Interstitial%clx        (IM,4))
-    allocate (Interstitial%cndm_surf  (IM))
     allocate (Interstitial%cnvc       (IM,Model%levs))
     allocate (Interstitial%cnvw       (IM,Model%levs))
     allocate (Interstitial%cumabs     (IM))
@@ -4289,7 +4330,6 @@ module GFS_typedefs
     allocate (Interstitial%fh2        (IM))
     allocate (Interstitial%flag_guess (IM))
     allocate (Interstitial%flag_iter  (IM))
-    allocate (Interstitial%flag_frsoil(IM))
     allocate (Interstitial%fm10       (IM))
     allocate (Interstitial%gabsbdlw   (IM))
     allocate (Interstitial%gamma      (IM))
@@ -4326,7 +4366,6 @@ module GFS_typedefs
     allocate (Interstitial%rb         (IM))
     allocate (Interstitial%rhc        (IM,Model%levs))
     allocate (Interstitial%runoff     (IM))
-    allocate (Interstitial%rhofr      (IM))
     allocate (Interstitial%save_qcw   (IM,Model%levs))
     allocate (Interstitial%save_qv    (IM,Model%levs))
     allocate (Interstitial%save_t     (IM,Model%levs))
@@ -4351,7 +4390,6 @@ module GFS_typedefs
     allocate (Interstitial%tseal      (IM))
     allocate (Interstitial%tsfa       (IM))
     allocate (Interstitial%tsfg       (IM))
-    allocate (Interstitial%tsnow      (IM))
     allocate (Interstitial%tsurf      (IM))
     allocate (Interstitial%ud_mf      (IM,Model%levs))
     allocate (Interstitial%vegtype    (IM))
@@ -4489,9 +4527,7 @@ module GFS_typedefs
     Interstitial%cld1d        = clear_val
     Interstitial%cldf         = clear_val
     Interstitial%clw          = clear_val
-    Interstitial%clw_surf     = clear_val
     Interstitial%clx          = clear_val
-    Interstitial%cndm_surf    = clear_val
     Interstitial%cnvc         = clear_val
     Interstitial%cnvw         = clear_val
     Interstitial%cumabs       = clear_val
@@ -4525,7 +4561,6 @@ module GFS_typedefs
     Interstitial%fh2          = clear_val
     Interstitial%flag_guess   = .false.
     Interstitial%flag_iter    = .false.
-    Interstitial%flag_frsoil  = clear_val
     Interstitial%fm10         = clear_val
     Interstitial%frain        = clear_val
     Interstitial%gabsbdlw     = clear_val
@@ -4558,7 +4593,6 @@ module GFS_typedefs
     Interstitial%rhcpbl       = clear_val
     Interstitial%rhctop       = clear_val
     Interstitial%runoff       = clear_val
-    Interstitial%rhofr        = clear_val
     Interstitial%save_qcw     = clear_val
     Interstitial%save_qv      = clear_val
     Interstitial%save_t       = clear_val
@@ -4577,7 +4611,6 @@ module GFS_typedefs
     Interstitial%tice         = clear_val
     Interstitial%trans        = clear_val
     Interstitial%tseal        = clear_val
-    Interstitial%tsnow        = clear_val
     Interstitial%tsurf        = clear_val
     Interstitial%ud_mf        = clear_val
     Interstitial%vegtype      = 0
@@ -4636,9 +4669,7 @@ module GFS_typedefs
     write (0,*) 'sum(Interstitial%cldsa       ) = ', sum(Interstitial%cldsa       )
     write (0,*) 'sum(Interstitial%cld1d       ) = ', sum(Interstitial%cld1d       )
     write (0,*) 'sum(Interstitial%clw         ) = ', sum(Interstitial%clw         )
-    write (0,*) 'sum(Interstitial%clw_surf    ) = ', sum(Interstitial%clw_surf    )
     write (0,*) 'sum(Interstitial%clx         ) = ', sum(Interstitial%clx         )
-    write (0,*) 'sum(Interstitial%cndm_surf   ) = ', sum(Interstitial%cndm_surf   )
     write (0,*) 'sum(Interstitial%clouds      ) = ', sum(Interstitial%clouds      )
     write (0,*) 'sum(Interstitial%cnvc        ) = ', sum(Interstitial%cnvc        )
     write (0,*) 'sum(Interstitial%cnvw        ) = ', sum(Interstitial%cnvw        )
@@ -4675,7 +4706,6 @@ module GFS_typedefs
     write (0,*) 'sum(Interstitial%fh2         ) = ', sum(Interstitial%fh2         )
     write (0,*) 'Interstitial%flag_guess(1)     = ', Interstitial%flag_guess(1)
     write (0,*) 'Interstitial%flag_iter(1)      = ', Interstitial%flag_iter(1)
-    write (0,*) 'sum(Interstitial%flag_frsoil ) = ', sum(Interstitial%flag_frsoil )
     write (0,*) 'sum(Interstitial%fm10        ) = ', sum(Interstitial%fm10        )
     write (0,*) 'Interstitial%frain             = ', Interstitial%frain
     write (0,*) 'sum(Interstitial%gabsbdlw    ) = ', sum(Interstitial%gabsbdlw    )
@@ -4721,7 +4751,6 @@ module GFS_typedefs
     write (0,*) 'Interstitial%rhcpbl            = ', Interstitial%rhcpbl
     write (0,*) 'Interstitial%rhctop            = ', Interstitial%rhctop
     write (0,*) 'sum(Interstitial%runoff      ) = ', sum(Interstitial%runoff      )
-    write (0,*) 'sum(Interstitial%rhofr       ) = ', sum(Interstitial%rhofr       )
     write (0,*) 'sum(Interstitial%save_qcw    ) = ', sum(Interstitial%save_qcw    )
     write (0,*) 'sum(Interstitial%save_qv     ) = ', sum(Interstitial%save_qv     )
     write (0,*) 'sum(Interstitial%save_t      ) = ', sum(Interstitial%save_t      )
@@ -4751,7 +4780,6 @@ module GFS_typedefs
     write (0,*) 'sum(Interstitial%tseal       ) = ', sum(Interstitial%tseal       )
     write (0,*) 'sum(Interstitial%tsfa        ) = ', sum(Interstitial%tsfa        )
     write (0,*) 'sum(Interstitial%tsfg        ) = ', sum(Interstitial%tsfg        )
-    write (0,*) 'sum(Interstitial%tsnow       ) = ', sum(Interstitial%tsnow       )
     write (0,*) 'sum(Interstitial%tsurf       ) = ', sum(Interstitial%tsurf       )
     write (0,*) 'sum(Interstitial%ud_mf       ) = ', sum(Interstitial%ud_mf       )
     write (0,*) 'sum(Interstitial%vegtype     ) = ', sum(Interstitial%vegtype     )
