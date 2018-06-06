@@ -1,5 +1,11 @@
 module GFS_typedefs
 
+#ifdef CCPP
+       ! DH* In the future, the MPI communicator should be an input argument
+       ! to control_initialize and the following statement should be removed
+       use mpi,                      only: MPI_COMM_WORLD
+       ! *DH
+#endif
        use machine,                  only: kind_phys, kind_evod
 #ifdef CCPP
        use physcons,                 only: con_cp, con_fvirt, con_g, &
@@ -358,7 +364,7 @@ module GFS_typedefs
 !! | IPD_Data(nb)%Sfcprop%zs          | depth_of_soil_levels_for_land_surface_model                            | depth of soil levels for land surface model            | m             |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%clw_surf    | cloud_condensed_water_mixing_ratio_at_surface                          | moist cloud water mixing ratio at surface              | kg kg-1       |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%cndm_surf   | surface_condensation_mass                                              | surface condensation mass                              | kg m-2        |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%flag_frsoil | flag_for_frozen_soil_physics                                           | flag for frozen soil physics (RUC)                     | flag          |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%flag_frsoil | flag_for_frozen_soil_physics                                           | flag for frozen soil physics (RUC)                     | flag          |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%rhofr       | density_of_frozen_precipitation                                        | density of frozen precipitation                        | kg m-3        |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%tsnow       | snow_temperature_bottom_first_layer                                    | snow temperature at the bottom of the first soil layer | K             |    1 | real    | kind_phys | none   | F        |
 !!
@@ -438,16 +444,16 @@ module GFS_typedefs
 
 #ifdef CCPP
     ! Soil properties for land-surface model (if number of levels different from NOAH 4-layer model)
-    real (kind=kind_phys), pointer :: sh2o(:,:)      => null()  !< volume fraction of unfrozen soil moisture for lsm
-    real (kind=kind_phys), pointer :: smois(:,:)     => null()  !< volumetric fraction of soil moisture for lsm
-    real (kind=kind_phys), pointer :: tslb(:,:)      => null()  !< soil temperature for land surface model
-    real (kind=kind_phys), pointer :: zs(:)          => null()  !< depth of soil levels for land surface model
+    real (kind=kind_phys), pointer :: sh2o(:,:)        => null()  !< volume fraction of unfrozen soil moisture for lsm
+    real (kind=kind_phys), pointer :: smois(:,:)       => null()  !< volumetric fraction of soil moisture for lsm
+    real (kind=kind_phys), pointer :: tslb(:,:)        => null()  !< soil temperature for land surface model
+    real (kind=kind_phys), pointer :: zs(:)            => null()  !< depth of soil levels for land surface model
     !
-    real (kind=kind_phys), pointer :: clw_surf(:)    => null()  !< RUC LSM: moist cloud water mixing ratio at surface
-    real (kind=kind_phys), pointer :: cndm_surf(:)   => null()  !< RUC LSM: surface condensation mass
-    real (kind=kind_phys), pointer :: flag_frsoil(:) => null()  !< RUC LSM: flag for frozen soil physics
-    real (kind=kind_phys), pointer :: rhofr(:)       => null()  !< RUC LSM: density of frozen precipitation
-    real (kind=kind_phys), pointer :: tsnow(:)       => null()  !< RUC LSM: snow temperature at the bottom of the first soil layer
+    real (kind=kind_phys), pointer :: clw_surf(:)      => null()  !< RUC LSM: moist cloud water mixing ratio at surface
+    real (kind=kind_phys), pointer :: cndm_surf(:)     => null()  !< RUC LSM: surface condensation mass
+    real (kind=kind_phys), pointer :: flag_frsoil(:,:) => null()  !< RUC LSM: flag for frozen soil physics
+    real (kind=kind_phys), pointer :: rhofr(:)         => null()  !< RUC LSM: density of frozen precipitation
+    real (kind=kind_phys), pointer :: tsnow(:)         => null()  !< RUC LSM: snow temperature at the bottom of the first soil layer
 #endif
 
     contains
@@ -659,7 +665,8 @@ module GFS_typedefs
 !! | local_name                           | standard_name                                                                 | long_name                                               | units         | rank | type      |    kind   | intent | optional |
 !! |--------------------------------------|-------------------------------------------------------------------------------|---------------------------------------------------------|---------------|------|-----------|-----------|--------|----------|
 !! | IPD_Control%me                       | mpi_rank                                                                      | current MPI-rank                                        | index         |    0 | integer   |           | none   | F        |
-!! | IPD_Control%master                   |                                                                               | master MPI-rank                                         | index         |    0 | integer   |           | none   | F        |
+!! | IPD_Control%master                   | mpi_root                                                                      | master MPI-rank                                         | index         |    0 | integer   |           | none   | F        |
+!! | IPD_Control%communicator             | mpi_comm                                                                      | MPI communicator                                        | index         |    0 | integer   |           | none   | F        |
 !! | IPD_Control%nlunit                   |                                                                               | fortran unit number for file opens                      | none          |    0 | integer   |           | none   | F        |
 !! | IPD_Control%fn_nml                   |                                                                               | namelist filename                                       | none          |    0 | charater  |           | none   | F        |
 !! | IPD_Control%fhzero                   |                                                                               | seconds between clearing of diagnostic buckets          | s             |    0 | real      | kind_phys | none   | F        |
@@ -894,6 +901,9 @@ module GFS_typedefs
 
     integer              :: me              !< MPI rank designator
     integer              :: master          !< MPI rank of master atmosphere processor
+#ifdef CCPP
+    integer              :: communicator    !< MPI communicator
+#endif
     integer              :: nlunit          !< unit for namelist
     character(len=64)    :: fn_nml          !< namelist filename for surface data cycling
     character(len=256), pointer :: input_nml_file(:) !< character string containing full namelist
@@ -2316,7 +2326,7 @@ module GFS_typedefs
        allocate (Sfcprop%zs          (Model%lsoil_lsm))
        allocate (Sfcprop%clw_surf    (IM))
        allocate (Sfcprop%cndm_surf   (IM))
-       allocate (Sfcprop%flag_frsoil (IM))
+       allocate (Sfcprop%flag_frsoil (IM,Model%lsoil_lsm))
        allocate (Sfcprop%rhofr       (IM))
        allocate (Sfcprop%tsnow       (IM))
        !
@@ -2941,6 +2951,11 @@ module GFS_typedefs
 !--- MPI parameters
     Model%me               = me
     Model%master           = master
+#ifdef CCPP
+    ! In the future, this should be an input argument to control_initialize
+    ! and the 'use mpi' statement at the top of the file should be removed
+    Model%communicator     = MPI_COMM_WORLD
+#endif
     Model%nlunit           = nlunit
     Model%fn_nml           = fn_nml
     Model%fhzero           = fhzero
@@ -3527,6 +3542,9 @@ module GFS_typedefs
       print *, 'basic control parameters'
       print *, ' me                : ', Model%me
       print *, ' master            : ', Model%master
+#ifdef CCPP
+      print *, ' communicator      : ', Model%communicator
+#endif
       print *, ' nlunit            : ', Model%nlunit
       print *, ' fn_nml            : ', trim(Model%fn_nml)
       print *, ' fhzero            : ', Model%fhzero
