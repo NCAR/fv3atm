@@ -328,10 +328,26 @@
 
       SUBROUTINE thompson_init
 
+#ifdef SION
+      use mpi
+#endif
+
       IMPLICIT NONE
 
       INTEGER:: i, j, k, m, n
       LOGICAL:: micro_init
+#ifdef SION
+      integer :: mpirank, mpierr
+      real :: stime, etime
+      INTEGER :: ierr
+      LOGICAL :: precomputed_tables
+#else
+      LOGICAL, PARAMETER :: precomputed_tables = .FALSE.
+#endif
+
+#ifdef SION
+      call MPI_COMM_RANK(MPI_COMM_WORLD, mpirank, mpierr)
+#endif
 
 !..Allocate space for lookup tables (J. Michalakes 2009Jun08).
       micro_init = .FALSE.
@@ -621,6 +637,24 @@
 !..Create lookup tables for most costly calculations.
 !+---+-----------------------------------------------------------------+
 
+#ifdef SION
+      call cpu_time(stime)
+      call readwrite_tables("read", ierr)
+      call cpu_time(etime)
+      if (mpirank==0) print '("Reading and broadcasting precomputed Thompson tables took ",f10.3," seconds.")', etime-stime
+      if (ierr==0) then
+         precomputed_tables = .true.
+         if (mpirank==0) write(0,*) "Read Thompson tables from disk, skip calculation"
+      else
+         precomputed_tables = .false.
+         if (mpirank==0) write(0,*) "An error occurred reading Thompson tables from disk, recalculate"
+      end if
+#endif
+
+      precomputed_tables_1: if (.not.precomputed_tables) then
+#ifdef SION
+      call cpu_time(stime)
+#endif
       do m = 1, ntb_r
          do k = 1, ntb_r1
             do j = 1, ntb_g
@@ -710,8 +744,16 @@
 !..Drop evaporation.
 !     CALL wrf_debug(200, '  creating rain evap table')
 !     call table_dropEvap
+#ifdef SION
+      call cpu_time(etime)
+      if (mpirank==0) print '("Calculating Thompson tables part 1 took ",f10.3," seconds.")', etime-stime
+#endif
+      end if precomputed_tables_1
 
 !..Initialize various constants for computing radar reflectivity.
+#ifdef SION
+      call cpu_time(stime)
+#endif
       xam_r = am_r
       xbm_r = bm_r
       xmu_r = mu_r
@@ -722,9 +764,17 @@
       xbm_g = bm_g
       xmu_g = mu_g
       call radar_init
+#ifdef SION
+      call cpu_time(etime)
+      if (mpirank==0) print '("Calling radar_init took ",f10.3," seconds.")', etime-stime
+#endif
 
       if (.not. iiwarm) then
 
+      precomputed_tables_2: if (.not.precomputed_tables) then
+#ifdef SION
+      call cpu_time(stime)
+#endif
 !..Rain collecting graupel & graupel collecting rain.
 !     CALL wrf_debug(200, '  creating rain collecting graupel table')
 !     print*, '  creating rain collecting graupel table'
@@ -744,6 +794,21 @@
 !     CALL wrf_debug(200, '  creating ice converting to snow table')
 !     print*,'  creating ice converting to snow table'
       call qi_aut_qs
+#ifdef SION
+      call cpu_time(etime)
+      if (mpirank==0) print '("Calculating Thompson tables part 2 took ",f10.3," seconds.")', etime-stime
+
+      call cpu_time(stime)
+      call readwrite_tables("write", ierr)
+      if (ierr/=0) then
+          write(0,*) "An error occurred writing Thompson tables to disk"
+          stop 1
+      end if
+      call cpu_time(etime)
+      if (mpirank==0) print '("Writing Thompson tables took ",f10.3," seconds.")', etime-stime
+#endif
+
+      end if precomputed_tables_2
 
       endif
 
@@ -4163,6 +4228,278 @@
       endif
 
       end subroutine calc_effectRad
+
+#ifdef SION
+      subroutine readwrite_tables(mode, ierr)
+
+         use mpi
+         use sion_f90
+
+         implicit none
+
+         ! Interface variables
+         character(len=*), intent(in)  :: mode
+         integer,          intent(out) :: ierr
+
+         ! MPI variables
+         integer :: mpirank
+         integer :: mpierr
+
+         ! SIONlib variables
+         integer            :: SIONLIB_fsblksize
+         integer            :: SIONLIB_numfiles
+         character*2        :: SIONLIB_filemode
+         !
+         integer                              :: nprocs
+         integer,   dimension(:), allocatable :: procs
+         integer*8, dimension(:), allocatable :: chunksizes
+         !
+         integer*8          :: brw
+         integer            :: sid
+         integer            :: f_endian, s_endian
+         logical            :: exists
+         integer*8          :: tables_size
+         real*8             :: checksum
+         character(len=*), parameter :: filename = 'thompson_tables_precomp.sl'
+
+         integer :: i
+
+         continue
+
+         ierr = 0
+
+         ! Get MPI rank (only master reads and writes)
+         call MPI_COMM_RANK(MPI_COMM_WORLD, mpirank, mpierr)
+
+         ! Test if SIONlib file containing pre-computed tables exists
+         inquire(file=trim(filename), exist=exists)
+         if (trim(mode)=="read") then
+            SIONLIB_filemode = "rb"
+            if (.not.exists) then
+               if (mpirank==0) write(0,*) "SIONlib file " // trim(filename) // &
+                                          " with precomputed Thompson MP tables not found"
+               ierr = 1
+               return
+            end if
+         else if (trim(mode)=="write") then
+            SIONLIB_filemode = "wb"
+            SIONLIB_numfiles = 1
+            if (exists) then
+               if (mpirank==0) write(0,*) "SIONlib file " // trim(filename) // &
+                                          " with precomputed Thompson MP tables already exists"
+               ierr = 1
+               return
+            end if
+         end if
+
+         ! To avoid that MPI master task creates the file before
+         ! other tasks pass the inquire test above
+         call MPI_BARRIER(MPI_COMM_WORLD, mpierr)
+
+         mpi_master_io_only: if (mpirank==0) then
+            tables_size = sizeof(tcg_racg)
+            tables_size = tables_size + sizeof(tmr_racg)
+            tables_size = tables_size + sizeof(tcr_gacr)
+            tables_size = tables_size + sizeof(tmg_gacr)
+            tables_size = tables_size + sizeof(tnr_racg)
+            tables_size = tables_size + sizeof(tnr_gacr)
+            tables_size = tables_size + sizeof(tcs_racs1)
+            tables_size = tables_size + sizeof(tmr_racs1)
+            tables_size = tables_size + sizeof(tcs_racs2)
+            tables_size = tables_size + sizeof(tmr_racs2)
+            tables_size = tables_size + sizeof(tcr_sacr1)
+            tables_size = tables_size + sizeof(tms_sacr1)
+            tables_size = tables_size + sizeof(tcr_sacr2)
+            tables_size = tables_size + sizeof(tms_sacr2)
+            tables_size = tables_size + sizeof(tnr_racs1)
+            tables_size = tables_size + sizeof(tnr_racs2)
+            tables_size = tables_size + sizeof(tnr_sacr1)
+            tables_size = tables_size + sizeof(tnr_sacr2)
+            tables_size = tables_size + sizeof(tpi_qcfz)
+            tables_size = tables_size + sizeof(tni_qcfz)
+            tables_size = tables_size + sizeof(tpi_qrfz)
+            tables_size = tables_size + sizeof(tpg_qrfz)
+            tables_size = tables_size + sizeof(tni_qrfz)
+            tables_size = tables_size + sizeof(tnr_qrfz)
+            tables_size = tables_size + sizeof(tps_iaus)
+            tables_size = tables_size + sizeof(tni_iaus)
+            tables_size = tables_size + sizeof(tpi_ide)
+            tables_size = tables_size + sizeof(t_Efrw)
+            tables_size = tables_size + sizeof(t_Efsw)
+            tables_size = tables_size + sizeof(tnr_rev)
+
+            ! Autodetect SIONlib filesystem block size
+            SIONLIB_fsblksize = -1
+
+            nprocs = 1
+            allocate (procs(1:nprocs))
+            allocate (chunksizes(1:nprocs))
+            do i=1,nprocs
+               procs(i) = i
+               chunksizes(i) = sizeof(checksum) + tables_size
+            end do
+
+            write(0,'(a)') "Opening file " // trim(filename)
+            call fsion_open(trim(filename), SIONLIB_filemode, nprocs, SIONLIB_numfiles, chunksizes(1), SIONLIB_fsblksize, procs(1), sid)
+            if (sid<0) write(0,'(a)') "Error opening " // trim(filename) // " in " // trim(mode) // " mode"
+
+            call fsion_seek(sid, mpirank, SION_CURRENT_BLK, SION_CURRENT_POS, ierr)
+            ! fsion_seek returns ierr=1 if cursor could be positioned as requested and 0 otherwise
+            if (ierr==1) ierr=0
+
+            if (trim(mode)=="read") then
+                ! Check that file endianness is identical to system endianness
+                call fsion_get_file_endianness(sid, f_endian)
+                call fsion_get_endianess(s_endian)
+                if (f_endian .ne. s_endian) then
+                   write(0,'(a)') "Error, endianness of SIONlib file " // trim(filename) // " differs " // &
+                                  "from filesystem endianness; please delete file and recalculate tables!"
+                   ierr = 1
+                end if
+                if (ierr==0) then
+                   ! Read checksum
+                   call fsion_read(checksum, int(kind(checksum),8), int(1,8), sid, brw)
+                   ! Read arrays tcg_racg through tnr_rev
+                   call fsion_read(tcg_racg(1,1,1,1),  int(kind(tcg_racg(1,1,1,1)),8),  int(size(tcg_racg),8),  sid, brw)
+                   call fsion_read(tmr_racg(1,1,1,1),  int(kind(tmr_racg(1,1,1,1)),8),  int(size(tmr_racg),8),  sid, brw)
+                   call fsion_read(tcr_gacr(1,1,1,1),  int(kind(tcr_gacr(1,1,1,1)),8),  int(size(tcr_gacr),8),  sid, brw)
+                   call fsion_read(tmg_gacr(1,1,1,1),  int(kind(tmg_gacr(1,1,1,1)),8),  int(size(tmg_gacr),8),  sid, brw)
+                   call fsion_read(tnr_racg(1,1,1,1),  int(kind(tnr_racg(1,1,1,1)),8),  int(size(tnr_racg),8),  sid, brw)
+                   call fsion_read(tnr_gacr(1,1,1,1),  int(kind(tnr_gacr(1,1,1,1)),8),  int(size(tnr_gacr),8),  sid, brw)
+                   call fsion_read(tcs_racs1(1,1,1,1), int(kind(tcs_racs1(1,1,1,1)),8), int(size(tcs_racs1),8), sid, brw)
+                   call fsion_read(tmr_racs1(1,1,1,1), int(kind(tmr_racs1(1,1,1,1)),8), int(size(tmr_racs1),8), sid, brw)
+                   call fsion_read(tcs_racs2(1,1,1,1), int(kind(tcs_racs2(1,1,1,1)),8), int(size(tcs_racs2),8), sid, brw)
+                   call fsion_read(tmr_racs2(1,1,1,1), int(kind(tmr_racs2(1,1,1,1)),8), int(size(tmr_racs2),8), sid, brw)
+                   call fsion_read(tcr_sacr1(1,1,1,1), int(kind(tcr_sacr1(1,1,1,1)),8), int(size(tcr_sacr1),8), sid, brw)
+                   call fsion_read(tms_sacr1(1,1,1,1), int(kind(tms_sacr1(1,1,1,1)),8), int(size(tms_sacr1),8), sid, brw)
+                   call fsion_read(tcr_sacr2(1,1,1,1), int(kind(tcr_sacr2(1,1,1,1)),8), int(size(tcr_sacr2),8), sid, brw)
+                   call fsion_read(tms_sacr2(1,1,1,1), int(kind(tms_sacr2(1,1,1,1)),8), int(size(tms_sacr2),8), sid, brw)
+                   call fsion_read(tnr_racs1(1,1,1,1), int(kind(tnr_racs1(1,1,1,1)),8), int(size(tnr_racs1),8), sid, brw)
+                   call fsion_read(tnr_racs2(1,1,1,1), int(kind(tnr_racs2(1,1,1,1)),8), int(size(tnr_racs2),8), sid, brw)
+                   call fsion_read(tnr_sacr1(1,1,1,1), int(kind(tnr_sacr1(1,1,1,1)),8), int(size(tnr_sacr1),8), sid, brw)
+                   call fsion_read(tnr_sacr2(1,1,1,1), int(kind(tnr_sacr2(1,1,1,1)),8), int(size(tnr_sacr2),8), sid, brw)
+                   call fsion_read(tpi_qcfz(1,1,1),    int(kind(tpi_qcfz(1,1,1)),8),    int(size(tpi_qcfz),8),  sid, brw)
+                   call fsion_read(tni_qcfz(1,1,1),    int(kind(tni_qcfz(1,1,1)),8),    int(size(tni_qcfz),8),  sid, brw)
+                   call fsion_read(tpi_qrfz(1,1,1),    int(kind(tpi_qrfz(1,1,1)),8),    int(size(tpi_qrfz),8),  sid, brw)
+                   call fsion_read(tpg_qrfz(1,1,1),    int(kind(tpg_qrfz(1,1,1)),8),    int(size(tpg_qrfz),8),  sid, brw)
+                   call fsion_read(tni_qrfz(1,1,1),    int(kind(tni_qrfz(1,1,1)),8),    int(size(tni_qrfz),8),  sid, brw)
+                   call fsion_read(tnr_qrfz(1,1,1),    int(kind(tnr_qrfz(1,1,1)),8),    int(size(tnr_qrfz),8),  sid, brw)
+                   call fsion_read(tps_iaus(1,1),      int(kind(tps_iaus(1,1)),8),      int(size(tps_iaus),8),  sid, brw)
+                   call fsion_read(tni_iaus(1,1),      int(kind(tni_iaus(1,1)),8),      int(size(tni_iaus),8),  sid, brw)
+                   call fsion_read(tpi_ide(1,1),       int(kind(tpi_ide(1,1)),8),       int(size(tpi_ide),8),   sid, brw)
+                   call fsion_read(t_Efrw(1,1),        int(kind(t_Efrw(1,1)),8),        int(size(t_Efrw),8),    sid, brw)
+                   call fsion_read(t_Efsw(1,1),        int(kind(t_Efsw(1,1)),8),        int(size(t_Efsw),8),    sid, brw)
+                   call fsion_read(tnr_rev(1,1,1),     int(kind(tnr_rev(1,1,1)),8),     int(size(tnr_rev),8),   sid, brw)
+                else
+                    ! Wrong endianness (ierr/=0) will force checksum match to fail
+                   checksum = -1
+                end if
+            else if (trim(mode)=="write") then
+                ! Calculate and write checksum
+                checksum = calculate_checksum()
+                call fsion_write(checksum, int(kind(checksum),8), int(1,8), sid, brw)
+                ! Write arrays tcg_racg through tnr_rev
+                call fsion_write(tcg_racg(1,1,1,1),  int(kind(tcg_racg(1,1,1,1)),8),  int(size(tcg_racg),8),  sid, brw)
+                call fsion_write(tmr_racg(1,1,1,1),  int(kind(tmr_racg(1,1,1,1)),8),  int(size(tmr_racg),8),  sid, brw)
+                call fsion_write(tcr_gacr(1,1,1,1),  int(kind(tcr_gacr(1,1,1,1)),8),  int(size(tcr_gacr),8),  sid, brw)
+                call fsion_write(tmg_gacr(1,1,1,1),  int(kind(tmg_gacr(1,1,1,1)),8),  int(size(tmg_gacr),8),  sid, brw)
+                call fsion_write(tnr_racg(1,1,1,1),  int(kind(tnr_racg(1,1,1,1)),8),  int(size(tnr_racg),8),  sid, brw)
+                call fsion_write(tnr_gacr(1,1,1,1),  int(kind(tnr_gacr(1,1,1,1)),8),  int(size(tnr_gacr),8),  sid, brw)
+                call fsion_write(tcs_racs1(1,1,1,1), int(kind(tcs_racs1(1,1,1,1)),8), int(size(tcs_racs1),8), sid, brw)
+                call fsion_write(tmr_racs1(1,1,1,1), int(kind(tmr_racs1(1,1,1,1)),8), int(size(tmr_racs1),8), sid, brw)
+                call fsion_write(tcs_racs2(1,1,1,1), int(kind(tcs_racs2(1,1,1,1)),8), int(size(tcs_racs2),8), sid, brw)
+                call fsion_write(tmr_racs2(1,1,1,1), int(kind(tmr_racs2(1,1,1,1)),8), int(size(tmr_racs2),8), sid, brw)
+                call fsion_write(tcr_sacr1(1,1,1,1), int(kind(tcr_sacr1(1,1,1,1)),8), int(size(tcr_sacr1),8), sid, brw)
+                call fsion_write(tms_sacr1(1,1,1,1), int(kind(tms_sacr1(1,1,1,1)),8), int(size(tms_sacr1),8), sid, brw)
+                call fsion_write(tcr_sacr2(1,1,1,1), int(kind(tcr_sacr2(1,1,1,1)),8), int(size(tcr_sacr2),8), sid, brw)
+                call fsion_write(tms_sacr2(1,1,1,1), int(kind(tms_sacr2(1,1,1,1)),8), int(size(tms_sacr2),8), sid, brw)
+                call fsion_write(tnr_racs1(1,1,1,1), int(kind(tnr_racs1(1,1,1,1)),8), int(size(tnr_racs1),8), sid, brw)
+                call fsion_write(tnr_racs2(1,1,1,1), int(kind(tnr_racs2(1,1,1,1)),8), int(size(tnr_racs2),8), sid, brw)
+                call fsion_write(tnr_sacr1(1,1,1,1), int(kind(tnr_sacr1(1,1,1,1)),8), int(size(tnr_sacr1),8), sid, brw)
+                call fsion_write(tnr_sacr2(1,1,1,1), int(kind(tnr_sacr2(1,1,1,1)),8), int(size(tnr_sacr2),8), sid, brw)
+                call fsion_write(tpi_qcfz(1,1,1),    int(kind(tpi_qcfz(1,1,1)),8),    int(size(tpi_qcfz),8),  sid, brw)
+                call fsion_write(tni_qcfz(1,1,1),    int(kind(tni_qcfz(1,1,1)),8),    int(size(tni_qcfz),8),  sid, brw)
+                call fsion_write(tpi_qrfz(1,1,1),    int(kind(tpi_qrfz(1,1,1)),8),    int(size(tpi_qrfz),8),  sid, brw)
+                call fsion_write(tpg_qrfz(1,1,1),    int(kind(tpg_qrfz(1,1,1)),8),    int(size(tpg_qrfz),8),  sid, brw)
+                call fsion_write(tni_qrfz(1,1,1),    int(kind(tni_qrfz(1,1,1)),8),    int(size(tni_qrfz),8),  sid, brw)
+                call fsion_write(tnr_qrfz(1,1,1),    int(kind(tnr_qrfz(1,1,1)),8),    int(size(tnr_qrfz),8),  sid, brw)
+                call fsion_write(tps_iaus(1,1),      int(kind(tps_iaus(1,1)),8),      int(size(tps_iaus),8),  sid, brw)
+                call fsion_write(tni_iaus(1,1),      int(kind(tni_iaus(1,1)),8),      int(size(tni_iaus),8),  sid, brw)
+                call fsion_write(tpi_ide(1,1),       int(kind(tpi_ide(1,1)),8),       int(size(tpi_ide),8),   sid, brw)
+                call fsion_write(t_Efrw(1,1),        int(kind(t_Efrw(1,1)),8),        int(size(t_Efrw),8),    sid, brw)
+                call fsion_write(t_Efsw(1,1),        int(kind(t_Efsw(1,1)),8),        int(size(t_Efsw),8),    sid, brw)
+                call fsion_write(tnr_rev(1,1,1),     int(kind(tnr_rev(1,1,1)),8),     int(size(tnr_rev),8),   sid, brw)
+            end if
+
+            write(0,'(a)') "Closing file " // trim(filename)
+            call fsion_close(sid, ierr)
+
+            ierr = 0
+            ! Test if checksum matches, this fails if wrong endianness (checksum=-1, see above)
+            if (trim(mode)=="read" .and. checksum/=calculate_checksum()) then
+               write(0,'(2(a,e20.9))') "Checksum mismatch, expected", calculate_checksum(), "but got", checksum
+               ierr = 1
+            end if
+
+            deallocate (procs)
+            deallocate (chunksizes)
+
+         else
+
+            ierr = 0
+
+         end if mpi_master_io_only
+
+         if (trim(mode)=="read") then
+            ! After reading the tables, broadcast the information to all MPI tasks.
+            ! First, broadcast the current error code from MPI master (0 = success)
+            call MPI_BCAST(ierr, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, mpierr)
+            if (ierr/=0) return
+            call MPI_BCAST(tcg_racg,  size(tcg_racg),  MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, mpierr)
+            call MPI_BCAST(tmr_racg,  size(tmr_racg),  MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, mpierr)
+            call MPI_BCAST(tcr_gacr,  size(tcr_gacr),  MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, mpierr)
+            call MPI_BCAST(tmg_gacr,  size(tmg_gacr),  MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, mpierr)
+            call MPI_BCAST(tnr_racg,  size(tnr_racg),  MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, mpierr)
+            call MPI_BCAST(tnr_gacr,  size(tnr_gacr),  MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, mpierr)
+            call MPI_BCAST(tcs_racs1, size(tcs_racs1), MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, mpierr)
+            call MPI_BCAST(tmr_racs1, size(tmr_racs1), MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, mpierr)
+            call MPI_BCAST(tcs_racs2, size(tcs_racs2), MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, mpierr)
+            call MPI_BCAST(tmr_racs2, size(tmr_racs2), MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, mpierr)
+            call MPI_BCAST(tcr_sacr1, size(tcr_sacr1), MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, mpierr)
+            call MPI_BCAST(tms_sacr1, size(tms_sacr1), MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, mpierr)
+            call MPI_BCAST(tcr_sacr2, size(tcr_sacr2), MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, mpierr)
+            call MPI_BCAST(tms_sacr2, size(tms_sacr2), MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, mpierr)
+            call MPI_BCAST(tnr_racs1, size(tnr_racs1), MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, mpierr)
+            call MPI_BCAST(tnr_racs2, size(tnr_racs2), MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, mpierr)
+            call MPI_BCAST(tnr_sacr1, size(tnr_sacr1), MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, mpierr)
+            call MPI_BCAST(tnr_sacr2, size(tnr_sacr2), MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, mpierr)
+            call MPI_BCAST(tpi_qcfz,  size(tpi_qcfz),  MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, mpierr)
+            call MPI_BCAST(tni_qcfz,  size(tni_qcfz),  MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, mpierr)
+            call MPI_BCAST(tpi_qrfz,  size(tpi_qrfz),  MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, mpierr)
+            call MPI_BCAST(tpg_qrfz,  size(tpg_qrfz),  MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, mpierr)
+            call MPI_BCAST(tni_qrfz,  size(tni_qrfz),  MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, mpierr)
+            call MPI_BCAST(tnr_qrfz,  size(tnr_qrfz),  MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, mpierr)
+            call MPI_BCAST(tps_iaus,  size(tps_iaus),  MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, mpierr)
+            call MPI_BCAST(tni_iaus,  size(tni_iaus),  MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, mpierr)
+            call MPI_BCAST(tpi_ide,   size(tpi_ide),   MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, mpierr)
+            call MPI_BCAST(t_Efrw,    size(t_Efrw),    MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, mpierr)
+            call MPI_BCAST(t_Efsw,    size(t_Efsw),    MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, mpierr)
+            call MPI_BCAST(tnr_rev,   size(tnr_rev),   MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, mpierr)
+         else
+            call MPI_BARRIER(MPI_COMM_WORLD, mpierr)
+         end if
+
+         return
+
+      contains
+
+         function calculate_checksum() result(checksum)
+             real*8 :: checksum
+             checksum = real(tables_size,8)*sum(tcg_racg)
+         end function calculate_checksum
+
+      end subroutine readwrite_tables
+#endif
 
 !+---+-----------------------------------------------------------------+
 !+---+-----------------------------------------------------------------+

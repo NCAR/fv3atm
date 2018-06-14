@@ -128,7 +128,9 @@ module GFS_driver
     use micro_mg3_0,         only: micro_mg_init3_0 => micro_mg_init
     use aer_cloud,           only: aer_cloud_init
     use module_ras,          only: ras_init
+#ifndef CCPP
     use module_mp_thompson,  only: thompson_init
+#endif
     use module_mp_wsm6,      only: wsm6init
 
     !--- interface variables
@@ -317,11 +319,14 @@ module GFS_driver
         print *,'SHOC is not currently compatible with Thompson MP -- shutting down'
         stop 
       endif 
+! For CCPP the Thompson MP init are called automatically as part of CCPP physics init
+#ifndef CCPP
       call thompson_init()                     !--- add aerosol version later 
       if(Model%ltaerosol) then 
         print *,'Aerosol awareness is not included in this version of Thompson MP -- shutting down'
         stop 
       endif 
+#endif
 !
     elseif(Model%imp_physics == 6) then        !--- initialize WSM6 Cloud microphysics
       if(Model%do_shoc) then 
@@ -406,6 +411,11 @@ module GFS_driver
     rinc(1:5)   = 0
     call w3difdat(Model%jdat,Model%idat,4,rinc)
     sec = rinc(4)
+#ifdef CCPP
+    ! Update model state variable Model%sec, needs to be done explicitly
+    ! as long as the time vary steps are not run through CCPP.
+    Model%sec = sec
+#endif
     Model%phour = sec/con_hr
     !--- set current bucket hour
     Model%zhour = Model%phour

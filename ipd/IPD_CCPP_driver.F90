@@ -142,12 +142,6 @@ module IPD_CCPP_driver
 #include "ccpp_fields.inc"
 ! End include auto-generated list of calls to ccpp_field_add
 
-        !--- Initialize CCPP physics
-        call ccpp_physics_init(cdata, ierr)
-        if (ierr/=0) then
-          write(0,*) 'An error occurred in ccpp_physics_init'
-          return
-        end if
       end associate associate_domain
 
       ! Allocate cdata structures for blocks and threads
@@ -168,7 +162,7 @@ module IPD_CCPP_driver
 #else
       do nt=1,nthrds
 #endif
-      do nb = 1,nblks
+      do nb=1,nblks
         ! Associate cdata with the cdata structure for this block
         ! and thread; this is needed because ccpp_fields.inc uses
         ! 'cdata' in its ccpp_field_add statements.
@@ -197,13 +191,47 @@ module IPD_CCPP_driver
 #endif
       if (ierr/=0) return
 
-    else if (trim(step)=="fast_physics") then
+   else if (trim(step)=="physics_init") then
 
-      call ccpp_physics_run(cdata_domain, group_name='fast_physics', ierr=ierr)
-      if (ierr/=0) then
-         write(0,'(a)') "An error occurred in ccpp_physics_run for group fast_physics"
-         return
+      if (.not.present(nblks)) then
+        write(0,*) 'Optional argument nblks required for IPD-CCPP physics_init step'
+        ierr = 1
+        return
       end if
+
+      if (.not.present(IPD_Control)) then
+        write(0,*) 'Optional argument IPD_Control required for IPD-CCPP physics_init step'
+        ierr = 1
+        return
+      end if
+
+      ! Loop over blocks, don't use threading on the outside but allowing threading
+      ! inside the initialization, because physics initialization code does a lot of
+      ! reading/writing data from disk, allocating fields, etc.
+      IPD_Control%threads = nthrds
+
+      ! Since physics init can only affect block- (and not thread-) dependent data
+      ! structures, it is sufficient to run this over all blocks for one thread only
+      nt = 1
+      do nb=1,nblks
+        !--- Initialize CCPP physics
+        call ccpp_physics_init(cdata_block(nb,nt), ierr)
+        if (ierr/=0) then
+          write(0,'(2(a,i4))') "An error occurred in ccpp_physics_init for block ", nb, " and thread ", nt
+          if (ierr/=0) return
+        end if
+      end do
+
+      ! Reset number of threads available to physisc schemes to default value
+      IPD_Control%threads = 1
+
+!    else if (trim(step)=="fast_physics") then
+!
+!      call ccpp_physics_run(cdata_domain, group_name='fast_physics', ierr=ierr)
+!      if (ierr/=0) then
+!         write(0,'(a)') "An error occurred in ccpp_physics_run for group fast_physics"
+!         return
+!      end if
 
     ! Finalize
     else if (trim(step)=="finalize") then
@@ -214,12 +242,12 @@ module IPD_CCPP_driver
         return
       end if
 
-      !--- Finalize CCPP physics
-      call ccpp_physics_finalize(cdata_domain, ierr)
-      if (ierr/=0) then
-         write(0,'(a)') "An error occurred in ccpp_physics_finalize"
-         return
-      end if
+      !!--- Finalize CCPP physics
+      !call ccpp_physics_finalize(cdata_domain, ierr)
+      !if (ierr/=0) then
+      !   write(0,'(a)') "An error occurred in ccpp_physics_finalize"
+      !   return
+      !end if
 
 !$OMP parallel num_threads (nthrds) &
 !$OMP          default (shared) &
@@ -231,6 +259,13 @@ module IPD_CCPP_driver
       nt = 1
 #endif
       do nb = 1,nblks
+        !--- Finalize CCPP physics
+        call ccpp_physics_finalize(cdata_block(nb,nt), ierr)
+        if (ierr/=0) then
+           write(0,'(a,i4,a,i4)') "An error occurred in ccpp_physics_finalize for block ", nb, " and thread ", nt
+           exit
+        end if
+
         !--- Finalize CCPP framework for blocks/threads
         call ccpp_finalize(cdata_block(nb,nt), ierr)
         if (ierr/=0) then

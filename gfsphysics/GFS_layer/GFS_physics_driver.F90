@@ -1673,8 +1673,8 @@ module module_physics_driver
               do i=1,im
                 dqdt(i,k,1)     = dvdftra(i,k,1)
                 dqdt(i,k,ntcw)  = dvdftra(i,k,2)
-                dqdt(i,k,ntlnc) = dvdftra(i,k,3)
-                dqdt(i,k,ntiw)  = dvdftra(i,k,4)
+                dqdt(i,k,ntiw)  = dvdftra(i,k,3)
+                dqdt(i,k,ntlnc) = dvdftra(i,k,4)
                 dqdt(i,k,ntinc) = dvdftra(i,k,5)
                 dqdt(i,k,ntoz)  = dvdftra(i,k,6)
                 dqdt(i,k,ntwa)  = dvdftra(i,k,7)
@@ -2172,6 +2172,12 @@ module module_physics_driver
 !        Call SHOC if do_shoc is true and shocaftcnv is false
 !
       if (Model%do_shoc .and. .not. Model%shocaftcnv) then
+! DH*
+#ifdef CCPP
+        write(0,*) "DH WARNING: inside Model%do_shoc .and. .not. Model%shocaftcnv - need to fix ncpl/ncpli?"
+        write(0,*) "DH WARNING: do we need Thompson with/without aerosol here as well?"
+#endif
+! *DH
         if (imp_physics == 10) then
           skip_macro = Model%do_shoc
           do k=1,levs
@@ -2269,6 +2275,12 @@ module module_physics_driver
 !    &,              dqdt(1,1,1), dqdt(1,1,2), dqdt(1,1,3)
 !    &,              gq0(1,1,1),clw(1,1,2),clw(1,1,1),'shoc      ')
 
+! DH*
+#ifdef CCPP
+          write(0,*) "DH WARNING: shouldn't this test for imp_physics==10?"
+          write(0,*) "DH WARNING: do we need Thompson with/without aerosol here as well?"
+#endif
+! *DH
           if (ntlnc > 0 .and. ntinc > 0 .and. ncld >= 2) then
             do k=1,levs
               do i=1,im
@@ -2921,6 +2933,11 @@ module module_physics_driver
 !       endif
 
       elseif (Model%shocaftcnv) then ! if do_shoc is true and shocaftcnv is true call shoc
+! DH*
+#ifdef CCPP
+        write(0,*) "DH WARNING: inside Model%shocaftcnv, do we need to do this for Thompson, too?"
+#endif
+! *DH
         if (imp_physics == 10) then
           skip_macro = Model%do_shoc
           do k=1,levs
@@ -2990,6 +3007,12 @@ module module_physics_driver
                    lprnt, ipr, ncpl, ncpi)
 !       enddo
 
+! DH*
+#ifdef CCPP
+        write(0,*) "DH WARNING: shouldn't this be testing for imp_physics=10?"
+        write(0,*) "DH WARNING: do we need to do this for Thompson, too?"
+#endif
+! *DH
         if (ntlnc > 0 .and. ntinc > 0 .and. ncld >= 2) then
           do k=1,levs
             do i=1,im
@@ -3290,6 +3313,7 @@ module module_physics_driver
                                             ! ------------
           ims = 1 ; ime = ix ; kms = 1 ; kme = levs ; its = 1 ; ite = ix ; kts = 1 ; kte = levs
 
+#ifndef CCPP
           if (Model%ltaerosol) then
             print*,'aerosol version of the Thompson scheme is not included'
 
@@ -3326,7 +3350,74 @@ module module_physics_driver
                Diag%refl_10cm, Model%lradar,                                               &
                Tbd%phy_f3d(:,:,1),Tbd%phy_f3d(:,:,2),Tbd%phy_f3d(:,:,3),me,Statein%phii)
           endif 
-
+#else
+          if (Model%me==0) write(0,*) 'CCPP DEBUG: calling mp_thompson_hrrr_run through option B'
+          nb = Tbd%blkno
+#ifdef OPENMP
+          nt = OMP_GET_THREAD_NUM() + 1
+#else
+          nt = 1
+#endif
+          ! Copy local variables from driver to appropriate interstitial variables
+          Interstitial(nt)%im = im                              ! intent(in)
+          !Model%levs                                           ! intent(in)
+          !con_g                                                ! intent(in)
+          !con_rd                                               ! intent(in)
+          !Stateout%gq0(:,:,1)                                  ! intent(inout)
+          !Stateout%gq0(:,:,IPD_Control%ntcw)                   ! intent(inout)
+          !Stateout%gq0(:,:,IPD_Control%ntrw)                   ! intent(inout)
+          !Stateout%gq0(:,:,IPD_Control%ntiw)                   ! intent(inout)
+          !Stateout%gq0(:,:,IPD_Control%ntsw)                   ! intent(inout)
+          !Stateout%gq0(:,:,IPD_Control%ntgl)                   ! intent(inout)
+          !Stateout%gq0(:,:,IPD_Control%ntinc)                  ! intent(inout)
+          !Stateout%gq0(:,:,IPD_Control%ntrnc)                  ! intent(inout)
+          !Model%ltaerosol                                      ! intent(in)
+          !Stateout%gq0(:,:,IPD_Control%ntlnc)                  ! intent(inout)
+          !Stateout%gq0(:,:,IPD_Control%ntwa)                   ! intent(inout)
+          !Stateout%gq0(:,:,IPD_Control%ntia)                   ! intent(inout)
+          !Coupling%nwfa2d                                      ! intent(in)
+          !Stateout%gt0                                         ! intent(inout)
+          !Statein%prsl                                         ! intent(in)
+          !Statein%phii                                         ! intent(in)
+          !Statein%vvl                                          ! intent(in)
+          !Model%dtp                                            ! intent(in)
+          !Model%kdt                                            ! intent(in)
+          Diag%rain = rain1                                     ! intent(inout)
+          !Interstitial(nt)%rainst                              ! intent(inout), should be zero on entry
+          !Diag%snow                                            ! intent(inout)
+          !Diag%ice                                             ! intent(inout)
+          !Diag%graupel                                         ! intent(inout)
+          !Diag%sr                                              ! intent(  out)
+          Interstitial(nt)%islmsk = islmsk                      ! intent(in   )
+          !Diag%refl_10cm                                       ! intent(  out)
+          !Model%lradar                                         ! intent(in   )
+          ! DH* use Tbd%phy_f3d(:,:,1-3) directly? difficult, because
+          ! these fields are used for different purposes depending on
+          ! the physics options used and as such require multiple 
+          ! standard names. Alternative: create separate fields for
+          ! each MP scheme, make sure they are treated in the same
+          ! way as Tbd here and allocate them only if the scheme
+          ! is active. *DH
+          Interstitial(nt)%clouds(:,:,3) = Tbd%phy_f3d(:,:,1)   ! intent(inout)
+          Interstitial(nt)%clouds(:,:,5) = Tbd%phy_f3d(:,:,2)   ! intent(inout)
+          Interstitial(nt)%clouds(:,:,9) = Tbd%phy_f3d(:,:,3)   ! intent(inout)
+          Interstitial(nt)%errmsg = errmsg                      ! intent(  out)
+          Interstitial(nt)%errflg = errflg                      ! intent(  out)
+          !
+          call ccpp_physics_run(cdata_block(nb,nt), scheme_name="mp_thompson_hrrr", ierr=ierr)
+          ! Copy back intent(inout) and intent(out) interstitial variables to local variables in driver
+          rain1 = Diag%rain
+          Tbd%phy_f3d(:,:,1) = Interstitial(nt)%clouds(:,:,3)
+          Tbd%phy_f3d(:,:,2) = Interstitial(nt)%clouds(:,:,5)
+          Tbd%phy_f3d(:,:,3) = Interstitial(nt)%clouds(:,:,9)
+          errmsg = trim(Interstitial(nt)%errmsg)
+          errflg = Interstitial(nt)%errflg
+          !
+          if (errflg/=0) then
+              write(0,*) 'Error in call to cnvc90_mp_cnvc90_run: ' // trim(errmsg)
+              stop
+          end if
+#endif
         elseif (imp_physics == 6) then      ! WSM6
                                             ! -----
           ims = 1 ; ime = ix ; kms = 1 ; kme = levs ; its = 1 ; ite = ix ; kts = 1 ; kte = levs

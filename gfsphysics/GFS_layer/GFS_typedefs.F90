@@ -667,6 +667,7 @@ module GFS_typedefs
 !! | IPD_Control%me                       | mpi_rank                                                                      | current MPI-rank                                        | index         |    0 | integer   |           | none   | F        |
 !! | IPD_Control%master                   | mpi_root                                                                      | master MPI-rank                                         | index         |    0 | integer   |           | none   | F        |
 !! | IPD_Control%communicator             | mpi_comm                                                                      | MPI communicator                                        | index         |    0 | integer   |           | none   | F        |
+!! | IPD_Control%threads                  | omp_threads                                                                   | number of OpenMP threads available for physics schemes  | count         |    0 | integer   |           | none   | F        |
 !! | IPD_Control%nlunit                   |                                                                               | fortran unit number for file opens                      | none          |    0 | integer   |           | none   | F        |
 !! | IPD_Control%fn_nml                   |                                                                               | namelist filename                                       | none          |    0 | charater  |           | none   | F        |
 !! | IPD_Control%fhzero                   |                                                                               | seconds between clearing of diagnostic buckets          | s             |    0 | real      | kind_phys | none   | F        |
@@ -903,6 +904,7 @@ module GFS_typedefs
     integer              :: master          !< MPI rank of master atmosphere processor
 #ifdef CCPP
     integer              :: communicator    !< MPI communicator
+    integer              :: threads         !< number of OpenMP threads available for schemes
 #endif
     integer              :: nlunit          !< unit for namelist
     character(len=64)    :: fn_nml          !< namelist filename for surface data cycling
@@ -1040,7 +1042,7 @@ module GFS_typedefs
     logical              :: lgfdlmprad      !< flag for GFDL mp scheme and radiation consistency
 
     !--- land/surface model parameters
-    integer              :: lsm             !< flag for land surface model
+    integer              :: lsm             !< flag for land surface model lsm=1 for noah lsm
     integer              :: lsm_ruc=2       !< flag for RUC land surface model
     integer              :: lsoil           !< number of soil layers
 #ifdef CCPP
@@ -2960,6 +2962,8 @@ module GFS_typedefs
     ! In the future, this should be an input argument to control_initialize
     ! and the 'use mpi' statement at the top of the file should be removed
     Model%communicator     = MPI_COMM_WORLD
+    ! Number of OpenMP threads available for schemes, default only one
+    Model%threads          = 1
 #endif
     Model%nlunit           = nlunit
     Model%fn_nml           = fn_nml
