@@ -4437,7 +4437,8 @@
             ierr = 0
             ! Test if checksum matches, this fails if wrong endianness (checksum=-1, see above)
             if (trim(mode)=="read" .and. checksum/=calculate_checksum()) then
-               write(0,'(2(a,e20.9))') "Checksum mismatch, expected", calculate_checksum(), "but got", checksum
+               write(0,'(2(a,e20.9))') "Checksum mismatch, expected", calculate_checksum(), " but got", checksum
+               call system('rm -f ' // trim(filename))
                ierr = 1
             end if
 
