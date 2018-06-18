@@ -119,7 +119,8 @@ SRCS_f   =  \
 	   ./physics/shalcv_fixdp.f                                                  \
 	   ./physics/shalcv_opr.f                                                    \
 	   ./physics/tracer_const_h.f                                                \
-	   ./physics/tridi2t3.f
+		 ./physics/tridi.f                                                         \
+		 ./physics/tridi2t3.f
 
 SRCS_f90 = \
 	   ./physics/calpreciptype.f90                                               \
@@ -211,4 +212,3 @@ include ./depend
 ifneq (clean,$(findstring clean,$(MAKECMDGOALS)))
    -include depend
 endif
-
