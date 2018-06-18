@@ -667,6 +667,7 @@ module GFS_typedefs
 !! | IPD_Control%me                       | mpi_rank                                                                      | current MPI-rank                                        | index         |    0 | integer   |           | none   | F        |
 !! | IPD_Control%master                   | mpi_root                                                                      | master MPI-rank                                         | index         |    0 | integer   |           | none   | F        |
 !! | IPD_Control%communicator             | mpi_comm                                                                      | MPI communicator                                        | index         |    0 | integer   |           | none   | F        |
+!! | IPD_Control%threads                  | omp_threads                                                                   | number of OpenMP threads available for physics schemes  | count         |    0 | integer   |           | none   | F        |
 !! | IPD_Control%nlunit                   |                                                                               | fortran unit number for file opens                      | none          |    0 | integer   |           | none   | F        |
 !! | IPD_Control%fn_nml                   |                                                                               | namelist filename                                       | none          |    0 | charater  |           | none   | F        |
 !! | IPD_Control%fhzero                   |                                                                               | seconds between clearing of diagnostic buckets          | s             |    0 | real      | kind_phys | none   | F        |
@@ -903,6 +904,7 @@ module GFS_typedefs
     integer              :: master          !< MPI rank of master atmosphere processor
 #ifdef CCPP
     integer              :: communicator    !< MPI communicator
+    integer              :: threads         !< number of OpenMP threads available for schemes
 #endif
     integer              :: nlunit          !< unit for namelist
     character(len=64)    :: fn_nml          !< namelist filename for surface data cycling
@@ -1040,7 +1042,7 @@ module GFS_typedefs
     logical              :: lgfdlmprad      !< flag for GFDL mp scheme and radiation consistency
 
     !--- land/surface model parameters
-    integer              :: lsm             !< flag for land surface model
+    integer              :: lsm             !< flag for land surface model lsm=1 for noah lsm
     integer              :: lsm_ruc=2       !< flag for RUC land surface model
     integer              :: lsoil           !< number of soil layers
 #ifdef CCPP
@@ -1058,7 +1060,7 @@ module GFS_typedefs
     logical              :: ras             !< flag for ras convection scheme
     logical              :: flipv           !< flag for vertical direction flip (ras)
                                             !< .true. implies surface at k=1
-    logical              :: trans_trac      !< flag for convective transport of tracers (RAS only)
+    logical              :: trans_trac      !< flag for convective transport of tracers (RAS, CS, or SAMF)
     logical              :: old_monin       !< flag for diff monin schemes
     logical              :: cnvgwd          !< flag for conv gravity wave drag
     logical              :: mstrat          !< flag for moorthi approach for stratus
@@ -1077,6 +1079,8 @@ module GFS_typedefs
     logical              :: shcnvcw         !< flag for shallow convective cloud
     logical              :: redrag          !< flag for reduced drag coeff. over sea
     logical              :: hybedmf         !< flag for hybrid edmf pbl scheme
+    logical              :: satmedmf        !< flag for scale-aware TKE-based moist edmf
+                                            !< vertical turbulent mixing scheme
     logical              :: dspheat         !< flag for tke dissipative heating
     logical              :: cnvcld
     logical              :: random_clds     !< flag controls whether clouds are random
@@ -2730,7 +2734,7 @@ module GFS_typedefs
     logical              :: ras            = .false.                  !< flag for ras convection scheme
     logical              :: flipv          = .true.                   !< flag for vertical direction flip (ras)
                                                                       !< .true. implies surface at k=1
-    logical              :: trans_trac     = .false.                  !< flag for convective transport of tracers (RAS only)
+    logical              :: trans_trac     = .false.                  !< flag for convective transport of tracers (RAS, CS, or SAMF)
     logical              :: old_monin      = .false.                  !< flag for diff monin schemes
     logical              :: cnvgwd         = .false.                  !< flag for conv gravity wave drag
     logical              :: mstrat         = .false.                  !< flag for moorthi approach for stratus
@@ -2748,6 +2752,8 @@ module GFS_typedefs
     logical              :: shcnvcw        = .false.                  !< flag for shallow convective cloud
     logical              :: redrag         = .false.                  !< flag for reduced drag coeff. over sea
     logical              :: hybedmf        = .false.                  !< flag for hybrid edmf pbl scheme
+    logical              :: satmedmf       = .false.                  !< flag for scale-aware TKE-based moist edmf
+                                                                      !< vertical turbulent mixing scheme
     logical              :: dspheat        = .false.                  !< flag for tke dissipative heating
     logical              :: cnvcld         = .false.
     logical              :: random_clds    = .false.                  !< flag controls whether clouds are random
@@ -2891,7 +2897,8 @@ module GFS_typedefs
                           !--- physical parameterizations
                                ras, trans_trac, old_monin, cnvgwd, mstrat, moist_adj,       &
                                cscnv, cal_pre, do_aw, do_shoc, shocaftcnv, shoc_cld,        &
-                               h2o_phys, pdfcld, shcnvcw, redrag, hybedmf, dspheat, cnvcld, &
+                               h2o_phys, pdfcld, shcnvcw, redrag, hybedmf, satmedmf,        &
+                               dspheat, cnvcld,                                             &
                                random_clds, shal_cnv, imfshalcnv, imfdeepcnv, do_deep, jcap,&
                                cs_parm, flgmin, cgwf, ccwf, cdmbgwd, sup, ctei_rm, crtrh,   &
                                dlqf, rbcr, shoc_parm,                                       &
@@ -2957,6 +2964,8 @@ module GFS_typedefs
     ! In the future, this should be an input argument to control_initialize
     ! and the 'use mpi' statement at the top of the file should be removed
     Model%communicator     = MPI_COMM_WORLD
+    ! Number of OpenMP threads available for schemes, default only one
+    Model%threads          = 1
 #endif
     Model%nlunit           = nlunit
     Model%fn_nml           = fn_nml
@@ -3104,6 +3113,7 @@ module GFS_typedefs
     Model%shcnvcw          = shcnvcw
     Model%redrag           = redrag
     Model%hybedmf          = hybedmf
+    Model%satmedmf         = satmedmf
     Model%dspheat          = dspheat
     Model%cnvcld           = cnvcld
     Model%random_clds      = random_clds
@@ -3268,6 +3278,7 @@ module GFS_typedefs
       Model%shal_cnv   = .false.
       Model%imfshalcnv = -1
       Model%hybedmf    = .false.
+      Model%satmedmf   = .false.
       if (Model%me == Model%master) print *,' Simplified Higher Order Closure Model used for', &
                                             ' Boundary layer and Shallow Convection',          &
                                             ' nshoc_3d=',Model%nshoc_3d,                       &
@@ -3682,6 +3693,7 @@ module GFS_typedefs
       print *, ' shcnvcw           : ', Model%shcnvcw
       print *, ' redrag            : ', Model%redrag
       print *, ' hybedmf           : ', Model%hybedmf
+      print *, ' satmedmf          : ', Model%satmedmf
       print *, ' dspheat           : ', Model%dspheat
       print *, ' cnvcld            : ', Model%cnvcld
       print *, ' random_clds       : ', Model%random_clds

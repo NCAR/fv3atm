@@ -242,7 +242,7 @@ module module_physics_driver
 !!   - determine the index of TKE (ntk) in the convectively transported tracer array (clw)
 !!   - allocate precipitation mixing ratio cloud droplet number concentration arrays
 !!  - Deep Convection:
-!!   - determine which tracers in the tracer input array undergo convective transport (valid only for the RAS and Chikira-Sugiyama schemes) and allocate a local convective transported tracer array (clw)
+!!   - determine which tracers in the tracer input array undergo convective transport (valid for the RAS and Chikira-Sugiyama, and SAMF schemes) and allocate a local convective transported tracer array (clw)
 !!   - apply an adjustment to the tracers from the dynamics
 !!   - calculate horizontal grid-related parameters needed for some parameterizations
 !!   - calculate the maxiumum cloud base updraft speed for the Chikira-Sugiyama scheme
@@ -273,7 +273,7 @@ module module_physics_driver
 !!    - finally, accumulate surface-related diagnostics and calculate the max/min values of T and q at 2 m height.
 !!  .
 !!  ## Calculate the state variable tendencies due to the PBL (vertical diffusion) scheme.
-!!   - Call the vertical diffusion scheme (PBL) based on the following logical flags: do_shoc, hybedmf, old_monin, mstrat
+!!   - Call the vertical diffusion scheme (PBL) based on the following logical flags: do_shoc, hybedmf, satmedmf, old_monin, mstrat
 !!    - the PBL scheme is expected to return tendencies of the state variables
 !!   - If A/O/I coupling and the surface is sea ice, overwrite some surface-related variables to their states before PBL was called
 !!   - For diagnostics, do the following:
@@ -474,9 +474,9 @@ module module_physics_driver
                  ims, ime, kms, kme, its, ite, kts, kte, imp_physics,   &
                  ntwa, ntia
 
-      integer :: i, kk, ic, k, n, k1, iter, levshcm, tracers,          &
-                 tottracer, num2, num3, nshocm, nshoc, ntk, nn, nncl,  &
-                 seconds
+      integer :: i, kk, ic, k, n, k1, iter, levshcm, tracers,           &
+                 tottracer, nsamftrac, num2, num3, nshocm, nshoc, ntk,  &
+                 nn, nncl, seconds
 
       integer, dimension(size(Grid%xlon,1)) ::                          &
            kbot, ktop, kcnv, soiltyp, vegtype, kpbl, slopetyp, kinver,  &
@@ -560,7 +560,7 @@ module module_physics_driver
 !--- ALLOCATABLE ELEMENTS
       !--- in clw, the first two varaibles are cloud water and ice.
       !--- from third to ntrac are convective transportable tracers,
-      !--- third being the ozone, when ntrac=3 (valid only with ras)
+      !--- third being the ozone, when ntrac=3 (valid with ras, csaw, or samf)
       !--- Anning Cheng 9/21/2016 leave a hook here for diagnosed snow,
       !--- rain, and their numbers
       real(kind=kind_phys), allocatable ::                              &
@@ -615,6 +615,10 @@ module module_physics_driver
       ntiw    = Model%ntiw
       ncld    = Model%ncld
       ntke    = Model%ntke
+!
+!  scal-aware TKE-based moist EDMF (satmedmfvdif) scheme is coded assuming
+!    ntke=ntrac. If ntrac > ntke, the code needs to be modified. (Jongil Han)
+!
       ntlnc   = Model%ntlnc
       ntinc   = Model%ntinc
       ntrw    = Model%ntrw
@@ -1481,7 +1485,18 @@ module module_physics_driver
 !  if (lprnt) write(0,*)'aftmonshoc=',Statein%tgrs(ipr,:)
 !  if (lprnt) write(0,*)'aftmonshocdtdt=',dtdt(ipr,1:10)
         else
-          if (Model%hybedmf) then
+          if (Model%satmedmf) then
+              call satmedmfvdif(ix, im, levs, nvdiff, ntcw, ntke,                   &
+                       dvdt, dudt, dtdt, dqdt,                                      &
+                       Statein%ugrs, Statein%vgrs, Statein%tgrs, Statein%qgrs,      &
+                       Radtend%htrsw, Radtend%htrlw, xmu, garea,                    &
+                       Statein%prsik(1,1), rb, Sfcprop%zorl, Diag%u10m, Diag%v10m,  &
+                       Sfcprop%ffmm, Sfcprop%ffhh, Sfcprop%tsfc, hflx, evap,        &
+                       stress, wind, kpbl, Statein%prsi, del, Statein%prsl,         &
+                       Statein%prslk, Statein%phii, Statein%phil, dtp,              &
+                       Model%dspheat, dusfc1, dvsfc1, dtsfc1, dqsfc1, Diag%hpbl,    &
+                       kinver, Model%xkzm_m, Model%xkzm_h, Model%xkzm_s)
+          elseif (Model%hybedmf) then
               call moninedmf(ix, im, levs, nvdiff, ntcw, dvdt, dudt, dtdt, dqdt,    &
                            Statein%ugrs, Statein%vgrs, Statein%tgrs, Statein%qgrs,  &
                            Radtend%htrsw, Radtend%htrlw, xmu, Statein%prsik(1,1),   &
@@ -1658,8 +1673,8 @@ module module_physics_driver
               do i=1,im
                 dqdt(i,k,1)     = dvdftra(i,k,1)
                 dqdt(i,k,ntcw)  = dvdftra(i,k,2)
-                dqdt(i,k,ntlnc) = dvdftra(i,k,3)
-                dqdt(i,k,ntiw)  = dvdftra(i,k,4)
+                dqdt(i,k,ntiw)  = dvdftra(i,k,3)
+                dqdt(i,k,ntlnc) = dvdftra(i,k,4)
                 dqdt(i,k,ntinc) = dvdftra(i,k,5)
                 dqdt(i,k,ntoz)  = dvdftra(i,k,6)
                 dqdt(i,k,ntwa)  = dvdftra(i,k,7)
@@ -2029,12 +2044,12 @@ module module_physics_driver
       endif
 
 
-!  --- ...  for convective tracer transport (while using ras or csaw)
+!  --- ...  for convective tracer transport (while using ras, csaw, or samf)
 !           (the code here implicitly assumes that ntiw=ntcw+1)
 
       ntk       = 0
       tottracer = 0
-      if (Model%cscnv .or. Model%trans_trac ) then
+      if (Model%cscnv .or. Model%satmedmf .or. Model%trans_trac ) then
         otspt(:,:)   = .true.     ! otspt is used only for cscnv
         otspt(1:3,:) = .false.    ! this is for sp.hum, ice and liquid water
         tracers = 2
@@ -2059,7 +2074,7 @@ module module_physics_driver
           endif
         enddo
         tottracer = tracers - 2
-      endif   ! end if_ras or cfscnv
+      endif   ! end if_ras or cfscnv or samf
 
 !    if (kdt == 1 .and. me == 0)                                       &
 !        write(0,*)' trans_trac=',Model%trans_trac,' tottracer=',      &
@@ -2157,6 +2172,12 @@ module module_physics_driver
 !        Call SHOC if do_shoc is true and shocaftcnv is false
 !
       if (Model%do_shoc .and. .not. Model%shocaftcnv) then
+! DH*
+#ifdef CCPP
+        write(0,*) "DH WARNING: inside Model%do_shoc .and. .not. Model%shocaftcnv - need to fix ncpl/ncpli?"
+        write(0,*) "DH WARNING: do we need Thompson with/without aerosol here as well?"
+#endif
+! *DH
         if (imp_physics == 10) then
           skip_macro = Model%do_shoc
           do k=1,levs
@@ -2254,6 +2275,12 @@ module module_physics_driver
 !    &,              dqdt(1,1,1), dqdt(1,1,2), dqdt(1,1,3)
 !    &,              gq0(1,1,1),clw(1,1,2),clw(1,1,1),'shoc      ')
 
+! DH*
+#ifdef CCPP
+          write(0,*) "DH WARNING: shouldn't this test for imp_physics==10?"
+          write(0,*) "DH WARNING: do we need Thompson with/without aerosol here as well?"
+#endif
+! *DH
           if (ntlnc > 0 .and. ntinc > 0 .and. ncld >= 2) then
             do k=1,levs
               do i=1,im
@@ -2304,16 +2331,20 @@ module module_physics_driver
                           Model%evfact_deep, Model%evfactl_deep,                 &
                           Model%pgcon_deep)
           elseif (Model%imfdeepcnv == 2) then
-            call samfdeepcnv(im, ix, levs, dtp, del, Statein%prsl,                 &
-                             Statein%pgr, Statein%phil, clw(:,:,1:2),              &
-                             Stateout%gq0(:,:,1),                                  &
-                             Stateout%gt0, Stateout%gu0, Stateout%gv0,             &
-                             cld1d, rain1, kbot, ktop, kcnv, islmsk,               &
-                             garea, Statein%vvl, ncld, ud_mf, dd_mf,               &
-                             dt_mf, cnvw, cnvc,                                    &
-                             Model%clam_deep,   Model%c0s_deep,                    &
-                             Model%c1_deep,     Model%betal_deep, Model%betas_deep,&
-                             Model%evfact_deep, Model%evfactl_deep,                &
+            if(.not. Model%satmedmf .and. .not. Model%trans_trac) then
+               nsamftrac = 0
+            else
+               nsamftrac = tottracer
+            endif
+            call samfdeepcnv(im, ix, levs, dtp, ntk, nsamftrac, del,             &
+                             Statein%prsl, Statein%pgr, Statein%phil, clw,       &
+                             Stateout%gq0(:,:,1), Stateout%gt0,                  &
+                             Stateout%gu0, Stateout%gv0,                         &
+                             cld1d, rain1, kbot, ktop, kcnv, islmsk, garea,      &
+                             Statein%vvl, ncld, ud_mf, dd_mf, dt_mf, cnvw, cnvc, &
+                             Model%clam_deep,   Model%c0s_deep,                  &
+                             Model%c1_deep,  Model%betal_deep, Model%betas_deep, &
+                             Model%evfact_deep, Model%evfactl_deep,              &
                              Model%pgcon_deep,  Model%asolfac_deep)
 !           if (lprnt) print *,' rain1=',rain1(ipr)
           elseif (Model%imfdeepcnv == 0) then         ! random cloud top
@@ -2466,26 +2497,6 @@ module module_physics_driver
               enddo
             enddo
           endif ! if (lgocart)
-
-!  --- ...  update the tracers due to convective transport
-!           (except for suspended water and ice)
-
-          if (tottracer > 0) then
-            tracers = 2
-            do n=2,ntrac
-!             if ( n /= ntcw .and. n /= ntiw .and. n /= ntclamt) then
-              if ( n /= ntcw  .and. n /= ntiw  .and. n /= ntclamt .and. &
-                   n /= ntrw  .and. n /= ntsw  .and. n /= ntrnc   .and. &
-                   n /= ntsnc .and. n /= ntgl  .and. n /= ntgnc ) then
-                  tracers = tracers + 1
-                do k=1,levs
-                  do i=1,im
-                    Stateout%gq0(i,k,n) = clw(i,k,tracers)
-                  enddo
-                enddo
-              endif
-            enddo
-          endif
 
         endif   ! end if_not_ras
       else      ! no parameterized deep convection
@@ -2815,10 +2826,15 @@ module module_physics_driver
             endif
 
           elseif (Model%imfshalcnv == 2) then
-            call samfshalcnv (im, ix, levs, dtp, del, Statein%prsl,            &
-                              Statein%pgr, Statein%phil, clw(:,:,1:2),         &
-                              Stateout%gq0(:,:,1:1),                           &
-                              Stateout%gt0, Stateout%gu0, Stateout%gv0,        &
+            if(.not. Model%satmedmf .and. .not. Model%trans_trac) then
+               nsamftrac = 0
+            else
+               nsamftrac = tottracer
+            endif
+            call samfshalcnv (im, ix, levs, dtp, ntk, nsamftrac, del,          &
+                              Statein%prsl, Statein%pgr, Statein%phil, clw,    &
+                              Stateout%gq0(:,:,1), Stateout%gt0,               &
+                              Stateout%gu0, Stateout%gv0,                      &
                               rain1, kbot, ktop, kcnv, islmsk, garea,          &
                               Statein%vvl, ncld, DIag%hpbl, ud_mf,             &
                               dt_mf, cnvw, cnvc,                               &
@@ -2917,6 +2933,11 @@ module module_physics_driver
 !       endif
 
       elseif (Model%shocaftcnv) then ! if do_shoc is true and shocaftcnv is true call shoc
+! DH*
+#ifdef CCPP
+        write(0,*) "DH WARNING: inside Model%shocaftcnv, do we need to do this for Thompson, too?"
+#endif
+! *DH
         if (imp_physics == 10) then
           skip_macro = Model%do_shoc
           do k=1,levs
@@ -2986,6 +3007,12 @@ module module_physics_driver
                    lprnt, ipr, ncpl, ncpi)
 !       enddo
 
+! DH*
+#ifdef CCPP
+        write(0,*) "DH WARNING: shouldn't this be testing for imp_physics=10?"
+        write(0,*) "DH WARNING: do we need to do this for Thompson, too?"
+#endif
+! *DH
         if (ntlnc > 0 .and. ntinc > 0 .and. ncld >= 2) then
           do k=1,levs
             do i=1,im
@@ -3013,7 +3040,29 @@ module module_physics_driver
 !         write(0,*) ' aftshgt0=',gt0(ipr,:)
 !         write(0,*) ' aftshgq0=',gq0(ipr,:,1)
 !       endif
-
+!
+!------------------------------------------------------------------------------
+!  --- update the tracers due to deep & shallow cumulus convective transport
+!           (except for suspended water and ice)
+!
+      if (tottracer > 0) then
+        tracers = 2
+        do n=2,ntrac
+!         if ( n /= ntcw .and. n /= ntiw .and. n /= ntclamt) then
+          if ( n /= ntcw  .and. n /= ntiw  .and. n /= ntclamt .and. &
+               n /= ntrw  .and. n /= ntsw  .and. n /= ntrnc   .and. &
+               n /= ntsnc .and. n /= ntgl  .and. n /= ntgnc ) then
+              tracers = tracers + 1
+            do k=1,levs
+              do i=1,im
+                Stateout%gq0(i,k,n) = clw(i,k,tracers)
+              enddo
+            enddo
+          endif
+        enddo
+      endif
+!-------------------------------------------------------------------------------
+!
       if (ntcw > 0) then
 
 !  for microphysics
@@ -3264,6 +3313,7 @@ module module_physics_driver
                                             ! ------------
           ims = 1 ; ime = ix ; kms = 1 ; kme = levs ; its = 1 ; ite = ix ; kts = 1 ; kte = levs
 
+#ifndef CCPP
           if (Model%ltaerosol) then
             print*,'aerosol version of the Thompson scheme is not included'
 
@@ -3300,7 +3350,74 @@ module module_physics_driver
                Diag%refl_10cm, Model%lradar,                                               &
                Tbd%phy_f3d(:,:,1),Tbd%phy_f3d(:,:,2),Tbd%phy_f3d(:,:,3),me,Statein%phii)
           endif 
-
+#else
+          if (Model%me==0) write(0,*) 'CCPP DEBUG: calling mp_thompson_hrrr_run through option B'
+          nb = Tbd%blkno
+#ifdef OPENMP
+          nt = OMP_GET_THREAD_NUM() + 1
+#else
+          nt = 1
+#endif
+          ! Copy local variables from driver to appropriate interstitial variables
+          Interstitial(nt)%im = im                              ! intent(in)
+          !Model%levs                                           ! intent(in)
+          !con_g                                                ! intent(in)
+          !con_rd                                               ! intent(in)
+          !Stateout%gq0(:,:,1)                                  ! intent(inout)
+          !Stateout%gq0(:,:,IPD_Control%ntcw)                   ! intent(inout)
+          !Stateout%gq0(:,:,IPD_Control%ntrw)                   ! intent(inout)
+          !Stateout%gq0(:,:,IPD_Control%ntiw)                   ! intent(inout)
+          !Stateout%gq0(:,:,IPD_Control%ntsw)                   ! intent(inout)
+          !Stateout%gq0(:,:,IPD_Control%ntgl)                   ! intent(inout)
+          !Stateout%gq0(:,:,IPD_Control%ntinc)                  ! intent(inout)
+          !Stateout%gq0(:,:,IPD_Control%ntrnc)                  ! intent(inout)
+          !Model%ltaerosol                                      ! intent(in)
+          !Stateout%gq0(:,:,IPD_Control%ntlnc)                  ! intent(inout)
+          !Stateout%gq0(:,:,IPD_Control%ntwa)                   ! intent(inout)
+          !Stateout%gq0(:,:,IPD_Control%ntia)                   ! intent(inout)
+          !Coupling%nwfa2d                                      ! intent(in)
+          !Stateout%gt0                                         ! intent(inout)
+          !Statein%prsl                                         ! intent(in)
+          !Statein%phii                                         ! intent(in)
+          !Statein%vvl                                          ! intent(in)
+          !Model%dtp                                            ! intent(in)
+          !Model%kdt                                            ! intent(in)
+          Diag%rain = rain1                                     ! intent(inout)
+          !Interstitial(nt)%rainst                              ! intent(inout), should be zero on entry
+          !Diag%snow                                            ! intent(inout)
+          !Diag%ice                                             ! intent(inout)
+          !Diag%graupel                                         ! intent(inout)
+          !Diag%sr                                              ! intent(  out)
+          Interstitial(nt)%islmsk = islmsk                      ! intent(in   )
+          !Diag%refl_10cm                                       ! intent(  out)
+          !Model%lradar                                         ! intent(in   )
+          ! DH* use Tbd%phy_f3d(:,:,1-3) directly? difficult, because
+          ! these fields are used for different purposes depending on
+          ! the physics options used and as such require multiple 
+          ! standard names. Alternative: create separate fields for
+          ! each MP scheme, make sure they are treated in the same
+          ! way as Tbd here and allocate them only if the scheme
+          ! is active. *DH
+          Interstitial(nt)%clouds(:,:,3) = Tbd%phy_f3d(:,:,1)   ! intent(inout)
+          Interstitial(nt)%clouds(:,:,5) = Tbd%phy_f3d(:,:,2)   ! intent(inout)
+          Interstitial(nt)%clouds(:,:,9) = Tbd%phy_f3d(:,:,3)   ! intent(inout)
+          Interstitial(nt)%errmsg = errmsg                      ! intent(  out)
+          Interstitial(nt)%errflg = errflg                      ! intent(  out)
+          !
+          call ccpp_physics_run(cdata_block(nb,nt), scheme_name="mp_thompson_hrrr", ierr=ierr)
+          ! Copy back intent(inout) and intent(out) interstitial variables to local variables in driver
+          rain1 = Diag%rain
+          Tbd%phy_f3d(:,:,1) = Interstitial(nt)%clouds(:,:,3)
+          Tbd%phy_f3d(:,:,2) = Interstitial(nt)%clouds(:,:,5)
+          Tbd%phy_f3d(:,:,3) = Interstitial(nt)%clouds(:,:,9)
+          errmsg = trim(Interstitial(nt)%errmsg)
+          errflg = Interstitial(nt)%errflg
+          !
+          if (errflg/=0) then
+              write(0,*) 'Error in call to cnvc90_mp_cnvc90_run: ' // trim(errmsg)
+              stop
+          end if
+#endif
         elseif (imp_physics == 6) then      ! WSM6
                                             ! -----
           ims = 1 ; ime = ix ; kms = 1 ; kme = levs ; its = 1 ; ite = ix ; kts = 1 ; kte = levs
