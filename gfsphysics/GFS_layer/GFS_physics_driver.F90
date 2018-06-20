@@ -27,7 +27,7 @@ module module_physics_driver
 !  use gwdps_pre,             only: gwdps_pre_run
 !  use gwdps,                 only: gwdps_run
 !  use gwdps_post,            only: gwdps_post_run
-!  use gwdc_pre,              only: gwdc_pre_run
+  use gwdc_pre,              only: gwdc_pre_run
   use gwdc,                  only: gwdc_run
 !  use gwdc_post,             only: gwdc_post_run
 
@@ -884,11 +884,12 @@ module module_physics_driver
 !GFDL   tem1       = con_rerth * (con_pi+con_pi)*coslat(i)/nlons(i)
 !GFDL   tem2       = con_rerth * con_pi / latr
 !GFDL   garea(i)   = tem1 * tem2
-        tem1       = Grid%dx(i)
-        tem2       = Grid%dx(i)
+!zhang:gwdc_pre_run
+!        tem1       = Grid%dx(i)
+!        tem2       = Grid%dx(i)
         garea(i)   = Grid%area(i)
-        dlength(i) = sqrt( tem1*tem1+tem2*tem2 )
-        cldf(i)    = Model%cgwf(1)    * work1(i) + Model%cgwf(2)    * work2(i)
+!        dlength(i) = sqrt( tem1*tem1+tem2*tem2 )
+!        cldf(i)    = Model%cgwf(1)    * work1(i) + Model%cgwf(2)    * work2(i)
         wcbmax(i)  = Model%cs_parm(1) * work1(i) + Model%cs_parm(2) * work2(i)
       enddo
 !
@@ -2599,26 +2600,28 @@ module module_physics_driver
 !  --- ...  calculate maximum convective heating rate 
 !           cuhr = temperature change due to deep convection
 
-        do i=1,im
-          cumabs(i) = 0.0
-          work3 (i)  = 0.0
-        enddo
-        do k=1,levs
-          do i=1,im
-            if (k >= kbot(i) .and. k <= ktop(i)) then
-              cumabs(i) = cumabs(i) + (Stateout%gt0(i,k)-dtdt(i,k)) * del(i,k)
-              work3(i)  = work3(i)  + del(i,k)
-            endif
-          enddo
-        enddo
-        do i=1,im
-          if (work3(i) > 0.0) cumabs(i) = cumabs(i) / (dtp*work3(i))
-        enddo
+!zhang: gwdc_pre_run
+!        do i=1,im
+!          cumabs(i) = 0.0
+!          work3 (i)  = 0.0
+!        enddo
+!        do k=1,levs
+!          do i=1,im
+!            if (k >= kbot(i) .and. k <= ktop(i)) then
+!              cumabs(i) = cumabs(i) + (Stateout%gt0(i,k)-dtdt(i,k)) * del(i,k)
+!              work3(i)  = work3(i)  + del(i,k)
+!            endif
+!          enddo
+!        enddo
+!        do i=1,im
+!          if (work3(i) > 0.0) cumabs(i) = cumabs(i) / (dtp*work3(i))
+!        enddo
 
-!        call gwdc_pre_run (                                                            &
-!             size(Grid%xlon,1), Model%cgwf, Grid%dx, work1, work2, dlength, cldf,      &
-!             Model%levs, kbot, ktop, Model%dtp, Stateout%gt0, save_t, del, cumabs,     &
-!             errmsg, errflg)
+        call gwdc_pre_run (                                                            &
+             size(Grid%xlon,1), Model%cgwf, Grid%dx, work1, work2, dlength, cldf,      &
+!ccpp             Model%levs, kbot, ktop, Model%dtp, Stateout%gt0, save_t, del, cumabs,     &
+              Model%levs, kbot, ktop, Model%dtp, Stateout%gt0, dtdt, del, cumabs,     &
+             errmsg, errflg)
 
 
 !       do i = 1, im
