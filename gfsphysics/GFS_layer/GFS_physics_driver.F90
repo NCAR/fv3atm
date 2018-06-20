@@ -1509,7 +1509,7 @@ module module_physics_driver
                    Statein%ugrs, Statein%vgrs, Statein%tgrs, Statein%qgrs,  &
                    Radtend%htrsw, Radtend%htrlw, xmu, Statein%prsik(1,1),   &
                    rb, Sfcprop%zorl, Diag%u10m, Diag%v10m, Sfcprop%ffmm,    &
-                   Sfcprop%ffhh, Sfcprop%tsfc, qss, hflx, evap, stress,     &
+                   Sfcprop%ffhh, Sfcprop%tsfc, hflx, evap, stress,          &
                    wind, kpbl, Statein%prsi, del, Statein%prsl,             &
                    Statein%prslk, Statein%phii, Statein%phil, dtp,          &
                    Model%dspheat, dusfc1, dvsfc1, dtsfc1, dqsfc1, Diag%hpbl,&
