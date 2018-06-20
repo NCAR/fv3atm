@@ -24,6 +24,12 @@ module module_physics_driver
   use module_mp_thompson,    only: mp_gt_driver
   use module_mp_wsm6,        only: wsm6
   use funcphys,              only: ftdp
+!  use gwdps_pre,             only: gwdps_pre_run
+!  use gwdps,                 only: gwdps_run
+!  use gwdps_post,            only: gwdps_post_run
+!  use gwdc_pre,              only: gwdc_pre_run
+  use gwdc,                  only: gwdc_run
+!  use gwdc_post,             only: gwdc_post_run
 
 #ifdef CCPP
   use ccpp_api,              only: ccpp_physics_run
@@ -51,6 +57,7 @@ module module_physics_driver
   real(kind=kind_phys), parameter :: con_p001= 0.001d0
   real(kind=kind_phys), parameter :: con_d00 = 0.0d0
   real(kind=kind_phys), parameter :: con_day = 86400.d0
+  integer, parameter :: intgr_one = 1
 
 
 !> GFS Physics Implementation Layer
@@ -537,6 +544,9 @@ module module_physics_driver
       real(kind=kind_phys), dimension(size(Grid%xlon,1),Model%levs) ::  &
           del, rhc, dtdt, dudt, dvdt, gwdcu, gwdcv, dtdtc, rainp,       &
           ud_mf, dd_mf, dt_mf, prnum, dkt, sigmatot, sigmafrac
+
+      real(kind=kind_phys), dimension(size(Grid%xlon,1),Model%levs) ::  &
+          save_t
 
 !--- GFDL modification for FV3 
 
@@ -2605,6 +2615,12 @@ module module_physics_driver
           if (work3(i) > 0.0) cumabs(i) = cumabs(i) / (dtp*work3(i))
         enddo
 
+!        call gwdc_pre_run (                                                            &
+!             size(Grid%xlon,1), Model%cgwf, Grid%dx, work1, work2, dlength, cldf,      &
+!             Model%levs, kbot, ktop, Model%dtp, Stateout%gt0, save_t, del, cumabs,     &
+!             errmsg, errflg)
+
+
 !       do i = 1, im
 !         do k = kbot(i), ktop(i)
 !           do k1 = kbot(i), k
@@ -2672,11 +2688,18 @@ module module_physics_driver
 
 !GFDL replacing lat with "1"
 !       call gwdc(im, ix, im, levs, lat, gu0, gv0, gt0, gq0, dtp,       &
-        call gwdc (im, ix, im, levs, 1, Statein%ugrs, Statein%vgrs,     &
-                   Statein%tgrs, Statein%qgrs, dtp, Statein%prsl,       &
-                   Statein%prsi, del, cumabs, ktop, kbot, kcnv, cldf,   &
-                   con_g, con_cp, con_rd, con_fvirt, con_pi, dlength,   &
-                   lprnt, ipr, Model%fhour, gwdcu, gwdcv, dusfcg, dvsfcg)
+!zhang        call gwdc (im, ix, im, levs, 1, Statein%ugrs, Statein%vgrs,     &
+!zhang                   Statein%tgrs, Statein%qgrs, dtp, Statein%prsl,       &
+!zhang                   Statein%prsi, del, cumabs, ktop, kbot, kcnv, cldf,   &
+!zhang                   con_g, con_cp, con_rd, con_fvirt, con_pi, dlength,   &
+!zhang                   lprnt, ipr, Model%fhour, gwdcu, gwdcv, dusfcg, dvsfcg)
+     call gwdc_run (                                                      &
+             size(Grid%xlon,1), size(Grid%xlon,1), Model%levs,            &
+             intgr_one, Statein%ugrs, Statein%vgrs,                       &
+             Statein%tgrs, Statein%qgrs(:,:,1), Model%dtp, Statein%prsl,  &
+             Statein%prsi, del, cumabs, ktop, kbot, kcnv, cldf,           &
+             con_g, con_cp, con_rd, con_fvirt, con_pi, dlength,           &
+             Model%lprnt, ipr, Model%fhour, gwdcu, gwdcv, dusfcg, dvsfcg, errmsg, errflg)
 
 !       if (lprnt) then
 !         if (fhour >= fhourpr) then
@@ -2701,6 +2724,7 @@ module module_physics_driver
 
 !  --- ...  write out cloud top stress and wind tendencies
 
+!zhang: gwdc_post_run
         if (Model%lssav) then
           do i=1,im
             Diag%dugwd(i) = Diag%dugwd(i) + dusfcg(i)*dtf
@@ -2731,6 +2755,14 @@ module module_physics_driver
 !    &gwdcu(ipr,k), ' gv0=', gv0(ipr,k),' gwdcv=',gwdcv(ipr,k)
 !    &,' k=',k
         enddo
+!zhang: end gwdc_post_run
+
+!zhang:ccpp
+!        call gwdc_post_run (                                               &
+!             size(Grid%xlon,1), Model%levs, Model%lssav, Model%ldiag3d, Model%dtf, Model%dtp, con_cp,       &
+!             dusfcg, dvsfcg, gwdcu, gwdcv,                                 &
+!             Diag%dugwd, Diag%dvgwd, Diag%du3dt(:,:,4), Diag%dv3dt(:,:,4), &
+!             Stateout%gu0, Stateout%gv0, Stateout%gt0, errmsg, errflg)
 
 !       if (lprnt) then
 !         if (fhour >= fhourpr) then
