@@ -29,7 +29,7 @@ module module_physics_driver
 !  use gwdps_post,            only: gwdps_post_run
   use gwdc_pre,              only: gwdc_pre_run
   use gwdc,                  only: gwdc_run
-!  use gwdc_post,             only: gwdc_post_run
+  use gwdc_post,             only: gwdc_post_run
 
 #ifdef CCPP
   use ccpp_api,              only: ccpp_physics_run
@@ -2728,44 +2728,44 @@ module module_physics_driver
 !  --- ...  write out cloud top stress and wind tendencies
 
 !zhang: gwdc_post_run
-        if (Model%lssav) then
-          do i=1,im
-            Diag%dugwd(i) = Diag%dugwd(i) + dusfcg(i)*dtf
-            Diag%dvgwd(i) = Diag%dvgwd(i) + dvsfcg(i)*dtf
-          enddo
+!        if (Model%lssav) then
+!          do i=1,im
+!            Diag%dugwd(i) = Diag%dugwd(i) + dusfcg(i)*dtf
+!            Diag%dvgwd(i) = Diag%dvgwd(i) + dvsfcg(i)*dtf
+!          enddo
 
-          if (Model%ldiag3d) then
-            do k=1,levs
-              do i=1,im
-                Diag%du3dt(i,k,4) = Diag%du3dt(i,k,4) + gwdcu(i,k)  * dtf
-                Diag%dv3dt(i,k,4) = Diag%dv3dt(i,k,4) + gwdcv(i,k)  * dtf
-              enddo
-            enddo
-          endif
-        endif   ! end if_lssav
+!          if (Model%ldiag3d) then
+!            do k=1,levs
+!              do i=1,im
+!                Diag%du3dt(i,k,4) = Diag%du3dt(i,k,4) + gwdcu(i,k)  * dtf
+!                Diag%dv3dt(i,k,4) = Diag%dv3dt(i,k,4) + gwdcv(i,k)  * dtf
+!              enddo
+!            enddo
+!          endif
+!        endif   ! end if_lssav
 
 !  --- ...  update the wind components with  gwdc tendencies
 
-        do k=1,levs
-          do i=1,im
-            eng0               = 0.5*(Stateout%gu0(i,k)*Stateout%gu0(i,k)+Stateout%gv0(i,k)*Stateout%gv0(i,k))
-            Stateout%gu0(i,k)  = Stateout%gu0(i,k) + gwdcu(i,k) * dtp
-            Stateout%gv0(i,k)  = Stateout%gv0(i,k) + gwdcv(i,k) * dtp
-            eng1               = 0.5*(Stateout%gu0(i,k)*Stateout%gu0(i,k)+Stateout%gv0(i,k)*Stateout%gv0(i,k))
-            Stateout%gt0(i,k)  = Stateout%gt0(i,k) + (eng0-eng1)/(dtp*con_cp)
-          enddo
+!        do k=1,levs
+!          do i=1,im
+!            eng0               = 0.5*(Stateout%gu0(i,k)*Stateout%gu0(i,k)+Stateout%gv0(i,k)*Stateout%gv0(i,k))
+!            Stateout%gu0(i,k)  = Stateout%gu0(i,k) + gwdcu(i,k) * dtp
+!            Stateout%gv0(i,k)  = Stateout%gv0(i,k) + gwdcv(i,k) * dtp
+!            eng1               = 0.5*(Stateout%gu0(i,k)*Stateout%gu0(i,k)+Stateout%gv0(i,k)*Stateout%gv0(i,k))
+!            Stateout%gt0(i,k)  = Stateout%gt0(i,k) + (eng0-eng1)/(dtp*con_cp)
+!          enddo
 !         if (lprnt) write(7000,*)' gu0=',gu0(ipr,k),' gwdcu=',
 !    &gwdcu(ipr,k), ' gv0=', gv0(ipr,k),' gwdcv=',gwdcv(ipr,k)
 !    &,' k=',k
-        enddo
+!        enddo
 !zhang: end gwdc_post_run
 
 !zhang:ccpp
-!        call gwdc_post_run (                                               &
-!             size(Grid%xlon,1), Model%levs, Model%lssav, Model%ldiag3d, Model%dtf, Model%dtp, con_cp,       &
-!             dusfcg, dvsfcg, gwdcu, gwdcv,                                 &
-!             Diag%dugwd, Diag%dvgwd, Diag%du3dt(:,:,4), Diag%dv3dt(:,:,4), &
-!             Stateout%gu0, Stateout%gv0, Stateout%gt0, errmsg, errflg)
+        call gwdc_post_run (                                               &
+             size(Grid%xlon,1), Model%levs, Model%lssav, Model%ldiag3d, Model%dtf, Model%dtp, con_cp,       &
+             dusfcg, dvsfcg, gwdcu, gwdcv,                                 &
+             Diag%dugwd, Diag%dvgwd, Diag%du3dt(:,:,4), Diag%dv3dt(:,:,4), &
+             Stateout%gu0, Stateout%gv0, Stateout%gt0, errmsg, errflg)
 
 !       if (lprnt) then
 !         if (fhour >= fhourpr) then
