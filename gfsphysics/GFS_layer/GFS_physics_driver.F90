@@ -2606,12 +2606,6 @@ module module_physics_driver
       nt = 1
 #endif
       ! Copy local variables from driver to appropriate interstitial variables
-!zhang for reference
-!zhang        call gwdc_pre_run (                                                           &
-!zhang             size(Grid%xlon,1), Model%cgwf, Grid%dx, work1, work2, dlength, cldf,      &
-!zhang              Model%levs, kbot, ktop, Model%dtp, Stateout%gt0, dtdt, del, cumabs,     &
-!zhang             errmsg, errflg)
-      
       Interstitial(nt)%im = im             ! intent(in)
       Interstitial(nt)%work1 = work1       ! intent(in)
       Interstitial(nt)%work2 = work2       ! intent(in)
@@ -2624,7 +2618,6 @@ module module_physics_driver
       Interstitial(nt)%cumabs = cumabs     ! intent(out)
       Interstitial(nt)%errmsg = errmsg     ! intent(out)
       Interstitial(nt)%errflg = errflg     ! intent(out)
-
       call ccpp_physics_run(cdata_block(nb,nt), scheme_name="gwdc_pre", ierr=ierr)
       ! Copy back intent(inout) interstitial variables to local variables in driver
       dlength = Interstitial(nt)%dlength
@@ -2725,6 +2718,54 @@ module module_physics_driver
 
 !  --- ...  end check print ********************************************
 
+#ifdef CCPP
+! OPTION B BEGIN
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling gwdc_run through option B'
+      nb = Tbd%blkno
+#ifdef OPENMP
+      nt = OMP_GET_THREAD_NUM() + 1
+#else
+      nt = 1
+#endif
+      ! Copy local variables from driver to appropriate interstitial variables
+      Interstitial(nt)%im = im             ! intent(in)
+      Interstitial(nt)%ix = ix             ! intent(in)
+      Interstitial(nt)%del = del           ! intent(in)
+      Interstitial(nt)%cumabs = cumabs     ! intent(in)
+      Interstitial(nt)%ktop = ktop         ! intent(in)
+      Interstitial(nt)%kbot = kbot         ! intent(in)
+      Interstitial(nt)%kcnv = kcnv         ! intent(in)
+      Interstitial(nt)%cldf = cldf         ! intent(in)
+      !con_g, 
+      !con_cp, 
+      !con_rd, 
+      !con_fvirt, 
+      !con_pi, 
+      Interstitial(nt)%dlength = dlength   ! intent(in)
+      Interstitial(nt)%ipr     = ipr       ! intent(in)
+      Interstitial(nt)%gwdcu   = gwdcu     ! intent(out)
+      Interstitial(nt)%gwdcv   = gwdcv     ! intent(out)
+      Interstitial(nt)%dusfcg  = dusfcg    ! intent(out)
+      Interstitial(nt)%dvsfcg  = dvsfcg    ! intent(out)
+      Interstitial(nt)%errmsg = errmsg     ! intent(out)
+      Interstitial(nt)%errflg = errflg     ! intent(out)
+      call ccpp_physics_run(cdata_block(nb,nt), scheme_name="gwdc", ierr=ierr)
+      ! Copy back intent(inout) interstitial variables to local variables in driver
+      gwdcu  = Interstitial(nt)%gwdcu
+      gwdcv  = Interstitial(nt)%gwdcv
+      dusfcg = Interstitial(nt)%dusfcg
+      dvsfcg = Interstitial(nt)%dvsfcg
+      errmsg = trim(Interstitial(nt)%errmsg)
+      errflg = Interstitial(nt)%errflg
+! OPTION B END
+      if (errflg/=0) then
+          write(0,*) 'Error in call to gwdc_mp_gwdc_run: ' // trim(errmsg)
+          stop
+      end if
+#else
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of gwdc'
+
+
 !GFDL replacing lat with "1"
 !       call gwdc(im, ix, im, levs, lat, gu0, gv0, gt0, gq0, dtp,       &
        call gwdc (im, ix, im, levs, 1, Statein%ugrs, Statein%vgrs,     &
@@ -2732,13 +2773,7 @@ module module_physics_driver
                    Statein%prsi, del, cumabs, ktop, kbot, kcnv, cldf,   &
                    con_g, con_cp, con_rd, con_fvirt, con_pi, dlength,   &
                    lprnt, ipr, Model%fhour, gwdcu, gwdcv, dusfcg, dvsfcg)
-!     call gwdc_run (                                                      &
-!             size(Grid%xlon,1), size(Grid%xlon,1), Model%levs,            &
-!             intgr_one, Statein%ugrs, Statein%vgrs,                       &
-!             Statein%tgrs, Statein%qgrs(:,:,1), Model%dtp, Statein%prsl,  &
-!             Statein%prsi, del, cumabs, ktop, kbot, kcnv, cldf,           &
-!             con_g, con_cp, con_rd, con_fvirt, con_pi, dlength,           &
-!             Model%lprnt, ipr, Model%fhour, gwdcu, gwdcv, dusfcg, dvsfcg, errmsg, errflg)
+#endif
 
 !       if (lprnt) then
 !         if (fhour >= fhourpr) then
