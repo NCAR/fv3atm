@@ -2798,7 +2798,36 @@ module module_physics_driver
 
 !  --- ...  write out cloud top stress and wind tendencies
 
-!zhang: gwdc_post_run
+#ifdef CCPP
+! OPTION B BEGIN
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling gwdc_post through option B'
+      nb = Tbd%blkno
+#ifdef OPENMP
+      nt = OMP_GET_THREAD_NUM() + 1
+#else
+      nt = 1
+#endif
+      ! Copy local variables from driver to appropriate interstitial variables
+      Interstitial(nt)%im = im             ! intent(in)
+      Interstitial(nt)%dusfcg = dusfcg     ! intent(in)
+      Interstitial(nt)%dvsfcg = dvsfcg     ! intent(in)
+      Interstitial(nt)%gwdcu  = gwdcu      ! intent(in)
+      Interstitial(nt)%gwdcv  = gwdcv      ! intent(in)
+      Interstitial(nt)%errmsg = errmsg     ! intent(out)
+      Interstitial(nt)%errflg = errflg     ! intent(out)
+      call ccpp_physics_run(cdata_block(nb,nt), scheme_name="gwdc_post", ierr=ierr)
+      ! Copy back intent(inout) interstitial variables to local variables in driver
+      errmsg = trim(Interstitial(nt)%errmsg)
+      errflg = Interstitial(nt)%errflg
+! OPTION B END
+      if (errflg/=0) then
+          write(0,*) 'Error in call to gwdc_post_mp_gwdc_post_run: ' // trim(errmsg)
+          stop
+      end if
+#else
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of gwdc_post'
+
+
         if (Model%lssav) then
           do i=1,im
             Diag%dugwd(i) = Diag%dugwd(i) + dusfcg(i)*dtf
@@ -2829,14 +2858,7 @@ module module_physics_driver
 !    &gwdcu(ipr,k), ' gv0=', gv0(ipr,k),' gwdcv=',gwdcv(ipr,k)
 !    &,' k=',k
         enddo
-!zhang: end gwdc_post_run
-
-!zhang:ccpp
-!        call gwdc_post_run (                                               &
-!             size(Grid%xlon,1), Model%levs, Model%lssav, Model%ldiag3d, Model%dtf, Model%dtp, con_cp,       &
-!             dusfcg, dvsfcg, gwdcu, gwdcv,                                 &
-!             Diag%dugwd, Diag%dvgwd, Diag%du3dt(:,:,4), Diag%dv3dt(:,:,4), &
-!             Stateout%gu0, Stateout%gv0, Stateout%gt0, errmsg, errflg)
+#endif
 
 !       if (lprnt) then
 !         if (fhour >= fhourpr) then
