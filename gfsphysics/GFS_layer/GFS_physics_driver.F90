@@ -24,12 +24,6 @@ module module_physics_driver
   use module_mp_thompson,    only: mp_gt_driver
   use module_mp_wsm6,        only: wsm6
   use funcphys,              only: ftdp
-!  use gwdps_pre,             only: gwdps_pre_run
-!  use gwdps,                 only: gwdps_run
-!  use gwdps_post,            only: gwdps_post_run
-  use gwdc_pre,              only: gwdc_pre_run
-  use gwdc,                  only: gwdc_run
-  use gwdc_post,             only: gwdc_post_run
 
 #ifdef CCPP
   use ccpp_api,              only: ccpp_physics_run
@@ -57,7 +51,6 @@ module module_physics_driver
   real(kind=kind_phys), parameter :: con_p001= 0.001d0
   real(kind=kind_phys), parameter :: con_d00 = 0.0d0
   real(kind=kind_phys), parameter :: con_day = 86400.d0
-  integer, parameter :: intgr_one = 1
 
 
 !> GFS Physics Implementation Layer
@@ -545,8 +538,6 @@ module module_physics_driver
           del, rhc, dtdt, dudt, dvdt, gwdcu, gwdcv, dtdtc, rainp,       &
           ud_mf, dd_mf, dt_mf, prnum, dkt, sigmatot, sigmafrac
 
-      real(kind=kind_phys), dimension(size(Grid%xlon,1),Model%levs) ::  &
-          save_t
 
 !--- GFDL modification for FV3 
 
@@ -884,12 +875,16 @@ module module_physics_driver
 !GFDL   tem1       = con_rerth * (con_pi+con_pi)*coslat(i)/nlons(i)
 !GFDL   tem2       = con_rerth * con_pi / latr
 !GFDL   garea(i)   = tem1 * tem2
-!zhang:gwdc_pre_run
-!        tem1       = Grid%dx(i)
-!        tem2       = Grid%dx(i)
         garea(i)   = Grid%area(i)
-!        dlength(i) = sqrt( tem1*tem1+tem2*tem2 )
-!        cldf(i)    = Model%cgwf(1)    * work1(i) + Model%cgwf(2)    * work2(i)
+
+#ifdef CCPP
+
+#else
+        tem1       = Grid%dx(i)
+        tem2       = Grid%dx(i)
+        dlength(i) = sqrt( tem1*tem1+tem2*tem2 )
+        cldf(i)    = Model%cgwf(1)    * work1(i) + Model%cgwf(2)    * work2(i)
+#endif
         wcbmax(i)  = Model%cs_parm(1) * work1(i) + Model%cs_parm(2) * work2(i)
       enddo
 !
@@ -2600,28 +2595,69 @@ module module_physics_driver
 !  --- ...  calculate maximum convective heating rate 
 !           cuhr = temperature change due to deep convection
 
-!zhang: gwdc_pre_run
-!        do i=1,im
-!          cumabs(i) = 0.0
-!          work3 (i)  = 0.0
-!        enddo
-!        do k=1,levs
-!          do i=1,im
-!            if (k >= kbot(i) .and. k <= ktop(i)) then
-!              cumabs(i) = cumabs(i) + (Stateout%gt0(i,k)-dtdt(i,k)) * del(i,k)
-!              work3(i)  = work3(i)  + del(i,k)
-!            endif
-!          enddo
-!        enddo
-!        do i=1,im
-!          if (work3(i) > 0.0) cumabs(i) = cumabs(i) / (dtp*work3(i))
-!        enddo
 
-        call gwdc_pre_run (                                                            &
-             size(Grid%xlon,1), Model%cgwf, Grid%dx, work1, work2, dlength, cldf,      &
-!ccpp             Model%levs, kbot, ktop, Model%dtp, Stateout%gt0, save_t, del, cumabs,     &
-              Model%levs, kbot, ktop, Model%dtp, Stateout%gt0, dtdt, del, cumabs,     &
-             errmsg, errflg)
+#ifdef CCPP
+! OPTION B BEGIN
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling gwdc_pre_run through option B'
+      nb = Tbd%blkno
+#ifdef OPENMP
+      nt = OMP_GET_THREAD_NUM() + 1
+#else
+      nt = 1
+#endif
+      ! Copy local variables from driver to appropriate interstitial variables
+!zhang for reference
+!zhang        call gwdc_pre_run (                                                           &
+!zhang             size(Grid%xlon,1), Model%cgwf, Grid%dx, work1, work2, dlength, cldf,      &
+!zhang              Model%levs, kbot, ktop, Model%dtp, Stateout%gt0, dtdt, del, cumabs,     &
+!zhang             errmsg, errflg)
+      
+      Interstitial(nt)%im = im             ! intent(in)
+      Interstitial(nt)%work1 = work1       ! intent(in)
+      Interstitial(nt)%work2 = work2       ! intent(in)
+      Interstitial(nt)%dlength = dlength   ! intent(out)     
+      Interstitial(nt)%cldf = cldf         ! intent(out)
+      Interstitial(nt)%kbot = kbot         ! intent(in)
+      Interstitial(nt)%ktop = ktop         ! intent(in)
+      Interstitial(nt)%save_t = dtdt       ! intent(in)
+      Interstitial(nt)%del = del           ! intent(in)
+      Interstitial(nt)%cumabs = cumabs     ! intent(out)
+      Interstitial(nt)%errmsg = errmsg     ! intent(out)
+      Interstitial(nt)%errflg = errflg     ! intent(out)
+
+      call ccpp_physics_run(cdata_block(nb,nt), scheme_name="gwdc_pre", ierr=ierr)
+      ! Copy back intent(inout) interstitial variables to local variables in driver
+      dlength = Interstitial(nt)%dlength
+      cldf = Interstitial(nt)%cldf
+      cumabs = Interstitial(nt)%cumabs
+      errmsg = trim(Interstitial(nt)%errmsg)
+      errflg = Interstitial(nt)%errflg
+! OPTION B END
+      if (errflg/=0) then
+          write(0,*) 'Error in call to gwdc_pre_mp_gwdc_pre_run: ' // trim(errmsg)
+          stop
+      end if
+
+#else
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of gwdc_pre_run'
+
+        do i=1,im
+          cumabs(i) = 0.0
+          work3 (i)  = 0.0
+        enddo
+        do k=1,levs
+          do i=1,im
+            if (k >= kbot(i) .and. k <= ktop(i)) then
+              cumabs(i) = cumabs(i) + (Stateout%gt0(i,k)-dtdt(i,k)) * del(i,k)
+              work3(i)  = work3(i)  + del(i,k)
+            endif
+          enddo
+        enddo
+        do i=1,im
+          if (work3(i) > 0.0) cumabs(i) = cumabs(i) / (dtp*work3(i))
+        enddo
+
+#endif
 
 
 !       do i = 1, im
@@ -2691,18 +2727,18 @@ module module_physics_driver
 
 !GFDL replacing lat with "1"
 !       call gwdc(im, ix, im, levs, lat, gu0, gv0, gt0, gq0, dtp,       &
-!zhang        call gwdc (im, ix, im, levs, 1, Statein%ugrs, Statein%vgrs,     &
-!zhang                   Statein%tgrs, Statein%qgrs, dtp, Statein%prsl,       &
-!zhang                   Statein%prsi, del, cumabs, ktop, kbot, kcnv, cldf,   &
-!zhang                   con_g, con_cp, con_rd, con_fvirt, con_pi, dlength,   &
-!zhang                   lprnt, ipr, Model%fhour, gwdcu, gwdcv, dusfcg, dvsfcg)
-     call gwdc_run (                                                      &
-             size(Grid%xlon,1), size(Grid%xlon,1), Model%levs,            &
-             intgr_one, Statein%ugrs, Statein%vgrs,                       &
-             Statein%tgrs, Statein%qgrs(:,:,1), Model%dtp, Statein%prsl,  &
-             Statein%prsi, del, cumabs, ktop, kbot, kcnv, cldf,           &
-             con_g, con_cp, con_rd, con_fvirt, con_pi, dlength,           &
-             Model%lprnt, ipr, Model%fhour, gwdcu, gwdcv, dusfcg, dvsfcg, errmsg, errflg)
+       call gwdc (im, ix, im, levs, 1, Statein%ugrs, Statein%vgrs,     &
+                   Statein%tgrs, Statein%qgrs, dtp, Statein%prsl,       &
+                   Statein%prsi, del, cumabs, ktop, kbot, kcnv, cldf,   &
+                   con_g, con_cp, con_rd, con_fvirt, con_pi, dlength,   &
+                   lprnt, ipr, Model%fhour, gwdcu, gwdcv, dusfcg, dvsfcg)
+!     call gwdc_run (                                                      &
+!             size(Grid%xlon,1), size(Grid%xlon,1), Model%levs,            &
+!             intgr_one, Statein%ugrs, Statein%vgrs,                       &
+!             Statein%tgrs, Statein%qgrs(:,:,1), Model%dtp, Statein%prsl,  &
+!             Statein%prsi, del, cumabs, ktop, kbot, kcnv, cldf,           &
+!             con_g, con_cp, con_rd, con_fvirt, con_pi, dlength,           &
+!             Model%lprnt, ipr, Model%fhour, gwdcu, gwdcv, dusfcg, dvsfcg, errmsg, errflg)
 
 !       if (lprnt) then
 !         if (fhour >= fhourpr) then
@@ -2728,44 +2764,44 @@ module module_physics_driver
 !  --- ...  write out cloud top stress and wind tendencies
 
 !zhang: gwdc_post_run
-!        if (Model%lssav) then
-!          do i=1,im
-!            Diag%dugwd(i) = Diag%dugwd(i) + dusfcg(i)*dtf
-!            Diag%dvgwd(i) = Diag%dvgwd(i) + dvsfcg(i)*dtf
-!          enddo
+        if (Model%lssav) then
+          do i=1,im
+            Diag%dugwd(i) = Diag%dugwd(i) + dusfcg(i)*dtf
+            Diag%dvgwd(i) = Diag%dvgwd(i) + dvsfcg(i)*dtf
+          enddo
 
-!          if (Model%ldiag3d) then
-!            do k=1,levs
-!              do i=1,im
-!                Diag%du3dt(i,k,4) = Diag%du3dt(i,k,4) + gwdcu(i,k)  * dtf
-!                Diag%dv3dt(i,k,4) = Diag%dv3dt(i,k,4) + gwdcv(i,k)  * dtf
-!              enddo
-!            enddo
-!          endif
-!        endif   ! end if_lssav
+          if (Model%ldiag3d) then
+            do k=1,levs
+              do i=1,im
+                Diag%du3dt(i,k,4) = Diag%du3dt(i,k,4) + gwdcu(i,k)  * dtf
+                Diag%dv3dt(i,k,4) = Diag%dv3dt(i,k,4) + gwdcv(i,k)  * dtf
+              enddo
+            enddo
+          endif
+        endif   ! end if_lssav
 
 !  --- ...  update the wind components with  gwdc tendencies
 
-!        do k=1,levs
-!          do i=1,im
-!            eng0               = 0.5*(Stateout%gu0(i,k)*Stateout%gu0(i,k)+Stateout%gv0(i,k)*Stateout%gv0(i,k))
-!            Stateout%gu0(i,k)  = Stateout%gu0(i,k) + gwdcu(i,k) * dtp
-!            Stateout%gv0(i,k)  = Stateout%gv0(i,k) + gwdcv(i,k) * dtp
-!            eng1               = 0.5*(Stateout%gu0(i,k)*Stateout%gu0(i,k)+Stateout%gv0(i,k)*Stateout%gv0(i,k))
-!            Stateout%gt0(i,k)  = Stateout%gt0(i,k) + (eng0-eng1)/(dtp*con_cp)
-!          enddo
+        do k=1,levs
+          do i=1,im
+            eng0               = 0.5*(Stateout%gu0(i,k)*Stateout%gu0(i,k)+Stateout%gv0(i,k)*Stateout%gv0(i,k))
+            Stateout%gu0(i,k)  = Stateout%gu0(i,k) + gwdcu(i,k) * dtp
+            Stateout%gv0(i,k)  = Stateout%gv0(i,k) + gwdcv(i,k) * dtp
+            eng1               = 0.5*(Stateout%gu0(i,k)*Stateout%gu0(i,k)+Stateout%gv0(i,k)*Stateout%gv0(i,k))
+            Stateout%gt0(i,k)  = Stateout%gt0(i,k) + (eng0-eng1)/(dtp*con_cp)
+          enddo
 !         if (lprnt) write(7000,*)' gu0=',gu0(ipr,k),' gwdcu=',
 !    &gwdcu(ipr,k), ' gv0=', gv0(ipr,k),' gwdcv=',gwdcv(ipr,k)
 !    &,' k=',k
-!        enddo
+        enddo
 !zhang: end gwdc_post_run
 
 !zhang:ccpp
-        call gwdc_post_run (                                               &
-             size(Grid%xlon,1), Model%levs, Model%lssav, Model%ldiag3d, Model%dtf, Model%dtp, con_cp,       &
-             dusfcg, dvsfcg, gwdcu, gwdcv,                                 &
-             Diag%dugwd, Diag%dvgwd, Diag%du3dt(:,:,4), Diag%dv3dt(:,:,4), &
-             Stateout%gu0, Stateout%gv0, Stateout%gt0, errmsg, errflg)
+!        call gwdc_post_run (                                               &
+!             size(Grid%xlon,1), Model%levs, Model%lssav, Model%ldiag3d, Model%dtf, Model%dtp, con_cp,       &
+!             dusfcg, dvsfcg, gwdcu, gwdcv,                                 &
+!             Diag%dugwd, Diag%dvgwd, Diag%du3dt(:,:,4), Diag%dv3dt(:,:,4), &
+!             Stateout%gu0, Stateout%gv0, Stateout%gt0, errmsg, errflg)
 
 !       if (lprnt) then
 !         if (fhour >= fhourpr) then
