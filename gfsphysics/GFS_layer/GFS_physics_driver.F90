@@ -1818,6 +1818,48 @@ module module_physics_driver
 !
 !            Orographic gravity wave drag parameterization
 !            ---------------------------------------------
+#ifdef CCPP
+! OPTION B BEGIN
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling gwdps_pre through option B'
+      nb = Tbd%blkno
+#ifdef OPENMP
+      nt = OMP_GET_THREAD_NUM() + 1
+#else
+      nt = 1
+#endif
+      ! Copy local variables from driver to appropriate interstitial variables
+      Interstitial(nt)%im     = im           ! intent(in)
+      !IPD_Control%nmtvr       = nmtvr       ! intent(in)
+      !Interstitial(nt)%hprime1 =  hprime     ! intent(out)
+      Interstitial(nt)%hprime1 = Sfcprop%hprime(:,1)
+      Interstitial(nt)%oc      = oc          ! intent(out)
+      Interstitial(nt)%oa4     = oa4         ! intent(out)
+      Interstitial(nt)%clx     = clx         ! intent(out)
+      Interstitial(nt)%theta   = theta       ! intent(out)
+      Interstitial(nt)%sigma   = sigma       ! intent(out)
+      Interstitial(nt)%gamma   = gamma       ! intent(out)
+      Interstitial(nt)%elvmax  = elvmax      ! intent(out)
+      Interstitial(nt)%errmsg  = errmsg      ! intent(out)
+      Interstitial(nt)%errflg  = errflg      ! intent(out)
+      call ccpp_physics_run(cdata_block(nb,nt), scheme_name="gwdps_pre", ierr=ierr)
+      ! Copy back intent(inout) interstitial variables to local variables in driver
+      Sfcprop%hprime(:,1) = Interstitial(nt)%hprime1
+      oc     = Interstitial(nt)%oc
+      oa4    = Interstitial(nt)%oa4
+      clx    = Interstitial(nt)%clx
+      theta  = Interstitial(nt)%theta
+      sigma  = Interstitial(nt)%sigma 
+      gamma  = Interstitial(nt)%gamma
+      elvmax = Interstitial(nt)%elvmax
+      errmsg = trim(Interstitial(nt)%errmsg)
+      errflg = Interstitial(nt)%errflg
+! OPTION B END
+      if (errflg/=0) then
+          write(0,*) 'Error in call to gwdps_pre_mp_gwdps_pre: ' // trim(errmsg)
+          stop
+      end if
+#else
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of gwdps_pre'
 
       if (Model%nmtvr == 14) then         ! current operational - as of 2014
         do i=1,im
@@ -1864,6 +1906,7 @@ module module_physics_driver
         elvmax = 0
 
       endif   ! end if_nmtvr
+#endif
 
 #ifdef CCPP
 ! OPTION B BEGIN
