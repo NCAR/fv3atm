@@ -1865,6 +1865,59 @@ module module_physics_driver
 
       endif   ! end if_nmtvr
 
+#ifdef CCPP
+! OPTION B BEGIN
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling gwdps_run through option B'
+      nb = Tbd%blkno
+#ifdef OPENMP
+      nt = OMP_GET_THREAD_NUM() + 1
+#else
+      nt = 1
+#endif
+      ! Copy local variables from driver to appropriate interstitial variables
+      Interstitial(nt)%im     = im           ! intent(in)
+      Interstitial(nt)%ix     = ix           ! intent(in)
+      !IPD_Control%levs                      ! intent(in)
+      Interstitial(nt)%dvdt   = dvdt         ! A: intent(inout)
+      Interstitial(nt)%dudt   = dudt         ! B: intent(inout)
+      Interstitial(nt)%dtdt   = dtdt         ! C: intent(inout)
+      Interstitial(nt)%kpbl   = kpbl         ! intent(in)
+      Interstitial(nt)%del    = del          ! intent(in)
+      !IPD_Control%dtp
+      !IPD_Control%kdt
+      Interstitial(nt)%hprime1 = Sfcprop%hprime(:,1)  ! intent(in)
+      Interstitial(nt)%oc     = oc           ! intent(in)
+      Interstitial(nt)%oa4    = oa4          ! intent(in)
+      Interstitial(nt)%clx    = clx          ! intent(in)
+      Interstitial(nt)%theta  = theta        ! intent(in)
+      Interstitial(nt)%sigma  = sigma        ! intent(in)
+      Interstitial(nt)%gamma  = gamma        ! intent(in)
+      Interstitial(nt)%elvmax = elvmax       ! intent(inout)
+      Interstitial(nt)%dusfcg = dusfcg       ! intent(out)
+      Interstitial(nt)%dvsfcg = dvsfcg       ! intent(out)
+      !IPD_Control%me
+      !IPD_Control%lprnt
+      Interstitial(nt)%ipr    = ipr          ! intent(in)
+      Interstitial(nt)%errmsg = errmsg       ! intent(out)
+      Interstitial(nt)%errflg = errflg       ! intent(out)
+      call ccpp_physics_run(cdata_block(nb,nt), scheme_name="gwdps", ierr=ierr)
+      ! Copy back intent(inout) interstitial variables to local variables in driver
+      dvdt   = Interstitial(nt)%dvdt
+      dudt   = Interstitial(nt)%dudt
+      dtdt   = Interstitial(nt)%dtdt
+      elvmax = Interstitial(nt)%elvmax
+      dusfcg = Interstitial(nt)%dusfcg
+      dvsfcg = Interstitial(nt)%dvsfcg
+      !rdxzb  = Diag%zmtnblck
+      errmsg = trim(Interstitial(nt)%errmsg)
+      errflg = Interstitial(nt)%errflg
+! OPTION B END
+      if (errflg/=0) then
+          write(0,*) 'Error in call to gwdps_mp_gwdps_run: ' // trim(errmsg)
+          stop
+      end if
+#else
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of gwdps'
       call gwdps(im, ix, im, levs, dvdt, dudt, dtdt,        &
                  Statein%ugrs, Statein%vgrs, Statein%tgrs,  &
                  Statein%qgrs, kpbl, Statein%prsi, del,     &
@@ -1875,6 +1928,7 @@ module module_physics_driver
                  con_g, con_cp, con_rd, con_rv, Model%lonr, &
                  Model%nmtvr, Model%cdmbgwd, me, lprnt,ipr, &
                  Diag%zmtnblck)
+#endif
 
       if (Model%lssav) then
         do i=1,im
@@ -2728,27 +2782,22 @@ module module_physics_driver
       nt = 1
 #endif
       ! Copy local variables from driver to appropriate interstitial variables
-      Interstitial(nt)%im = im             ! intent(in)
-      Interstitial(nt)%ix = ix             ! intent(in)
-      Interstitial(nt)%del = del           ! intent(in)
-      Interstitial(nt)%cumabs = cumabs     ! intent(in)
-      Interstitial(nt)%ktop = ktop         ! intent(in)
-      Interstitial(nt)%kbot = kbot         ! intent(in)
-      Interstitial(nt)%kcnv = kcnv         ! intent(in)
-      Interstitial(nt)%cldf = cldf         ! intent(in)
-      !con_g, 
-      !con_cp, 
-      !con_rd, 
-      !con_fvirt, 
-      !con_pi, 
-      Interstitial(nt)%dlength = dlength   ! intent(in)
-      Interstitial(nt)%ipr     = ipr       ! intent(in)
-      Interstitial(nt)%gwdcu   = gwdcu     ! intent(out)
-      Interstitial(nt)%gwdcv   = gwdcv     ! intent(out)
-      Interstitial(nt)%dusfcg  = dusfcg    ! intent(out)
-      Interstitial(nt)%dvsfcg  = dvsfcg    ! intent(out)
-      Interstitial(nt)%errmsg = errmsg     ! intent(out)
-      Interstitial(nt)%errflg = errflg     ! intent(out)
+      Interstitial(nt)%im      = im             ! intent(in)
+      Interstitial(nt)%ix      = ix             ! intent(in)
+      Interstitial(nt)%del     = del            ! intent(in)
+      Interstitial(nt)%cumabs  = cumabs         ! intent(in)
+      Interstitial(nt)%ktop    = ktop           ! intent(in)
+      Interstitial(nt)%kbot    = kbot           ! intent(in)
+      Interstitial(nt)%kcnv    = kcnv           ! intent(in)
+      Interstitial(nt)%cldf    = cldf           ! intent(in)
+      Interstitial(nt)%dlength = dlength        ! intent(in)
+      Interstitial(nt)%ipr     = ipr            ! intent(in)
+      Interstitial(nt)%gwdcu   = gwdcu          ! intent(out)
+      Interstitial(nt)%gwdcv   = gwdcv          ! intent(out)
+      Interstitial(nt)%dusfcg  = dusfcg         ! intent(out)
+      Interstitial(nt)%dvsfcg  = dvsfcg         ! intent(out)
+      Interstitial(nt)%errmsg  = errmsg         ! intent(out)
+      Interstitial(nt)%errflg  = errflg         ! intent(out)
       call ccpp_physics_run(cdata_block(nb,nt), scheme_name="gwdc", ierr=ierr)
       ! Copy back intent(inout) interstitial variables to local variables in driver
       gwdcu  = Interstitial(nt)%gwdcu
@@ -2808,7 +2857,7 @@ module module_physics_driver
       nt = 1
 #endif
       ! Copy local variables from driver to appropriate interstitial variables
-      Interstitial(nt)%im = im             ! intent(in)
+      Interstitial(nt)%im     = im         ! intent(in)
       Interstitial(nt)%dusfcg = dusfcg     ! intent(in)
       Interstitial(nt)%dvsfcg = dvsfcg     ! intent(in)
       Interstitial(nt)%gwdcu  = gwdcu      ! intent(in)
