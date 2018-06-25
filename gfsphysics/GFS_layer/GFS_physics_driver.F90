@@ -2451,6 +2451,101 @@ module module_physics_driver
             else
                nsamftrac = tottracer
             endif
+#ifdef CCPP
+! DH* Uncomment either option A or B for Intel (for GNU/PGI, only option B works).
+! It doesn't make sense to me to implement a CPP flag for this, since option A
+! will only be used as a debugging step in case the call to ccpp_physics_run leads
+! to different results. *DH
+! OPTION A BEGIN - works for Intel
+#ifdef __INTEL_COMPILER
+       if (Model%me==0) write(0,*) 'CCPP DEBUG: calling samfdeepcnv_run through option A'
+       call samfdeepcnv_mp_samfdeepcnv_run(im, ix, levs, dtp, ntk, nsamftrac, del,             &
+                 Statein%prsl, Statein%pgr, Statein%phil, clw,       &
+                 Stateout%gq0(:,:,1), Stateout%gt0,                  &
+                 Stateout%gu0, Stateout%gv0,                         &
+                 cld1d, rain1, kbot, ktop, kcnv, islmsk, garea,      &
+                 Statein%vvl, ncld, ud_mf, dd_mf, dt_mf, cnvw, cnvc, &
+                 Model%clam_deep,   Model%c0s_deep,                  &
+                 Model%c1_deep,  Model%betal_deep, Model%betas_deep, &
+                 Model%evfact_deep, Model%evfactl_deep,              &
+                 Model%pgcon_deep,  Model%asolfac_deep)
+#else
+       write(0,*) "ERROR, CCPP option A only works with Intel compiler"
+       call sleep(2)
+       stop
+#endif
+! OPTION A END
+! OPTION B BEGIN
+!             if (Model%me==0) write(0,*) 'CCPP DEBUG: calling samfdeepcnv_run through option B'
+!             nb = Tbd%blkno
+! #ifdef OPENMP
+!             nt = OMP_GET_THREAD_NUM() + 1
+! #else
+!             nt = 1
+! #endif
+!             ! Copy local variables from driver to appropriate interstitial variables
+!             Interstitial(nt)%im = im              ! intent(in)
+!             Interstitial(nt)%ix = ix              ! intent(in)
+!             !Model%levs                           ! intent(in)
+!             !Model%dtp                            ! intent(in)
+!             Interstitial(nt)%ntk = ntk            ! intent(in)
+!             Interstitial(nt)%nsamftrac = nsamftrac! intent(in)
+!             Interstitial(nt)%del = del            ! intent(in)
+!             !Statein%prsl                         ! intent(in)
+!             !Statein%pgr                          ! intent(in)
+!             !Statein%phil                         ! intent(in)
+!             Interstitial(nt)%clw = clw            ! intent(inout)
+!             !Stateout%gq0(:,:,1)                  ! intent(inout)
+!             !Stateout%gt0                         ! intent(inout)
+!             !Stateout%gu0                         ! intent(inout)
+!             !Stateout%gv0                         ! intent(inout)
+!             Interstitial(nt)%cld1d = cld1d        ! intent(out)
+!             Interstitial(nt)%raincd = rain1       ! intent(out)
+!             Interstitial(nt)%kbot = kbot          ! intent(out)
+!             Interstitial(nt)%ktop = ktop          ! intent(out)
+!             Interstitial(nt)%kcnv = kcnv          ! intent(out)
+!             Interstitial(nt)%islmsk = islmsk      ! intent(in)
+!             !Grid%area                            ! intent(in)
+!             !Statein%vvl                          ! intent(in)
+!             !Model%ncld                           ! intent(in)
+!             Interstitial(nt)%ud_mf = ud_mf        ! intent(out)
+!             Interstitial(nt)%dd_mf = dd_mf        ! intent(out)
+!             Interstitial(nt)%dt_mf = dt_mf        ! intent(out)
+!             Interstitial(nt)%cnvw = cnvw          ! intent(out)
+!             Interstitial(nt)%cnvc = cnvc          ! intent(out)
+!             !Model%clam_deep                      ! intent(in)
+!             !Model%c0s_deep                       ! intent(in)
+!             !Model%c1_deep                        ! intent(in)
+!             !Model%betal_deep                     ! intent(in)
+!             !Model%betas_deep                     ! intent(in)
+!             !Model%evfact_deep                    ! intent(in)
+!             !Model%evfactl_deep                   ! intent(in)
+!             !Model%pgcon_deep                     ! intent(in)
+!             !Model%asolfac_deep                   ! intent(in)
+!             Interstitial(nt)%errmsg = errmsg      ! intent(out)
+!             Interstitial(nt)%errflg = errflg      ! intent(out)
+!             call ccpp_physics_run(cdata_block(nb,nt), scheme_name="samfdeepcnv", ierr=ierr)
+!             ! Copy back intent(inout) interstitial variables to local variables in driver
+!             clw = Interstitial(nt)%clw
+!             cld1d = Interstitial(nt)%cld1d
+!             rain1 = Interstitial(nt)%raincd
+!             kbot = Interstitial(nt)%kbot
+!             ktop = Interstitial(nt)%ktop
+!             kcnv = Interstitial(nt)%kcnv
+!             ud_mf = Interstitial(nt)%ud_mf
+!             dd_mf = Interstitial(nt)%dd_mf
+!             dt_mf = Interstitial(nt)%dt_mf
+!             cnvw = Interstitial(nt)%cnvw
+!             cnvc = Interstitial(nt)%cnvc
+!             errmsg = trim(Interstitial(nt)%errmsg)
+!             errflg = Interstitial(nt)%errflg
+            ! OPTION B END
+            if (errflg/=0) then
+                write(0,*) 'Error in call to samfdeepcnv_mp_samfdeepcnv_run: ' // trim(errmsg)
+                stop
+            end if
+#else
+            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of samfdeepcnv'
             call samfdeepcnv(im, ix, levs, dtp, ntk, nsamftrac, del,             &
                              Statein%prsl, Statein%pgr, Statein%phil, clw,       &
                              Stateout%gq0(:,:,1), Stateout%gt0,                  &
@@ -2462,6 +2557,7 @@ module module_physics_driver
                              Model%evfact_deep, Model%evfactl_deep,              &
                              Model%pgcon_deep,  Model%asolfac_deep)
 !           if (lprnt) print *,' rain1=',rain1(ipr)
+#endif
           elseif (Model%imfdeepcnv == 0) then         ! random cloud top
             call sascnv (im, ix, levs, Model%jcap, dtp, del,                     &
                          Statein%prsl, Statein%pgr, Statein%phil, clw(:,:,1:2),  &
