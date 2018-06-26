@@ -3315,9 +3315,12 @@ module module_physics_driver
       if (ntcw > 0) then
 
 !  for microphysics
-        if (imp_physics == 99 .or. imp_physics == 98    &
-                              .or. imp_physics == 11) then
-          Stateout%gq0(1:im,:,ntcw) = clw(1:im,:,1) + clw(1:im,:,2)
+        !ccpp if (imp_physics == 99 .or. imp_physics == 98    &
+        !ccpp                      .or. imp_physics == 11) then
+        if (imp_physics == 99 ) then
+          ! ccpp Stateout%gq0(1:im,:,ntcw) = clw(1:im,:,1) + clw(1:im,:,2)
+        elseif (imp_physics == 98 .or. imp_physics == 11) then
+           Stateout%gq0(1:im,:,ntcw) = clw(1:im,:,1) + clw(1:im,:,2)
         elseif (ntiw > 0) then
           do k=1,levs
             do i=1,im
@@ -3517,11 +3520,42 @@ module module_physics_driver
                               psautco_l, prautco_l, Model%evpco, Model%wminco, &
                               Tbd%phy_f3d(1,1,ntot3d-2), lprnt, ipr)
           else
+
+#ifdef CCPP
+! OPTION B BEGIN
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling gscond_run through option B'
+      nb = Tbd%blkno
+#ifdef OPENMP
+      nt = OMP_GET_THREAD_NUM() + 1
+#else
+      nt = 1
+#endif
+      ! Copy local variables from driver to appropriate interstitial variables
+      Interstitial(nt)%im     = im                            ! intent(in)
+      Interstitial(nt)%ix     = ix                            ! intent(in)
+      Interstitial(nt)%clw(:,:,1) = clw(:,:,1)                ! intent(in)
+      Interstitial(nt)%clw(:,:,2) = clw(:,:,2)                ! intent(in) 
+      Interstitial(nt)%rhc    = rhc                           ! intent(in)
+      Interstitial(nt)%ipr    = ipr                           ! intent(in) 
+      Interstitial(nt)%errmsg = errmsg                        ! intent(out)
+      Interstitial(nt)%errflg = errflg                        ! intent(out)
+      call ccpp_physics_run(cdata_block(nb,nt), scheme_name="zhaocarr_gscond", ierr=ierr)
+      ! Copy back intent(inout) interstitial variables to local variables in driver
+      errmsg = trim(Interstitial(nt)%errmsg)
+      errflg = Interstitial(nt)%errflg
+! OPTION B END
+      if (errflg/=0) then
+          write(0,*) 'Error in call to gscond_mp_gscond_run: ' // trim(errmsg)
+          stop
+      end if
+#else
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of gscond'
             call gscond (im, ix, levs, dtp, dtf, Statein%prsl, Statein%pgr,    &
                          Stateout%gq0(1,1,1), Stateout%gq0(1,1,ntcw),          &
                          Stateout%gt0, Tbd%phy_f3d(1,1,1), Tbd%phy_f3d(1,1,2), &
                          Tbd%phy_f2d(1,1), Tbd%phy_f3d(1,1,3),                 &
                          Tbd%phy_f3d(1,1,4), Tbd%phy_f2d(1,2), rhc,lprnt, ipr)
+#endif
 
             call precpd (im, ix, levs, dtp, del, Statein%prsl,                 &
                         Stateout%gq0(1,1,1), Stateout%gq0(1,1,ntcw),           &
@@ -3663,7 +3697,7 @@ module module_physics_driver
           errflg = Interstitial(nt)%errflg
           !
           if (errflg/=0) then
-              write(0,*) 'Error in call to cnvc90_mp_cnvc90_run: ' // trim(errmsg)
+              write(0,*) 'Error in call to mp_thompson_hrrr_mp_mp_thompson_hrrr_run: ' // trim(errmsg)
               stop
           end if
 #endif
