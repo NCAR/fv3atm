@@ -16,13 +16,16 @@ module IPD_driver
                                         IPD_func0d_proc,   IPD_func1d_proc
 #endif
 
-  use physics_abstraction_layer,  only: initialize,        time_vary_step,   &
-                                        radiation_step1,   physics_step1,    &
-                                        physics_step2,                       &
 #ifdef CCPP
+  use physics_abstraction_layer,  only: initialize,        time_vary_step,   &
+                                        physics_step1,                       &
+                                        physics_step2,                       &
                                         diagnostic_populate, restart_populate,&
                                         finalize
 #else
+  use physics_abstraction_layer,  only: initialize,        time_vary_step,   &
+                                        radiation_step1,   physics_step1,    &
+                                        physics_step2,                       &
                                         diagnostic_populate, restart_populate
 #endif
   implicit none
