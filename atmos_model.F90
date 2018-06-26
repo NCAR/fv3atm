@@ -94,10 +94,11 @@ use IPD_typedefs,       only: IPD_init_type, IPD_control_type, &
 #ifdef CCPP
 use IPD_driver,         only: IPD_initialize, IPD_step, IPD_finalize
 use IPD_CCPP_driver,    only: IPD_CCPP_step
+use physics_abstraction_layer, only: time_vary_step, physics_step1, physics_step2
 #else
 use IPD_driver,         only: IPD_initialize, IPD_step
-#endif
 use physics_abstraction_layer, only: time_vary_step, radiation_step1, physics_step1, physics_step2
+#endif
 use FV3GFS_io_mod,      only: FV3GFS_restart_read, FV3GFS_restart_write, &
                               FV3GFS_IPD_checksum,                       &
                               FV3GFS_diag_register, FV3GFS_diag_output,  &
@@ -292,22 +293,19 @@ subroutine update_atmos_radiation_physics (Atmos)
 !--- execute the IPD atmospheric radiation subcomponent (RRTM)
 
       call mpp_clock_begin(radClock)
+#ifdef CCPP
+      call IPD_CCPP_step (step="radiation", nblks=Atm_block%nblks, ierr=ierr)
+      if (ierr/=0)  call mpp_error(FATAL, 'Call to IPD-CCPP radiation step failed')
+#else
       Func0d => radiation_step1
 !$OMP parallel do default (none)       &
 !$OMP            schedule (dynamic,1), &
-#ifdef CCPP
-!$OMP            shared   (Atm_block, IPD_Control, IPD_Data, IPD_Diag, IPD_Restart, IPD_Interstitial, Func0d) &
-#else
 !$OMP            shared   (Atm_block, IPD_Control, IPD_Data, IPD_Diag, IPD_Restart, Func0d) &
-#endif
 !$OMP            private  (nb)
       do nb = 1,Atm_block%nblks
-#ifdef CCPP
-        call IPD_step (IPD_Control, IPD_Data(nb:nb), IPD_Diag, IPD_Restart, IPD_Interstitial, IPD_func0d=Func0d)
-#else
         call IPD_step (IPD_Control, IPD_Data(nb:nb), IPD_Diag, IPD_Restart, IPD_func0d=Func0d)
-#endif
       enddo
+#endif
       call mpp_clock_end(radClock)
 
       if (chksum_debug) then
@@ -392,6 +390,7 @@ subroutine atmos_model_init (Atmos, Time_init, Time, Time_step)
 #ifdef OPENMP
   use omp_lib
 #endif
+  use fv_mp_mod, only: commglobal
 #endif
 
   type (atmos_data_type), intent(inout) :: Atmos
@@ -540,6 +539,8 @@ subroutine atmos_model_init (Atmos, Time_init, Time, Time_step)
 #endif
 
 #ifdef CCPP
+   ! Update the MPI communicator in IPD_Control that gets passed to CCPP physics
+   IPD_Control%communicator = commglobal
    call IPD_CCPP_step (step="init", IPD_Control=IPD_Control, IPD_Data=IPD_Data, &
                                     IPD_Diag=IPD_Diag, IPD_Restart=IPD_Restart, &
                                     IPD_Interstitial=IPD_Interstitial,          &
