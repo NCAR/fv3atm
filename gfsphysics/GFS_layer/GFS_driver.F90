@@ -13,7 +13,9 @@ module GFS_driver
 #else
                                       GFS_radtend_type, GFS_diag_type
 #endif
+#ifndef CCPP
   use module_radiation_driver,  only: GFS_radiation_driver, radupdate
+#endif
   use module_physics_driver,    only: GFS_physics_driver
   use module_radsw_parameters,  only: topfsw_type, sfcfsw_type
   use module_radlw_parameters,  only: topflw_type, sfcflw_type
@@ -23,6 +25,11 @@ module GFS_driver
                                       rh2o   => con_rv,                      &
                                       tmelt  => con_ttp,  cpair   => con_cp, &
                                       latvap => con_hvap, latice  => con_hfus
+
+#ifdef CCPP
+  use ccpp_api,                 only: ccpp_physics_run
+  use CCPP_data,                only: cdata_domain
+#endif
 
   implicit none
 
@@ -96,7 +103,9 @@ module GFS_driver
 !----------------
   public  GFS_initialize              !< GFS initialization routine
   public  GFS_time_vary_step          !< perform operations needed prior radiation or physics
+#ifndef CCPP
   public  GFS_radiation_driver        !< radiation_driver (was grrad)
+#endif
   public  GFS_physics_driver          !< physics_driver (was gbphys)
   public  GFS_stochastic_driver       !< stochastic physics
 #ifdef CCPP
@@ -159,7 +168,9 @@ module GFS_driver
 #endif
     integer :: ntrac
     integer :: ix
+#ifndef CCPP
     real(kind=kind_phys), allocatable :: si(:)
+#endif
     real(kind=kind_phys), parameter   :: p_ref = 101325.0d0
 
 
@@ -263,6 +274,11 @@ module GFS_driver
     !--- The formula converting hybrid sigma pressure coefficients to sigma coefficients follows Eckermann (2009, MWR)
     !--- ps is replaced with p0. The value of p0 uses that in http://www.emc.ncep.noaa.gov/officenotes/newernotes/on461.pdf
     !--- ak/bk have been flipped from their original FV3 orientation and are defined sfc -> toa
+#ifdef CCPP
+    Model%si = (Init_parm%ak + Init_parm%bk * p_ref - Init_parm%ak(Model%levr+1)) &
+                   / (p_ref - Init_parm%ak(Model%levr+1))
+    ! no need to call rad_initialize here, will be called as part of CCPP's physics_init
+#else
     allocate(si(Model%levr+1))
     si = (Init_parm%ak + Init_parm%bk * p_ref - Init_parm%ak(Model%levr+1)) &
              / (p_ref - Init_parm%ak(Model%levr+1))
@@ -274,6 +290,7 @@ module GFS_driver
            Model%isubc_lw,     Model%crick_proof,  Model%ccnorm,                  &
            Model%imp_physics,  Model%norad_precip, Model%idate,   Model%iflip,  Model%me)
     deallocate (si)
+#endif
 
 !   microphysics initialization calls
 !   --------------------------------- 
@@ -655,12 +672,33 @@ module GFS_driver
     type (random_stat) :: stat
     integer :: ix, nb, j, i, nblks, ipseed
     integer :: numrdm(Model%cnx*Model%cny*2)
+#ifdef CCPP
+    integer :: ierr
+#endif
 
     nblks = size(blksz,1)
 
+#ifdef CCPP
+    ! DH*
+    ! This is an temporary solution until the entire time_vary_steps are run through CCPP (if possible).
+    ! Calls to time_vary are not threaded. Can use cdata_domain here, because radupdate only uses Model%...,
+    ! which is independent of block number and thread number
+    call ccpp_physics_run(cdata_domain, scheme_name="GFS_rrtmg_setup", ierr=ierr)
+    if (ierr/=0) then
+       write(0,'(a)') "An error occurred in ccpp_physics_run for scheme GFS_rrtmg_setup - aborting."
+       ! DH* better way to abort the model here or return with an error to the calling routine?
+       stop
+       ! *DH
+    end if
+    ! *DH
+#else
     call radupdate (Model%idat, Model%jdat, Model%fhswr, Model%dtf,  Model%lsswr, &
                     Model%me,   Model%slag, Model%sdec,  Model%cdec, Model%solcon)
+#endif
 
+#ifdef CCPP
+    ! DH* make the remainder of this routine a separate scheme and call after GFS_rrtmg_setup in SDF group "time_vary"?
+#endif
     !--- set up random seed index in a reproducible way for entire cubed-sphere face (lat-lon grid)
     if ((Model%isubc_lw==2) .or. (Model%isubc_sw==2)) then
       ipseed = mod(nint(con_100*sqrt(sec)), ipsdlim) + 1 + ipsd0
