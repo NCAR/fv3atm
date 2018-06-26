@@ -819,20 +819,20 @@ module GFS_typedefs
 !! | IPD_Control%rbcr                     |                                                                               | Critical Richardson Number in the PBL scheme            |               |    0 | real      | kind_phys | none   | F        |
 !! | IPD_Control%prslrd0                  | pressure_cutoff_for_rayleigh_damping                                          | pressure level from which Rayleigh Damping is applied   | Pa            |    0 | real      | kind_phys | none   | F        |
 !! | IPD_Control%ral_ts                   | time_scale_for_rayleigh_damping                                               | time scale for Rayleigh damping in days                 | d             |    0 | real      | kind_phys | none   | F        |
-!! | IPD_Control%clam_deep                |                                              | c_e for deep convection                                                                  |               |    0 | real      | kind_phys | none   | F        |
-!! | IPD_Control%c0s_deep                 |                                              | convective rain conversion parameter                                                     |               |    0 | real      | kind_phys | none   | F        |
-!! | IPD_Control%c1_deep                  |                                              | conversion parameter of detrainment from liquid water into grid-scale cloud water        |               |    0 | real      | kind_phys | none   | F        |
-!! | IPD_Control%betal_deep               |                                              | fraction factor of downdraft air mass reaching ground surface over land                  |               |    0 | real      | kind_phys | none   | F        |
-!! | IPD_Control%betas_deep               |                                              | fraction factor of downdraft air mass reaching ground surface over sea                   |               |    0 | real      | kind_phys | none   | F        |
-!! | IPD_Control%evfact_deep              |                                              | evaporation factor from convective rain                                                  |               |    0 | real      | kind_phys | none   | F        |
-!! | IPD_Control%evfactl_deep             |                                              | evaporation factor from convective rain over land                                        |               |    0 | real      | kind_phys | none   | F        |
-!! | IPD_Control%pgcon_deep               |                                              | reduction factor in momentum transport due to convection induced pressure gradient force |               |    0 | real      | kind_phys | none   | F        |
-!! | IPD_Control%asolfac_deep             |                                              | aerosol-aware parameter based on Lim                                                     |               |    0 | real      | kind_phys | none   | F        |
-!! | IPD_Control%clam_shal                |                                              | c_e for shallow convection                                                               |               |    0 | real      | kind_phys | none   | F        |
-!! | IPD_Control%c0s_shal                 |                                              | convective rain conversion parameter                                                     |               |    0 | real      | kind_phys | none   | F        |
-!! | IPD_Control%c1_shal                  |                                              | conversion parameter of detrainment from liquid water into grid-scale cloud water        |               |    0 | real      | kind_phys | none   | F        |
-!! | IPD_Control%pgcon_shal               |                                              | reduction factor in momentum transport due to convection induced pressure gradient force |               |    0 | real      | kind_phys | none   | F        |
-!! | IPD_Control%asolfac_shal             |                                              | aerosol-aware parameter based on Lim                                                     |               |    0 | real      | kind_phys | none   | F        |
+!! | IPD_Control%clam_deep                | entrainment_rate_coefficient_deep_convection                                  | entrainment rate coefficient for deep convection                                          | none    |    0 | real      | kind_phys | none   | F        |
+!! | IPD_Control%c0s_deep                 | rain_conversion_parameter_deep_convection                                     | convective rain conversion parameter for deep convection                                  | m-1     |    0 | real      | kind_phys | none   | F        |
+!! | IPD_Control%c1_deep                  | detrainment_conversion_parameter_deep_convection                              | convective detrainment conversion parameter for deep convection                           | m-1     |    0 | real      | kind_phys | none   | F        |
+!! | IPD_Control%betal_deep               | downdraft_fraction_reaching_surface_over_land_deep_convection                 | downdraft fraction reaching surface over land for deep convection                         | frac    |    0 | real      | kind_phys | none   | F        |
+!! | IPD_Control%betas_deep               | downdraft_fraction_reaching_surface_over_ocean_deep_convection                | downdraft fraction reaching surface over ocean for deep convection                        | frac    |    0 | real      | kind_phys | none   | F        |
+!! | IPD_Control%evfact_deep              | rain_evaporation_coefficient_deep_convection                                  | convective rain evaporation coefficient for deep convection                               | frac    |    0 | real      | kind_phys | none   | F        |
+!! | IPD_Control%evfactl_deep             | rain_evaporation_coefficient_over_land_deep_convection                        | convective rain evaporation coefficient over land for deep convection                     | frac    |    0 | real      | kind_phys | none   | F        |
+!! | IPD_Control%pgcon_deep               | momentum_transport_reduction_factor_pgf_deep_convection                       | reduction factor in momentum transport due to convection induced pressure gradient force  | frac    |    0 | real      | kind_phys | none   | F        |
+!! | IPD_Control%asolfac_deep             | aerosol_aware_parameter_deep_convection                                       | aerosol-aware parameter inversely proportional to CCN number concentraion from Lim (2011) | none    |    0 | real      | kind_phys | none   | F        |
+!! | IPD_Control%clam_shal                |                                                                               | c_e for shallow convection                                                               |               |    0 | real      | kind_phys | none   | F        |
+!! | IPD_Control%c0s_shal                 |                                                                               | convective rain conversion parameter                                                     |               |    0 | real      | kind_phys | none   | F        |
+!! | IPD_Control%c1_shal                  |                                                                               | conversion parameter of detrainment from liquid water into grid-scale cloud water        |               |    0 | real      | kind_phys | none   | F        |
+!! | IPD_Control%pgcon_shal               |                                                                               | reduction factor in momentum transport due to convection induced pressure gradient force |               |    0 | real      | kind_phys | none   | F        |
+!! | IPD_Control%asolfac_shal             |                                                                               | aerosol-aware parameter based on Lim                                                     |               |    0 | real      | kind_phys | none   | F        |
 !! | IPD_Control%nst_anl                  |                                                                               | flag for NSSTM analysis in gcycle/sfcsub                |               |    0 | logical   |           | none   | F        |
 !! | IPD_Control%lsea                     |                                                                               |                                                         |               |    0 | integer   |           | none   | F        |
 !! | IPD_Control%xkzm_m                   | atmosphere_momentum_diffusivity_background                                    | background vertical diffusion for momentum              | m2 s-1        |    0 | real      | kind_phys | none   | F        |
@@ -842,8 +842,8 @@ module GFS_typedefs
 !! | IPD_Control%nstf_name(1)             | flag_for_nsstm_run                                                            | NSSTM flag: off/uncoupled/coupled=0/1/2                 | flag          |    0 | integer   |           | none   | F        |
 !! | IPD_Control%nstf_name(4)             | vertical_temperature_average_range_lower_bound                                | zsea1 in mm                                             | mm            |    0 | integer   |           | none   | F        |
 !! | IPD_Control%nstf_name(5)             | vertical_temperature_average_range_upper_bound                                | zsea2 in mm                                             | mm            |    0 | integer   |           | none   | F        |
-!! | IPD_Control%xkzminv                  |                                                                               | diffusivity in inversion layers                         |               |    0 | real      | kind_phys | none   | F        |
-!! | IPD_Control%moninq_fac               |                                                                               | turbulence diffusion coefficient factor                 |               |    0 | real      | kind_phys | none   | F        |
+!! | IPD_Control%xkzminv                  | atmosphere_heat_diffusivity_background_maximum                                | maximum background value of heat diffusivity            | m2 s-1        |    0 | real      | kind_phys | none   | F        |
+!! | IPD_Control%moninq_fac               | atmosphere_diffusivity_coefficient_factor                                     | multiplicative constant for atmospheric diffusivities   | none          |    0 | real      | kind_phys | none   | F        |
 !! | IPD_Control%do_sppt                  |                                                                               |                                                         |               |    0 | logical   |           | none   | F        |
 !! | IPD_Control%use_zmtnblck             |                                                                               |                                                         |               |    0 | logical   |           | none   | F        |
 !! | IPD_Control%do_shum                  |                                                                               |                                                         |               |    0 | logical   |           | none   | F        |
@@ -1857,7 +1857,8 @@ module GFS_typedefs
 !! | IPD_Interstitial(nt)%mbota                         | model_layer_number_at_cloud_base                                                               | vertical indices for low, middle and high cloud bases                               | index         |    2 | integer     |           | none   | F        |
 !! | IPD_Interstitial(nt)%mtopa                         | model_layer_number_at_cloud_top                                                                | vertical indices for low, middle and high cloud tops                                | index         |    2 | integer     |           | none   | F        |
 !! | IPD_Interstitial(nt)%nday                          | daytime_points_dimension                                                                       | daytime points dimension                                                            | count         |    0 | integer     |           | none   | F        |
-!! | IPD_Interstitial(nt)%ntk                           | index_of_TKE                                                                                   | index of TKE in the tracer array                                                    | index         |    0 | integer     |           | none   | F        |
+!! | IPD_Interstitial(nt)%nsamftrac                     | number_of_tracers_for_samf                                                                     | number of tracers for scale-aware mass flux schemes                                 | count         |    0 | integer     |           | none   | F        |
+!! | IPD_Interstitial(nt)%ntk                           | index_of_TKE_convective_transport_tracer                                                       | index of TKE in the convectively transported tracer array                           | index         |    0 | integer     |           | none   | F        |
 !! | IPD_Interstitial(nt)%nvdiff                        | number_of_vertical_diffusion_tracers                                                           | number of tracers to diffuse vertically                                             | count         |    0 | integer     |           | none   | F        |
 !! | IPD_Interstitial(nt)%oa4                           | asymmetry_of_subgrid_orography                                                                 | asymmetry of subgrid orography                                                      | none          |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%oc                            | convexity_of_subgrid_orography                                                                 | convexity of subgrid orography                                                      | none          |    1 | real        | kind_phys | none   | F        |
@@ -2022,6 +2023,7 @@ module GFS_typedefs
     integer,               pointer      :: mbota(:,:)       => null()  !<
     integer,               pointer      :: mtopa(:,:)       => null()  !<
     integer                             :: nday                        !<
+    integer                             :: nsamftrac                   !<
     integer                             :: ntk                         !<
     integer                             :: nvdiff                      !<
     real (kind=kind_phys), pointer      :: oa4(:,:)         => null()  !<
@@ -4646,6 +4648,7 @@ module GFS_typedefs
     Interstitial%kinver       = 0
     Interstitial%kpbl         = 0
     Interstitial%ktop         = 0
+    Interstitial%nsamftrac    = 0
     Interstitial%oa4          = clear_val
     Interstitial%oc           = clear_val
     Interstitial%qss          = clear_val
@@ -4710,6 +4713,7 @@ module GFS_typedefs
     write (0,*) 'Interstitial%lm           = ', Interstitial%lm
     write (0,*) 'Interstitial%lmk          = ', Interstitial%lmk
     write (0,*) 'Interstitial%lmp          = ', Interstitial%lmp
+    write (0,*) 'Interstitial%nsamftrac    = ', Interstitial%nsamftrac
     write (0,*) 'Interstitial%nvdiff       = ', Interstitial%nvdiff
     write (0,*) 'Interstitial%oz_coeff     = ', Interstitial%oz_coeff
     write (0,*) 'Interstitial%oz_pres      = ', Interstitial%oz_pres
