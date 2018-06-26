@@ -1956,7 +1956,7 @@ module module_physics_driver
       errflg = Interstitial(nt)%errflg
 ! OPTION B END
       if (errflg/=0) then
-          write(0,*) 'Error in call to gwdps_mp_gwdps_run: ' // trim(errmsg)
+          write(0,*) 'Error in call to gwdps_run_mp_gwdps_run: ' // trim(errmsg)
           stop
       end if
 #else
@@ -1973,6 +1973,34 @@ module module_physics_driver
                  Diag%zmtnblck)
 #endif
 
+#ifdef CCPP
+! OPTION B BEGIN
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling gwdps_post through option B'
+      nb = Tbd%blkno
+#ifdef OPENMP
+      nt = OMP_GET_THREAD_NUM() + 1
+#else
+      nt = 1
+#endif
+      ! Copy local variables from driver to appropriate interstitial variables
+      Interstitial(nt)%dusfcg  = dusfcg           ! intent(in)
+      Interstitial(nt)%dvsfcg  = dvsfcg      ! intent(in)
+      Interstitial(nt)%dudt   = dudt         ! intent(in)
+      Interstitial(nt)%dvdt   = dvdt         ! intent(in)
+      Interstitial(nt)%dtdt   = dtdt         ! intent(in)
+      Interstitial(nt)%errmsg = errmsg       ! intent(out)
+      Interstitial(nt)%errflg = errflg       ! intent(out)
+      call ccpp_physics_run(cdata_block(nb,nt), scheme_name="gwdps_post", ierr=ierr)
+      ! Copy back intent(inout) interstitial variables to local variables in driver
+      errmsg = trim(Interstitial(nt)%errmsg)
+      errflg = Interstitial(nt)%errflg
+! OPTION B END
+      if (errflg/=0) then
+          write(0,*) 'Error in call to gwdps_post_mp_gwdps_post: ' // trim(errmsg)
+          stop
+      end if
+#else
+     if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of gwdps_post'
       if (Model%lssav) then
         do i=1,im
           Diag%dugwd(i) = Diag%dugwd(i) + dusfcg(i)*dtf
@@ -1989,6 +2017,7 @@ module module_physics_driver
           enddo
         endif
       endif
+#endif
 
 !    Rayleigh damping  near the model top
       if( .not. Model%lsidea .and. Model%ral_ts > 0.0) then
