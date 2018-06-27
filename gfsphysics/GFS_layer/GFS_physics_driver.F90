@@ -724,6 +724,19 @@ module module_physics_driver
         nn = ntrac + 1
       endif
       allocate (clw(ix,levs,nn))
+! DH*
+#if 0
+      if (Model%me==0) then
+         write(0,*) "DH DEBUG clw: ntiw, ntcw, ntclamt, ntrac, nn / shape(clw)", &
+                  & ntiw, ntcw, ntclamt, ntrac, nn, "/", shape(clw)
+#ifdef CCPP
+         write(0,*) "DH DEBUG clw: nt, Interstitial(nt)%tracers_total, Interstitial(nt)%nn, shape(Interstitial(nt)%clw)", &
+                  & nt, Interstitial(nt)%tracers_total, Interstitial(nt)%nn, shape(Interstitial(nt)%clw)
+#endif
+      end if
+
+#endif
+! *DH
 
       if (Model%imfdeepcnv >= 0 .or. Model%imfshalcnv > 0) then
         allocate (cnvc(ix,levs), cnvw(ix,levs))
@@ -3259,6 +3272,14 @@ module module_physics_driver
                n /= ntrw  .and. n /= ntsw  .and. n /= ntrnc   .and. &
                n /= ntsnc .and. n /= ntgl  .and. n /= ntgnc ) then
               tracers = tracers + 1
+! DH*
+#if 0
+              if (Model%me==0) then
+                 write(0,*) "DH DEBUG clw 2: tottracer, ntrac, n, tracers / shape(clw)", &
+                          & tottracer, ntrac, n, tracers, "/", shape(clw)
+              end if
+#endif
+! *DH
             do k=1,levs
               do i=1,im
                 Stateout%gq0(i,k,n) = clw(i,k,tracers)

@@ -1857,6 +1857,7 @@ module GFS_typedefs
 !! | IPD_Interstitial(nt)%mbota                         | model_layer_number_at_cloud_base                                                               | vertical indices for low, middle and high cloud bases                               | index         |    2 | integer     |           | none   | F        |
 !! | IPD_Interstitial(nt)%mtopa                         | model_layer_number_at_cloud_top                                                                | vertical indices for low, middle and high cloud tops                                | index         |    2 | integer     |           | none   | F        |
 !! | IPD_Interstitial(nt)%nday                          | daytime_points_dimension                                                                       | daytime points dimension                                                            | count         |    0 | integer     |           | none   | F        |
+!! | IPD_Interstitial(nt)%nn                            | number_of_tracers_for_allocating_cloud_work_function                                           | number of tracers for allocating cloud work function                                | count         |    0 | integer     |           | none   | F        |
 !! | IPD_Interstitial(nt)%nsamftrac                     | number_of_tracers_for_samf                                                                     | number of tracers for scale-aware mass flux schemes                                 | count         |    0 | integer     |           | none   | F        |
 !! | IPD_Interstitial(nt)%ntk                           | index_of_TKE_convective_transport_tracer                                                       | index of TKE in the convectively transported tracer array                           | index         |    0 | integer     |           | none   | F        |
 !! | IPD_Interstitial(nt)%nvdiff                        | number_of_vertical_diffusion_tracers                                                           | number of tracers to diffuse vertically                                             | count         |    0 | integer     |           | none   | F        |
@@ -2023,6 +2024,7 @@ module GFS_typedefs
     integer,               pointer      :: mbota(:,:)       => null()  !<
     integer,               pointer      :: mtopa(:,:)       => null()  !<
     integer                             :: nday                        !<
+    integer                             :: nn                          !<
     integer                             :: nsamftrac                   !<
     integer                             :: ntk                         !<
     integer                             :: nvdiff                      !<
@@ -4363,7 +4365,10 @@ module GFS_typedefs
     allocate (Interstitial%cldsa      (IM,5))
     allocate (Interstitial%cld1d      (IM))
     allocate (Interstitial%clouds     (IM,Model%levr+LTP,NF_CLDS))
-    allocate (Interstitial%clw        (IM,Model%levs,Interstitial%tracers_total+2))
+    ! DH* 20180626
+    !allocate (Interstitial%clw        (IM,Model%levs,Interstitial%tracers_total+2))
+    allocate (Interstitial%clw        (IM,Model%levs,Interstitial%nn))
+    ! *DH 20180626
     allocate (Interstitial%clx        (IM,4))
     allocate (Interstitial%cnvc       (IM,Model%levs))
     allocate (Interstitial%cnvw       (IM,Model%levs))
@@ -4529,6 +4534,19 @@ module GFS_typedefs
     !
     if (Model%ntke > 0) Interstitial%ntk = Model%ntke - Interstitial%tracers_start_index + 3
     !
+    ! DH* NEW CODE 20180626
+    if (Model%ntiw > 0) then
+      if (Model%ntclamt > 0) then
+        Interstitial%nn = Model%ntrac - 2
+      else
+        Interstitial%nn = Model%ntrac - 1
+      endif
+    elseif (Model%ntcw > 0) then
+      Interstitial%nn = Model%ntrac
+    else
+      Interstitial%nn = Model%ntrac + 1
+    endif
+    ! *DH END NEW CODE 20180626
   end subroutine interstitial_setup_tracers
 
   subroutine interstitial_rad_reset (Interstitial)
