@@ -1250,6 +1250,7 @@ module fv_control_mod
      fv_diag_ic                    => Atm%flagstruct%fv_diag_ic
      external_ic                   => Atm%flagstruct%external_ic
      external_eta                  => Atm%flagstruct%external_eta
+     ! DH* flag for reading in external aerosols here? *DH
      read_increment                => Atm%flagstruct%read_increment
 
      hydrostatic                   => Atm%flagstruct%hydrostatic
