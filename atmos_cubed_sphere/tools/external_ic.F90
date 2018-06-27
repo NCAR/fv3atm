@@ -212,7 +212,7 @@ contains
 
       integer :: is,  ie,  js,  je
       integer :: isd, ied, jsd, jed
-      integer :: sphum, liq_wat, ice_wat, rainwat, snowwat, graupel, o3mr
+      integer :: sphum, liq_wat, ice_wat, rainwat, snowwat, graupel, o3mr, liq_aero, ice_aero
 
       is  = Atm(1)%bd%is
       ie  = Atm(1)%bd%ie
@@ -298,6 +298,8 @@ contains
         snowwat   = get_tracer_index(MODEL_ATMOS, 'snowwat')
         graupel   = get_tracer_index(MODEL_ATMOS, 'graupel')
         o3mr      = get_tracer_index(MODEL_ATMOS, 'o3mr')
+        liq_aero  = get_tracer_index(MODEL_ATMOS, 'liq_aero')
+        ice_aero  = get_tracer_index(MODEL_ATMOS, 'ice_aero')
         if ( liq_wat > 0 ) &
         call prt_maxmin('liq_wat', Atm(1)%q(:,:,:,liq_wat), is, ie, js, je, ng, Atm(1)%npz, 1.)
         if ( ice_wat > 0 ) &
@@ -310,6 +312,10 @@ contains
         call prt_maxmin('graupel', Atm(1)%q(:,:,:,graupel), is, ie, js, je, ng, Atm(1)%npz, 1.)
         if ( o3mr > 0    ) &
         call prt_maxmin('O3MR',    Atm(1)%q(:,:,:,o3mr),    is, ie, js, je, ng, Atm(1)%npz, 1.)
+        if ( liq_aero > 0) &
+        call prt_maxmin('liq_aero',Atm(1)%q(:,:,:,liq_aero),is, ie, js, je, ng, Atm(1)%npz, 1.)
+        if ( ice_aero > 0) &
+        call prt_maxmin('ice_aero',Atm(1)%q(:,:,:,ice_aero),is, ie, js, je, ng, Atm(1)%npz, 1.)
       endif
 
       call p_var(Atm(1)%npz,  is, ie, js, je, Atm(1)%ak(1),  ptop_min,         &
@@ -445,6 +451,7 @@ contains
       character(len=64) :: fn_gfs_ics = 'gfs_data.nc'
       character(len=64) :: fn_sfc_ics = 'sfc_data.nc'
       character(len=64) :: fn_oro_ics = 'oro_data.nc'
+      ! DH* character(len=64) :: fn_aero_ics = 'aero_data.nc' *DH
       logical :: remap
       logical :: filtered_terrain = .true.
       logical :: gfs_dwinds = .true.
@@ -453,8 +460,8 @@ contains
       integer :: nt_checker = 0
       real(kind=R_GRID), dimension(2):: p1, p2, p3
       real(kind=R_GRID), dimension(3):: e1, e2, ex, ey
-      integer:: i,j,k,nts, ks
-      integer:: liq_wat, ice_wat, rainwat, snowwat, graupel, ntclamt
+      integer :: i,j,k,nts, ks
+      integer :: liq_wat, ice_wat, rainwat, snowwat, graupel, ntclamt
       namelist /external_ic_nml/ filtered_terrain, levp, gfs_dwinds, &
                                  checker_tr, nt_checker
 #ifdef GFSL64
@@ -680,6 +687,16 @@ contains
       endif
       call mpp_error(NOTE,'==> External_ic::get_nggps_ic: using tiled data file '//trim(fn_gfs_ics)//' for NGGPS IC')
 
+      ! DH* if aerosol aware and use Thompson aerosol climatology?
+      !if (.not. file_exist('INPUT/'//trim(fn_aero_ics), domain=Atm(1)%domain)) then
+      !  call mpp_error(NOTE,'==> External_ic::get_nggps_ic: tiled file '//trim(fn_aero_ics)//' for NGGPS IC does not exist, not reading in initial aerosol data')
+      !  read_aero = .false.
+      !else
+      !  call mpp_error(NOTE,'==> External_ic::get_nggps_ic: using tiled data file '//trim(fn_aero_ics)//' for NGGPS IC')
+      !  read_aero = .true.
+      !endif
+      ! *DH
+
       allocate (zh(is:ie,js:je,levp+1))   ! SJL
       allocate (ps(is:ie,js:je))
       allocate (omga(is:ie,js:je,levp))
@@ -750,6 +767,7 @@ contains
         ! prognostic tracers
         do nt = 1, ntracers
           call get_tracer_names(MODEL_ATMOS, nt, tracer_name)
+          ! DH* if aerosols are in separate file, need to test for indices liq_aero and ice_aero and change fn_gfs_ics to fn_aero_ics *DH
           id_res = register_restart_field (GFS_restart, fn_gfs_ics, trim(tracer_name), q(:,:,:,nt), &
                                            mandatory=.false.,domain=Atm(n)%domain)
         enddo
@@ -2461,7 +2479,7 @@ contains
   real(kind=R_GRID):: pst
 !!! High-precision
   integer i,j,k,l,m, k2,iq
-  integer  sphum, o3mr, liq_wat, ice_wat, rainwat, snowwat, graupel, cld_amt
+  integer  sphum, o3mr, liq_wat, ice_wat, rainwat, snowwat, graupel, cld_amt, liq_aero, ice_aero
   integer :: is,  ie,  js,  je
 
   is  = Atm%bd%is
@@ -2469,22 +2487,26 @@ contains
   js  = Atm%bd%js
   je  = Atm%bd%je
 
-  sphum   = get_tracer_index(MODEL_ATMOS, 'sphum')
-  liq_wat = get_tracer_index(MODEL_ATMOS, 'liq_wat')
-  ice_wat = get_tracer_index(MODEL_ATMOS, 'ice_wat')
-  rainwat = get_tracer_index(MODEL_ATMOS, 'rainwat')
-  snowwat = get_tracer_index(MODEL_ATMOS, 'snowwat')
-  graupel = get_tracer_index(MODEL_ATMOS, 'graupel')
-  cld_amt = get_tracer_index(MODEL_ATMOS, 'cld_amt')
-  o3mr    = get_tracer_index(MODEL_ATMOS, 'o3mr')
+  sphum    = get_tracer_index(MODEL_ATMOS, 'sphum')
+  liq_wat  = get_tracer_index(MODEL_ATMOS, 'liq_wat')
+  ice_wat  = get_tracer_index(MODEL_ATMOS, 'ice_wat')
+  rainwat  = get_tracer_index(MODEL_ATMOS, 'rainwat')
+  snowwat  = get_tracer_index(MODEL_ATMOS, 'snowwat')
+  graupel  = get_tracer_index(MODEL_ATMOS, 'graupel')
+  cld_amt  = get_tracer_index(MODEL_ATMOS, 'cld_amt')
+  o3mr     = get_tracer_index(MODEL_ATMOS, 'o3mr')
+  liq_aero = get_tracer_index(MODEL_ATMOS, 'liq_aero')
+  ice_aero = get_tracer_index(MODEL_ATMOS, 'ice_aero')
 
   k2 = max(10, km/2)
 
   if (mpp_pe()==1) then
-    print *, 'sphum = ', sphum
-    print *, 'clwmr = ', liq_wat
-    print *, ' o3mr = ', o3mr
-    print *, 'ncnst = ', ncnst
+    print *, 'sphum    = ', sphum
+    print *, 'clwmr    = ', liq_wat
+    print *, ' o3mr    = ', o3mr
+    print *, 'liq_aero = ', liq_aero
+    print *, 'ice_aero = ', ice_aero
+    print *, 'ncnst    = ', ncnst
   endif
 
   if ( sphum/=1 ) then
@@ -2496,7 +2518,7 @@ contains
 #endif
 
 !$OMP parallel do default(none) &
-!$OMP             shared(sphum,liq_wat,rainwat,ice_wat,snowwat,graupel,&
+!$OMP             shared(sphum,liq_wat,rainwat,ice_wat,snowwat,graupel,liq_aero,ice_aero,&
 !$OMP                    cld_amt,ncnst,npz,is,ie,js,je,km,k2,ak0,bk0,psc,zh,omga,qa,Atm,z500) &
 !$OMP             private(l,m,pst,pn,gz,pe0,pn0,pe1,pn1,dp2,qp,qn1,gz_fv)
   do 5000 j=js,je
@@ -2568,7 +2590,7 @@ contains
                qp(i,k) = qa(i,j,k,iq)
             enddo
          enddo
-         call mappm(km, pe0, qp, npz, pe1,  qn1, is,ie, 0, 8, Atm%ptop)
+         call mappm(km, pe0, qp, npz, pe1, qn1, is, ie, 0, 8, Atm%ptop)
          if ( iq==sphum ) then
             call fillq(ie-is+1, npz, 1, qn1, dp2)
          else

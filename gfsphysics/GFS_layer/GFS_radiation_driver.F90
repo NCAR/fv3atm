@@ -344,17 +344,11 @@
                                            GFS_tbd_type,                 &
                                            GFS_cldprop_type,             &
                                            GFS_radtend_type,             &
-#ifdef CCPP
-                                           GFS_diag_type,                &
-                                           GFS_interstitial_type,        &
-                                           LTP
-#else
                                            GFS_diag_type
-#endif
 
-      use module_physics_driver,     only: dgamln, cdfgam, cdfnor
+      use surface_perturbation,      only: cdfnor
 !
-      implicit   none
+      implicit none
 !
       private
 
@@ -393,12 +387,10 @@
 !! control parameter ioznflg=0)
       logical :: loz1st =.true.
 
-#ifndef CCPP
 !> optional extra top layer on top of low ceiling models
 !!\n LTP=0: no extra top layer
       integer, parameter :: LTP = 0   ! no extra top layer
 !     integer, parameter :: LTP = 1   ! add an extra top layer
-#endif
 
 !> control flag for extra top layer
       logical, parameter :: lextop = (LTP > 0)
@@ -406,7 +398,6 @@
 !  ---  publicly accessible module programs:
 
       public radinit, radupdate, GFS_radiation_driver
-
 
 ! =================
       contains
@@ -1022,11 +1013,7 @@
 !-----------------------------------
       subroutine GFS_radiation_driver                             &
          (Model, Statein, Stateout, Sfcprop, Coupling, Grid, Tbd, &
-#ifdef CCPP
-          Cldprop, Radtend, Diag, Interstitial)
-#else
           Cldprop, Radtend, Diag)
-#endif
 
       implicit none
 
@@ -1050,9 +1037,6 @@
       type(GFS_cldprop_type),         intent(inout) :: Cldprop
       type(GFS_radtend_type),         intent(inout) :: Radtend
       type(GFS_diag_type),            intent(inout) :: Diag
-#ifdef CCPP
-      type(GFS_interstitial_type),    intent(inout) :: Interstitial(:)
-#endif
 #else
       type(GFS_control_type),         intent(in)    :: Model
       type(GFS_statein_type),         intent(in)    :: Statein
@@ -1064,9 +1048,6 @@
       type(GFS_cldprop_type),         intent(in)    :: Cldprop
       type(GFS_radtend_type),         intent(inout) :: Radtend
       type(GFS_diag_type),            intent(inout) :: Diag
-#ifdef CCPP
-      type(GFS_interstitial_type),    intent(inout) :: Interstitial(:)
-#endif
 #endif
 
 ! =================   subprogram documentation block   ================ !
