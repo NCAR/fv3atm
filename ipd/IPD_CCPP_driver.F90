@@ -12,6 +12,9 @@ module IPD_CCPP_driver
                                 ccpp_physics_run,                    &
                                 ccpp_physics_finalize,               &
                                 ccpp_field_add
+! DH*
+!  use ccpp_errors,        only: ccpp_error, ccpp_debug
+! *DH
 
   use CCPP_data,          only: cdata_domain,                        &
                                 cdata_block
@@ -63,6 +66,7 @@ module IPD_CCPP_driver
     ! Local variables
     integer :: nb
     integer :: nthrds, nt
+    integer :: ierr2
 
     ierr = 0
 
@@ -147,49 +151,25 @@ module IPD_CCPP_driver
       ! Allocate cdata structures for blocks and threads
       allocate(cdata_block(1:nblks,1:nthrds))
 
-! For some reason, this didn't work with PGI - DH* 20180517 - check if this is still true
-#ifndef __PGI
-      ! Loop over blocks for each of the threads
-!$OMP parallel num_threads (nthrds) &
-!$OMP          default (shared) &
-!$OMP          private (nb,nt,cdata) &
-!$OMP          reduction (+:ierr)
-#ifdef OPENMP
-      nt = omp_get_thread_num()+1
-#else
-      nt = 1
-#endif
-#else
+      ! Loop over all blocks and threads
       do nt=1,nthrds
-#endif
-      do nb=1,nblks
-        ! Associate cdata with the cdata structure for this block
-        ! and thread; this is needed because ccpp_fields.inc uses
-        ! 'cdata' in its ccpp_field_add statements.
-        associate_block: associate (cdata => cdata_block(nb,nt))
-! Again, for some reason, this didn't work with PGI - DH* 20180517 - check if this is still true
-#ifndef __PGI
-          !--- Initialize CCPP framework for blocks/threads, use suite from scalar cdata to avoid reading the SDF multiple times
-          call ccpp_init(ccpp_suite, cdata, ierr, suite=cdata_domain%suite)
-#else
-          !--- Initialize CCPP framework for blocks/threads, cannot use suite from scalar cdata with PGI (crashes)
-          call ccpp_init(ccpp_suite, cdata, ierr)
-#endif
-          if (ierr/=0) then
-            write(0,'(2(a,i4))') "An error occurred in ccpp_init for block ", nb, " and thread ", nt
-            exit
-          end if
+        do nb=1,nblks
+          ! Associate cdata with the cdata structure for this block
+          ! and thread; this is needed because ccpp_fields.inc uses
+          ! 'cdata' in its ccpp_field_add statements.
+          associate_block: associate (cdata => cdata_block(nb,nt))
+            !--- Initialize CCPP framework for blocks/threads, use suite from scalar cdata to avoid reading the SDF multiple times
+            call ccpp_init(ccpp_suite, cdata, ierr, suite=cdata_domain%suite)
+            if (ierr/=0) then
+              write(0,'(2(a,i4))') "An error occurred in ccpp_init for block ", nb, " and thread ", nt
+              return
+            end if
 ! Begin include auto-generated list of calls to ccpp_field_add
 #include "ccpp_fields.inc"
 ! End include auto-generated list of calls to ccpp_field_add
-        end associate associate_block
+          end associate associate_block
+        end do
       end do
-#ifndef __PGI
-!$OMP end parallel
-#else
-      end do
-#endif
-      if (ierr/=0) return
 
    else if (trim(step)=="physics_init") then
 
@@ -233,6 +213,36 @@ module IPD_CCPP_driver
 !         return
 !      end if
 
+    ! Radiation
+    else if (trim(step)=="radiation") then
+
+      if (.not.present(nblks)) then
+        write(0,*) 'Optional argument nblks required for IPD-CCPP radiation step'
+        ierr = 1
+        return
+      end if
+
+!$OMP parallel do num_threads (nthrds) &
+!$OMP          schedule (dynamic,1),   &
+!$OMP          default (shared)        &
+!$OMP          private (nb,nt,ierr2)   &
+!$OMP          reduction (+:ierr)
+      do nb = 1,nblks
+#ifdef OPENMP
+        nt = omp_get_thread_num()+1
+#else
+        nt = 1
+#endif
+        !--- Call CCPP radiation group
+        call ccpp_physics_run(cdata_block(nb,nt), group_name="radiation", ierr=ierr2)
+        if (ierr2/=0) then
+           write(0,'(a,i4,a,i4)') "An error occurred in ccpp_physics_run for group radiation, block ", nb, " and thread ", nt
+           ierr = ierr + ierr2
+        end if
+      end do
+!$OMP end parallel do
+      if (ierr/=0) return
+
     ! Finalize
     else if (trim(step)=="finalize") then
 
@@ -242,39 +252,23 @@ module IPD_CCPP_driver
         return
       end if
 
-      !!--- Finalize CCPP physics
-      !call ccpp_physics_finalize(cdata_domain, ierr)
-      !if (ierr/=0) then
-      !   write(0,'(a)') "An error occurred in ccpp_physics_finalize"
-      !   return
-      !end if
-
-!$OMP parallel num_threads (nthrds) &
-!$OMP          default (shared) &
-!$OMP          private (nb,nt) &
-!$OMP          reduction (+:ierr)
-#ifdef OPENMP
-      nt = omp_get_thread_num()+1
-#else
-      nt = 1
-#endif
-      do nb = 1,nblks
-        !--- Finalize CCPP physics
-        call ccpp_physics_finalize(cdata_block(nb,nt), ierr)
-        if (ierr/=0) then
-           write(0,'(a,i4,a,i4)') "An error occurred in ccpp_physics_finalize for block ", nb, " and thread ", nt
-           exit
-        end if
-
-        !--- Finalize CCPP framework for blocks/threads
-        call ccpp_finalize(cdata_block(nb,nt), ierr)
-        if (ierr/=0) then
-           write(0,'(a,i4,a,i4)') "An error occurred in ccpp_finalize for block ", nb, " and thread ", nt
-           exit
-        end if
+      ! Loop over all blocks and threads
+      do nt=1,nthrds
+        do nb=1,nblks
+          !--- Finalize CCPP physics
+          call ccpp_physics_finalize(cdata_block(nb,nt), ierr)
+          if (ierr/=0) then
+            write(0,'(a,i4,a,i4)') "An error occurred in ccpp_physics_finalize for block ", nb, " and thread ", nt
+            return
+          end if
+          !--- Finalize CCPP framework for blocks/threads
+          call ccpp_finalize(cdata_block(nb,nt), ierr)
+          if (ierr/=0) then
+            write(0,'(a,i4,a,i4)') "An error occurred in ccpp_finalize for block ", nb, " and thread ", nt
+            return
+          end if
+        end do
       end do
-!$OMP end parallel
-      if (ierr/=0) return
 
       ! Deallocate cdata structure for blocks and threads
       deallocate(cdata_block)
