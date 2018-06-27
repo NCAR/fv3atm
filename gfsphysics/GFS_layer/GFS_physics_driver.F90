@@ -1522,119 +1522,103 @@ module module_physics_driver
                        kinver, Model%xkzm_m, Model%xkzm_h, Model%xkzm_s)
           elseif (Model%hybedmf) then
 #ifdef CCPP
-! DH* Uncomment either option A or B for Intel (for GNU/PGI, only option B works).
-! It doesn't make sense to me to implement a CPP flag for this, since option A
-! will only be used as a debugging step in case the call to ccpp_physics_run leads
-! to different results. *DH
-!! OPTION A BEGIN - works for Intel
-! #ifdef __INTEL_COMPILER
-!       if (Model%me==0) write(0,*) 'CCPP DEBUG: calling hedmf_run through option A'
-!       call hedmf_mp_hedmf_run(ix, im, levs, nvdiff, ntcw, dvdt, dudt, dtdt, dqdt,    &
-!                    Statein%ugrs, Statein%vgrs, Statein%tgrs, Statein%qgrs,  &
-!                    Radtend%htrsw, Radtend%htrlw, xmu, Statein%prsik(1,1),   &
-!                    rb, Sfcprop%zorl, Diag%u10m, Diag%v10m, Sfcprop%ffmm,    &
-!                    Sfcprop%ffhh, Sfcprop%tsfc, hflx, evap, stress,          &
-!                    wind, kpbl, Statein%prsi, del, Statein%prsl,             &
-!                    Statein%prslk, Statein%phii, Statein%phil, dtp,          &
-!                    Model%dspheat, dusfc1, dvsfc1, dtsfc1, dqsfc1, Diag%hpbl,&
-!                    gamt, gamq, dkt, kinver, Model%xkzm_m, Model%xkzm_h,     &
-!                    Model%xkzm_s, lprnt, ipr,                                &
-!                    Model%xkzminv, Model%moninq_fac, errmsg, errflg)
-! #else
-!       write(0,*) "ERROR, CCPP option A only works with Intel compiler"
-!       call sleep(2)
-!       stop
-! #endif
-! OPTION A END
-! OPTION B BEGIN
-            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling hedmf_run through option B'
-              nb = Tbd%blkno
-#ifdef OPENMP
-            nt = OMP_GET_THREAD_NUM() + 1
+#if defined(CCPP_OPTION_A) && defined(__INTEL_COMPILER)
+! OPTION A - works with Intel only
+              if (Model%me==0) write(0,*) 'CCPP DEBUG: calling hedmf_run through option A'
+              call hedmf_mp_hedmf_run(                                              &
+                           ix, im, levs, nvdiff, ntcw, dvdt, dudt, dtdt, dqdt,      &
+                           Statein%ugrs, Statein%vgrs, Statein%tgrs, Statein%qgrs,  &
+                           Radtend%htrsw, Radtend%htrlw, xmu, Statein%prsik(1,1),   &
+                           rb, Sfcprop%zorl, Diag%u10m, Diag%v10m, Sfcprop%ffmm,    &
+                           Sfcprop%ffhh, Sfcprop%tsfc, hflx, evap, stress,          &
+                           wind, kpbl, Statein%prsi, del, Statein%prsl,             &
+                           Statein%prslk, Statein%phii, Statein%phil, dtp,          &
+                           Model%dspheat, dusfc1, dvsfc1, dtsfc1, dqsfc1, Diag%hpbl,&
+                           gamt, gamq, dkt, kinver, Model%xkzm_m, Model%xkzm_h,     &
+                           Model%xkzm_s, lprnt, ipr,                                &
+                           Model%xkzminv, Model%moninq_fac, errmsg, errflg)
 #else
-            nt = 1
+! OPTION B - works with all compilers
+              if (Model%me==0) write(0,*) 'CCPP DEBUG: calling hedmf_run through option B'
+              ! Copy local variables from driver to appropriate interstitial variables
+              Interstitial(nt)%im = im              ! intent(in)
+              Interstitial(nt)%ix = ix              ! intent(in)
+              !Model%levs                           ! intent(in)
+              Interstitial(nt)%nvdiff = nvdiff      ! intent(in)
+              !Model%ntcw                           ! intent(in)
+              Interstitial(nt)%dvdt = dvdt          ! intent(inout)
+              Interstitial(nt)%dudt = dudt          ! intent(inout)
+              Interstitial(nt)%dtdt = dtdt          ! intent(inout)
+              Interstitial(nt)%dqdt = dqdt          ! intent(inout)
+              !Statein%ugrs                         ! intent(in)
+              !Statein%vgrs                         ! intent(in)
+              !Statein%tgrs                         ! intent(in)
+              !Statein%qgrs                         ! intent(in)
+              !Radtend%htrsw                        ! intent(in)
+              !Radtend%htrlw                        ! intent(in)
+              Interstitial(nt)%xmu = xmu            ! intent(in)
+              !Statein%prsik(1,1)                   ! intent(in)
+              Interstitial(nt)%rb = rb              ! intent(in)
+              !Sfcprop%zorl                         ! intent(in)
+              !Diag%u10m                            ! intent(in)
+              !Diag%v10m                            ! intent(in)
+              !Sfcprop%ffmm                         ! intent(in)
+              !Sfcprop%ffhh                         ! intent(in)
+              !Sfcprop%tsfc                         ! intent(in)
+              Interstitial(nt)%hflx = hflx          ! intent(in)
+              Interstitial(nt)%evap = evap          ! intent(in)
+              Interstitial(nt)%stress = stress      ! intent(in)
+              Interstitial(nt)%wind = wind          ! intent(in)
+              Interstitial(nt)%kpbl = kpbl          ! intent(out)
+              !Statein%prsi                         ! intent(in)
+              Interstitial(nt)%del = del            ! intent(in)
+              !Statein%prsl                         ! intent(in)
+              !Statein%prslk                        ! intent(in)
+              !Statein%phii                         ! intent(in)
+              !Statein%phil                         ! intent(in)
+              !Model%dtp                            ! intent(in)
+              !Model%dspheat                        ! intent(in)
+              Interstitial(nt)%dusfc1 = dusfc1      ! intent(out)
+              Interstitial(nt)%dvsfc1 = dvsfc1      ! intent(out)
+              Interstitial(nt)%dtsfc1 = dtsfc1      ! intent(out)
+              Interstitial(nt)%dqsfc1 = dqsfc1      ! intent(out)
+              !Diag%hpbl                            ! intent(out)
+              Interstitial(nt)%gamt = gamt          ! intent(inout)
+              Interstitial(nt)%gamq = gamq          ! intent(inout)
+              Interstitial(nt)%dkt = dkt(:,1:Model%levs-1) ! intent(out)
+              Interstitial(nt)%kinver = kinver      ! intent(in)
+              !Model%xkzm_m                         ! intent(in)
+              !Model%xkzm_h                         ! intent(in)
+              !Model%xkzm_s                         ! intent(in)
+              !Model%lprnt                          ! intent(in)
+              Interstitial(nt)%ipr = ipr            ! intent(in)
+              !Model%xkzminv                        ! intent(in)
+              !Model%moninq_fac                     ! intent(in)
+              Interstitial(nt)%errmsg = errmsg      ! intent(out)
+              Interstitial(nt)%errflg = errflg      ! intent(out)
+              call ccpp_physics_run(cdata_block(nb,nt), scheme_name="hedmf", ierr=ierr)
+              ! Copy back intent(inout) interstitial variables to local variables in driver
+              dvdt   = Interstitial(nt)%dvdt
+              dudt   = Interstitial(nt)%dudt
+              dtdt   = Interstitial(nt)%dtdt
+              dqdt   = Interstitial(nt)%dqdt
+              kpbl   = Interstitial(nt)%kpbl
+              dusfc1 = Interstitial(nt)%dusfc1
+              dvsfc1 = Interstitial(nt)%dvsfc1
+              dtsfc1 = Interstitial(nt)%dtsfc1
+              dqsfc1 = Interstitial(nt)%dqsfc1
+              gamt   = Interstitial(nt)%gamt
+              gamq   = Interstitial(nt)%gamq
+              dkt(:,1:Model%levs-1) = Interstitial(nt)%dkt
+              errmsg = trim(Interstitial(nt)%errmsg)
+              errflg = Interstitial(nt)%errflg
 #endif
-            ! Copy local variables from driver to appropriate interstitial variables
-            Interstitial(nt)%im = im              ! intent(in)
-            Interstitial(nt)%ix = ix              ! intent(in)
-            !Model%levs                           ! intent(in)
-            Interstitial(nt)%nvdiff = nvdiff      ! intent(in)
-            !Model%ntcw                           ! intent(in)
-            Interstitial(nt)%dvdt = dvdt          ! intent(inout)
-            Interstitial(nt)%dudt = dudt          ! intent(inout)
-            Interstitial(nt)%dtdt = dtdt          ! intent(inout)
-            Interstitial(nt)%dqdt = dqdt          ! intent(inout)
-            !Statein%ugrs                         ! intent(in)
-            !Statein%vgrs                         ! intent(in)
-            !Statein%tgrs                         ! intent(in)
-            !Statein%qgrs                         ! intent(in)
-            !Radtend%htrsw                        ! intent(in)
-            !Radtend%htrlw                        ! intent(in)
-            Interstitial(nt)%xmu = xmu            ! intent(in)
-            !Statein%prsik(1,1)                   ! intent(in)
-            Interstitial(nt)%rb = rb              ! intent(in)
-            !Sfcprop%zorl                         ! intent(in)
-            !Diag%u10m                            ! intent(in)
-            !Diag%v10m                            ! intent(in)
-            !Sfcprop%ffmm                         ! intent(in)
-            !Sfcprop%ffhh                         ! intent(in)
-            !Sfcprop%tsfc                         ! intent(in)
-            Interstitial(nt)%hflx = hflx          ! intent(in)
-            Interstitial(nt)%evap = evap          ! intent(in)
-            Interstitial(nt)%stress = stress      ! intent(in)
-            Interstitial(nt)%wind = wind          ! intent(in)
-            Interstitial(nt)%kpbl = kpbl          ! intent(out)
-            !Statein%prsi                         ! intent(in)
-            Interstitial(nt)%del = del            ! intent(in)
-            !Statein%prsl                         ! intent(in)
-            !Statein%prslk                        ! intent(in)
-            !Statein%phii                         ! intent(in)
-            !Statein%phil                         ! intent(in)
-            !Model%dtp                            ! intent(in)
-            !Model%dspheat                        ! intent(in)
-            Interstitial(nt)%dusfc1 = dusfc1      ! intent(out)
-            Interstitial(nt)%dvsfc1 = dvsfc1      ! intent(out)
-            Interstitial(nt)%dtsfc1 = dtsfc1      ! intent(out)
-            Interstitial(nt)%dqsfc1 = dqsfc1      ! intent(out)
-            !Diag%hpbl                            ! intent(out)
-            Interstitial(nt)%gamt = gamt          ! intent(inout)
-            Interstitial(nt)%gamq = gamq          ! intent(inout)
-            Interstitial(nt)%dkt = dkt            ! intent(out)
-            Interstitial(nt)%kinver = kinver      ! intent(in)
-            !Model%xkzm_m                         ! intent(in)
-            !Model%xkzm_h                         ! intent(in)
-            !Model%xkzm_s                         ! intent(in)
-            !Model%lprnt                          ! intent(in)
-            Interstitial(nt)%ipr = ipr            ! intent(in)
-            !Model%xkzminv                        ! intent(in)
-            !Model%moninq_fac                     ! intent(in)
-            Interstitial(nt)%errmsg = errmsg      ! intent(out)
-            Interstitial(nt)%errflg = errflg      ! intent(out)
-            call ccpp_physics_run(cdata_block(nb,nt), scheme_name="hedmf", ierr=ierr)
-            ! Copy back intent(inout) interstitial variables to local variables in driver
-            dvdt = Interstitial(nt)%dvdt
-            dudt = Interstitial(nt)%dudt
-            dtdt = Interstitial(nt)%dtdt
-            dqdt = Interstitial(nt)%dqdt
-            kpbl = Interstitial(nt)%kpbl
-            dusfc1 = Interstitial(nt)%dusfc1
-            dvsfc1 = Interstitial(nt)%dvsfc1
-            dtsfc1 = Interstitial(nt)%dtsfc1
-            dqsfc1 = Interstitial(nt)%dqsfc1
-            gamt = Interstitial(nt)%gamt
-            gamq = Interstitial(nt)%gamq
-            dkt = Interstitial(nt)%dkt
-            errmsg = trim(Interstitial(nt)%errmsg)
-            errflg = Interstitial(nt)%errflg
-            ! OPTION B END
-            if (errflg/=0) then
-                write(0,*) 'Error in call to hedmf_mp_hedmf_run: ' // trim(errmsg)
-                stop
-            end if
+              if (errflg/=0) then
+                  write(0,*) 'Error in call to hedmf_mp_hedmf_run: ' // trim(errmsg)
+                  stop
+              end if
 #else
-            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of moninedmf'
-
-
+              if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of moninedmf'
               call moninedmf(ix, im, levs, nvdiff, ntcw, dvdt, dudt, dtdt, dqdt,    &
                            Statein%ugrs, Statein%vgrs, Statein%tgrs, Statein%qgrs,  &
                            Radtend%htrsw, Radtend%htrlw, xmu, Statein%prsik(1,1),   &
@@ -2476,94 +2460,81 @@ module module_physics_driver
                nsamftrac = tottracer
             endif
 #ifdef CCPP
-! DH* Uncomment either option A or B for Intel (for GNU/PGI, only option B works).
-! It doesn't make sense to me to implement a CPP flag for this, since option A
-! will only be used as a debugging step in case the call to ccpp_physics_run leads
-! to different results. *DH
-! OPTION A BEGIN - works for Intel
-#ifdef __INTEL_COMPILER
-       if (Model%me==0) write(0,*) 'CCPP DEBUG: calling samfdeepcnv_run through option A'
-       call samfdeepcnv_mp_samfdeepcnv_run(im, ix, levs, dtp, ntk, nsamftrac, del,             &
-                 Statein%prsl, Statein%pgr, Statein%phil, clw,       &
-                 Stateout%gq0(:,:,1), Stateout%gt0,                  &
-                 Stateout%gu0, Stateout%gv0,                         &
-                 cld1d, rain1, kbot, ktop, kcnv, islmsk, garea,      &
-                 Statein%vvl, ncld, ud_mf, dd_mf, dt_mf, cnvw, cnvc, &
-                 Model%clam_deep,   Model%c0s_deep,                  &
-                 Model%c1_deep,  Model%betal_deep, Model%betas_deep, &
-                 Model%evfact_deep, Model%evfactl_deep,              &
-                 Model%pgcon_deep,  Model%asolfac_deep)
+#if defined(CCPP_OPTION_A) && defined(__INTEL_COMPILER)
+! OPTION A - works with Intel only
+            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling samfdeepcnv_run through option A'
+            call samfdeepcnv_mp_samfdeepcnv_run(                          &
+                      im, ix, levs, dtp, ntk, nsamftrac, del,             &
+                      Statein%prsl, Statein%pgr, Statein%phil, clw,       &
+                      Stateout%gq0(:,:,1), Stateout%gt0,                  &
+                      Stateout%gu0, Stateout%gv0,                         &
+                      cld1d, rain1, kbot, ktop, kcnv, islmsk, garea,      &
+                      Statein%vvl, ncld, ud_mf, dd_mf, dt_mf, cnvw, cnvc, &
+                      Model%clam_deep,   Model%c0s_deep,                  &
+                      Model%c1_deep,  Model%betal_deep, Model%betas_deep, &
+                      Model%evfact_deep, Model%evfactl_deep,              &
+                      Model%pgcon_deep,  Model%asolfac_deep,              &
+                      errmsg, errflg)
 #else
-       write(0,*) "ERROR, CCPP option A only works with Intel compiler"
-       call sleep(2)
-       stop
+! OPTION B - works with all compilers
+            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling samfdeepcnv_run through option B'
+            ! Copy local variables from driver to appropriate interstitial variables
+            Interstitial(nt)%im = im              ! intent(in)
+            Interstitial(nt)%ix = ix              ! intent(in)
+            !Model%levs                           ! intent(in)
+            !Model%dtp                            ! intent(in)
+            Interstitial(nt)%ntk = ntk            ! intent(in)
+            Interstitial(nt)%nsamftrac = nsamftrac! intent(in)
+            Interstitial(nt)%del = del            ! intent(in)
+            !Statein%prsl                         ! intent(in)
+            !Statein%pgr                          ! intent(in)
+            !Statein%phil                         ! intent(in)
+            Interstitial(nt)%clw = clw            ! intent(inout)
+            !Stateout%gq0(:,:,1)                  ! intent(inout)
+            !Stateout%gt0                         ! intent(inout)
+            !Stateout%gu0                         ! intent(inout)
+            !Stateout%gv0                         ! intent(inout)
+            Interstitial(nt)%cld1d = cld1d        ! intent(out)
+            Interstitial(nt)%raincd = rain1       ! intent(out)
+            Interstitial(nt)%kbot = kbot          ! intent(out)
+            Interstitial(nt)%ktop = ktop          ! intent(out)
+            Interstitial(nt)%kcnv = kcnv          ! intent(out)
+            Interstitial(nt)%islmsk = islmsk      ! intent(in)
+            !Grid%area                            ! intent(in)
+            !Statein%vvl                          ! intent(in)
+            !Model%ncld                           ! intent(in)
+            Interstitial(nt)%ud_mf = ud_mf        ! intent(out)
+            Interstitial(nt)%dd_mf = dd_mf        ! intent(out)
+            Interstitial(nt)%dt_mf = dt_mf        ! intent(out)
+            Interstitial(nt)%cnvw = cnvw          ! intent(out)
+            Interstitial(nt)%cnvc = cnvc          ! intent(out)
+            !Model%clam_deep                      ! intent(in)
+            !Model%c0s_deep                       ! intent(in)
+            !Model%c1_deep                        ! intent(in)
+            !Model%betal_deep                     ! intent(in)
+            !Model%betas_deep                     ! intent(in)
+            !Model%evfact_deep                    ! intent(in)
+            !Model%evfactl_deep                   ! intent(in)
+            !Model%pgcon_deep                     ! intent(in)
+            !Model%asolfac_deep                   ! intent(in)
+            Interstitial(nt)%errmsg = errmsg      ! intent(out)
+            Interstitial(nt)%errflg = errflg      ! intent(out)
+            call ccpp_physics_run(cdata_block(nb,nt), scheme_name="samfdeepcnv", ierr=ierr)
+            ! Copy back intent(inout) interstitial variables to local variables in driver
+            clw    = Interstitial(nt)%clw
+            cld1d  = Interstitial(nt)%cld1d
+            rain1  = Interstitial(nt)%raincd
+            kbot   = Interstitial(nt)%kbot
+            ktop   = Interstitial(nt)%ktop
+            kcnv   = Interstitial(nt)%kcnv
+            ud_mf  = Interstitial(nt)%ud_mf
+            dd_mf  = Interstitial(nt)%dd_mf
+            dt_mf  = Interstitial(nt)%dt_mf
+            cnvw   = Interstitial(nt)%cnvw
+            cnvc   = Interstitial(nt)%cnvc
+            errmsg = trim(Interstitial(nt)%errmsg)
+            errflg = Interstitial(nt)%errflg
 #endif
-! OPTION A END
-! OPTION B BEGIN
-!             if (Model%me==0) write(0,*) 'CCPP DEBUG: calling samfdeepcnv_run through option B'
-!             nb = Tbd%blkno
-! #ifdef OPENMP
-!             nt = OMP_GET_THREAD_NUM() + 1
-! #else
-!             nt = 1
-! #endif
-!             ! Copy local variables from driver to appropriate interstitial variables
-!             Interstitial(nt)%im = im              ! intent(in)
-!             Interstitial(nt)%ix = ix              ! intent(in)
-!             !Model%levs                           ! intent(in)
-!             !Model%dtp                            ! intent(in)
-!             Interstitial(nt)%ntk = ntk            ! intent(in)
-!             Interstitial(nt)%nsamftrac = nsamftrac! intent(in)
-!             Interstitial(nt)%del = del            ! intent(in)
-!             !Statein%prsl                         ! intent(in)
-!             !Statein%pgr                          ! intent(in)
-!             !Statein%phil                         ! intent(in)
-!             Interstitial(nt)%clw = clw            ! intent(inout)
-!             !Stateout%gq0(:,:,1)                  ! intent(inout)
-!             !Stateout%gt0                         ! intent(inout)
-!             !Stateout%gu0                         ! intent(inout)
-!             !Stateout%gv0                         ! intent(inout)
-!             Interstitial(nt)%cld1d = cld1d        ! intent(out)
-!             Interstitial(nt)%raincd = rain1       ! intent(out)
-!             Interstitial(nt)%kbot = kbot          ! intent(out)
-!             Interstitial(nt)%ktop = ktop          ! intent(out)
-!             Interstitial(nt)%kcnv = kcnv          ! intent(out)
-!             Interstitial(nt)%islmsk = islmsk      ! intent(in)
-!             !Grid%area                            ! intent(in)
-!             !Statein%vvl                          ! intent(in)
-!             !Model%ncld                           ! intent(in)
-!             Interstitial(nt)%ud_mf = ud_mf        ! intent(out)
-!             Interstitial(nt)%dd_mf = dd_mf        ! intent(out)
-!             Interstitial(nt)%dt_mf = dt_mf        ! intent(out)
-!             Interstitial(nt)%cnvw = cnvw          ! intent(out)
-!             Interstitial(nt)%cnvc = cnvc          ! intent(out)
-!             !Model%clam_deep                      ! intent(in)
-!             !Model%c0s_deep                       ! intent(in)
-!             !Model%c1_deep                        ! intent(in)
-!             !Model%betal_deep                     ! intent(in)
-!             !Model%betas_deep                     ! intent(in)
-!             !Model%evfact_deep                    ! intent(in)
-!             !Model%evfactl_deep                   ! intent(in)
-!             !Model%pgcon_deep                     ! intent(in)
-!             !Model%asolfac_deep                   ! intent(in)
-!             Interstitial(nt)%errmsg = errmsg      ! intent(out)
-!             Interstitial(nt)%errflg = errflg      ! intent(out)
-!             call ccpp_physics_run(cdata_block(nb,nt), scheme_name="samfdeepcnv", ierr=ierr)
-!             ! Copy back intent(inout) interstitial variables to local variables in driver
-!             clw = Interstitial(nt)%clw
-!             cld1d = Interstitial(nt)%cld1d
-!             rain1 = Interstitial(nt)%raincd
-!             kbot = Interstitial(nt)%kbot
-!             ktop = Interstitial(nt)%ktop
-!             kcnv = Interstitial(nt)%kcnv
-!             ud_mf = Interstitial(nt)%ud_mf
-!             dd_mf = Interstitial(nt)%dd_mf
-!             dt_mf = Interstitial(nt)%dt_mf
-!             cnvw = Interstitial(nt)%cnvw
-!             cnvc = Interstitial(nt)%cnvc
-!             errmsg = trim(Interstitial(nt)%errmsg)
-!             errflg = Interstitial(nt)%errflg
-            ! OPTION B END
             if (errflg/=0) then
                 write(0,*) 'Error in call to samfdeepcnv_mp_samfdeepcnv_run: ' // trim(errmsg)
                 stop
@@ -3572,12 +3543,6 @@ module module_physics_driver
           endif
 #else
           if (Model%me==0) write(0,*) 'CCPP DEBUG: calling mp_thompson_hrrr_run through option B'
-          nb = Tbd%blkno
-#ifdef OPENMP
-          nt = OMP_GET_THREAD_NUM() + 1
-#else
-          nt = 1
-#endif
           ! Copy local variables from driver to appropriate interstitial variables
           Interstitial(nt)%im = im                              ! intent(in)
           !Model%levs                                           ! intent(in)
