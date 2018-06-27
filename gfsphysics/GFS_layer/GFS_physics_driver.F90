@@ -3315,12 +3315,16 @@ module module_physics_driver
       if (ntcw > 0) then
 
 !  for microphysics
-        !ccpp if (imp_physics == 99 .or. imp_physics == 98    &
-        !ccpp                      .or. imp_physics == 11) then
-        if (imp_physics == 99 ) then
-          ! ccpp Stateout%gq0(1:im,:,ntcw) = clw(1:im,:,1) + clw(1:im,:,2)
+#ifdef CCPP
+        if (imp_physics == 99 ) then       !zhang: zhaocarr_gscond
+
         elseif (imp_physics == 98 .or. imp_physics == 11) then
            Stateout%gq0(1:im,:,ntcw) = clw(1:im,:,1) + clw(1:im,:,2)
+#else
+        if (imp_physics == 99 .or. imp_physics == 98    &
+                               .or. imp_physics == 11) then
+           Stateout%gq0(1:im,:,ntcw) = clw(1:im,:,1) + clw(1:im,:,2)
+#endif
         elseif (ntiw > 0) then
           do k=1,levs
             do i=1,im
