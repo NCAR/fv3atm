@@ -3563,6 +3563,12 @@ module module_physics_driver
                Tbd%phy_f3d(:,:,1),Tbd%phy_f3d(:,:,2),Tbd%phy_f3d(:,:,3),me,Statein%phii)
           endif
 #else
+! DH* 20180629 temporarily remove Thompson scheme for making ccpp-physics public (until Greg has reviewed our port)
+#if 1
+          write(0,*) 'ERROR: HRRR Thompson MP currently not available in CCPP'
+          call sleep(5)
+          stop
+#else
           if (Model%me==0) write(0,*) 'CCPP DEBUG: calling mp_thompson_hrrr_run through option B'
           ! Copy local variables from driver to appropriate interstitial variables
           Interstitial(nt)%im = im                              ! intent(in)
@@ -3623,6 +3629,8 @@ module module_physics_driver
               write(0,*) 'Error in call to cnvc90_mp_cnvc90_run: ' // trim(errmsg)
               stop
           end if
+#endif
+! *DH 20180629
 #endif
         elseif (imp_physics == 6) then      ! WSM6
                                             ! -----
