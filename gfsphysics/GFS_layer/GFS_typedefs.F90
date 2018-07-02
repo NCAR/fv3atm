@@ -1275,6 +1275,7 @@ module GFS_typedefs
 !! | local_name                           | standard_name                                                   | long_name                           | units         | rank | type     |    kind   | intent | optional |
 !! |--------------------------------------|-----------------------------------------------------------------|-------------------------------------|---------------|------|----------|-----------|--------|----------|
 !! | IPD_Data(nb)%Grid%area               | cell_area                                                       | area of the grid cell               | m2            |    1 | real     | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Grid%dx                 | cell_size                                                       | relative dx for the grid cell       | m             |    1 | real     | kind_phys | none   | F        |
 !!
 #endif
   type GFS_grid_type
@@ -1566,7 +1567,7 @@ module GFS_typedefs
 !! | IPD_Data(nb)%Intdiag%skebv_wts            |                                                                         |                                                                 |               |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%sppt_wts             |                                                                         |                                                                 |               |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%shum_wts             |                                                                         |                                                                 |               |    2 | real        | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Intdiag%zmtnblck             |                                                                         | mountain blocking evel                                          |               |    1 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%zmtnblck             | level_of_dividing_streamline                                            | level of the dividing streamline                                | none          |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%du3dt                |                                                                         | u momentum change due to physics                                |               |    3 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%du3dt(:,:,2)         | cumulative_change_in_x_wind_due_to_surface_processes                    | cumulative change in x wind due to surface processes            | m s-1         |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%du3dt(:,:,4)         | cumulative_change_in_x_wind_due_to_convective_gravity_wave_drag         | cumulative change in x wind due to convective gravity wave drag | m s-1         |    2 | real        | kind_phys | none   | F        |

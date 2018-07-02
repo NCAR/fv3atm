@@ -56,7 +56,7 @@ SRCS_f   =  \
 	   ./physics/gocart_tracer_config_stub.f                                     \
 	   ./physics/gscond.f                                                        \
 	   ./physics/gscondp.f                                                       \
-	   ./physics/gwdc.f                                                          \
+           ./physics/gwdc.f                                                          \
 	   ./physics/gwdps.f                                                         \
 	   ./physics/h2o_def.f                                                       \
 	   ./physics/h2oc.f                                                          \

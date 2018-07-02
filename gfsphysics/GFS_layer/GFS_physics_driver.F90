@@ -545,7 +545,6 @@ module module_physics_driver
           ud_mf, dd_mf, dt_mf, prnum, dkt, sigmatot, sigmafrac
 
 !--- GFDL modification for FV3
-
       real(kind=kind_phys), dimension(size(Grid%xlon,1),Model%levs+1) ::&
            del_gz
       real(kind=kind_phys), allocatable, dimension(:,:,:) ::            &
@@ -911,11 +910,16 @@ module module_physics_driver
 !GFDL   tem1       = con_rerth * (con_pi+con_pi)*coslat(i)/nlons(i)
 !GFDL   tem2       = con_rerth * con_pi / latr
 !GFDL   garea(i)   = tem1 * tem2
+        garea(i)   = Grid%area(i)
+
+#ifdef CCPP
+
+#else
         tem1       = Grid%dx(i)
         tem2       = Grid%dx(i)
-        garea(i)   = Grid%area(i)
         dlength(i) = sqrt( tem1*tem1+tem2*tem2 )
         cldf(i)    = Model%cgwf(1)    * work1(i) + Model%cgwf(2)    * work2(i)
+#endif
         wcbmax(i)  = Model%cs_parm(1) * work1(i) + Model%cs_parm(2) * work2(i)
       enddo
 !
@@ -1948,6 +1952,48 @@ module module_physics_driver
 !
 !            Orographic gravity wave drag parameterization
 !            ---------------------------------------------
+#ifdef CCPP
+! OPTION B BEGIN
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling gwdps_pre through option B'
+      nb = Tbd%blkno
+#ifdef OPENMP
+      nt = OMP_GET_THREAD_NUM() + 1
+#else
+      nt = 1
+#endif
+      ! Copy local variables from driver to appropriate interstitial variables
+      Interstitial(nt)%im     = im           ! intent(in)
+      !IPD_Control%nmtvr       = nmtvr       ! intent(in)
+      !Interstitial(nt)%hprime1 =  hprime     ! intent(out)
+      Interstitial(nt)%hprime1 = Sfcprop%hprime(:,1)
+      Interstitial(nt)%oc      = oc          ! intent(out)
+      Interstitial(nt)%oa4     = oa4         ! intent(out)
+      Interstitial(nt)%clx     = clx         ! intent(out)
+      Interstitial(nt)%theta   = theta       ! intent(out)
+      Interstitial(nt)%sigma   = sigma       ! intent(out)
+      Interstitial(nt)%gamma   = gamma       ! intent(out)
+      Interstitial(nt)%elvmax  = elvmax      ! intent(out)
+      Interstitial(nt)%errmsg  = errmsg      ! intent(out)
+      Interstitial(nt)%errflg  = errflg      ! intent(out)
+      call ccpp_physics_run(cdata_block(nb,nt), scheme_name="gwdps_pre", ierr=ierr)
+      ! Copy back intent(inout) interstitial variables to local variables in driver
+      Sfcprop%hprime(:,1) = Interstitial(nt)%hprime1
+      oc     = Interstitial(nt)%oc
+      oa4    = Interstitial(nt)%oa4
+      clx    = Interstitial(nt)%clx
+      theta  = Interstitial(nt)%theta
+      sigma  = Interstitial(nt)%sigma 
+      gamma  = Interstitial(nt)%gamma
+      elvmax = Interstitial(nt)%elvmax
+      errmsg = trim(Interstitial(nt)%errmsg)
+      errflg = Interstitial(nt)%errflg
+! OPTION B END
+      if (errflg/=0) then
+          write(0,*) 'Error in call to gwdps_pre_mp_gwdps_pre: ' // trim(errmsg)
+          stop
+      end if
+#else
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of gwdps_pre'
 
       if (Model%nmtvr == 14) then         ! current operational - as of 2014
         do i=1,im
@@ -1994,7 +2040,61 @@ module module_physics_driver
         elvmax = 0
 
       endif   ! end if_nmtvr
+#endif
 
+#ifdef CCPP
+! OPTION B BEGIN
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling gwdps_run through option B'
+      nb = Tbd%blkno
+#ifdef OPENMP
+      nt = OMP_GET_THREAD_NUM() + 1
+#else
+      nt = 1
+#endif
+      ! Copy local variables from driver to appropriate interstitial variables
+      Interstitial(nt)%im     = im           ! intent(in)
+      Interstitial(nt)%ix     = ix           ! intent(in)
+      !IPD_Control%levs                      ! intent(in)
+      Interstitial(nt)%dvdt   = dvdt         ! A: intent(inout)
+      Interstitial(nt)%dudt   = dudt         ! B: intent(inout)
+      Interstitial(nt)%dtdt   = dtdt         ! C: intent(inout)
+      Interstitial(nt)%kpbl   = kpbl         ! intent(in)
+      Interstitial(nt)%del    = del          ! intent(in)
+      !IPD_Control%dtp
+      !IPD_Control%kdt
+      Interstitial(nt)%hprime1 = Sfcprop%hprime(:,1)  ! intent(in)
+      Interstitial(nt)%oc     = oc           ! intent(in)
+      Interstitial(nt)%oa4    = oa4          ! intent(in)
+      Interstitial(nt)%clx    = clx          ! intent(in)
+      Interstitial(nt)%theta  = theta        ! intent(in)
+      Interstitial(nt)%sigma  = sigma        ! intent(in)
+      Interstitial(nt)%gamma  = gamma        ! intent(in)
+      Interstitial(nt)%elvmax = elvmax       ! intent(inout)
+      Interstitial(nt)%dusfcg = dusfcg       ! intent(out)
+      Interstitial(nt)%dvsfcg = dvsfcg       ! intent(out)
+      !IPD_Control%me
+      !IPD_Control%lprnt
+      Interstitial(nt)%ipr    = ipr          ! intent(in)
+      Interstitial(nt)%errmsg = errmsg       ! intent(out)
+      Interstitial(nt)%errflg = errflg       ! intent(out)
+      call ccpp_physics_run(cdata_block(nb,nt), scheme_name="gwdps", ierr=ierr)
+      ! Copy back intent(inout) interstitial variables to local variables in driver
+      dvdt   = Interstitial(nt)%dvdt
+      dudt   = Interstitial(nt)%dudt
+      dtdt   = Interstitial(nt)%dtdt
+      elvmax = Interstitial(nt)%elvmax
+      dusfcg = Interstitial(nt)%dusfcg
+      dvsfcg = Interstitial(nt)%dvsfcg
+      !rdxzb  = Diag%zmtnblck
+      errmsg = trim(Interstitial(nt)%errmsg)
+      errflg = Interstitial(nt)%errflg
+! OPTION B END
+      if (errflg/=0) then
+          write(0,*) 'Error in call to gwdps_run_mp_gwdps_run: ' // trim(errmsg)
+          stop
+      end if
+#else
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of gwdps'
       call gwdps(im, ix, im, levs, dvdt, dudt, dtdt,        &
                  Statein%ugrs, Statein%vgrs, Statein%tgrs,  &
                  Statein%qgrs, kpbl, Statein%prsi, del,     &
@@ -2005,7 +2105,36 @@ module module_physics_driver
                  con_g, con_cp, con_rd, con_rv, Model%lonr, &
                  Model%nmtvr, Model%cdmbgwd, me, lprnt,ipr, &
                  Diag%zmtnblck)
+#endif
 
+#ifdef CCPP
+! OPTION B BEGIN
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling gwdps_post through option B'
+      nb = Tbd%blkno
+#ifdef OPENMP
+      nt = OMP_GET_THREAD_NUM() + 1
+#else
+      nt = 1
+#endif
+      ! Copy local variables from driver to appropriate interstitial variables
+      Interstitial(nt)%dusfcg  = dusfcg           ! intent(in)
+      Interstitial(nt)%dvsfcg  = dvsfcg      ! intent(in)
+      Interstitial(nt)%dudt   = dudt         ! intent(in)
+      Interstitial(nt)%dvdt   = dvdt         ! intent(in)
+      Interstitial(nt)%dtdt   = dtdt         ! intent(in)
+      Interstitial(nt)%errmsg = errmsg       ! intent(out)
+      Interstitial(nt)%errflg = errflg       ! intent(out)
+      call ccpp_physics_run(cdata_block(nb,nt), scheme_name="gwdps_post", ierr=ierr)
+      ! Copy back intent(inout) interstitial variables to local variables in driver
+      errmsg = trim(Interstitial(nt)%errmsg)
+      errflg = Interstitial(nt)%errflg
+! OPTION B END
+      if (errflg/=0) then
+          write(0,*) 'Error in call to gwdps_post_mp_gwdps_post: ' // trim(errmsg)
+          stop
+      end if
+#else
+     if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of gwdps_post'
       if (Model%lssav) then
         do i=1,im
           Diag%dugwd(i) = Diag%dugwd(i) + dusfcg(i)*dtf
@@ -2022,6 +2151,7 @@ module module_physics_driver
           enddo
         endif
       endif
+#endif
 
 !    Rayleigh damping  near the model top
       if( .not. Model%lsidea .and. Model%ral_ts > 0.0) then
@@ -2808,6 +2938,45 @@ module module_physics_driver
 !  --- ...  calculate maximum convective heating rate
 !           cuhr = temperature change due to deep convection
 
+
+#ifdef CCPP
+! OPTION B BEGIN
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling gwdc_pre_run through option B'
+      nb = Tbd%blkno
+#ifdef OPENMP
+      nt = OMP_GET_THREAD_NUM() + 1
+#else
+      nt = 1
+#endif
+      ! Copy local variables from driver to appropriate interstitial variables
+      Interstitial(nt)%im = im             ! intent(in)
+      Interstitial(nt)%work1 = work1       ! intent(in)
+      Interstitial(nt)%work2 = work2       ! intent(in)
+      Interstitial(nt)%dlength = dlength   ! intent(out)     
+      Interstitial(nt)%cldf = cldf         ! intent(out)
+      Interstitial(nt)%kbot = kbot         ! intent(in)
+      Interstitial(nt)%ktop = ktop         ! intent(in)
+      Interstitial(nt)%save_t = dtdt       ! intent(in)
+      Interstitial(nt)%del = del           ! intent(in)
+      Interstitial(nt)%cumabs = cumabs     ! intent(out)
+      Interstitial(nt)%errmsg = errmsg     ! intent(out)
+      Interstitial(nt)%errflg = errflg     ! intent(out)
+      call ccpp_physics_run(cdata_block(nb,nt), scheme_name="gwdc_pre", ierr=ierr)
+      ! Copy back intent(inout) interstitial variables to local variables in driver
+      dlength = Interstitial(nt)%dlength
+      cldf = Interstitial(nt)%cldf
+      cumabs = Interstitial(nt)%cumabs
+      errmsg = trim(Interstitial(nt)%errmsg)
+      errflg = Interstitial(nt)%errflg
+! OPTION B END
+      if (errflg/=0) then
+          write(0,*) 'Error in call to gwdc_pre_mp_gwdc_pre_run: ' // trim(errmsg)
+          stop
+      end if
+
+#else
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of gwdc_pre_run'
+
         do i=1,im
           cumabs(i) = 0.0
           work3 (i)  = 0.0
@@ -2823,6 +2992,9 @@ module module_physics_driver
         do i=1,im
           if (work3(i) > 0.0) cumabs(i) = cumabs(i) / (dtp*work3(i))
         enddo
+
+#endif
+
 
 !       do i = 1, im
 !         do k = kbot(i), ktop(i)
@@ -2889,13 +3061,57 @@ module module_physics_driver
 
 !  --- ...  end check print ********************************************
 
+#ifdef CCPP
+! OPTION B BEGIN
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling gwdc_run through option B'
+      nb = Tbd%blkno
+#ifdef OPENMP
+      nt = OMP_GET_THREAD_NUM() + 1
+#else
+      nt = 1
+#endif
+      ! Copy local variables from driver to appropriate interstitial variables
+      Interstitial(nt)%im      = im             ! intent(in)
+      Interstitial(nt)%ix      = ix             ! intent(in)
+      Interstitial(nt)%del     = del            ! intent(in)
+      Interstitial(nt)%cumabs  = cumabs         ! intent(in)
+      Interstitial(nt)%ktop    = ktop           ! intent(in)
+      Interstitial(nt)%kbot    = kbot           ! intent(in)
+      Interstitial(nt)%kcnv    = kcnv           ! intent(in)
+      Interstitial(nt)%cldf    = cldf           ! intent(in)
+      Interstitial(nt)%dlength = dlength        ! intent(in)
+      Interstitial(nt)%ipr     = ipr            ! intent(in)
+      Interstitial(nt)%gwdcu   = gwdcu          ! intent(out)
+      Interstitial(nt)%gwdcv   = gwdcv          ! intent(out)
+      Interstitial(nt)%dusfcg  = dusfcg         ! intent(out)
+      Interstitial(nt)%dvsfcg  = dvsfcg         ! intent(out)
+      Interstitial(nt)%errmsg  = errmsg         ! intent(out)
+      Interstitial(nt)%errflg  = errflg         ! intent(out)
+      call ccpp_physics_run(cdata_block(nb,nt), scheme_name="gwdc", ierr=ierr)
+      ! Copy back intent(inout) interstitial variables to local variables in driver
+      gwdcu  = Interstitial(nt)%gwdcu
+      gwdcv  = Interstitial(nt)%gwdcv
+      dusfcg = Interstitial(nt)%dusfcg
+      dvsfcg = Interstitial(nt)%dvsfcg
+      errmsg = trim(Interstitial(nt)%errmsg)
+      errflg = Interstitial(nt)%errflg
+! OPTION B END
+      if (errflg/=0) then
+          write(0,*) 'Error in call to gwdc_mp_gwdc_run: ' // trim(errmsg)
+          stop
+      end if
+#else
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of gwdc'
+
+
 !GFDL replacing lat with "1"
 !       call gwdc(im, ix, im, levs, lat, gu0, gv0, gt0, gq0, dtp,       &
-        call gwdc (im, ix, im, levs, 1, Statein%ugrs, Statein%vgrs,     &
+       call gwdc (im, ix, im, levs, 1, Statein%ugrs, Statein%vgrs,     &
                    Statein%tgrs, Statein%qgrs, dtp, Statein%prsl,       &
                    Statein%prsi, del, cumabs, ktop, kbot, kcnv, cldf,   &
                    con_g, con_cp, con_rd, con_fvirt, con_pi, dlength,   &
                    lprnt, ipr, Model%fhour, gwdcu, gwdcv, dusfcg, dvsfcg)
+#endif
 
 !       if (lprnt) then
 !         if (fhour >= fhourpr) then
@@ -2919,6 +3135,36 @@ module module_physics_driver
 !       endif
 
 !  --- ...  write out cloud top stress and wind tendencies
+
+#ifdef CCPP
+! OPTION B BEGIN
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling gwdc_post through option B'
+      nb = Tbd%blkno
+#ifdef OPENMP
+      nt = OMP_GET_THREAD_NUM() + 1
+#else
+      nt = 1
+#endif
+      ! Copy local variables from driver to appropriate interstitial variables
+      Interstitial(nt)%im     = im         ! intent(in)
+      Interstitial(nt)%dusfcg = dusfcg     ! intent(in)
+      Interstitial(nt)%dvsfcg = dvsfcg     ! intent(in)
+      Interstitial(nt)%gwdcu  = gwdcu      ! intent(in)
+      Interstitial(nt)%gwdcv  = gwdcv      ! intent(in)
+      Interstitial(nt)%errmsg = errmsg     ! intent(out)
+      Interstitial(nt)%errflg = errflg     ! intent(out)
+      call ccpp_physics_run(cdata_block(nb,nt), scheme_name="gwdc_post", ierr=ierr)
+      ! Copy back intent(inout) interstitial variables to local variables in driver
+      errmsg = trim(Interstitial(nt)%errmsg)
+      errflg = Interstitial(nt)%errflg
+! OPTION B END
+      if (errflg/=0) then
+          write(0,*) 'Error in call to gwdc_post_mp_gwdc_post_run: ' // trim(errmsg)
+          stop
+      end if
+#else
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of gwdc_post'
+
 
         if (Model%lssav) then
           do i=1,im
@@ -2950,6 +3196,7 @@ module module_physics_driver
 !    &gwdcu(ipr,k), ' gv0=', gv0(ipr,k),' gwdcv=',gwdcv(ipr,k)
 !    &,' k=',k
         enddo
+#endif
 
 !       if (lprnt) then
 !         if (fhour >= fhourpr) then
@@ -3293,9 +3540,16 @@ module module_physics_driver
       if (ntcw > 0) then
 
 !  for microphysics
+#ifdef CCPP
+        if (imp_physics == 99 ) then       !zhang: zhaocarr_gscond
+
+        elseif (imp_physics == 98 .or. imp_physics == 11) then
+           Stateout%gq0(1:im,:,ntcw) = clw(1:im,:,1) + clw(1:im,:,2)
+#else
         if (imp_physics == 99 .or. imp_physics == 98    &
-                              .or. imp_physics == 11) then
-          Stateout%gq0(1:im,:,ntcw) = clw(1:im,:,1) + clw(1:im,:,2)
+                               .or. imp_physics == 11) then
+           Stateout%gq0(1:im,:,ntcw) = clw(1:im,:,1) + clw(1:im,:,2)
+#endif
         elseif (ntiw > 0) then
           do k=1,levs
             do i=1,im
@@ -3480,11 +3734,42 @@ module module_physics_driver
                               psautco_l, prautco_l, Model%evpco, Model%wminco, &
                               Tbd%phy_f3d(1,1,ntot3d-2), lprnt, ipr)
           else
+
+#ifdef CCPP
+! OPTION B BEGIN
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling gscond_run through option B'
+      nb = Tbd%blkno
+#ifdef OPENMP
+      nt = OMP_GET_THREAD_NUM() + 1
+#else
+      nt = 1
+#endif
+      ! Copy local variables from driver to appropriate interstitial variables
+      Interstitial(nt)%im     = im                            ! intent(in)
+      Interstitial(nt)%ix     = ix                            ! intent(in)
+      Interstitial(nt)%clw(:,:,1) = clw(:,:,1)                ! intent(in)
+      Interstitial(nt)%clw(:,:,2) = clw(:,:,2)                ! intent(in) 
+      Interstitial(nt)%rhc    = rhc                           ! intent(in)
+      Interstitial(nt)%ipr    = ipr                           ! intent(in) 
+      Interstitial(nt)%errmsg = errmsg                        ! intent(out)
+      Interstitial(nt)%errflg = errflg                        ! intent(out)
+      call ccpp_physics_run(cdata_block(nb,nt), scheme_name="zhaocarr_gscond", ierr=ierr)
+      ! Copy back intent(inout) interstitial variables to local variables in driver
+      errmsg = trim(Interstitial(nt)%errmsg)
+      errflg = Interstitial(nt)%errflg
+! OPTION B END
+      if (errflg/=0) then
+          write(0,*) 'Error in call to gscond_mp_gscond_run: ' // trim(errmsg)
+          stop
+      end if
+#else
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of gscond'
             call gscond (im, ix, levs, dtp, dtf, Statein%prsl, Statein%pgr,    &
                          Stateout%gq0(1,1,1), Stateout%gq0(1,1,ntcw),          &
                          Stateout%gt0, Tbd%phy_f3d(1,1,1), Tbd%phy_f3d(1,1,2), &
                          Tbd%phy_f2d(1,1), Tbd%phy_f3d(1,1,3),                 &
                          Tbd%phy_f3d(1,1,4), Tbd%phy_f2d(1,2), rhc,lprnt, ipr)
+#endif
 
             call precpd (im, ix, levs, dtp, del, Statein%prsl,                 &
                         Stateout%gq0(1,1,1), Stateout%gq0(1,1,ntcw),           &
@@ -3626,7 +3911,7 @@ module module_physics_driver
           errflg = Interstitial(nt)%errflg
           !
           if (errflg/=0) then
-              write(0,*) 'Error in call to cnvc90_mp_cnvc90_run: ' // trim(errmsg)
+              write(0,*) 'Error in call to mp_thompson_hrrr_mp_mp_thompson_hrrr_run: ' // trim(errmsg)
               stop
           end if
 #endif
