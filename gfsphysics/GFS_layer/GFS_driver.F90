@@ -422,6 +422,36 @@ module GFS_driver
     real(kind=kind_phys) :: rinc(5)
     real(kind=kind_phys) :: sec
 
+#ifdef CCPP
+
+#if defined(CCPP_OPTION_A) && defined(__INTEL_COMPILER)
+! OPTION A - works with Intel only
+              if (Model%me==0) write(0,*) 'CCPP DEBUG: calling time_vary_run through option A'
+              call GFS_phys_time_vary_1_run(                                        &
+                           Model,                                                   &
+                           errmsg, errflg)
+              call GFS_rad_time_vary_run(                                           &
+                           Model, Statein, Tbd,                                     &
+                           errmsg, errflg)
+              call GFS_phys_time_vary_2_run(                                        &
+                           Grid, Model, Tbd, Sfcprop, Cldprop, Diag,                &
+                           errmsg, errflg)
+#else
+! OPTION B - works with all compilers
+              if (Model%me==0) write(0,*) 'CCPP DEBUG: calling time_vary_run through option B'
+
+              call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_phys_time_vary_1_run", ierr=ierr)
+              call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_rad_time_vary_run", ierr=ierr)
+              call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_phys_time_vary_2_run", ierr=ierr)
+              errmsg = trim(Interstitial(nt)%errmsg)
+              errflg = Interstitial(nt)%errflg
+#endif
+              if (errflg/=0) then
+                  write(0,*) 'Error in call to hedmf_mp_hedmf_run: ' // trim(errmsg)
+                  stop
+              end if
+#else
+
     nblks = size(blksz)
     !--- Model%jdat is being updated directly inside of FV3GFS_cap.F90
     !--- update calendars and triggers
@@ -510,6 +540,8 @@ module GFS_driver
           enddo
        enddo
     endif
+
+#endif
 
   end subroutine GFS_time_vary_step
 
