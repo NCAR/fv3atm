@@ -1,7 +1,7 @@
 ! Enable this to test direct calls of CCPP-compliant schemes
 ! (i.e. w/o using CCPP infrastructure); works only with the
 ! Intel compiler, for others option B will be used regardless
-#define CCPP_OPTION_A
+!#define CCPP_OPTION_A
 
 module module_physics_driver
 
@@ -1231,7 +1231,7 @@ module module_physics_driver
               wind = Interstitial(nt)%wind
               fm10 = Interstitial(nt)%fm10
               fh2  = Interstitial(nt)%fh2 
-              errmsg = Interstitial(nt)%errmsg
+              errmsg = trim(Interstitial(nt)%errmsg)
               errflg = Interstitial(nt)%errflg
 #endif
               if (errflg/=0) then
@@ -1343,46 +1343,67 @@ module module_physics_driver
 #if defined(CCPP_OPTION_A) && defined(__INTEL_COMPILER)
 ! OPTION A - works with Intel only
           if (Model%me==0) write(0,*) 'CCPP DEBUG: calling lsm_noah_run through option A'
+      do k=1,lsoil
+        do i=1,im
+!          Sfcprop%smc(i,k) = smsoil(i,k)
+          Sfcprop%stc(i,k) = stsoil(i,k)
+!          Sfcprop%slc(i,k) = slsoil(i,k)
+        enddo
+      enddo
            call lsm_noah_mp_lsm_noah_run(                              &
-!            im, Model%lsoil, Statein%pgr, Statein%ugrs, Statein%vgrs,  &
-!            Statein%tgrs, Statein%qgrs, soiltyp, vegtype, sigmaf,      &
-!            Radtend%semis, gabsbdlw, adjsfcdsw, adjsfcnsw, Model%dtf,  &
-!            Sfcprop%tg3, cd, cdq, Statein%prsl(1,1), work3, Diag%zlvl, &
-!            islmsk, Tbd%phy_f2d(1,Model%num_p2d), slopetyp,            &
-!            Sfcprop%shdmin, Sfcprop%shdmax, Sfcprop%snoalb,            &
-!            Radtend%sfalb, flag_iter, flag_guess, Model%isot,          &
-!            Model%ivegsrc,                                             &
-!            bexp1d, xlai1d, vegf1d, Model%pertvegf,                    &
-!!  ---  in/outs:
-!            Sfcprop%weasd, Sfcprop%snowd, Sfcprop%tsfc, Sfcprop%tprcp, &
-!            Sfcprop%srflag, Sfcprop%smc, Sfcprop%stc, Sfcprop%slc, Sfcprop%canopy,    &
-!            trans, tsurf, Sfcprop%zorl,                                &
-!!  ---  outputs:
-!            Sfcprop%sncovr, qss, gflx, drain, evap, hflx, ep1d, runof, &
-!            Diag%cmm, Diag%chh, evbs, evcw, sbsno, snowc, Diag%soilm,  &
-!            snohf, Diag%smcwlt2, Diag%smcref2, Diag%wet1, errmsg, errflg )
-            im, lsoil, Statein%pgr, Statein%ugrs, Statein%vgrs,        &
+            im, Model%lsoil, Statein%pgr, Statein%ugrs, Statein%vgrs,  &
             Statein%tgrs, Statein%qgrs, soiltyp, vegtype, sigmaf,      &
-            Radtend%semis, gabsbdlw, adjsfcdsw, adjsfcnsw, dtf,        &
+            Radtend%semis, gabsbdlw, adjsfcdsw, adjsfcnsw, Model%dtf,  &
             Sfcprop%tg3, cd, cdq, Statein%prsl(1,1), work3, Diag%zlvl, &
             islmsk, Tbd%phy_f2d(1,Model%num_p2d), slopetyp,            &
             Sfcprop%shdmin, Sfcprop%shdmax, Sfcprop%snoalb,            &
             Radtend%sfalb, flag_iter, flag_guess, Model%isot,          &
             Model%ivegsrc,                                             &
             bexp1d, xlai1d, vegf1d, Model%pertvegf,                    &
-!  ---  in/outs:
+!!  ---  in/outs:
             Sfcprop%weasd, Sfcprop%snowd, Sfcprop%tsfc, Sfcprop%tprcp, &
-            Sfcprop%srflag, smsoil, stsoil, slsoil, Sfcprop%canopy,    &
+            Sfcprop%srflag, smsoil, Sfcprop%stc, slsoil, Sfcprop%canopy,    &
             trans, tsurf, Sfcprop%zorl,                                &
-!  ---  outputs:
+!!  ---  outputs:
             Sfcprop%sncovr, qss, gflx, drain, evap, hflx, ep1d, runof, &
             Diag%cmm, Diag%chh, evbs, evcw, sbsno, snowc, Diag%soilm,  &
-            snohf, Diag%smcwlt2, Diag%smcref2, Diag%wet1,errmsg, errflg)
+            snohf, Diag%smcwlt2, Diag%smcref2, Diag%wet1, errmsg, errflg )
+      do k=1,lsoil
+        do i=1,im
+!          smsoil(i,k) = Sfcprop%smc(i,k)
+          stsoil(i,k) = Sfcprop%stc(i,k)
+!          slsoil(i,k) = Sfcprop%slc(i,k)          !! clu: slc -> slsoil
+        enddo
+      enddo
+!            im, lsoil, Statein%pgr, Statein%ugrs, Statein%vgrs,        &
+!            Statein%tgrs, Statein%qgrs, soiltyp, vegtype, sigmaf,      &
+!            Radtend%semis, gabsbdlw, adjsfcdsw, adjsfcnsw, dtf,        &
+!            Sfcprop%tg3, cd, cdq, Statein%prsl(1,1), work3, Diag%zlvl, &
+!            islmsk, Tbd%phy_f2d(1,Model%num_p2d), slopetyp,            &
+!            Sfcprop%shdmin, Sfcprop%shdmax, Sfcprop%snoalb,            &
+!            Radtend%sfalb, flag_iter, flag_guess, Model%isot,          &
+!            Model%ivegsrc,                                             &
+!            bexp1d, xlai1d, vegf1d, Model%pertvegf,                    &
+!  ---  in/outs:
+!            Sfcprop%weasd, Sfcprop%snowd, Sfcprop%tsfc, Sfcprop%tprcp, &
+!            Sfcprop%srflag, smsoil, stsoil, slsoil, Sfcprop%canopy,    &
+!            trans, tsurf, Sfcprop%zorl,                                &
+!  ---  outputs:
+!            Sfcprop%sncovr, qss, gflx, drain, evap, hflx, ep1d, runof, &
+!            Diag%cmm, Diag%chh, evbs, evcw, sbsno, snowc, Diag%soilm,  &
+!            snohf, Diag%smcwlt2, Diag%smcref2, Diag%wet1,errmsg, errflg)
 
 #else
 ! OPTION B - works with all compilers
               if (Model%me==0) write(0,*) 'CCPP DEBUG: calling lsm_noah_run through option B'
               ! Copy local variables from driver to appropriate interstitial variables
+      do k=1,lsoil
+        do i=1,im
+          Sfcprop%smc(i,k) = smsoil(i,k)
+          Sfcprop%stc(i,k) = stsoil(i,k)
+          Sfcprop%slc(i,k) = slsoil(i,k)
+        enddo
+      enddo
               Interstitial(nt)%im = im               ! intent(in)
               !Model%lsoil                           ! intent(in)
               !Statein%pgr                           ! intent(in)
@@ -1470,12 +1491,17 @@ module module_physics_driver
               sbsno  = Interstitial(nt)%sbsno 
               snowc  = Interstitial(nt)%snowc 
               snohf  = Interstitial(nt)%snohf 
-              errmsg = Interstitial(nt)%errmsg
+              errmsg = trim(Interstitial(nt)%errmsg)
               errflg = Interstitial(nt)%errflg
 
-              smsoil = Sfcprop%smc
-              stsoil = Sfcprop%stc
-              slsoil = Sfcprop%slc
+      do k=1,lsoil
+        do i=1,im
+          smsoil(i,k) = Sfcprop%smc(i,k)
+          stsoil(i,k) = Sfcprop%stc(i,k)
+          slsoil(i,k) = Sfcprop%slc(i,k)          !! clu: slc -> slsoil
+        enddo
+      enddo
+
 #endif
               if (errflg/=0) then
                   write(0,*) 'Error in call to lsm_noah_mp_lsm_noah_run: ' // trim(errmsg)
@@ -4416,9 +4442,6 @@ module module_physics_driver
         endif
       enddo
 
-!#ifdef CCPP
-!#if defined(CCPP_OPTION_A) && defined(__INTEL_COMPILER)
-!! OPTION A - works with Intel only
 !!  --- ...  return updated smsoil and stsoil to global arrays
       do k=1,lsoil
         do i=1,im
@@ -4427,22 +4450,6 @@ module module_physics_driver
           Sfcprop%slc(i,k) = slsoil(i,k)
         enddo
       enddo
-!#else
-!! OPTION B - works with all compilers
-!! no need to update the DDT when OPTION B is used
-!#endif
-
-!#else
-!! original call of sfc_drv needs the following updates
-!!  --- ...  return updated smsoil and stsoil to global arrays
-!      do k=1,lsoil
-!        do i=1,im
-!          Sfcprop%smc(i,k) = smsoil(i,k)
-!          Sfcprop%stc(i,k) = stsoil(i,k)
-!          Sfcprop%slc(i,k) = slsoil(i,k)
-!        enddo
-!      enddo
-!#endif
 
 !  --- ...  calculate column precipitable water "pwat"
       Diag%pwat(:) = 0.0
