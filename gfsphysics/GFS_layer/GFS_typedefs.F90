@@ -2067,7 +2067,6 @@ module GFS_typedefs
     real (kind=kind_phys), pointer      :: sigma(:)         => null()  !<
     real (kind=kind_phys), pointer      :: sigmaf(:)        => null()  !<
     logical                             :: skip_macro                  !<
-!    real (kind=kind_phys), pointer      :: slopetype(:)     => null()  !<
     integer, pointer                    :: slopetype(:)     => null()  !<
     real (kind=kind_phys), pointer      :: snowc(:)         => null()  !<
     real (kind=kind_phys), pointer      :: snohf(:)         => null()  !<
@@ -4706,7 +4705,6 @@ module GFS_typedefs
     Interstitial%sbsno        = clear_val
     Interstitial%sigma        = clear_val
     Interstitial%sigmaf       = clear_val
-!    Interstitial%slopetype    = clear_val
     Interstitial%slopetype    = 0
     Interstitial%snowc        = clear_val
     Interstitial%snohf        = clear_val

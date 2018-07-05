@@ -1345,9 +1345,9 @@ module module_physics_driver
           if (Model%me==0) write(0,*) 'CCPP DEBUG: calling lsm_noah_run through option A'
       do k=1,lsoil
         do i=1,im
-!          Sfcprop%smc(i,k) = smsoil(i,k)
+          Sfcprop%smc(i,k) = smsoil(i,k)
           Sfcprop%stc(i,k) = stsoil(i,k)
-!          Sfcprop%slc(i,k) = slsoil(i,k)
+          Sfcprop%slc(i,k) = slsoil(i,k)
         enddo
       enddo
            call lsm_noah_mp_lsm_noah_run(                              &
@@ -1362,7 +1362,7 @@ module module_physics_driver
             bexp1d, xlai1d, vegf1d, Model%pertvegf,                    &
 !!  ---  in/outs:
             Sfcprop%weasd, Sfcprop%snowd, Sfcprop%tsfc, Sfcprop%tprcp, &
-            Sfcprop%srflag, smsoil, Sfcprop%stc, slsoil, Sfcprop%canopy,    &
+            Sfcprop%srflag, Sfcprop%smc, Sfcprop%stc, Sfcprop%slc, Sfcprop%canopy,    &
             trans, tsurf, Sfcprop%zorl,                                &
 !!  ---  outputs:
             Sfcprop%sncovr, qss, gflx, drain, evap, hflx, ep1d, runof, &
@@ -1370,9 +1370,9 @@ module module_physics_driver
             snohf, Diag%smcwlt2, Diag%smcref2, Diag%wet1, errmsg, errflg )
       do k=1,lsoil
         do i=1,im
-!          smsoil(i,k) = Sfcprop%smc(i,k)
+          smsoil(i,k) = Sfcprop%smc(i,k)
           stsoil(i,k) = Sfcprop%stc(i,k)
-!          slsoil(i,k) = Sfcprop%slc(i,k)          !! clu: slc -> slsoil
+          slsoil(i,k) = Sfcprop%slc(i,k)          !! clu: slc -> slsoil
         enddo
       enddo
 !            im, lsoil, Statein%pgr, Statein%ugrs, Statein%vgrs,        &
