@@ -227,9 +227,9 @@ module GFS_typedefs
 !! | IPD_Data(nb)%Statein%qgrs(:,:,IPD_Control%ntsnc)| snow_number_concentration                                 | number concentration of snow                                                        | kg-1          |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Statein%qgrs(:,:,IPD_Control%ntgnc)| graupel_number_concentration                              | number concentration of graupel                                                     | kg-1          |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Statein%diss_est                   |                                                           | dissipation estimate model layer mean temperature                                   | K             |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Statein%smc                        |                                                           |                                                                                     |               |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Statein%stc                        |                                                           |                                                                                     |               |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Statein%slc                        |                                                           |                                                                                     |               |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Statein%smc                        |                                                           | total soil moisture                                                                 | frac          |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Statein%stc                        |                                                           | soil temperature                                                                    | K             |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Statein%slc                        |                                                           | liquid soil moisture                                                                | frac          |    2 | real    | kind_phys | none   | F        |
 !!
 #endif
   type GFS_statein_type
