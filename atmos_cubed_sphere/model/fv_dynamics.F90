@@ -129,7 +129,7 @@ module fv_dynamics_mod
    use diag_manager_mod,    only: send_data
    use fv_diagnostics_mod,  only: fv_time, prt_mxm, range_check, prt_minmax
    use mpp_domains_mod,     only: DGRID_NE, CGRID_NE, mpp_update_domains, domain2D
-   use mpp_mod,             only: mpp_pe
+   use mpp_mod,             only: mpp_pe, mpp_root_pe
    use field_manager_mod,   only: MODEL_ATMOS
    use tracer_manager_mod,  only: get_tracer_index
    use fv_sg_mod,           only: neg_adj3
@@ -166,6 +166,12 @@ contains
                         ak, bk, mfx, mfy, cx, cy, ze0, hybrid_z,                      &
                         gridstruct, flagstruct, neststruct, idiag, bd,                &
                         parent_grid, domain, diss_est, time_total)
+
+#ifdef CCPP
+    use mpp_mod,   only: FATAL, mpp_error
+    use ccpp_api,  only: ccpp_initialized, ccpp_physics_run
+    use CCPP_data, only: cdata => cdata_tile
+#endif
 
     real, intent(IN) :: bdt  !< Large time-step
     real, intent(IN) :: consv_te
@@ -257,6 +263,9 @@ contains
       integer :: is,  ie,  js,  je
       integer :: isd, ied, jsd, jed
       real    :: dt2
+#ifdef CCPP
+      integer :: ierr
+#endif
 
       is  = bd%is
       ie  = bd%ie
@@ -274,6 +283,16 @@ contains
       nwat    = flagstruct%nwat
       nq      = nq_tot - flagstruct%dnats
       rdg     = -rdgas * agrav
+
+#ifdef CCPP
+      if (ccpp_initialized(cdata)) then
+         call ccpp_physics_run(cdata, scheme_name='fv_sat_adj_pre', ierr=ierr)
+         if (ierr/=0) call mpp_error(FATAL, "Call to ccpp_physics_run for scheme 'fv_sat_adj_pre' failed")
+      else
+        call mpp_error (FATAL, 'fv_dynamics: can not call ccpp fast physics because cdata not initialized')
+      end if
+#endif
+
       allocate ( dp1(isd:ied, jsd:jed, 1:npz) )
       
       
@@ -733,7 +752,7 @@ contains
   endif
 
   if( (flagstruct%consv_am.or.idiag%id_amdt>0) .and. (.not.do_adiabatic_init)  ) then
-!$OMP parallel do default(none) shared(is,ie,js,je,te_2d,teq,dt2,ps2,ps,idiag) 
+!$OMP parallel do default(none) shared(is,ie,js,je,te_2d,teq,dt2,ps2,ps,idiag)
       do j=js,je
          do i=is,ie
 ! Note: the mountain torque computation contains also numerical error
