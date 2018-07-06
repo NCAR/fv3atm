@@ -1132,6 +1132,38 @@ module fv_arrays_mod
 
   end type fv_grid_bounds_type
 
+#if 0
+!! \section arg_table_fv_atmos_type Argument Table
+!! | local_name                         | standard_name                                                 | long_name                                                                              | units     | rank | type      | kind      | intent | optional |
+!! |------------------------------------|---------------------------------------------------------------|----------------------------------------------------------------------------------------|-----------|------|-----------|-----------|--------|----------|
+!! | Atm(mytile)%bd%is                  | starting_x_direction_index                                    | starting X direction index                                                             | count     |    0 | integer   |           | none   | F        |
+!! | Atm(mytile)%bd%ie                  | ending_x_direction_index                                      | ending X direction index                                                               | count     |    0 | integer   |           | none   | F        |
+!! | Atm(mytile)%bd%isd                 | starting_x_direction_index_domain                             | starting X direction index for domain                                                  | count     |    0 | integer   |           | none   | F        |
+!! | Atm(mytile)%bd%ied                 | ending_x_direction_index_domain                               | ending X direction index for domain                                                    | count     |    0 | integer   |           | none   | F        |
+!! | Atm(mytile)%bd%js                  | starting_y_direction_index                                    | starting Y direction index                                                             | count     |    0 | integer   |           | none   | F        |
+!! | Atm(mytile)%bd%je                  | ending_y_direction_index                                      | ending Y direction index                                                               | count     |    0 | integer   |           | none   | F        |
+!! | Atm(mytile)%bd%jsd                 | starting_y_direction_index_domain                             | starting X direction index for domain                                                  | count     |    0 | integer   |           | none   | F        |
+!! | Atm(mytile)%bd%jed                 | ending_y_direction_index_domain                               | ending X direction index for domain                                                    | count     |    0 | integer   |           | none   | F        |
+!! | Atm(mytile)%delp                   | pressure_thickness_at_Lagrangian_surface                      | pressure thickness at Lagrangian surface                                               | Pa        |    3 | real      |           | none   | F        |
+!! | Atm(mytile)%delz                   | thickness_at_Lagrangian_surface                               | thickness at Lagrangian_surface                                                        | m         |    3 | real      |           | none   | F        |
+!! | Atm(mytile)%gridstruct%area_64     | cell_area_for_fast_physics                                    | area of the grid cell for fast physics                                                 | m2        |    2 | real      | kind_grid | none   | F        |
+!! | Atm(mytile)%flagstruct%hydrostatic | flag_for_hydrostatic_solver                                   | flag for use the hydrostatic or nonhydrostatic solver                                  | flag      |    0 | logical   |           | none   | F        |
+!! | Atm(mytile)%ng                     | number_of_ghost_zones                                         | number of ghost zones defined in fv_mp                                                 | count     |    0 | integer   |           | none   | F        |
+!! | Atm(mytile)%npz                    | vertical_dimension_for_fast_physics                           | number of vertical levels for fast physics                                             | count     |    0 | integer   |           | none   | F        |
+!! | Atm(mytile)%peln                   | log_pressure_at_Lagrangian_surface                            | logarithm of pressure at Lagrangian surface                                            | Pa        |    3 | real      |           | none   | F        |
+!! | Atm(mytile)%phis                   | surface_geopotential_at_Lagrangian_surface                    | surface geopotential at Lagrangian surface                                             | m2 s-2    |    2 | real      |           | none   | F        |
+!! | Atm(mytile)%pkz                    | finite-volume_mean_pe_raised_to_the_power_of_kappa            | finite-volume mean pe raised to the power of kappa                                     | Pa**kappa |    3 | real      |           | none   | F        |
+!! | Atm(mytile)%pt                     | virtual_temperature_at_Lagrangian_surface                     | virtual temperature at Lagrangian surface                                              | K         |    3 | real      |           | none   | F        |
+!! | Atm(mytile)%q(:,:,:,sphum)         | water_vapor_specific_humidity_at_Lagrangian_surface           | water vapor specific humidity updated by fast physics at Lagrangian surface            | kg kg-1   |    3 | real      |           | none   | F        |
+!! | Atm(mytile)%q(:,:,:,liq_wat)       | cloud_liquid_water_specific_humidity_at_Lagrangian_surface    | cloud liquid water specific humidity updated by fast physics at Lagrangian surface     | kg kg-1   |    3 | real      |           | none   | F        |
+!! | Atm(mytile)%q(:,:,:,ice_wat)       | cloud_ice_specific_humidity_at_Lagrangian_surface             | cloud ice specific humidity updated by fast physics at Lagrangian surface              | kg kg-1   |    3 | real      |           | none   | F        |
+!! | Atm(mytile)%q(:,:,:,rainwat)       | cloud_rain_specific_humidity_at_Lagrangian_surface            | cloud rain specific humidity updated by fast physics at Lagrangian surface             | kg kg-1   |    3 | real      |           | none   | F        |
+!! | Atm(mytile)%q(:,:,:,snowwat)       | cloud_snow_specific_humidity_at_Lagrangian_surface            | cloud snow specific humidity updated by fast physics at Lagrangian surface             | kg kg-1   |    3 | real      |           | none   | F        |
+!! | Atm(mytile)%q(:,:,:,graupel)       | cloud_graupel_specific_humidity_at_Lagrangian_surface         | cloud graupel specific humidity updated by fast physics at Lagrangian surface          | kg kg-1   |    3 | real      |           | none   | F        |
+!! | Atm(mytile)%q(:,:,:,cld_amt)       | cloud_fraction_at_Lagrangian_surface                          | cloud fraction at Lagrangian surface                                                   | none      |    3 | real      |           | none   | F        |
+!! | Atm(mytile)%q_con                  | cloud_condensed_water_specific_humidity_at_Lagrangian_surface | cloud condensed water specific humidity updated by fast physics at Lagrangian surface  | kg kg-1   |    3 | real      |           | none   | F        |
+!!
+#endif
   type fv_atmos_type
 
      logical :: allocated = .false.
