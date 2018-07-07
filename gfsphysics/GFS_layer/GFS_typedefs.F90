@@ -51,7 +51,6 @@ module GFS_typedefs
 !! | IPD_Data(nb)%Statein            | FV3-GFS_Statein_type                                   | derived type GFS_statein_type in FV3                    | DDT           |    0 | GFS_statein_type      |           | none   | F        |
 !! | IPD_Data(nb)%Stateout           | FV3-GFS_Stateout_type                                  | derived type GFS_stateout_type in FV3                   | DDT           |    0 | GFS_stateout_type     |           | none   | F        |
 !! | IPD_Data(nb)%Tbd                | FV3-GFS_Tbd_type                                       | derived type GFS_tbd_type in FV3                        | DDT           |    0 | GFS_tbd_type          |           | none   | F        |
-!! | IPD_Fastphys                    | FV3-GFS_Fastphys_type                                  | derived type GFS_fastphys_type in FV3                   | DDT           |    0 | GFS_fastphys_type     |           | none   | F        |
 !! | IPD_Interstitial(nt)            | FV3-GFS_Interstitial_type                              | derived type GFS_interstitial_type in FV3               | DDT           |    0 | GFS_interstitial_type |           | none   | F        |
 !! | LTP                             | extra_top_layer                                        | extra top layer for radiation                           | none          |    0 | integer               |           | none   | F        |
 !! | con_cp                          | specific_heat_of_dry_air_at_constant_pressure          | specific heat of dry air at constant pressure           | J kg-1 K-1    |    0 | real                  | kind_phys | none   | F        |
@@ -106,7 +105,6 @@ module GFS_typedefs
 !    GFS_radtend_type        !< radiation tendencies needed in physics
 !    GFS_diag_type           !< fields targetted for diagnostic output
 !    GFS_interstitial_type   !< fields required to replace interstitial code in GFS_{physics,radiation}_driver.F90 in CCPP
-!    GFS_fastphys_type       !< fields required to run fast microphysics in dynamics through CCPP
 
 !--------------------------------------------------------------------------------
 ! GFS_init_type
@@ -678,7 +676,6 @@ module GFS_typedefs
 !! | IPD_Control%me                       | mpi_rank                                                                      | current MPI-rank                                        | index         |    0 | integer   |           | none   | F        |
 !! | IPD_Control%master                   | mpi_root                                                                      | master MPI-rank                                         | index         |    0 | integer   |           | none   | F        |
 !! | IPD_Control%communicator             | mpi_comm                                                                      | MPI communicator                                        | index         |    0 | integer   |           | none   | F        |
-!! | IPD_Control%threads                  | omp_threads                                                                   | number of OpenMP threads available for physics schemes  | count         |    0 | integer   |           | none   | F        |
 !! | IPD_Control%nlunit                   |                                                                               | fortran unit number for file opens                      | none          |    0 | integer   |           | none   | F        |
 !! | IPD_Control%fn_nml                   |                                                                               | namelist filename                                       | none          |    0 | charater  |           | none   | F        |
 !! | IPD_Control%fhzero                   |                                                                               | seconds between clearing of diagnostic buckets          | s             |    0 | real      | kind_phys | none   | F        |
@@ -916,7 +913,6 @@ module GFS_typedefs
     integer              :: master          !< MPI rank of master atmosphere processor
 #ifdef CCPP
     integer              :: communicator    !< MPI communicator
-    integer              :: threads         !< number of OpenMP threads available for schemes
 #endif
     integer              :: nlunit          !< unit for namelist
     character(len=64)    :: fn_nml          !< namelist filename for surface data cycling
@@ -1704,27 +1700,6 @@ module GFS_typedefs
   end type GFS_diag_type
 
 #ifdef CCPP
-!----------------------------------------------------------------
-! GFS_fastphys_type
-!  data type holding interstitial variables for fast physics
-!----------------------------------------------------------------
-#if 0
-!! \section arg_table_GFS_fastphys_type
-!! | local_name          | standard_name              | long_name                                      | units | rank | type      | kind    | intent | optional |
-!! |---------------------|----------------------------|------------------------------------------------|-------|------|-----------|---------|--------|----------|
-!! | IPD_fastphys%dummy  | FV3_ccpp_integration_dummy | dummy variable to test CCPP integration in FV3 | none  |    0 | integer   |         | none   | F        |
-!!
-#endif
-  type GFS_fastphys_type
-
-    integer                             :: dummy
-
-  contains
-    procedure :: create => fastphys_create
-  end type GFS_fastphys_type
-#endif
-
-#ifdef CCPP
 !---------------------------------------------------------------------
 ! GFS_interstitial_type
 !   fields required for interstitial code in CCPP schemes, previously
@@ -1796,8 +1771,6 @@ module GFS_typedefs
 !! | IPD_Interstitial(nt)%dvsfc1                        | instantaneous_surface_y_momentum_flux                                                          | y momentum flux                                                                     | Pa            |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%elvmax                        | maximum_subgrid_orography                                                                      | maximum of subgrid orography                                                        | m             |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%ep1d                          | surface_upward_potential_latent_heat_flux                                                      | surface upward potential latent heat flux                                           | W m-2         |    1 | real        | kind_phys | none   | F        |
-!! | IPD_Interstitial(nt)%errmsg                        | error_message                                                                                  | error message for error handling in CCPP                                            | none          |    0 | character   | len=512   | none   | F        |
-!! | IPD_Interstitial(nt)%errflg                        | error_flag                                                                                     | error flag for error handling in CCPP                                               | flag          |    0 | integer     |           | none   | F        |
 !! | IPD_Interstitial(nt)%evap                          | kinematic_surface_upward_latent_heat_flux                                                      | kinematic surface upward latent heat flux                                           | kg kg-1 m s-1 |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%evbs                          | soil_upward_latent_heat_flux                                                                   | soil upward latent heat flux                                                        | W m-2         |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%evcw                          | canopy_upward_latent_heat_flux                                                                 | canopy upward latent heat flux                                                      | W m-2         |    1 | real        | kind_phys | none   | F        |
@@ -1978,8 +1951,6 @@ module GFS_typedefs
     real (kind=kind_phys), pointer      :: dvsfc1(:)        => null()  !<
     real (kind=kind_phys), pointer      :: elvmax(:)        => null()  !<
     real (kind=kind_phys), pointer      :: ep1d(:)          => null()  !<
-    character(len=512)                  :: errmsg
-    integer                             :: errflg
     real (kind=kind_phys), pointer      :: evap(:)          => null()  !<
     real (kind=kind_phys), pointer      :: evbs(:)          => null()  !<
     real (kind=kind_phys), pointer      :: evcw(:)          => null()  !<
@@ -2108,7 +2079,7 @@ module GFS_typedefs
   public GFS_control_type,  GFS_grid_type,     GFS_tbd_type, &
          GFS_cldprop_type,  GFS_radtend_type,  GFS_diag_type
 #ifdef CCPP
-  public GFS_fastphys_type,  GFS_interstitial_type
+  public GFS_interstitial_type
 #endif
 
 !*******************************************************************************************
@@ -2987,8 +2958,6 @@ module GFS_typedefs
 #ifdef CCPP
     ! Default MPI communicator, overwrite if necessary (atmos_model.F90 -> atmos_model_init)
     Model%communicator     = MPI_COMM_WORLD
-    ! Number of OpenMP threads available for schemes, default only one
-    Model%threads          = 1
 #endif
     Model%nlunit           = nlunit
     Model%fn_nml           = fn_nml
@@ -4316,19 +4285,6 @@ module GFS_typedefs
   end subroutine diag_phys_zero
 
 #ifdef CCPP
-!--------------------
-! GFS_fastphys_type%create
-!--------------------
-  subroutine fastphys_create (Fastphys)
-
-    implicit none
-
-    class(GFS_fastphys_type)           :: Fastphys
-
-    Fastphys%dummy  = 0
-
-    end subroutine fastphys_create
-
   !-------------------------
   ! GFS_interstitial_type%create
   !-------------------------
@@ -4559,8 +4515,6 @@ module GFS_typedefs
     Interstitial%alb1d        = clear_val
     Interstitial%cldsa        = clear_val
     Interstitial%clouds       = clear_val
-    Interstitial%errmsg       = ''
-    Interstitial%errflg       = 0
     Interstitial%faerlw       = clear_val
     Interstitial%faersw       = clear_val
     Interstitial%gasvmr       = clear_val
@@ -4640,8 +4594,6 @@ module GFS_typedefs
     Interstitial%dvsfc1       = clear_val
     Interstitial%elvmax       = clear_val
     Interstitial%ep1d         = clear_val
-    Interstitial%errmsg       = ''
-    Interstitial%errflg       = 0
     Interstitial%evap         = clear_val
     Interstitial%evbs         = clear_val
     Interstitial%evcw         = clear_val
@@ -4786,8 +4738,6 @@ module GFS_typedefs
     write (0,*) 'sum(Interstitial%dvsfc1      ) = ', sum(Interstitial%dvsfc1      )
     write (0,*) 'sum(Interstitial%elvmax      ) = ', sum(Interstitial%elvmax      )
     write (0,*) 'sum(Interstitial%ep1d        ) = ', sum(Interstitial%ep1d        )
-    write (0,*) 'Interstitial%errmsg            = ', trim(Interstitial%errmsg)
-    write (0,*) 'Interstitial%errflg            = ', Interstitial%errflg
     write (0,*) 'sum(Interstitial%evap        ) = ', sum(Interstitial%evap        )
     write (0,*) 'sum(Interstitial%evbs        ) = ', sum(Interstitial%evbs        )
     write (0,*) 'sum(Interstitial%evcw        ) = ', sum(Interstitial%evcw        )
