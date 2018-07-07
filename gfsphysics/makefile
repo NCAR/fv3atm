@@ -22,14 +22,16 @@ FFLAGS   += -I../fms -I../fms/include -I../cpl
 CPPDEFS += -DNEW_TAUCTMAX -DSMALL_PE -DNEMS_GSM -DINTERNAL_FILE_NML
 
 ifneq (,$(findstring CCPP,$(CPPDEFS)))
-    CCPP_DATA = ./CCPP_layer/CCPP_data.F90
+    CCPP_SRCS_F90 = \
+	   ./CCPP_layer/CCPP_typedefs.F90                                            \
+	   ./CCPP_layer/CCPP_data.F90
     PHYSICS_SRCS_f =
     RADIATION_SRCS_f =
     RADIATION_SRCS_F90 =
 else
-    CCPP_DATA =
+    CCPP_SRCS_F90 =
     PHYSICS_SRCS_f = ./physics/cnvc90.f
-    RADIATION_SRCS_f =  \
+    RADIATION_SRCS_f = \
 	   ./physics/radiation_aerosols.f                                            \
 	   ./physics/radiation_astronomy.f                                           \
 	   ./physics/radiation_clouds.f                                              \
@@ -163,7 +165,7 @@ SRCS_F90 = \
 	   ./physics/module_mp_thompson_gfs.F90                                      \
 	   ./physics/module_mp_wsm6_fv3.F90                                          \
 	   ./physics/surface_perturbation.F90                                        \
-	   $(CCPP_DATA)                                                              \
+	   $(CCPP_SRCS_F90)                                                          \
 	   ./GFS_layer/GFS_abstraction_layer.F90                                     \
 	   ./GFS_layer/GFS_diagnostics.F90                                           \
 	   ./GFS_layer/GFS_driver.F90                                                \
