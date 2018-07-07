@@ -33,7 +33,8 @@ module module_physics_driver
 
 #ifdef CCPP
   use ccpp_api,              only: ccpp_physics_run
-  use CCPP_data,             only: cdata_block
+  use CCPP_data,             only: cdata_block, &
+                                   CCPP_shared
 #ifdef OPENMP
   use omp_lib
 #endif
@@ -611,8 +612,8 @@ module module_physics_driver
 #endif
       call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_suite_interstitial_phys_reset", ierr=ierr)
       ! Copy intent(inout) and intent(out) interstitial variables to local variables in driver
-      errmsg = trim(Interstitial(nt)%errmsg)
-      errflg = Interstitial(nt)%errflg
+      errmsg = trim(CCPP_shared(nt)%errmsg)
+      errflg = CCPP_shared(nt)%errflg
       if (errflg/=0) then
           write(0,*) 'Error in call to GFS_suite_interstitial_phys_reset_run: ' // trim(errmsg)
           stop
@@ -1607,8 +1608,8 @@ module module_physics_driver
               Interstitial(nt)%ipr = ipr            ! intent(in)
               !Model%xkzminv                        ! intent(in)
               !Model%moninq_fac                     ! intent(in)
-              Interstitial(nt)%errmsg = errmsg      ! intent(out)
-              Interstitial(nt)%errflg = errflg      ! intent(out)
+              CCPP_shared(nt)%errmsg = errmsg       ! intent(out)
+              CCPP_shared(nt)%errflg = errflg       ! intent(out)
               call ccpp_physics_run(cdata_block(nb,nt), scheme_name="hedmf", ierr=ierr)
               ! Copy back intent(inout) interstitial variables to local variables in driver
               dvdt   = Interstitial(nt)%dvdt
@@ -1623,8 +1624,8 @@ module module_physics_driver
               gamt   = Interstitial(nt)%gamt
               gamq   = Interstitial(nt)%gamq
               dkt(:,1:Model%levs-1) = Interstitial(nt)%dkt
-              errmsg = trim(Interstitial(nt)%errmsg)
-              errflg = Interstitial(nt)%errflg
+              errmsg = trim(CCPP_shared(nt)%errmsg)
+              errflg = CCPP_shared(nt)%errflg
 #endif
               if (errflg/=0) then
                   write(0,*) 'Error in call to hedmf_mp_hedmf_run: ' // trim(errmsg)
@@ -2530,8 +2531,8 @@ module module_physics_driver
             !Model%evfactl_deep                   ! intent(in)
             !Model%pgcon_deep                     ! intent(in)
             !Model%asolfac_deep                   ! intent(in)
-            Interstitial(nt)%errmsg = errmsg      ! intent(out)
-            Interstitial(nt)%errflg = errflg      ! intent(out)
+            CCPP_shared(nt)%errmsg = errmsg       ! intent(out)
+            CCPP_shared(nt)%errflg = errflg       ! intent(out)
             call ccpp_physics_run(cdata_block(nb,nt), scheme_name="samfdeepcnv", ierr=ierr)
             ! Copy back intent(inout) interstitial variables to local variables in driver
             clw    = Interstitial(nt)%clw
@@ -2545,8 +2546,8 @@ module module_physics_driver
             dt_mf  = Interstitial(nt)%dt_mf
             cnvw   = Interstitial(nt)%cnvw
             cnvc   = Interstitial(nt)%cnvc
-            errmsg = trim(Interstitial(nt)%errmsg)
-            errflg = Interstitial(nt)%errflg
+            errmsg = trim(CCPP_shared(nt)%errmsg)
+            errflg = CCPP_shared(nt)%errflg
 #endif
             if (errflg/=0) then
                 write(0,*) 'Error in call to samfdeepcnv_mp_samfdeepcnv_run: ' // trim(errmsg)
@@ -3363,12 +3364,12 @@ module module_physics_driver
       !Cldprop%cv                          ! intent(inout)
       !Cldprop%cvb                         ! intent(inout)
       !Cldprop%cvt                         ! intent(inout)
-      Interstitial(nt)%errmsg = errmsg     ! intent(out)
-      Interstitial(nt)%errflg = errflg     ! intent(out)
+      CCPP_shared(nt)%errmsg = errmsg      ! intent(out)
+      CCPP_shared(nt)%errflg = errflg      ! intent(out)
       call ccpp_physics_run(cdata_block(nb,nt), scheme_name="cnvc90", ierr=ierr)
       ! Copy intent(inout) and intent(out) interstitial variables to local variables in driver
-      errmsg = trim(Interstitial(nt)%errmsg)
-      errflg = Interstitial(nt)%errflg
+      errmsg = trim(CCPP_shared(nt)%errmsg)
+      errflg = CCPP_shared(nt)%errflg
 #endif
       if (errflg/=0) then
           write(0,*) 'Error in call to cnvc90_mp_cnvc90_run: ' // trim(errmsg)
@@ -3607,8 +3608,8 @@ module module_physics_driver
           Interstitial(nt)%clouds(:,:,3) = Tbd%phy_f3d(:,:,1)   ! intent(inout)
           Interstitial(nt)%clouds(:,:,5) = Tbd%phy_f3d(:,:,2)   ! intent(inout)
           Interstitial(nt)%clouds(:,:,9) = Tbd%phy_f3d(:,:,3)   ! intent(inout)
-          Interstitial(nt)%errmsg = errmsg                      ! intent(  out)
-          Interstitial(nt)%errflg = errflg                      ! intent(  out)
+          CCPP_shared(nt)%errmsg = errmsg                       ! intent(  out)
+          CCPP_shared(nt)%errflg = errflg                       ! intent(  out)
           !
           call ccpp_physics_run(cdata_block(nb,nt), scheme_name="mp_thompson_hrrr", ierr=ierr)
           ! Copy back intent(inout) and intent(out) interstitial variables to local variables in driver
@@ -3616,8 +3617,8 @@ module module_physics_driver
           Tbd%phy_f3d(:,:,1) = Interstitial(nt)%clouds(:,:,3)
           Tbd%phy_f3d(:,:,2) = Interstitial(nt)%clouds(:,:,5)
           Tbd%phy_f3d(:,:,3) = Interstitial(nt)%clouds(:,:,9)
-          errmsg = trim(Interstitial(nt)%errmsg)
-          errflg = Interstitial(nt)%errflg
+          errmsg = trim(CCPP_shared(nt)%errmsg)
+          errflg = CCPP_shared(nt)%errflg
           !
           if (errflg/=0) then
               write(0,*) 'Error in call to cnvc90_mp_cnvc90_run: ' // trim(errmsg)
