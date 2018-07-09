@@ -4321,10 +4321,7 @@ module GFS_typedefs
     allocate (Interstitial%cldsa      (IM,5))
     allocate (Interstitial%cld1d      (IM))
     allocate (Interstitial%clouds     (IM,Model%levr+LTP,NF_CLDS))
-    ! DH* 20180626
-    !allocate (Interstitial%clw        (IM,Model%levs,Interstitial%tracers_total+2))
     allocate (Interstitial%clw        (IM,Model%levs,Interstitial%nn))
-    ! *DH 20180626
     allocate (Interstitial%clx        (IM,4))
     allocate (Interstitial%cnvc       (IM,Model%levs))
     allocate (Interstitial%cnvw       (IM,Model%levs))
@@ -4456,11 +4453,7 @@ module GFS_typedefs
     class(GFS_interstitial_type)       :: Interstitial
     type(GFS_control_type), intent(in) :: Model
     !
-    ! DH* 20180517
-    ! CHECK IF THIS ROUTINE IS STILL CORRECT - INDICES MIGHT HAVE CHANGED ETC
-    ! IS PART OF INTERSTITIAL CODE IN GFS_PHYSICS_DRIVER.F90 I BELIEVE
-    ! *DH
-    !
+    ! DH* 20180709 most of this first part may no longer be needed, check and remove!
     Interstitial%tracers_water = 0
     Interstitial%tracers_total = 0
     Interstitial%tracers_start_index = 0
@@ -4489,6 +4482,7 @@ module GFS_typedefs
     endif
     !
     if (Model%ntke > 0) Interstitial%ntk = Model%ntke - Interstitial%tracers_start_index + 3
+    ! *DH 20180709
     !
     ! DH* NEW CODE 20180626
     if (Model%ntiw > 0) then
