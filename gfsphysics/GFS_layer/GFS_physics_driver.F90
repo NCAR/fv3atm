@@ -1300,12 +1300,31 @@ module module_physics_driver
 
 #else
 ! OPTION B - works with all compilers
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling sfc_nst_pre_run through option B'
+      ! Copy local variables from driver to appropriate interstitial variables
+      Interstitial(nt)%im = im                 ! intent(in)
+      Interstitial(nt)%islmsk = islmsk         ! intent(in)
+      Interstitial(nt)%tsurf = tsurf           ! intent(inout)
+      Interstitial(nt)%tseal = tseal           ! intent(inout)
+      Interstitial(nt)%errmsg = errmsg         ! intent(out)
+      Interstitial(nt)%errflg = errflg         ! intent(out)
+      call ccpp_physics_run(cdata_block(nb,nt), scheme_name="sfc_nst_pre", ierr=ierr)
+      ! Copy intent(inout) and intent(out) interstitial variables to local variables in driver
+      tsurf = Interstitial(nt)%tsurf
+      tseal = Interstitial(nt)%tseal
+      errmsg = trim(Interstitial(nt)%errmsg)
+      errflg = Interstitial(nt)%errflg
+      if (errflg/=0) then
+          write(0,*) 'Error in call to sfc_nst_mp_sfc_nst_pre_run: ' // trim(errmsg)
+          stop
+      end if
+
       if (Model%me==0) write(0,*) 'CCPP DEBUG: calling sfc_nst_run through option B'
       ! Copy local variables from driver to appropriate interstitial variables
       Interstitial(nt)%im = im                 ! intent(in)
       Interstitial(nt)%islmsk = islmsk         ! intent(in)
-      Interstitial(nt)%tsurf = tsurf           ! intent(in)
-      Interstitial(nt)%tseal = tseal           ! intent(out)
+      Interstitial(nt)%tsurf = tsurf           ! intent(inout)
+      Interstitial(nt)%tseal = tseal           ! intent(inout)
       Interstitial(nt)%cd = cd                 ! intent(in)
       Interstitial(nt)%cdq = cdq               ! intent(in)
       Interstitial(nt)%work3 = work3           ! intent(in)
@@ -1321,18 +1340,43 @@ module module_physics_driver
       Interstitial(nt)%evap = evap             ! intent(inout)
       Interstitial(nt)%hflx = hflx             ! intent(inout)
       Interstitial(nt)%ep1d = ep1d             ! intent(inout)
-      Interstitial(nt)%dtzm = dtzm             ! intent(out)
       Interstitial(nt)%errmsg = errmsg         ! intent(out)
       Interstitial(nt)%errflg = errflg         ! intent(out)
       call ccpp_physics_run(cdata_block(nb,nt), scheme_name="sfc_nst", ierr=ierr)
       ! Copy intent(inout) and intent(out) interstitial variables to local variables in driver
+      tsurf = Interstitial(nt)%tsurf
+      tseal = Interstitial(nt)%tseal
+      qss = Interstitial(nt)%qss
+      gflx = Interstitial(nt)%gflx
+      evap = Interstitial(nt)%evap
+      hflx = Interstitial(nt)%hflx
+      ep1d = Interstitial(nt)%ep1d
       errmsg = trim(Interstitial(nt)%errmsg)
       errflg = Interstitial(nt)%errflg
-#endif
       if (errflg/=0) then
           write(0,*) 'Error in call to sfc_nst_mp_sfc_nst_run: ' // trim(errmsg)
           stop
       end if
+
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling sfc_nst_post_run through option B'
+      ! Copy local variables from driver to appropriate interstitial variables
+      Interstitial(nt)%im = im                 ! intent(in)
+      Interstitial(nt)%islmsk = islmsk         ! intent(in)
+      Interstitial(nt)%tsurf = tsurf           ! intent(inout)
+      Interstitial(nt)%dtzm = dtzm             ! intent(inout)
+      Interstitial(nt)%errmsg = errmsg         ! intent(out)
+      Interstitial(nt)%errflg = errflg         ! intent(out)
+      call ccpp_physics_run(cdata_block(nb,nt), scheme_name="sfc_nst_post", ierr=ierr)
+      ! Copy intent(inout) and intent(out) interstitial variables to local variables in driver
+      tsurf = Interstitial(nt)%tsurf
+      dtzm = Interstitial(nt)%dtzm
+      errmsg = trim(Interstitial(nt)%errmsg)
+      errflg = Interstitial(nt)%errflg
+      if (errflg/=0) then
+          write(0,*) 'Error in call to sfc_nst_mp_sfc_nst_post_run: ' // trim(errmsg)
+          stop
+      end if
+#endif   # End of OPTION B
 #else
       if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of sfc_nst'
           do i=1,im
