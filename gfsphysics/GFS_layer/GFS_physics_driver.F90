@@ -1982,7 +1982,7 @@ module module_physics_driver
       oa4    = Interstitial(nt)%oa4
       clx    = Interstitial(nt)%clx
       theta  = Interstitial(nt)%theta
-      sigma  = Interstitial(nt)%sigma 
+      sigma  = Interstitial(nt)%sigma
       gamma  = Interstitial(nt)%gamma
       elvmax = Interstitial(nt)%elvmax
       errmsg = trim(Interstitial(nt)%errmsg)
@@ -2952,7 +2952,7 @@ module module_physics_driver
       Interstitial(nt)%im = im             ! intent(in)
       Interstitial(nt)%work1 = work1       ! intent(in)
       Interstitial(nt)%work2 = work2       ! intent(in)
-      Interstitial(nt)%dlength = dlength   ! intent(out)     
+      Interstitial(nt)%dlength = dlength   ! intent(out)
       Interstitial(nt)%cldf = cldf         ! intent(out)
       Interstitial(nt)%kbot = kbot         ! intent(in)
       Interstitial(nt)%ktop = ktop         ! intent(in)
@@ -3297,16 +3297,89 @@ module module_physics_driver
             else
                nsamftrac = tottracer
             endif
+#ifdef CCPP
+#if defined(CCPP_OPTION_A) && defined(__INTEL_COMPILER)
+! OPTION A - works with Intel only
+            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling samfshalcnv_run through option A'
+            call samfshalcnv_mp_samfshalcnv_run (im, ix, levs, dtp, ntk, nsamftrac, del, &
+                              Statein%prsl, Statein%pgr, Statein%phil, clw,    &
+                              Stateout%gq0(:,:,1), Stateout%gt0,               &
+                              Stateout%gu0, Stateout%gv0,                      &
+                              rain1, kbot, ktop, kcnv, islmsk, garea,          &
+                              Statein%vvl, ncld, Diag%hpbl, ud_mf,             &
+                              dt_mf, cnvw, cnvc,                               &
+                              Model%clam_shal,  Model%c0s_shal, Model%c1_shal, &
+                              Model%pgcon_shal, Model%asolfac_shal,            &
+                              errmsg, errflg)
+#else
+! OPTION B - works with all compilers
+            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling samfshalcnv_run through option B'
+            ! Copy local variables from driver to appropriate interstitial variables
+            Interstitial(nt)%im = im              ! intent(in)
+            Interstitial(nt)%ix = ix              ! intent(in)
+            !Model%levs                           ! intent(in)
+            !Model%dtp                            ! intent(in)
+            Interstitial(nt)%ntk = ntk            ! intent(in)
+            Interstitial(nt)%nsamftrac = nsamftrac! intent(in)
+            Interstitial(nt)%del = del            ! intent(in)
+            !Statein%prsl                         ! intent(in)
+            !Statein%pgr                          ! intent(in)
+            !Statein%phil                         ! intent(in)
+            Interstitial(nt)%clw = clw            ! intent(inout)
+            !Stateout%gq0(:,:,1)                  ! intent(inout)
+            !Stateout%gt0                         ! intent(inout)
+            !Stateout%gu0                         ! intent(inout)
+            !Stateout%gv0                         ! intent(inout)
+            Interstitial(nt)%raincs = rain1       ! intent(out)
+            Interstitial(nt)%kbot = kbot          ! intent(out)
+            Interstitial(nt)%ktop = ktop          ! intent(out)
+            Interstitial(nt)%kcnv = kcnv          ! intent(out)
+            Interstitial(nt)%islmsk = islmsk      ! intent(in)
+            !Grid%area                            ! intent(in)
+            !Statein%vvl                          ! intent(in)
+            !Model%ncld                           ! intent(in)
+            !Diag%hpbl                            ! intent(in)
+            Interstitial(nt)%ud_mf = ud_mf        ! intent(out)
+            Interstitial(nt)%dt_mf = dt_mf        ! intent(out)
+            Interstitial(nt)%cnvw = cnvw          ! intent(out)
+            Interstitial(nt)%cnvc = cnvc          ! intent(out)
+            !Model%clam_shal                      ! intent(in)
+            !Model%c0s_shal                       ! intent(in)
+            !Model%c1_shal                        ! intent(in)
+            !Model%pgcon_shal                     ! intent(in)
+            !Model%asolfac_shal                   ! intent(in)
+            Interstitial(nt)%errmsg = errmsg      ! intent(out)
+            Interstitial(nt)%errflg = errflg      ! intent(out)
+            call ccpp_physics_run(cdata_block(nb,nt), scheme_name="samfshalcnv", ierr=ierr)
+            ! Copy back intent(inout) interstitial variables to local variables in driver
+            clw    = Interstitial(nt)%clw
+            rain1  = Interstitial(nt)%raincs
+            kbot   = Interstitial(nt)%kbot
+            ktop   = Interstitial(nt)%ktop
+            kcnv   = Interstitial(nt)%kcnv
+            ud_mf  = Interstitial(nt)%ud_mf
+            dt_mf  = Interstitial(nt)%dt_mf
+            cnvw   = Interstitial(nt)%cnvw
+            cnvc   = Interstitial(nt)%cnvc
+            errmsg = trim(Interstitial(nt)%errmsg)
+            errflg = Interstitial(nt)%errflg
+#endif
+            if (errflg/=0) then
+                write(0,*) 'Error in call to samfshalcnv_mp_samfdeepcnv_run: ' // trim(errmsg)
+                stop
+            end if
+#else
+            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of samfshalcnv'
             call samfshalcnv (im, ix, levs, dtp, ntk, nsamftrac, del,          &
                               Statein%prsl, Statein%pgr, Statein%phil, clw,    &
                               Stateout%gq0(:,:,1), Stateout%gt0,               &
                               Stateout%gu0, Stateout%gv0,                      &
                               rain1, kbot, ktop, kcnv, islmsk, garea,          &
-                              Statein%vvl, ncld, DIag%hpbl, ud_mf,             &
+                              Statein%vvl, ncld, Diag%hpbl, ud_mf,             &
                               dt_mf, cnvw, cnvc,                               &
                               Model%clam_shal,  Model%c0s_shal, Model%c1_shal, &
                               Model%pgcon_shal, Model%asolfac_shal)
-
+#endif
             do i=1,im
               raincs(i)     = frain * rain1(i)
               Diag%rainc(i) = Diag%rainc(i) + raincs(i)
@@ -3748,9 +3821,9 @@ module module_physics_driver
       Interstitial(nt)%im     = im                            ! intent(in)
       Interstitial(nt)%ix     = ix                            ! intent(in)
       Interstitial(nt)%clw(:,:,1) = clw(:,:,1)                ! intent(in)
-      Interstitial(nt)%clw(:,:,2) = clw(:,:,2)                ! intent(in) 
+      Interstitial(nt)%clw(:,:,2) = clw(:,:,2)                ! intent(in)
       Interstitial(nt)%rhc    = rhc                           ! intent(in)
-      Interstitial(nt)%ipr    = ipr                           ! intent(in) 
+      Interstitial(nt)%ipr    = ipr                           ! intent(in)
       Interstitial(nt)%errmsg = errmsg                        ! intent(out)
       Interstitial(nt)%errflg = errflg                        ! intent(out)
       call ccpp_physics_run(cdata_block(nb,nt), scheme_name="zhaocarr_gscond", ierr=ierr)
