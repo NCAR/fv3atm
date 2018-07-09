@@ -65,7 +65,7 @@ module CCPP_typedefs
      integer                             :: npzdelz
      logical                             :: out_dt
      real, pointer                       :: pfull(:)
-     real, pointer                       :: te0_2d(:,:) ! called te0_2d in fv_dynamics, te_2d in Lagrangian_to_Eulerian, te0_2d in fv_sat_adj
+     real, pointer                       :: te0_2d(:,:) ! called te_2d in fv_dynamics, te0_2d in Lagrangian_to_Eulerian, te0_2d in fv_sat_adj
      real, pointer                       :: te0(:,:,:)  ! called dp1 in fv_dynamics, te in Lagrangian_to_Eulerian, te0 in fv_sat_adj
      real                                :: zvir
 

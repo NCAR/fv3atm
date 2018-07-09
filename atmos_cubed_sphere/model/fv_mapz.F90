@@ -203,12 +203,21 @@ contains
   real, dimension(is:ie+1,km+1):: pe0, pe3
   real, dimension(is:ie):: gz, cvm, qv
   real rcp, rg, rrg, bkh, dtmp, k1k
+#ifndef CCPP
   logical:: fast_mp_consv
+#endif
   integer:: i,j,k 
   integer:: kdelz
-  integer:: nt, liq_wat, ice_wat, rainwat, snowwat, cld_amt, graupel, iq, n, kmp, kp, k_next
 #ifdef CCPP
+  integer:: nt, liq_wat, ice_wat, rainwat, snowwat, cld_amt, graupel, iq, n, kp, k_next
   integer :: ierr
+#else
+  integer:: nt, liq_wat, ice_wat, rainwat, snowwat, cld_amt, graupel, iq, n, kmp, kp, k_next
+#endif
+
+#ifdef CCPP
+      ccpp_associate: associate( fast_mp_consv => CCPP_interstitial%fast_mp_consv, &
+                                 kmp           => CCPP_interstitial%kmp            )
 #endif
 
        k1k = rdgas/cv_air   ! akap / (1.-akap) = rg/Cv=0.4
@@ -225,9 +234,7 @@ contains
 
        if ( do_sat_adj ) then
             fast_mp_consv = (.not.do_adiabatic_init) .and. consv>consv_min
-#ifdef CCPP
-            kmp = CCPP_interstitial%kmp
-#else
+#ifndef CCPP
             do k=1,km
                kmp = k
                if ( pfull(k) > 10.E2 ) exit
@@ -560,7 +567,11 @@ contains
 
 1000  continue
 
+#if defined(CCPP) && defined(__GFORTRAN__)
+!$OMP parallel default(none) shared(is,ie,js,je,km,ptop,u,v,pe,ua,isd,ied,jsd,jed,kord_mt, &
+#else
 !$OMP parallel default(none) shared(is,ie,js,je,km,kmp,ptop,u,v,pe,ua,isd,ied,jsd,jed,kord_mt, &
+#endif
 !$OMP                               te_2d,te,delp,hydrostatic,hs,rg,pt,peln, adiabatic, &
 !$OMP                               cp,delz,nwat,rainwat,liq_wat,ice_wat,snowwat,       &
 !$OMP                               graupel,q_con,r_vir,sphum,w,pk,pkz,last_step,consv, &
@@ -568,7 +579,11 @@ contains
 !$OMP                               ng,gridstruct,E_Flux,pdt,dtmp,reproduce_sum,q,      &
 !$OMP                               mdt,cld_amt,cappa,dtdt,out_dt,rrg,akap,do_sat_adj,  &
 #ifdef CCPP
-!$OMP                               fast_mp_consv,kord_tm,cdata, CCPP_interstitial) &
+#ifdef __GFORTRAN__
+!$OMP                               kord_tm,cdata, CCPP_interstitial)                   &
+#else
+!$OMP                               fast_mp_consv,kord_tm,cdata, CCPP_interstitial)     &
+#endif
 !$OMP                       private(pe0,pe1,pe2,pe3,qv,cvm,gz,phis,kdelz,ierr)
 #else
 !$OMP                               fast_mp_consv,kord_tm) &
@@ -710,35 +725,10 @@ endif        ! end last_step check
     call timing_on('sat_adj2')
 #ifdef CCPP
     if (ccpp_initialized(cdata)) then
-!$OMP single
-      ! DH* HACK - update interstitial variables from local variables, how to do this in a cleaner way?
-      CCPP_interstitial%last_step     = last_step                             ! intent(in)
-      CCPP_interstitial%out_dt        = out_dt                                ! intent(in)
-      CCPP_interstitial%cappa         = cappa                                 ! intent(inout)
-      if ( CCPP_interstitial%out_dt .and. (.not.do_adiabatic_init) ) then
-         CCPP_interstitial%dtdt       = dtdt                                  ! intent(inout)
-      else
-         CCPP_interstitial%dtdt       = 0.0                                   ! intent(inout)
-      end if
-      CCPP_interstitial%te0_2d        = te0_2d                                ! intent(inout)
-      CCPP_interstitial%te0           = te                                    ! intent(  out)
-      CCPP_interstitial%fast_mp_consv = fast_mp_consv                         ! intent(in   )
-!$OMP end single
-      ! *DH
       call ccpp_physics_run(cdata, scheme_name='fv_sat_adj', ierr=ierr)
       if (ierr/=0) call mpp_error(FATAL, "Call to ccpp_physics_run for scheme 'fv_sat_adj' failed")
-!$OMP single
-      ! DH* HACK - update local variables from interstitial variables
-      cappa   = CCPP_interstitial%cappa
-      if ( CCPP_interstitial%out_dt .and. (.not.do_adiabatic_init) ) then
-         dtdt = CCPP_interstitial%dtdt
-      end if
-      te0_2d  = CCPP_interstitial%te0_2d
-      te      = CCPP_interstitial%te0
-!$OMP end single
-      ! *DH
     else
-      call mpp_error (FATAL, 'Lagrangian_to_Eulerian: can not call ccpp fast physics because cdata not initialized')
+      call mpp_error (FATAL, 'Lagrangian_to_Eulerian: can not call CCPP fast physics because cdata not initialized')
     endif
 #else
 !$OMP do
@@ -834,6 +824,10 @@ endif        ! end last_step check
     endif
   endif
 !$OMP end parallel
+
+#ifdef CCPP
+  end associate ccpp_associate
+#endif
 
  end subroutine Lagrangian_to_Eulerian
 
