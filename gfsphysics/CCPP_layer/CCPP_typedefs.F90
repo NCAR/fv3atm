@@ -49,7 +49,7 @@ module CCPP_typedefs
 !! | CCPP_interstitial%out_dt                           | flag_for_tendency_of_air_temperature_at_Lagrangian_surface    | flag for calculating tendency of air temperature due to fast physics                | flag    |    0 | logical     |           | none   | F        |
 !! | CCPP_interstitial%te0_2d                           | atmosphere_energy_content_in_column                           | atmosphere total energy in columns                                                  | J m-2   |    2 | real        |           | none   | F        |
 !! | CCPP_interstitial%te0                              | atmosphere_energy_content_at_Lagrangian_surface               | atmosphere total energy at Lagrangian surface                                       | J m-2   |    3 | real        |           | none   | F        |
-!! | CCPP_interstitial%zvir                             | moist_gas_constant                                            | zvir=rv/rd-1.0                                                                      | none    |    0 | real        |           | none   | F        |
+!! | CCPP_interstitial%zvir                             | ratio_of_vapor_to_dry_air_gas_constants_minus_one_default_kind| zvir=rv/rd-1.0                                                                      | none    |    0 | real        |           | none   | F        |
 !!
   type CCPP_interstitial_type
 
