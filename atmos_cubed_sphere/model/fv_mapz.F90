@@ -94,7 +94,7 @@ module fv_mapz_mod
   use fv_cmp_mod,        only: qs_init, fv_sat_adj
 #ifdef CCPP
   use ccpp_api,          only: ccpp_initialized, ccpp_physics_run
-  use CCPP_data,         only: ccpp_cdata => cdata_domain
+  use CCPP_data,         only: cdata => cdata_tile, CCPP_interstitial
 #endif
 
   implicit none
@@ -193,17 +193,31 @@ contains
 ! SJL 03.11.04: Initial version for partial remapping
 !
 !-----------------------------------------------------------------------
+#ifdef CCPP
+  real, dimension(is:ie,js:je):: te_2d, zsum0, zsum1
+#else
   real, dimension(is:ie,js:je):: te_2d, zsum0, zsum1, dpln
+#endif
   real, dimension(is:ie,km)  :: q2, dp2
   real, dimension(is:ie,km+1):: pe1, pe2, pk1, pk2, pn2, phis
   real, dimension(is:ie+1,km+1):: pe0, pe3
   real, dimension(is:ie):: gz, cvm, qv
   real rcp, rg, rrg, bkh, dtmp, k1k
+#ifndef CCPP
   logical:: fast_mp_consv
+#endif
   integer:: i,j,k 
-  integer:: nt, liq_wat, ice_wat, rainwat, snowwat, cld_amt, graupel, iq, n, kmp, kp, k_next
+  integer:: kdelz
 #ifdef CCPP
-  integer :: ccpp_ierr
+  integer:: nt, liq_wat, ice_wat, rainwat, snowwat, cld_amt, graupel, iq, n, kp, k_next
+  integer :: ierr
+#else
+  integer:: nt, liq_wat, ice_wat, rainwat, snowwat, cld_amt, graupel, iq, n, kmp, kp, k_next
+#endif
+
+#ifdef CCPP
+      ccpp_associate: associate( fast_mp_consv => CCPP_interstitial%fast_mp_consv, &
+                                 kmp           => CCPP_interstitial%kmp            )
 #endif
 
        k1k = rdgas/cv_air   ! akap / (1.-akap) = rg/Cv=0.4
@@ -220,11 +234,13 @@ contains
 
        if ( do_sat_adj ) then
             fast_mp_consv = (.not.do_adiabatic_init) .and. consv>consv_min
+#ifndef CCPP
             do k=1,km
                kmp = k
                if ( pfull(k) > 10.E2 ) exit
             enddo
             call qs_init(kmp)
+#endif
        endif
 
 !$OMP parallel do default(none) shared(is,ie,js,je,km,pe,ptop,kord_tm,hydrostatic, &
@@ -551,7 +567,11 @@ contains
 
 1000  continue
 
+#if defined(CCPP) && defined(__GFORTRAN__)
+!$OMP parallel default(none) shared(is,ie,js,je,km,ptop,u,v,pe,ua,isd,ied,jsd,jed,kord_mt, &
+#else
 !$OMP parallel default(none) shared(is,ie,js,je,km,kmp,ptop,u,v,pe,ua,isd,ied,jsd,jed,kord_mt, &
+#endif
 !$OMP                               te_2d,te,delp,hydrostatic,hs,rg,pt,peln, adiabatic, &
 !$OMP                               cp,delz,nwat,rainwat,liq_wat,ice_wat,snowwat,       &
 !$OMP                               graupel,q_con,r_vir,sphum,w,pk,pkz,last_step,consv, &
@@ -559,11 +579,15 @@ contains
 !$OMP                               ng,gridstruct,E_Flux,pdt,dtmp,reproduce_sum,q,      &
 !$OMP                               mdt,cld_amt,cappa,dtdt,out_dt,rrg,akap,do_sat_adj,  &
 #ifdef CCPP
-!$OMP                               fast_mp_consv,kord_tm,ccpp_cdata) &
-!$OMP                       private(pe0,pe1,pe2,pe3,qv,cvm,gz,phis,dpln,ccpp_ierr)
+#ifdef __GFORTRAN__
+!$OMP                               kord_tm,cdata, CCPP_interstitial)                   &
+#else
+!$OMP                               fast_mp_consv,kord_tm,cdata, CCPP_interstitial)     &
+#endif
+!$OMP                       private(pe0,pe1,pe2,pe3,qv,cvm,gz,phis,kdelz,ierr)
 #else
 !$OMP                               fast_mp_consv,kord_tm) &
-!$OMP                       private(pe0,pe1,pe2,pe3,qv,cvm,gz,phis,dpln)
+!$OMP                       private(pe0,pe1,pe2,pe3,qv,cvm,gz,phis,kdelz,dpln)
 #endif
 
 !$OMP do
@@ -698,16 +722,15 @@ endif        ! end last_step check
 ! Note: pt at this stage is T_v
 ! if ( (.not.do_adiabatic_init) .and. do_sat_adj ) then
   if ( do_sat_adj ) then
+    call timing_on('sat_adj2')
 #ifdef CCPP
-    if (ccpp_initialized(ccpp_cdata)) then
-      call ccpp_physics_run(ccpp_cdata, group_name='fast_physics', ierr=ccpp_ierr)
-      if (ccpp_ierr/=0) call mpp_error(FATAL, "Call to IPD-CCPP step 'fast_physics' failed")
+    if (ccpp_initialized(cdata)) then
+      call ccpp_physics_run(cdata, scheme_name='fv_sat_adj', ierr=ierr)
+      if (ierr/=0) call mpp_error(FATAL, "Call to ccpp_physics_run for scheme 'fv_sat_adj' failed")
     else
-      call mpp_error (NOTE, 'fv_mapz::skip ccpp fast physics because cdata not initialized')
+      call mpp_error (FATAL, 'Lagrangian_to_Eulerian: can not call CCPP fast physics because cdata not initialized')
     endif
-#endif
-
-                                           call timing_on('sat_adj2')
+#else
 !$OMP do
            do k=kmp,km
               do j=js,je
@@ -715,11 +738,16 @@ endif        ! end last_step check
                     dpln(i,j) = peln(i,k+1,j) - peln(i,k,j)
                  enddo
               enddo
+              if (hydrostatic) then
+                 kdelz = 1
+              else
+                 kdelz = k
+              end if
               call fv_sat_adj(abs(mdt), r_vir, is, ie, js, je, ng, hydrostatic, fast_mp_consv, &
                              te(isd,jsd,k), q(isd,jsd,k,sphum), q(isd,jsd,k,liq_wat),   &
                              q(isd,jsd,k,ice_wat), q(isd,jsd,k,rainwat),    &
                              q(isd,jsd,k,snowwat), q(isd,jsd,k,graupel),    &
-                             hs ,dpln, delz(isd:,jsd:,k), pt(isd,jsd,k), delp(isd,jsd,k), q_con(isd:,jsd:,k), &
+                             hs ,dpln, delz(isd:,jsd:,kdelz), pt(isd,jsd,k), delp(isd,jsd,k), q_con(isd:,jsd:,k), &
               cappa(isd:,jsd:,k), gridstruct%area_64, dtdt(is,js,k), out_dt, last_step, cld_amt>0, q(isd,jsd,k,cld_amt))
               if ( .not. hydrostatic  ) then
                  do j=js,je
@@ -744,7 +772,8 @@ endif        ! end last_step check
                    enddo
                 enddo
            endif
-                                           call timing_off('sat_adj2')
+#endif
+    call timing_off('sat_adj2')
   endif   ! do_sat_adj
 
 
@@ -795,6 +824,10 @@ endif        ! end last_step check
     endif
   endif
 !$OMP end parallel
+
+#ifdef CCPP
+  end associate ccpp_associate
+#endif
 
  end subroutine Lagrangian_to_Eulerian
 

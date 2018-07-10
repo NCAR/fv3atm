@@ -6,14 +6,10 @@ module GFS_driver
                                       GFS_sfcprop_type, GFS_coupling_type, &
                                       GFS_control_type, GFS_grid_type,     &
                                       GFS_tbd_type,     GFS_cldprop_type,  &
-#ifdef CCPP
-                                      GFS_radtend_type, GFS_diag_type,     &
-                                      GFS_fastphys_type,                   &
-                                      GFS_interstitial_type
-#else
                                       GFS_radtend_type, GFS_diag_type
-#endif
-#ifndef CCPP
+#ifdef CCPP
+  use GFS_typedefs,             only: GFS_interstitial_type
+#else
   use module_radiation_driver,  only: GFS_radiation_driver, radupdate
 #endif
   use module_physics_driver,    only: GFS_physics_driver
@@ -122,7 +118,7 @@ module GFS_driver
   subroutine GFS_initialize (Model, Statein, Stateout, Sfcprop,     &
                              Coupling, Grid, Tbd, Cldprop, Radtend, & 
 #ifdef CCPP
-                             Diag, Fastphys, Interstitial, Init_parm)
+                             Diag, Interstitial, Init_parm)
 #else
                              Diag, Init_parm)
 #endif
@@ -154,7 +150,6 @@ module GFS_driver
     type(GFS_radtend_type),   intent(inout) :: Radtend(:)
     type(GFS_diag_type),      intent(inout) :: Diag(:)
 #ifdef CCPP
-    type(GFS_fastphys_type),  intent(inout) :: Fastphys
     type(GFS_interstitial_type), intent(inout) :: Interstitial(:)
 #endif
     type(GFS_init_type),      intent(in)    :: Init_parm
@@ -228,9 +223,6 @@ module GFS_driver
 #else
     nthrds = 1
 #endif
-
-! Initialize the Fastphys data type - independent of blocks/threads
-    call Fastphys%create()
 
 ! Initialize the Interstitial data type in parallel so that
 ! each thread creates (touches) its Interstitial(nt) first

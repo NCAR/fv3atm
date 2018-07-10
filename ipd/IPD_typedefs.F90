@@ -9,12 +9,9 @@ module IPD_typedefs
                                        sfcprop_type,  coupling_type,         &
                                        grid_type,     tbd_type,              &
                                        cldprop_type,  radtend_type,          &
-#ifdef CCPP
-                                       intdiag_type,                         &
-                                       IPD_fastphys_type => fastphys_type,   &
-                                       IPD_interstitial_type => interstitial_type
-#else
                                        intdiag_type
+#ifdef CCPP
+  use physics_abstraction_layer, only: IPD_interstitial_type => interstitial_type
 #endif
 
 !--------------------
@@ -144,7 +141,6 @@ module IPD_typedefs
   public IPD_diag_type
   public IPD_init_type
 #ifdef CCPP
-  public IPD_fastphys_type
   public IPD_interstitial_type
 #endif
 

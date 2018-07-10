@@ -9,18 +9,15 @@ module IPD_driver
   use IPD_typedefs,               only: IPD_kind_phys,     IPD_init_type,    &
                                         IPD_control_type,  IPD_data_type,    &
                                         IPD_diag_type,     IPD_restart_type, &
+                                        IPD_func0d_proc,   IPD_func1d_proc
 #ifdef CCPP
-                                        IPD_interstitial_type, IPD_fastphys_type, &
-                                        IPD_func0d_proc,   IPD_func1d_proc
-#else
-                                        IPD_func0d_proc,   IPD_func1d_proc
+  use IPD_typedefs,               only: IPD_interstitial_type
 #endif
 
 #ifdef CCPP
-  use physics_abstraction_layer,  only: initialize,        time_vary_step,   &
-                                        physics_step1,                       &
-                                        physics_step2,                       &
-                                        diagnostic_populate, restart_populate,&
+  use physics_abstraction_layer,  only: initialize,          time_vary_step,   &
+                                        physics_step1,       physics_step2,    &
+                                        diagnostic_populate, restart_populate, &
                                         finalize
 #else
   use physics_abstraction_layer,  only: initialize,        time_vary_step,   &
@@ -61,7 +58,7 @@ module IPD_driver
 !  IPD Initialize 
 !----------------
 #ifdef CCPP
-  subroutine IPD_initialize (IPD_Control, IPD_Data, IPD_Diag, IPD_Restart, IPD_Fastphys, IPD_Interstitial, IPD_init_parm)
+  subroutine IPD_initialize (IPD_Control, IPD_Data, IPD_Diag, IPD_Restart, IPD_Interstitial, IPD_init_parm)
 #else
   subroutine IPD_initialize (IPD_Control, IPD_Data, IPD_Diag, IPD_Restart, IPD_init_parm)
 #endif
@@ -70,7 +67,6 @@ module IPD_driver
     type(IPD_diag_type),    intent(inout) :: IPD_Diag(:)
     type(IPD_restart_type), intent(inout) :: IPD_Restart
 #ifdef CCPP
-    type(IPD_fastphys_type), intent(inout) :: IPD_Fastphys
     type(IPD_interstitial_type), intent(inout) :: IPD_Interstitial(:)
 #endif
     type(IPD_init_type),    intent(in)    :: IPD_init_parm
@@ -80,7 +76,7 @@ module IPD_driver
                      IPD_Data(:)%Sfcprop, IPD_Data(:)%Coupling, IPD_Data(:)%Grid, &
                      IPD_Data(:)%Tbd, IPD_Data(:)%Cldprop, IPD_Data(:)%Radtend,   &
 #ifdef CCPP
-                     IPD_Data(:)%Intdiag, IPD_Fastphys, IPD_Interstitial(:), IPD_init_parm)
+                     IPD_Data(:)%Intdiag, IPD_Interstitial(:), IPD_init_parm)
 #else
                      IPD_Data(:)%Intdiag, IPD_init_parm)
 #endif
