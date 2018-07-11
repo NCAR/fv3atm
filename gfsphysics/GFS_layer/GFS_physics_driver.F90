@@ -1306,14 +1306,14 @@ module module_physics_driver
       Interstitial(nt)%islmsk = islmsk         ! intent(in)
       Interstitial(nt)%tsurf = tsurf           ! intent(inout)
       Interstitial(nt)%tseal = tseal           ! intent(inout)
-      Interstitial(nt)%errmsg = errmsg         ! intent(out)
-      Interstitial(nt)%errflg = errflg         ! intent(out)
+      CCPP_shared(nt)%errmsg = errmsg          ! intent(out)
+      CCPP_shared(nt)%errflg = errflg          ! intent(out)
       call ccpp_physics_run(cdata_block(nb,nt), scheme_name="sfc_nst_pre", ierr=ierr)
       ! Copy intent(inout) and intent(out) interstitial variables to local variables in driver
       tsurf = Interstitial(nt)%tsurf
       tseal = Interstitial(nt)%tseal
-      errmsg = trim(Interstitial(nt)%errmsg)
-      errflg = Interstitial(nt)%errflg
+      errmsg = trim(CCPP_shared(nt)%errmsg)
+      errflg = CCPP_shared(nt)%errflg
       if (errflg/=0) then
           write(0,*) 'Error in call to sfc_nst_mp_sfc_nst_pre_run: ' // trim(errmsg)
           stop
@@ -1340,8 +1340,8 @@ module module_physics_driver
       Interstitial(nt)%evap = evap             ! intent(inout)
       Interstitial(nt)%hflx = hflx             ! intent(inout)
       Interstitial(nt)%ep1d = ep1d             ! intent(inout)
-      Interstitial(nt)%errmsg = errmsg         ! intent(out)
-      Interstitial(nt)%errflg = errflg         ! intent(out)
+      CCPP_shared(nt)%errmsg = errmsg          ! intent(out)
+      CCPP_shared(nt)%errflg = errflg          ! intent(out)
       call ccpp_physics_run(cdata_block(nb,nt), scheme_name="sfc_nst", ierr=ierr)
       ! Copy intent(inout) and intent(out) interstitial variables to local variables in driver
       tsurf = Interstitial(nt)%tsurf
@@ -1351,8 +1351,8 @@ module module_physics_driver
       evap = Interstitial(nt)%evap
       hflx = Interstitial(nt)%hflx
       ep1d = Interstitial(nt)%ep1d
-      errmsg = trim(Interstitial(nt)%errmsg)
-      errflg = Interstitial(nt)%errflg
+      errmsg = trim(CCPP_shared(nt)%errmsg)
+      errflg = CCPP_shared(nt)%errflg
       if (errflg/=0) then
           write(0,*) 'Error in call to sfc_nst_mp_sfc_nst_run: ' // trim(errmsg)
           stop
@@ -1364,14 +1364,14 @@ module module_physics_driver
       Interstitial(nt)%islmsk = islmsk         ! intent(in)
       Interstitial(nt)%tsurf = tsurf           ! intent(inout)
       Interstitial(nt)%dtzm = dtzm             ! intent(inout)
-      Interstitial(nt)%errmsg = errmsg         ! intent(out)
-      Interstitial(nt)%errflg = errflg         ! intent(out)
+      CCPP_shared(nt)%errmsg = errmsg          ! intent(out)
+      CCPP_shared(nt)%errflg = errflg          ! intent(out)
       call ccpp_physics_run(cdata_block(nb,nt), scheme_name="sfc_nst_post", ierr=ierr)
       ! Copy intent(inout) and intent(out) interstitial variables to local variables in driver
       tsurf = Interstitial(nt)%tsurf
       dtzm = Interstitial(nt)%dtzm
-      errmsg = trim(Interstitial(nt)%errmsg)
-      errflg = Interstitial(nt)%errflg
+      errmsg = trim(CCPP_shared(nt)%errmsg)
+      errflg = CCPP_shared(nt)%errflg
       if (errflg/=0) then
           write(0,*) 'Error in call to sfc_nst_mp_sfc_nst_post_run: ' // trim(errmsg)
           stop
