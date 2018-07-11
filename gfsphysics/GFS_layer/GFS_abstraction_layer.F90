@@ -11,12 +11,9 @@ module physics_abstraction_layer
                              tbd_type         =>  GFS_tbd_type,      &
                              cldprop_type     =>  GFS_cldprop_type,  &
                              radtend_type     =>  GFS_radtend_type,  &
-#ifdef CCPP
-                             intdiag_type     =>  GFS_diag_type,     &
-                             fastphys_type    =>  GFS_fastphys_type, &
-                             interstitial_type=>  GFS_interstitial_type
-#else
                              intdiag_type     =>  GFS_diag_type
+#ifdef CCPP
+  use GFS_typedefs,    only: interstitial_type=>  GFS_interstitial_type
 #endif
 
 
@@ -68,7 +65,6 @@ module physics_abstraction_layer
   public  restart_type
   public  diagnostic_type
 #ifdef CCPP
-  public  fastphys_type
   public  interstitial_type
 #endif
 
