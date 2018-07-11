@@ -19,11 +19,9 @@ module module_physics_driver
                                    GFS_sfcprop_type, GFS_coupling_type, &
                                    GFS_control_type, GFS_grid_type,     &
                                    GFS_tbd_type,     GFS_cldprop_type,  &
-#ifdef CCPP
-                                   GFS_radtend_type, GFS_diag_type,     &
-                                   GFS_interstitial_type
-#else
                                    GFS_radtend_type, GFS_diag_type
+#ifdef CCPP
+  use GFS_typedefs,          only: GFS_interstitial_type
 #endif
   use gfdl_cloud_microphys_mod, only: gfdl_cloud_microphys_driver
   use module_mp_thompson,    only: mp_gt_driver
@@ -608,6 +606,10 @@ module module_physics_driver
       nt = 1
 #endif
 
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_suite_interstitial_phys_reset_run through option B'
+      ! Copy local variables from driver to appropriate interstitial variables
+      CCPP_shared(nt)%errmsg = errmsg        ! intent(out)
+      CCPP_shared(nt)%errflg = errflg        ! intent(out)
       call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_suite_interstitial_phys_reset", ierr=ierr)
       ! Copy intent(inout) and intent(out) interstitial variables to local variables in driver
       errmsg = trim(CCPP_shared(nt)%errmsg)
@@ -859,16 +861,69 @@ module module_physics_driver
                         Statein%tgrs, Statein%qgrs, del, del_gz)
 #endif
 !
+
+#ifdef CCPP
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_suite_interstitial_1_run through option B'
+      ! Copy local variables from driver to appropriate interstitial variables
+      !Model                             ! intent(in)
+      !Grid                              ! intent(in)
+      !Sfcprop                           ! intent(in)
+      !Statein                           ! intent(in)
+      !Diag                              ! intent(inout)
+      Interstitial(nt)%rhcbot = rhbbot   ! intent(out)
+      Interstitial(nt)%rhcpbl = rhpbl    ! intent(out)
+      Interstitial(nt)%rhctop = rhbtop   ! intent(out)
+      Interstitial(nt)%frain  = frain    ! intent(out)
+      Interstitial(nt)%islmsk = islmsk   ! intent(out)
+      Interstitial(nt)%frland = frland   ! intent(out)
+      Interstitial(nt)%work1  = work1    ! intent(out)
+      Interstitial(nt)%work2  = work2    ! intent(out)
+      Interstitial(nt)%dudt   = dudt     ! intent(out)
+      Interstitial(nt)%dvdt   = dvdt     ! intent(out)
+      Interstitial(nt)%dtdt   = dtdt     ! intent(out)
+      Interstitial(nt)%dtdtc  = dtdtc    ! intent(out)
+      Interstitial(nt)%dqdt   = dqdt     ! intent(out)
+      CCPP_shared(nt)%errmsg  = errmsg   ! intent(out)
+      CCPP_shared(nt)%errflg  = errflg   ! intent(out)
+      !
+      call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_suite_interstitial_1", ierr=ierr)
+      ! Copy back intent(inout) interstitial variables to local variables in driver
+      rhbbot = Interstitial(nt)%rhcbot
+      rhpbl  = Interstitial(nt)%rhcpbl
+      rhbtop = Interstitial(nt)%rhctop
+      frain  = Interstitial(nt)%frain
+      islmsk = Interstitial(nt)%islmsk
+      frland = Interstitial(nt)%frland
+      work1  = Interstitial(nt)%work1
+      work2  = Interstitial(nt)%work2
+      dudt   = Interstitial(nt)%dudt
+      dvdt   = Interstitial(nt)%dvdt
+      dtdt   = Interstitial(nt)%dtdt
+      dtdtc  = Interstitial(nt)%dtdtc
+      dqdt   = Interstitial(nt)%dqdt
+      errmsg = trim(CCPP_shared(nt)%errmsg)
+      errflg = CCPP_shared(nt)%errflg
+      if (errflg/=0) then
+          write(0,*) 'Error in call to GFS_suite_interstitial_1_run: ' // trim(errmsg)
+          stop
+      end if
+#endif
+
+#ifndef CCPP
       rhbbot = Model%crtrh(1)
       rhpbl  = Model%crtrh(2)
       rhbtop = Model%crtrh(3)
+#endif
 !
 !  --- ...  frain=factor for centered difference scheme correction of rain amount.
 
+#ifndef CCPP
       frain = dtf / dtp
+#endif
 
       do i=1,im
         sigmaf(i) = max( Sfcprop%vfrac(i),0.01 )
+#ifndef CCPP
         islmsk(i) = nint(Sfcprop%slmsk(i))
 
         if (islmsk(i) == 1) then
@@ -876,6 +931,7 @@ module module_physics_driver
         else
           frland(i) = 0.
         endif
+#endif
 
         if (islmsk(i) == 2) then
           if (Model%isot == 1) then
@@ -899,6 +955,7 @@ module module_physics_driver
         cice(i) = Sfcprop%fice(i)
         tice(i) = Sfcprop%tisfc(i)
 !
+#ifndef CCPP
 !GFDL   work1(i)   = (log(coslat(i) / (nlons(i)*latr)) - dxmin) * dxinv
 !GFS         Moorthi thinks this should be area and not dx
 !       work1(i)   = (log(Grid%dx(i)) - dxmin) * dxinv
@@ -906,15 +963,14 @@ module module_physics_driver
         work1(i)   = max(0.0, min(1.0,work1(i)))
         work2(i)   = 1.0 - work1(i)
         Diag%psurf(i) = Statein%pgr(i)
+#endif
         work3(i)   = Statein%prsik(i,1) / Statein%prslk(i,1)
 !GFDL   tem1       = con_rerth * (con_pi+con_pi)*coslat(i)/nlons(i)
 !GFDL   tem2       = con_rerth * con_pi / latr
 !GFDL   garea(i)   = tem1 * tem2
         garea(i)   = Grid%area(i)
 
-#ifdef CCPP
-
-#else
+#ifndef CCPP
         tem1       = Grid%dx(i)
         tem2       = Grid%dx(i)
         dlength(i) = sqrt( tem1*tem1+tem2*tem2 )
@@ -949,6 +1005,7 @@ module module_physics_driver
         enddo
       enddo
 
+#ifndef CCPP
       do k=1,levs
         do i=1,im
           dudt(i,k)  = 0.
@@ -964,6 +1021,7 @@ module module_physics_driver
           enddo
         enddo
       enddo
+#endif
 
 !  --- ...  initialize dtdt with heating rate from dcyc2
 
@@ -1237,7 +1295,6 @@ module module_physics_driver
               fh2    = Interstitial(nt)%fh2 
               errmsg = trim(CCPP_shared(nt)%errmsg)
               errflg = CCPP_shared(nt)%errflg
-
 #endif
               if (errflg/=0) then
                   write(0,*) 'Error in call to sfc_ex_coef_mp_sfc_ex_coef_run: ' // trim(errmsg)
@@ -4266,7 +4323,7 @@ module module_physics_driver
           !Statein%vvl                                          ! intent(in)
           !Model%dtp                                            ! intent(in)
           !Model%kdt                                            ! intent(in)
-          Diag%rain = rain1                                     ! intent(inout)
+          Diag%rain = rain1                                     ! intent(inout) ! DH* check if this is correct!
           !Interstitial(nt)%rainst                              ! intent(inout), should be zero on entry
           !Diag%snow                                            ! intent(inout)
           !Diag%ice                                             ! intent(inout)
@@ -4290,7 +4347,7 @@ module module_physics_driver
           !
           call ccpp_physics_run(cdata_block(nb,nt), scheme_name="mp_thompson_hrrr", ierr=ierr)
           ! Copy back intent(inout) and intent(out) interstitial variables to local variables in driver
-          rain1 = Diag%rain
+          rain1 = Diag%rain  ! DH* check if this works
           Tbd%phy_f3d(:,:,1) = Interstitial(nt)%clouds(:,:,3)
           Tbd%phy_f3d(:,:,2) = Interstitial(nt)%clouds(:,:,5)
           Tbd%phy_f3d(:,:,3) = Interstitial(nt)%clouds(:,:,9)
