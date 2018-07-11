@@ -251,14 +251,8 @@ module IPD_CCPP_driver
         return
       end if
 
-      ! Finalize fast physics first (must use cdata_tiles)
-      call ccpp_physics_finalize(cdata_tile, group_name="fast_physics", ierr=ierr)
-      if (ierr/=0) then
-        write(0,'(a)') "An error occurred in ccpp_physics_finalize for group fast_physics"
-        return
-      end if
-
-      ! Loop over all blocks and threads to finalize all other physics
+      ! Fast physics are finalized in atmosphere_end, loop over
+      ! all blocks and threads to finalize all other physics
       do nt=1,nthrds
         do nb=1,nblks
           !--- Finalize CCPP physics
@@ -295,6 +289,7 @@ module IPD_CCPP_driver
          end if
       end if
 
+      ! Deallocate shared CCPP data
       if (allocated(CCPP_shared)) deallocate(CCPP_shared)
 
     else
