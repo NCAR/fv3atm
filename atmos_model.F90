@@ -738,17 +738,17 @@ subroutine atmos_model_end (Atmos)
 
 !-----------------------------------------------------------------------
 !---- termination routine for atmospheric model ----
-#ifdef CCPP
-!   Both fast physics (from dynamics) and standard/slow physics (from IPD)
-!   are finalized in IPD_CCPP_step 'finalize'. This must happen before
-!   atmosphere_end, since data structures like Atm are deallocated in there.
-    call IPD_CCPP_step (step="finalize", nblks=Atm_block%nblks, ierr=ierr)
-    if (ierr/=0)  call mpp_error(FATAL, 'Call to IPD-CCPP finalize step failed')
-#endif
-
     call atmosphere_end (Atmos % Time, Atmos%grid)
     call FV3GFS_restart_write (IPD_Data, IPD_Restart, Atm_block, &
                                IPD_Control, Atmos%domain)
+
+#ifdef CCPP
+!   Fast physics (from dynamics) are finalized in atmosphere_end above;
+!   standard/slow physics (from IPD) are finalized in IPD_CCPP_step 'finalize'.
+!   The CCPP framework for all cdata structures is finalized in IPD_CCPP_step 'finalize'.
+    call IPD_CCPP_step (step="finalize", nblks=Atm_block%nblks, ierr=ierr)
+    if (ierr/=0)  call mpp_error(FATAL, 'Call to IPD-CCPP finalize step failed')
+#endif
 
 end subroutine atmos_model_end
 
