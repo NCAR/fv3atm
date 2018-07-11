@@ -400,6 +400,14 @@ module GFS_driver
                                  Grid, Tbd, Cldprop, Radtend, Diag)
 #endif
 
+#ifdef CCPP
+  use ccpp_api,              only: ccpp_physics_run
+  use CCPP_data,             only: cdata_block
+#ifdef OPENMP
+  use omp_lib
+#endif
+#endif
+
     implicit none
 
     !--- interface variables
@@ -423,6 +431,22 @@ module GFS_driver
     real(kind=kind_phys) :: sec
 
 #ifdef CCPP
+
+      integer :: nt
+      integer :: ierr
+      character(len=512) :: errmsg
+      integer            :: errflg
+
+      errmsg = ''
+      errflg = 0
+
+      ! Retrieve block number and OpenMP thread number
+      nb = size(blksz)
+#ifdef OPENMP
+      nt = omp_get_max_threads()
+#else
+      nt = 1
+#endif
 
 #if defined(CCPP_OPTION_A) && defined(__INTEL_COMPILER)
 ! OPTION A - works with Intel only
