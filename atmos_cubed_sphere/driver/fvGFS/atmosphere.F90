@@ -234,6 +234,9 @@ character(len=20)   :: mod_name = 'fvGFS/atmosphere_mod'
 
   integer, dimension(:), allocatable :: id_tracerdt_dyn
   integer :: sphum, liq_wat, rainwat, ice_wat, snowwat, graupel  ! condensate species tracer indices
+#ifdef CCPP
+  integer :: cld_amt
+#endif
 
   integer :: mytile = 1
   integer :: p_split = 1
@@ -258,6 +261,22 @@ contains
 !! including the grid structures, memory, initial state (self-initialization or restart), 
 !! and diagnostics.  
  subroutine atmosphere_init (Time_init, Time, Time_step, Grid_box, area)
+#ifdef CCPP
+   use iso_c_binding,     only: c_loc
+   use ccpp_api,          only: ccpp_init,           &
+                                ccpp_physics_init,   &
+                                ccpp_field_add
+   use CCPP_data,         only: ccpp_suite,          &
+                                cdata => cdata_tile, &
+                                CCPP_interstitial,   &
+                                CCPP_shared
+#ifdef OPENMP
+   use omp_lib
+#endif
+! Begin include auto-generated list of modules for ccpp
+#include "ccpp_modules_fast_physics.inc"
+! End include auto-generated list of modules for ccpp
+#endif
    type (time_type),    intent(in)    :: Time_init, Time, Time_step
    type(grid_box_type), intent(inout) :: Grid_box
    real(kind=kind_phys), pointer, dimension(:,:), intent(inout) :: area
@@ -267,8 +286,12 @@ contains
    logical :: do_atmos_nudge
    character(len=32) :: tracer_name, tracer_units
    real :: ps1, ps2
+#ifdef CCPP
+   integer :: nthreads
+   integer :: ierr
+#endif
 
-                    call timing_on('ATMOS_INIT')
+   call timing_on('ATMOS_INIT')
    allocate(pelist(mpp_npes()))
    call mpp_get_current_pelist(pelist)
 
@@ -320,7 +343,13 @@ contains
    rainwat = get_tracer_index (MODEL_ATMOS, 'rainwat' )
    snowwat = get_tracer_index (MODEL_ATMOS, 'snowwat' )
    graupel = get_tracer_index (MODEL_ATMOS, 'graupel' )
+#ifdef CCPP
+   cld_amt = get_tracer_index (MODEL_ATMOS, 'cld_amt')
+#endif
 
+#ifdef CCPP
+   ! DH* do we have to handle Thompson aerosols here?
+#endif
    if (max(sphum,liq_wat,ice_wat,rainwat,snowwat,graupel) > Atm(mytile)%flagstruct%nwat) then
       call mpp_error (FATAL,' atmosphere_init: condensate species are not first in the list of &
                             &tracers defined in the field_table')
@@ -386,7 +415,51 @@ contains
    id_subgridz  = mpp_clock_id ('FV subgrid_z',flags = clock_flag_default, grain=CLOCK_SUBCOMPONENT )
    id_fv_diag   = mpp_clock_id ('FV Diag',     flags = clock_flag_default, grain=CLOCK_SUBCOMPONENT )
 
-                    call timing_off('ATMOS_INIT')
+   call timing_off('ATMOS_INIT')
+
+#ifdef CCPP
+   ! Do CCPP fast physics initialization before call to adiabatic_init (since this calls fv_dynamics)
+
+   ! Initialize the cdata structure 
+   call ccpp_init(trim(ccpp_suite), cdata, ierr)
+   if (ierr/=0) then
+      call mpp_error (FATAL,' atmosphere_dynamics: error in ccpp_init')
+   end if
+
+   ! Create shared data type for fast and slow physics
+#ifdef OPENMP
+   nthreads = omp_get_max_threads()
+#else
+   nthreads = 1
+#endif
+   allocate(CCPP_shared(1:nthreads))
+   do i=1,nthreads
+      call CCPP_shared(i)%create()
+   end do
+
+   ! Create interstitial data type for fast physics
+   call CCPP_interstitial%create(Atm(mytile)%bd%is, Atm(mytile)%bd%ie, Atm(mytile)%bd%isd, Atm(mytile)%bd%ied,   &
+                                 Atm(mytile)%bd%js, Atm(mytile)%bd%je, Atm(mytile)%bd%jsd, Atm(mytile)%bd%jed,   &
+                                 Atm(mytile)%npz, dt_atmos, p_split, Atm(mytile)%flagstruct%k_split,             &
+                                 zvir, Atm(mytile)%flagstruct%p_ref, Atm(mytile)%ak, Atm(mytile)%bk,             &
+                                 cld_amt>0, kappa, Atm(mytile)%flagstruct%hydrostatic)
+
+! Populate cdata structure with fields required to run fast physics (auto-generated).
+! Some of the shared data require an argument nt = thread (currently only errmsg and
+! errflg). For the fast physics in FV3, it is sufficient to set this to nt = 1 and
+! remember that all threads inside the gfdl_fv_sat_adj runs will write to the first
+! thread's errmsg/errflg data (currently errmsg and errflg not used in fv_sat_adj)
+   i = 1
+   associate(nt=>i)
+#include "ccpp_fields_fast_physics.inc"
+   end associate
+
+   ! Initialize fast physics
+   call ccpp_physics_init(cdata, group_name="fast_physics", ierr=ierr)
+   if (ierr/=0) then
+      call mpp_error (FATAL,' atmosphere_dynamics: error in ccpp_physics_init')
+   end if
+#endif
 
    if ( Atm(mytile)%flagstruct%na_init>0 ) then
       call nullify_domain ( )
@@ -411,7 +484,7 @@ contains
 
    n = mytile
    call switch_current_Atm(Atm(n)) 
-      
+
  end subroutine atmosphere_init
 
 
@@ -486,7 +559,7 @@ contains
 
    n = mytile
    do psc=1,abs(p_split)
-                    call timing_on('fv_dynamics')
+     call timing_on('fv_dynamics')
 !uc/vc only need be same on coarse grid? However BCs do need to be the same
      call fv_dynamics(npx, npy, npz, nq, Atm(n)%ng, dt_atmos/real(abs(p_split)),&
                       Atm(n)%flagstruct%consv_te, Atm(n)%flagstruct%fill,  &
