@@ -2504,7 +2504,7 @@ module module_physics_driver
       !Stateout%gt0                               ! intent(in)
       !Stateout%gq0(:,:,1)                        ! intent(in)
       Interstitial(nt)%dudt = dudt                ! intent(inout)
-      Interstitail(nt)%dvdt = dvdt                ! intent(inout)
+      Interstitial(nt)%dvdt = dvdt                ! intent(inout)
       Interstitial(nt)%dtdt = dtdt                ! intent(inout)
       Interstitial(nt)%dqdt(:,:,1) = dqdt(:,:,1)  ! intent(inout)
       CCPP_shared(nt)%errmsg = errmsg             ! intent(out)
@@ -2512,9 +2512,9 @@ module module_physics_driver
       call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_DCNV_generic_pre", ierr=ierr)
       ! Copy back intent(inout/out) interstitial variables to local variables in driver
       dudt = Interstitial(nt)%dudt
-      dvdt = Interstitail(nt)%dvdt
+      dvdt = Interstitial(nt)%dvdt
       dtdt = Interstitial(nt)%dtdt
-      dqdt(:,:,1) = Interstitial(nt)%dqdt(:,:,1) = dqdt(:,:,1)
+      dqdt(:,:,1) = Interstitial(nt)%dqdt(:,:,1)
       errmsg = trim(CCPP_shared(nt)%errmsg)
       errflg = CCPP_shared(nt)%errflg
 #endif
@@ -3154,11 +3154,11 @@ module module_physics_driver
       !Model%ldiag3d                              ! intent(in)
       !Model%lgocart                              ! intent(in)
       Interstitial(nt)%frain = frain              ! intent(in)
-      Interstitail(nt)%raincd = rain1             ! intent(in)
+      Interstitial(nt)%raincd = rain1             ! intent(in)
       !Model%dtf                                  ! intent(in)
       Interstitial(nt)%cld1d = cld1d              ! intent(in)
       Interstitial(nt)%dudt = dudt                ! intent(in)
-      Interstitail(nt)%dvdt = dvdt                ! intent(in)
+      Interstitial(nt)%dvdt = dvdt                ! intent(in)
       Interstitial(nt)%dtdt = dtdt                ! intent(in)
       Interstitial(nt)%dqdt(:,:,1) = dqdt(:,:,1)  ! intent(in)
       !Stateout%gu0                               ! intent(in)
