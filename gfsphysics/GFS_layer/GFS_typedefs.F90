@@ -1791,6 +1791,7 @@ module GFS_typedefs
 !! | IPD_Interstitial(nt)%flag_iter                     | flag_for_iteration                                                                             | flag for iteration                                                                  | flag          |    1 | logical     |           | none   | F        |
 !! | IPD_Interstitial(nt)%fm10                          | Monin-Obukhov_similarity_function_for_momentum_at_10m                                          | Monin-Obukhov similarity parameter for momentum at 10m                              | none          |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%frain                         | dynamics_to_physics_timestep_ratio                                                             | ratio of dynamics timestep to physics timestep                                      | none          |    0 | real        | kind_phys | none   | F        |
+!! | IPD_Interstitial(nt)%frland                        | land_area_fraction                                                                             | land area fraction                                                                  | frac          |    1 | real        | kind_phys | none   | F       |
 !! | IPD_Interstitial(nt)%gabsbdlw                      | surface_downwelling_longwave_flux_absorbed_by_ground                                           | total sky surface downward longwave flux absorbed by the ground                     | W m-2         |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%gamma                         | anisotropy_of_subgrid_orography                                                                | anisotropy of subgrid orography                                                     | none          |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%gamq                          | countergradient_mixing_term_for_water_vapor                                                    | countergradient mixing term for water vapor                                         | kg kg-1       |    1 | real        | kind_phys | none   | F        |
@@ -1971,6 +1972,7 @@ module GFS_typedefs
     real (kind=kind_phys), pointer      :: flag_frsoil(:)   => null()  !<
     real (kind=kind_phys), pointer      :: fm10(:)          => null()  !<
     real (kind=kind_phys)               :: frain                       !<
+    real (kind=kind_phys), pointer      :: frland(:)        => null()  !<
     real (kind=kind_phys), pointer      :: gabsbdlw(:)      => null()  !<
     real (kind=kind_phys), pointer      :: gamma(:)         => null()  !<
     real (kind=kind_phys), pointer      :: gamq(:)          => null()  !<
@@ -4371,6 +4373,7 @@ module GFS_typedefs
     allocate (Interstitial%flag_guess (IM))
     allocate (Interstitial%flag_iter  (IM))
     allocate (Interstitial%fm10       (IM))
+    allocate (Interstitial%frland     (IM))
     allocate (Interstitial%gabsbdlw   (IM))
     allocate (Interstitial%gamma      (IM))
     allocate (Interstitial%gamq       (IM))
@@ -4615,6 +4618,7 @@ module GFS_typedefs
     Interstitial%flag_iter    = .false.
     Interstitial%fm10         = clear_val
     Interstitial%frain        = clear_val
+    Interstitial%frland       = clear_val
     Interstitial%gabsbdlw     = clear_val
     Interstitial%gamma        = clear_val
     Interstitial%gamq         = clear_val
@@ -4766,6 +4770,7 @@ module GFS_typedefs
     write (0,*) 'Interstitial%flag_iter(1)      = ', Interstitial%flag_iter(1)
     write (0,*) 'sum(Interstitial%fm10        ) = ', sum(Interstitial%fm10        )
     write (0,*) 'Interstitial%frain             = ', Interstitial%frain
+    write (0,*) 'sum(Interstitial%frland      ) = ', sum(Interstitial%frland      )
     write (0,*) 'sum(Interstitial%gabsbdlw    ) = ', sum(Interstitial%gabsbdlw    )
     write (0,*) 'sum(Interstitial%gamma       ) = ', sum(Interstitial%gamma       )
     write (0,*) 'sum(Interstitial%gamq        ) = ', sum(Interstitial%gamq        )
