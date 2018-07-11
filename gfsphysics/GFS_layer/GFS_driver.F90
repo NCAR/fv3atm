@@ -328,7 +328,7 @@ module GFS_driver
         print *,'SHOC is not currently compatible with Thompson MP -- shutting down'
         stop 
       endif 
-! For CCPP the Thompson MP init are called automatically as part of CCPP physics init
+! For CCPP the Thompson MP init is called automatically as part of CCPP physics init
 #ifndef CCPP
       call thompson_init()                     !--- add aerosol version later 
       if(Model%ltaerosol) then 

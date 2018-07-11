@@ -4658,7 +4658,6 @@ module module_physics_driver
             enddo
           enddo
 
-
           call gfdl_cloud_microphys_driver(qv1, ql1, qr1, qi1, qs1, qg1, qa1, &
                                            qn1, qv_dt, ql_dt, qr_dt, qi_dt,   &
                                            qs_dt, qg_dt, qa_dt, pt_dt, pt, w, &
