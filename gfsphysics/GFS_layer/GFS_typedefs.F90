@@ -883,7 +883,7 @@ module GFS_typedefs
 !! | IPD_Control%nshoc_3d                 |                                                                               | number of 3d fields for SHOC                            |               |    0 | integer   |           | none   | F        |
 !! | IPD_Control%ncnvcld3d                |                                                                               | number of convective 3d clouds fields                   |               |    0 | integer   |           | none   | F        |
 !! | IPD_Control%npdf3d                   | number_of_3d_arrays_associated_with_pdf-based_clouds                          | number of 3d arrays associated with pdf based clouds/mp | count         |    0 | integer   |           | none   | F        |
-!! | IPD_Control%nctp                     |                                                                               | number of cloud types in Chikira-Sugiyama scheme        |               |    0 | integer   |           | none   | F        |
+!! | IPD_Control%nctp                     | number_of_cloud_types_CS                                                      | number of cloud types in Chikira-Sugiyama scheme        | count         |    0 | integer   |           | none   | F        |
 !! | IPD_Control%ncnvw                    |                                                                               | the index of cnvw in phy_f3d                            |               |    0 | integer   |           | none   | F        |
 !! | IPD_Control%debug                    |                                                                               | debug flag                                              |               |    0 | logical   |           | none   | F        |
 !! | IPD_Control%pre_rad                  |                                                                               | flag for testing purpose                                |               |    0 | logical   |           | none   | F        |
@@ -1801,6 +1801,8 @@ module GFS_typedefs
 !! | IPD_Interstitial(nt)%flag_iter                     | flag_for_iteration                                                                             | flag for iteration                                                                  | flag          |    1 | logical     |           | none   | F        |
 !! | IPD_Interstitial(nt)%fm10                          | Monin-Obukhov_similarity_function_for_momentum_at_10m                                          | Monin-Obukhov similarity parameter for momentum at 10m                              | none          |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%frain                         | dynamics_to_physics_timestep_ratio                                                             | ratio of dynamics timestep to physics timestep                                      | none          |    0 | real        | kind_phys | none   | F        |
+!! | IPD_Interstitial(nt)%fscav                         | fraction_of_tracer_scavenged                                                                   | fraction of the tracer (aerosols) that is scavenged by convection                   | km-1          |    1 | real        | kind_phys | none   | F        |
+!! | IPD_Interstitial(nt)%fswtr                         | fraction_of_cloud_top_water_scavenged                                                          | fraction of the tracer (cloud top water) that is scavenged by convection            | km-1          |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%gabsbdlw                      | surface_downwelling_longwave_flux_absorbed_by_ground                                           | total sky surface downward longwave flux absorbed by the ground                     | W m-2         |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%gamma                         | anisotropy_of_subgrid_orography                                                                | anisotropy of subgrid orography                                                     | none          |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%gamq                          | countergradient_mixing_term_for_water_vapor                                                    | countergradient mixing term for water vapor                                         | kg kg-1       |    1 | real        | kind_phys | none   | F        |
@@ -1847,6 +1849,7 @@ module GFS_typedefs
 !! | IPD_Interstitial(nt)%nn                            | number_of_tracers_for_allocating_cloud_work_function                                           | number of tracers for allocating cloud work function                                | count         |    0 | integer     |           | none   | F        |
 !! | IPD_Interstitial(nt)%nsamftrac                     | number_of_tracers_for_samf                                                                     | number of tracers for scale-aware mass flux schemes                                 | count         |    0 | integer     |           | none   | F        |
 !! | IPD_Interstitial(nt)%ntk                           | index_of_TKE_convective_transport_tracer                                                       | index of TKE in the convectively transported tracer array                           | index         |    0 | integer     |           | none   | F        |
+!! | IPD_Interstitial(nt)%ntr                           | number_of_total_tracers_CS                                                                     | number of total tracers convectively transported by CS scheme                       | count         |    0 | integer     |           | none   | F        |
 !! | IPD_Interstitial(nt)%nvdiff                        | number_of_vertical_diffusion_tracers                                                           | number of tracers to diffuse vertically                                             | count         |    0 | integer     |           | none   | F        |
 !! | IPD_Interstitial(nt)%oa4                           | asymmetry_of_subgrid_orography                                                                 | asymmetry of subgrid orography                                                      | none          |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%oc                            | convexity_of_subgrid_orography                                                                 | convexity of subgrid orography                                                      | none          |    1 | real        | kind_phys | none   | F        |
@@ -1856,6 +1859,8 @@ module GFS_typedefs
 !! | IPD_Interstitial(nt)%oz_pres                       | natural_log_of_ozone_forcing_data_pressure_levels                                              | natural log of ozone forcing data pressure levels                                   | log(Pa)       |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%plvl                          | air_pressure_at_interface_for_radiation_in_hPa                                                 | air pressure at vertical interface for radiation calculation                        | hPa           |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%plyr                          | air_pressure_at_layer_for_radiation_in_hPa                                                     | air pressure at vertical layer for radiation calculation                            | hPa           |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Interstitial(nt)%qicn                          | mass_fraction_of_convective_cloud_ice                                                          | mass fraction of convective cloud ice water                                         | kg kg-1       |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Interstitial(nt)%qlcn                          | mass_fraction_of_convective_cloud_liquid_water                                                 | mass fraction of convective cloud liquid water                                      | kg kg-1       |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%qlyr                          | water_vapor_specific_humidity_at_layer_for_radiation                                           | specific humidity layer                                                             | kg kg-1       |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%qss                           | surface_specific_humidity                                                                      | surface air saturation specific humidity                                            | kg kg-1       |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%raddt                         | time_step_for_radiation                                                                        | radiation time step                                                                 | s             |    0 | real        | kind_phys | none   | F        |
@@ -1907,6 +1912,8 @@ module GFS_typedefs
 !! | IPD_Interstitial(nt)%ud_mf                         | instantaneous_atmosphere_updraft_convective_mass_flux                                          | (updraft mass flux) * delt                                                          | kg m-2        |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%vegf1d                        | perturbation_of_vegetation_fraction                                                            | perturbation of vegetation fraction                                                 | frac          |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%vegtype                       | cell_vegetation_type                                                                           | vegetation type at each grid cell                                                   | index         |    1 | integer     |           | none   | F        |
+!! | IPD_Interstitial(nt)%w_upi                         | vertical_velocity_for_updraft                                                                  | vertical velocity for updraft                                                       | m s-1         |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Interstitial(nt)%wcbmax                        | maximum_updraft_velocity_at_cloud_base                                                         | maximum updraft velocity at cloud base                                              | m s-1         |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%wind                          | wind_speed_at_lowest_model_layer                                                               | wind speed at lowest model level                                                    | m s-1         |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%work1                         | grid_size_related_coefficient_used_in_scale-sensitive_schemes                                  | grid size related coefficient used in scale-sensitive schemes                       | none          |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%work2                         | grid_size_related_coefficient_used_in_scale-sensitive_schemes_complement                       | complement to work1                                                                 | none          |    1 | real        | kind_phys | none   | F        |
@@ -1991,6 +1998,8 @@ module GFS_typedefs
     real (kind=kind_phys), pointer      :: flag_frsoil(:)   => null()  !<
     real (kind=kind_phys), pointer      :: fm10(:)          => null()  !<
     real (kind=kind_phys)               :: frain                       !<
+!JLS    real (kind=kind_phys), pointer      :: fscav(:)         => null()  !<
+!JLS    real (kind=kind_phys), pointer      :: fswtr(:)         => null()  !<
     real (kind=kind_phys), pointer      :: gabsbdlw(:)      => null()  !<
     real (kind=kind_phys), pointer      :: gamma(:)         => null()  !<
     real (kind=kind_phys), pointer      :: gamq(:)          => null()  !<
@@ -2027,15 +2036,18 @@ module GFS_typedefs
     integer                             :: nn                          !<
     integer                             :: nsamftrac                   !<
     integer                             :: ntk                         !<
+    integer                             :: ntr                         !<
     integer                             :: nvdiff                      !<
     real (kind=kind_phys), pointer      :: oa4(:,:)         => null()  !<
     real (kind=kind_phys), pointer      :: oc(:)            => null()  !<
     real (kind=kind_phys), pointer      :: olyr(:,:)        => null()  !<
-!JLS    logical,               pointer      :: otspt(:,:)       => null()  !<  ! Issue with dimensions (tottracer+3,2)
+!JLS    logical,               pointer      :: otspt(:,:)       => null()  !<  ! JLS Issue with dimensions (tottracer+3,2)
     integer                             :: oz_coeff                    !<
     real (kind=kind_phys), pointer      :: oz_pres(:)       => null()  !<
     real (kind=kind_phys), pointer      :: plvl(:,:)        => null()  !<
     real (kind=kind_phys), pointer      :: plyr(:,:)        => null()  !<
+    real (kind=kind_phys), pointer      :: qicn(:,:)        => null()  !<
+    real (kind=kind_phys), pointer      :: qlcn(:,:)        => null()  !<
     real (kind=kind_phys), pointer      :: qlyr(:,:)        => null()  !<
     real (kind=kind_phys), pointer      :: qss(:)           => null()  !<
     real (kind=kind_phys)               :: raddt                       !<
@@ -2085,6 +2097,8 @@ module GFS_typedefs
     real (kind=kind_phys), pointer      :: ud_mf(:,:)       => null()  !<
     real (kind=kind_phys), pointer      :: vegf1d(:)        => null()  !<
     integer, pointer                    :: vegtype(:)       => null()  !<
+    real (kind=kind_phys), pointer      :: w_upi(:,:)       => null()  !<
+    real (kind=kind_phys), pointer      :: wcbmax(:)        => null()  !<
     real (kind=kind_phys), pointer      :: wind(:)          => null()  !<
     real (kind=kind_phys), pointer      :: work1(:)         => null()  !<
     real (kind=kind_phys), pointer      :: work2(:)         => null()  !<
@@ -4401,6 +4415,8 @@ module GFS_typedefs
     allocate (Interstitial%flag_guess (IM))
     allocate (Interstitial%flag_iter  (IM))
     allocate (Interstitial%fm10       (IM))
+!JLS    allocate (Interstitial%fscav      (Model%ntr))
+!JLS    allocate (Interstitial%fswtr      (Model%ntr))
     allocate (Interstitial%gabsbdlw   (IM))
     allocate (Interstitial%gamma      (IM))
     allocate (Interstitial%gamq       (IM))
@@ -4423,11 +4439,13 @@ module GFS_typedefs
     allocate (Interstitial%oa4        (IM,4))
     allocate (Interstitial%oc         (IM))
     allocate (Interstitial%olyr       (IM,Model%levr+LTP))
-!JLS    allocate (Interstitial%otspt      (ntr,2))
+!JLS    allocate (Interstitial%otspt      (Model%ntr,2))
     allocate (Interstitial%oz_pres    (levozp))
     allocate (Interstitial%phy_fctd   (IM,Model%nctp))
     allocate (Interstitial%plvl       (IM,Model%levr+1+LTP))
     allocate (Interstitial%plyr       (IM,Model%levr+LTP))
+    allocate (Interstitial%qicn       (IM,Model%levs))
+    allocate (Interstitial%qlcn       (IM,Model%levs))
     allocate (Interstitial%qlyr       (IM,Model%levr+LTP))
     allocate (Interstitial%qss        (IM))
     allocate (Interstitial%raincd     (IM))
@@ -4467,6 +4485,8 @@ module GFS_typedefs
     allocate (Interstitial%ud_mf      (IM,Model%levs))
     allocate (Interstitial%vegf1d     (IM))
     allocate (Interstitial%vegtype    (IM))
+    allocate (Interstitial%w_upi      (IM,Model%levs))
+    allocate (Interstitial%wcbmax     (IM))
     allocate (Interstitial%wind       (IM))
     allocate (Interstitial%work1      (IM))
     allocate (Interstitial%work2      (IM))
@@ -4657,6 +4677,8 @@ module GFS_typedefs
     Interstitial%flag_iter    = .false.
     Interstitial%fm10         = clear_val
     Interstitial%frain        = clear_val
+!JLS    Interstitial%fscav        = clear_val
+!JLS    Interstitial%fswtr        = clear_val
     Interstitial%gabsbdlw     = clear_val
     Interstitial%gamma        = clear_val
     Interstitial%gamq         = clear_val
@@ -4676,7 +4698,10 @@ module GFS_typedefs
     Interstitial%nsamftrac    = 0
     Interstitial%oa4          = clear_val
     Interstitial%oc           = clear_val
+!JLS    Interstitial%otspt        = .false.
     Interstitial%phy_fctd     = clear_val
+    Interstitial%qicn         = clear_val
+    Interstitial%qlcn         = clear_val
     Interstitial%qss          = clear_val
     Interstitial%raincd       = clear_val
     Interstitial%raincs       = clear_val
@@ -4712,6 +4737,8 @@ module GFS_typedefs
     Interstitial%ud_mf        = clear_val
     Interstitial%vegf1d       = clear_val
     Interstitial%vegtype      = 0
+    Interstitial%w_upi        = clear_val
+    Interstitial%wcbmax       = clear_val
     Interstitial%wind         = clear_val
     Interstitial%work1        = clear_val
     Interstitial%work2        = clear_val
@@ -4819,6 +4846,8 @@ module GFS_typedefs
     write (0,*) 'Interstitial%flag_iter(1)      = ', Interstitial%flag_iter(1)
     write (0,*) 'sum(Interstitial%fm10        ) = ', sum(Interstitial%fm10        )
     write (0,*) 'Interstitial%frain             = ', Interstitial%frain
+ !JLS   write (0,*) 'sum(Interstitial%fscav       ) = ', sum(Interstitial%fscav       )
+ !JLS   write (0,*) 'sum(Interstitial%fswtr       ) = ', sum(Interstitial%fswtr       )
     write (0,*) 'sum(Interstitial%gabsbdlw    ) = ', sum(Interstitial%gabsbdlw    )
     write (0,*) 'sum(Interstitial%gamma       ) = ', sum(Interstitial%gamma       )
     write (0,*) 'sum(Interstitial%gamq        ) = ', sum(Interstitial%gamq        )
@@ -4846,9 +4875,12 @@ module GFS_typedefs
     write (0,*) 'sum(Interstitial%oa4         ) = ', sum(Interstitial%oa4         )
     write (0,*) 'sum(Interstitial%oc          ) = ', sum(Interstitial%oc          )
     write (0,*) 'sum(Interstitial%olyr        ) = ', sum(Interstitial%olyr        )
+!JLS    write (0,*) 'Interstitial%otspt             = ', Interstitial%otspt(1,1)      )
     write (0,*) 'sum(Interstitial%phy_fctd    ) = ', sum(Interstitial%phy_fctd    )
     write (0,*) 'sum(Interstitial%plvl        ) = ', sum(Interstitial%plvl        )
     write (0,*) 'sum(Interstitial%plyr        ) = ', sum(Interstitial%plyr        )
+    write (0,*) 'sum(Interstitial%qicn        ) = ', sum(Interstitial%qicn        )
+    write (0,*) 'sum(Interstitial%qlcn        ) = ', sum(Interstitial%qlcn        )
     write (0,*) 'sum(Interstitial%qlyr        ) = ', sum(Interstitial%qlyr        )
     write (0,*) 'sum(Interstitial%qss         ) = ', sum(Interstitial%qss         )
     write (0,*) 'Interstitial%raddt             = ', Interstitial%raddt
@@ -4897,6 +4929,8 @@ module GFS_typedefs
     write (0,*) 'sum(Interstitial%ud_mf       ) = ', sum(Interstitial%ud_mf       )
     write (0,*) 'sum(Interstitial%vegf1d      ) = ', sum(Interstitial%vegf1d      )
     write (0,*) 'sum(Interstitial%vegtype     ) = ', sum(Interstitial%vegtype     )
+    write (0,*) 'sum(Interstitial%w_upi       ) = ', sum(Interstitial%w_upi       )
+    write (0,*) 'sum(Interstitial%wcbmax      ) = ', sum(Interstitial%wcbmax      )
     write (0,*) 'sum(Interstitial%wind        ) = ', sum(Interstitial%wind        )
     write (0,*) 'sum(Interstitial%work1       ) = ', sum(Interstitial%work1       )
     write (0,*) 'sum(Interstitial%work2       ) = ', sum(Interstitial%work2       )
