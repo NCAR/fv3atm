@@ -2011,7 +2011,7 @@ module GFS_typedefs
     integer                             :: lmk                         !<
     integer                             :: lmp                         !<
     integer,               pointer      :: mbota(:,:)       => null()  !<
-    logical,                            :: mg3_as_mg2
+    logical                             :: mg3_as_mg2
     integer,               pointer      :: mtopa(:,:)       => null()  !<
     integer                             :: nday                        !<
     integer                             :: nn                          !<
@@ -4485,7 +4485,7 @@ module GFS_typedefs
     type(GFS_control_type), intent(in) :: Model
 
     integer :: n, tracers
-    
+
     ! GF* 20180712 moved from GFS_physics_driver.F90
     Interstitial%nncl = Model%ncld
 
