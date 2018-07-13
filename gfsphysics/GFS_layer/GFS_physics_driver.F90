@@ -3894,6 +3894,7 @@ module module_physics_driver
                               Model%clam_shal,  Model%c0s_shal, Model%c1_shal, &
                               Model%pgcon_shal, Model%asolfac_shal)
 #endif
+#ifdef CCPP
 #if defined(CCPP_OPTION_A) && defined(__INTEL_COMPILER)
 ! OPTION A - works with Intel only
             if (Model%me==0) write(0,*) 'CCPP DEBUG: calling samfshalcnv_post_run through option A'
