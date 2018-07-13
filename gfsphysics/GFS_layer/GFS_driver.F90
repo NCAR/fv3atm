@@ -24,7 +24,8 @@ module GFS_driver
 
 #ifdef CCPP
   use ccpp_api,                 only: ccpp_physics_run
-  use CCPP_data,                only: cdata_domain
+  use CCPP_data,                only: cdata_domain, &
+                                   CCPP_shared
 #endif
 
   implicit none
@@ -394,7 +395,7 @@ module GFS_driver
 
 #ifdef CCPP
   use ccpp_api,              only: ccpp_physics_run
-  use CCPP_data,             only: cdata_block
+  use CCPP_data,             only: cdata_domain
 #ifdef OPENMP
   use omp_lib
 #endif
@@ -432,40 +433,59 @@ module GFS_driver
       errmsg = ''
       errflg = 0
 
-      ! Retrieve block number and OpenMP thread number
-      nb = size(blksz)
-#ifdef OPENMP
-      nt = omp_get_max_threads()
-#else
-      nt = 1
-#endif
-
+    ! Calls to time_vary are not threaded. Can use cdata_domain here, because radupdate only uses Model%...,
+    ! which is independent of block number and thread number
+              nt=1
 #if defined(CCPP_OPTION_A) && defined(__INTEL_COMPILER)
 ! OPTION A - works with Intel only
               if (Model%me==0) write(0,*) 'CCPP DEBUG: calling time_vary_run through option A'
               call GFS_phys_time_vary_1_run(                                        &
                            Model,                                                   &
                            errmsg, errflg)
+              if (errflg/=0) then
+                  write(0,*) 'Error in call to GFS_phys_time_vary_1_run: ' // trim(errmsg)
+                  stop
+              end if
               call GFS_rad_time_vary_run(                                           &
                            Model, Statein, Tbd,                                     &
                            errmsg, errflg)
+              if (errflg/=0) then
+                  write(0,*) 'Error in call to GFS_rad_time_vary_run: ' // trim(errmsg)
+                  stop
+              end if
               call GFS_phys_time_vary_2_run(                                        &
                            Grid, Model, Tbd, Sfcprop, Cldprop, Diag,                &
                            errmsg, errflg)
+              if (errflg/=0) then
+                  write(0,*) 'Error in call to GFS_phys_time_vary_2_run: ' // trim(errmsg)
+                  stop
+              end if
 #else
 ! OPTION B - works with all compilers
               if (Model%me==0) write(0,*) 'CCPP DEBUG: calling time_vary_run through option B'
 
-              call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_phys_time_vary_1_run", ierr=ierr)
-              call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_rad_time_vary_run", ierr=ierr)
-              call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_phys_time_vary_2_run", ierr=ierr)
-              errmsg = trim(Interstitial(nt)%errmsg)
-              errflg = Interstitial(nt)%errflg
-#endif
+              call ccpp_physics_run(cdata_domain, scheme_name="GFS_phys_time_vary_1_run", ierr=ierr)
+              errmsg = trim(CCPP_shared(nt)%errmsg)
+              errflg = CCPP_shared(nt)%errflg
               if (errflg/=0) then
-                  write(0,*) 'Error in call to hedmf_mp_hedmf_run: ' // trim(errmsg)
+                  write(0,*) 'Error in call to GFS_phys_time_vary_1_run: ' // trim(errmsg)
                   stop
               end if
+              call ccpp_physics_run(cdata_domain, scheme_name="GFS_rad_time_vary_run", ierr=ierr)
+              errmsg = trim(CCPP_shared(nt)%errmsg)
+              errflg = CCPP_shared(nt)%errflg
+              if (errflg/=0) then
+                  write(0,*) 'Error in call to GFS_rad_time_vary_run: ' // trim(errmsg)
+                  stop
+              end if
+              call ccpp_physics_run(cdata_domain, scheme_name="GFS_phys_time_vary_2_run", ierr=ierr)
+              errmsg = trim(CCPP_shared(nt)%errmsg)
+              errflg = CCPP_shared(nt)%errflg
+              if (errflg/=0) then
+                  write(0,*) 'Error in call to GFS_phys_time_vary_2_run: ' // trim(errmsg)
+                  stop
+              end if
+#endif
 #else
 
     nblks = size(blksz)
