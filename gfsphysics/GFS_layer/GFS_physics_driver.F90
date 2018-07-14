@@ -4020,12 +4020,12 @@ module module_physics_driver
       !Coupling%dqdti                             ! intent(inout)
       !Diag%dt3dt(:,:,5)                          ! intent(inout)
       !Diag%dq3dt(:,:,3)                          ! intent(inout)
-      Interstitial(nt)%clw_liquid  = clw(:,:,2)   ! intent(inout)
+      Interstitial(nt)%clw(:,:,2)  = clw(:,:,2)   ! intent(inout)
       CCPP_shared(nt)%errmsg   = errmsg           ! intent(out)
       CCPP_shared(nt)%errflg   = errflg           ! intent(out)
       call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_SCNV_generic_post", ierr=ierr)
       ! Copy back intent(inout) interstitial variables to local variables in driver
-      clw(:,:,2) = Interstitial(nt)%clw_liquid
+      clw(:,:,2) = Interstitial(nt)%clw(:,:,2)
       errmsg = trim(CCPP_shared(nt)%errmsg)
       errflg = CCPP_shared(nt)%errflg
 #endif
