@@ -45,7 +45,7 @@ else
 	   ./physics/radsw_main.f                                                    \
 	   ./physics/rad_initialize.f                                                \
 		 ./physics/samfdeepcnv.f                                                   \
-	   ./physics/samfshalcnv.f                                                   \
+	   ./physics/samfshalcnv.f                                                   
     RADIATION_SRCS_F90 =  \
 	   ./GFS_layer/GFS_radiation_driver.F90
 endif
