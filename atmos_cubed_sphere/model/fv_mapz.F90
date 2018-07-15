@@ -91,8 +91,9 @@ module fv_mapz_mod
   use fv_arrays_mod,     only: fv_grid_type
   use fv_timing_mod,     only: timing_on, timing_off
   use fv_mp_mod,         only: is_master
+#ifndef CCPP
   use fv_cmp_mod,        only: qs_init, fv_sat_adj
-#ifdef CCPP
+#else
   use ccpp_api,          only: ccpp_initialized, ccpp_physics_run
   use CCPP_data,         only: cdata => cdata_tile, CCPP_interstitial
 #endif
