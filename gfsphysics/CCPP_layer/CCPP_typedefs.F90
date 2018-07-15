@@ -2,16 +2,19 @@ module CCPP_typedefs
 
     implicit none
 
+#if 0
 !! \section arg_table_CCPP_typedefs
 !! | local_name                                         | standard_name                                                 | long_name                                                                | units   | rank | type                   |    kind   | intent | optional |
 !! |----------------------------------------------------|---------------------------------------------------------------|--------------------------------------------------------------------------|---------|------|------------------------|-----------|--------|----------|
 !! | CCPP_interstitial                                  | CCPP_Interstitial_type                                        | derived type CCPP_interstitial_type                                      | DDT     |    0 | CCPP_interstitial_type |           | none   | F        |
 !!
+#endif
 
     private
 
     public CCPP_shared_type, CCPP_interstitial_type
 
+#if 0
 !! \section arg_table_CCPP_shared_type
 !! | local_name                                         | standard_name                                                 | long_name                                                                           | units   | rank | type        |    kind   | intent | optional |
 !! |----------------------------------------------------|---------------------------------------------------------------|-------------------------------------------------------------------------------------|---------|------|-------------|-----------|--------|----------|
@@ -21,6 +24,7 @@ module CCPP_typedefs
 !! | CCPP_shared(nt)%nthreads                           | omp_threads                                                   | number of OpenMP threads available for fast physics schemes                         | count   |    0 | integer     |           | none   | F        |
 !! | CCPP_shared(nt)%phys_hydrostatic                   | flag_for_hydrostatic_heating_from_physics                     | flag for use of hydrostatic heating in physics                                      | flag    |    0 | logical     |           | none   | F        |
 !!
+#endif
   type CCPP_shared_type
 
      integer                             :: errflg
@@ -37,6 +41,7 @@ module CCPP_typedefs
 
   end type CCPP_shared_type
 
+#if 0
 !! \section arg_table_CCPP_interstitial_type
 !! | local_name                                         | standard_name                                                 | long_name                                                                           | units   | rank | type        |    kind   | intent | optional |
 !! |----------------------------------------------------|---------------------------------------------------------------|-------------------------------------------------------------------------------------|---------|------|-------------|-----------|--------|----------|
@@ -55,6 +60,7 @@ module CCPP_typedefs
 !! | CCPP_interstitial%te0                              | atmosphere_energy_content_at_Lagrangian_surface               | atmosphere total energy at Lagrangian surface                                       | J m-2   |    3 | real        |           | none   | F        |
 !! | CCPP_interstitial%zvir                             | ratio_of_vapor_to_dry_air_gas_constants_minus_one_default_kind| zvir=rv/rd-1.0                                                                      | none    |    0 | real        |           | none   | F        |
 !!
+#endif
   type CCPP_interstitial_type
 
      real                                :: akap
