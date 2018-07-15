@@ -178,7 +178,6 @@ type(IPD_diag_type),    target      :: IPD_Diag(DIAG_SIZE)
 type(IPD_restart_type)              :: IPD_Restart
 #ifdef CCPP
 type(IPD_interstitial_type) , allocatable, target :: IPD_Interstitial(:) ! number of threads
-logical :: ccpp_physics_initialized = .false.
 #endif
 
 !--------------
@@ -247,16 +246,6 @@ subroutine update_atmos_radiation_physics (Atmos)
         IPD_Data(nb)%Stateout%gq0 = IPD_Data(nb)%Statein%qgrs
       enddo
     else
-#ifdef CCPP
-      ! Initialize the CCPP physics at the beginning of the first time step.
-      ! This must happen this late, because some physics need the model state
-      ! (height, geopotential, temperature etc.) for correct initialization
-      if (.not.ccpp_physics_initialized) then
-        call IPD_CCPP_step (step="physics_init", nblks=Atm_block%nblks, IPD_Control=IPD_Control, ierr=ierr)
-        if (ierr/=0)  call mpp_error(FATAL, 'Call to IPD-CCPP physics_init step failed')
-        ccpp_physics_initialized =.true.
-      end if
-#endif
       if (mpp_pe() == mpp_root_pe() .and. debug) write(6,*) "setup step"
 
 !--- update IPD_Control%jdat(8)
@@ -552,6 +541,11 @@ subroutine atmos_model_init (Atmos, Time_init, Time, Time_step)
                                     IPD_Interstitial=IPD_Interstitial,          &
                                     nblks=Atm_block%nblks, ierr=ierr)
    if (ierr/=0)  call mpp_error(FATAL, 'Call to IPD-CCPP init step failed')
+   ! DH* combine init and physics init again?
+   ! doing the init here will require logic in thompson aerosol init if no aerosol
+   ! profiles are specified (because temperatures etc. are not yet set)
+   call IPD_CCPP_step (step="physics_init", nblks=Atm_block%nblks, IPD_Control=IPD_Control, ierr=ierr)
+   if (ierr/=0)  call mpp_error(FATAL, 'Call to IPD-CCPP physics_init step failed')
 #endif
 
    Atmos%Diag => IPD_Diag
