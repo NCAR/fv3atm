@@ -23,7 +23,10 @@ module module_physics_driver
 #ifdef CCPP
   use GFS_typedefs,          only: GFS_interstitial_type
 #endif
+
+#ifndef CCPP
   use gfdl_cloud_microphys_mod, only: gfdl_cloud_microphys_driver
+#endif
   use module_mp_thompson,    only: mp_gt_driver
   use module_mp_wsm6,        only: wsm6
   use funcphys,              only: ftdp
@@ -504,9 +507,12 @@ module module_physics_driver
            dtf, dtp, rhbbot, rhbtop, rhpbl, frain, tem, tem1, tem2,     &
            xcosz_loc, zsea1, zsea2, eng0, eng1, dpshc,                  &
 !--- experimental for shoc sub-stepping
-           dtshoc,                                                      &
+           dtshoc
+#ifndef CCPP
 !--- GFDL Cloud microphysics
+      real(kind=kind_phys) ::                                           &
            crain, csnow
+#endif
 
       real(kind=kind_phys), dimension(Model%ntrac-Model%ncld+2) ::      &
            fscav, fswtr
@@ -530,8 +536,11 @@ module module_physics_driver
 !--- for CS-convection
            wcbmax
 
+#ifndef CCPP
+!--- for GFDL MP only
       real(kind=kind_phys), dimension(size(Grid%xlon,1),1) ::           &
           area, land, rain0, snow0, ice0, graupel0
+#endif
 
       real(kind=kind_phys), dimension(size(Grid%xlon,1),4) ::           &
            oa4, clx
@@ -546,10 +555,12 @@ module module_physics_driver
 !--- GFDL modification for FV3
       real(kind=kind_phys), dimension(size(Grid%xlon,1),Model%levs+1) ::&
            del_gz
+#ifndef CCPP
       real(kind=kind_phys), allocatable, dimension(:,:,:) ::            &
            delp, dz, uin, vin, pt, qv1, ql1, qr1, qg1, qa1, qn1, qi1,   &
            qs1, pt_dt, qa_dt, udt, vdt, w, qv_dt, ql_dt, qr_dt, qi_dt,  &
            qs_dt, qg_dt
+#endif
 !
       real(kind=kind_phys), dimension(size(Grid%xlon,1),Model%levs,Model%ntrac) :: &
            dqdt
@@ -725,19 +736,6 @@ module module_physics_driver
         nn = ntrac + 1
       endif
       allocate (clw(ix,levs,nn))
-! DH*
-#if 0
-      if (Model%me==0) then
-         write(0,*) "DH DEBUG clw: ntiw, ntcw, ntclamt, ntrac, nn / shape(clw)", &
-                  & ntiw, ntcw, ntclamt, ntrac, nn, "/", shape(clw)
-#ifdef CCPP
-         write(0,*) "DH DEBUG clw: nt, Interstitial(nt)%tracers_total, Interstitial(nt)%nn, shape(Interstitial(nt)%clw)", &
-                  & nt, Interstitial(nt)%tracers_total, Interstitial(nt)%nn, shape(Interstitial(nt)%clw)
-#endif
-      end if
-
-#endif
-! *DH
 
       if (Model%imfdeepcnv >= 0 .or. Model%imfshalcnv > 0) then
         allocate (cnvc(ix,levs), cnvw(ix,levs))
@@ -839,6 +837,7 @@ module module_physics_driver
         allocate (qlcn(1,1),    qicn(1,1),     w_upi(1,1),    cf_upi(1,1),  &
                   CNV_MFD(1,1), CNV_PRC3(1,1), CNV_DQLDT(1,1),              &
                   clcn(1,1),    cnv_fice(1,1), cnv_ndrop(1,1), cnv_nice(1,1))
+#ifndef CCPP
         if (imp_physics == 11) then       ! GFDL MP
           allocate (delp(im,1,levs),  dz(im,1,levs),    uin(im,1,levs),                    &
                     vin(im,1,levs),   pt(im,1,levs),    qv1(im,1,levs),   ql1(im,1,levs),  &
@@ -848,6 +847,7 @@ module module_physics_driver
                     ql_dt(im,1,levs), qr_dt(im,1,levs), qi_dt(im,1,levs), qs_dt(im,1,levs),&
                     qg_dt(im,1,levs))
         endif
+#endif
       endif
 
 #ifdef GFS_HYDRO
@@ -1710,7 +1710,7 @@ module module_physics_driver
 !     if (lprnt) write(0,*)' tseae=',tsea(ipr),' tsurf=',tsurf(ipr),iter &
 !    &,' phy_f2d=',phy_f2d(ipr,num_p2d)
 
-        endif
+end if
 
 !       if (lprnt) write(0,*)' tseabeficemodel =',Sfcprop%tsfc(ipr),' me=',me   &
 !    &,   ' kdt=',kdt
@@ -3969,14 +3969,6 @@ module module_physics_driver
                n /= ntrw  .and. n /= ntsw  .and. n /= ntrnc   .and. &
                n /= ntsnc .and. n /= ntgl  .and. n /= ntgnc ) then
               tracers = tracers + 1
-! DH*
-#if 0
-              if (Model%me==0) then
-                 write(0,*) "DH DEBUG clw 2: tottracer, ntrac, n, tracers / shape(clw)", &
-                          & tottracer, ntrac, n, tracers, "/", shape(clw)
-              end if
-#endif
-! *DH
             do k=1,levs
               do i=1,im
                 Stateout%gq0(i,k,n) = clw(i,k,tracers)
@@ -4323,7 +4315,7 @@ module module_physics_driver
           !Statein%vvl                                          ! intent(in)
           !Model%dtp                                            ! intent(in)
           !Model%kdt                                            ! intent(in)
-          Diag%rain = rain1                                     ! intent(inout) ! DH* check if this is correct!
+          !Diag%rain                                            ! intent(inout), should be zero on entry
           !Interstitial(nt)%rainst                              ! intent(inout), should be zero on entry
           !Diag%snow                                            ! intent(inout)
           !Diag%ice                                             ! intent(inout)
@@ -4347,7 +4339,7 @@ module module_physics_driver
           !
           call ccpp_physics_run(cdata_block(nb,nt), scheme_name="mp_thompson_hrrr", ierr=ierr)
           ! Copy back intent(inout) and intent(out) interstitial variables to local variables in driver
-          rain1 = Diag%rain  ! DH* check if this works
+          rain1 = Diag%rain
           Tbd%phy_f3d(:,:,1) = Interstitial(nt)%clouds(:,:,3)
           Tbd%phy_f3d(:,:,2) = Interstitial(nt)%clouds(:,:,5)
           Tbd%phy_f3d(:,:,3) = Interstitial(nt)%clouds(:,:,9)
@@ -4618,6 +4610,96 @@ module module_physics_driver
 
         elseif (imp_physics == 11) then      ! GFDL MP
                                             ! -------
+#ifdef CCPP
+          ! OPTION B - works with all compilers
+          if (Model%me==0) write(0,*) 'CCPP DEBUG: calling gfdl_cloud_microphys_pre_run through option B'
+          !Interstitial(nt)%im                         ! intent(in) - set in Interstitial(nt)%create
+          !Interstitial(nt)%rain0                      ! intent(out) - set to zero in call
+          !Interstitial(nt)%ice0                       ! intent(out) - set to zero in call
+          !Interstitial(nt)%snow0                      ! intent(out) - set to zero in call
+          !Interstitial(nt)%graupel0                   ! intent(out) - set to zero in call
+          CCPP_shared(nt)%errmsg = errmsg              ! intent(out)
+          CCPP_shared(nt)%errflg = errflg              ! intent(out)
+          !
+          call ccpp_physics_run(cdata_block(nb,nt), scheme_name="gfdl_cloud_microphys_pre", ierr=ierr)
+          ! Copy back intent(inout) interstitial variables to local variables
+          errmsg = trim(CCPP_shared(nt)%errmsg)
+          errflg = CCPP_shared(nt)%errflg
+          !
+          if (errflg/=0) then
+              write(0,*) 'Error in call to gfdl_cloud_microphys_pre_run: ' // trim(errmsg)
+              stop
+          end if
+          !
+          if (Model%me==0) write(0,*) 'CCPP DEBUG: calling gfdl_cloud_microphys_run through option B'
+          ! Copy local variables from driver to appropriate interstitial variables
+          !Model%levs                                  ! intent(in)
+          !Interstitial(nt)%im                         ! intent(in) - set in Interstitial(nt)%create
+          !con_g                                       ! intent(in) - physical constant in physcons.f90
+          !con_fvirt                                   ! intent(in) - physical constant in physcons.f90
+          !con_rd                                      ! intent(in) - physical constant in physcons.f90
+          !Interstitial(nt)%frland                     ! intent(in) - set in GFS_suite_interstitital_1_run
+          !Grid%area                                   ! intent(in)
+          !Stateout%gq0(:,:,1      )                   ! intent(inout)
+          !Stateout%gq0(:,:,ntcw   )                   ! intent(inout)
+          !Stateout%gq0(:,:,ntrw   )                   ! intent(inout)
+          !Stateout%gq0(:,:,ntiw   )                   ! intent(inout)
+          !Stateout%gq0(:,:,ntsw   )                   ! intent(inout)
+          !Stateout%gq0(:,:,ntgl   )                   ! intent(inout)
+          !Stateout%gq0(:,:,ntclamt)                   ! intent(inout)
+          !Stateout%gt0                                ! intent(inout)
+          !Stateout%gu0                                ! intent(inout)
+          !Stateout%gv0                                ! intent(inout)
+          !Statein%vvl                                 ! intent(in)
+          !Statein%prsl                                ! intent(in)
+          !Statein%phii                                ! intent(in)
+          Interstitial(nt)%del = del                   ! intent(in)
+          !Interstitial(nt)%rain0                      ! intent(inout) - not needed, coming straight from gfdl_cloud_microphys_pre_run
+          !Interstitial(nt)%ice0                       ! intent(inout) - not needed, coming straight from gfdl_cloud_microphys_pre_run
+          !Interstitial(nt)%snow0                      ! intent(inout) - not needed, coming straight from gfdl_cloud_microphys_pre_run
+          !Interstitial(nt)%graupel0                   ! intent(inout) - not needed, coming straight from gfdl_cloud_microphys_pre_run
+          !Model%dtp                                   ! intent(in)
+          !CCPP_shared(nt)%hydrostatic                 ! intent(in) - set in CCPP_shared(nt)%create
+          !CCPP_shared(nt)%phys_hydrostatic            ! intent(in) - set in CCPP_shared(nt)%create
+          CCPP_shared(nt)%errmsg = errmsg              ! intent(out)
+          CCPP_shared(nt)%errflg = errflg              ! intent(out)
+          !
+          call ccpp_physics_run(cdata_block(nb,nt), scheme_name="gfdl_cloud_microphys", ierr=ierr)
+          ! Copy back intent(inout) interstitial variables to local variables
+          errmsg = trim(CCPP_shared(nt)%errmsg)
+          errflg = CCPP_shared(nt)%errflg
+          !
+          if (errflg/=0) then
+              write(0,*) 'Error in call to gfdl_cloud_microphys_run: ' // trim(errmsg)
+              stop
+          end if
+          !
+          if (Model%me==0) write(0,*) 'CCPP DEBUG: calling gfdl_cloud_microphys_post_1_run through option B'
+          !Interstitial(nt)%im                      ! intent(in) - set in Interstitial(nt)%create
+          !Interstitial(nt)%rain0    = rain0        ! intent(in) - not needed, coming straight from gfdl_cloud_microphys_run
+          !Interstitial(nt)%ice0     = ice0         ! intent(in) - not needed, coming straight from gfdl_cloud_microphys_run
+          !Interstitial(nt)%snow0    = snow0        ! intent(in) - not needed, coming straight from gfdl_cloud_microphys_run
+          !Interstitial(nt)%graupel0 = graupel0     ! intent(in) - not needed, coming straight from gfdl_cloud_microphys_run
+          Interstitial(nt)%rainst = rain1           ! intent(out)
+          !Diag%ice                                 ! intent(out)
+          !Diag%snow                                ! intent(out)
+          !Diag%graupel                             ! intent(out)
+          !Diag%sr                                  ! intent(out)
+          !Model%dtp                                ! intent(in)
+          CCPP_shared(nt)%errmsg = errmsg           ! intent(out)
+          CCPP_shared(nt)%errflg = errflg           ! intent(out)
+          call ccpp_physics_run(cdata_block(nb,nt), scheme_name="gfdl_cloud_microphys_post_1", ierr=ierr)
+          ! Copy back intent(inout) interstitial variables to local variables
+          rain1 = Interstitial(nt)%rainst
+          errmsg = trim(CCPP_shared(nt)%errmsg)
+          errflg = CCPP_shared(nt)%errflg
+          !
+          if (errflg/=0) then
+              write(0,*) 'Error in call to gfdl_cloud_microphys_post_1_run: ' // trim(errmsg)
+              stop
+          end if
+#else
+          if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of gfdl_cloud_microphys_driver'
           do i = 1, im
             land     (i,1)   = frland(i)
             area     (i,1)   = Grid%area(i)
@@ -4699,7 +4781,7 @@ module module_physics_driver
               Stateout%gv0(i,k)         = Stateout%gv0(i,k) + vdt  (i,1,kk) * dtp
             enddo
           enddo
-
+#endif
         endif  ! end of if(Model%imp_physics)
       endif    ! end if_ncld
 
@@ -4842,6 +4924,31 @@ module module_physics_driver
       enddo
 
       if (Model%imp_physics == 11) then
+#ifdef CCPP
+          ! OPTION B - works with all compilers
+          if (Model%me==0) write(0,*) 'CCPP DEBUG: calling gfdl_cloud_microphys_post_2_run through option B'
+          !Interstitial(nt)%im                         ! intent(in) - set in Interstitial(nt)%create
+          !Sfcprop%tprcp                               ! intent(out)
+          !Diag%rain                                   ! intent(in)
+          !Diag%rainc                                  ! intent(in)
+          !Sfcprop%srflag                              ! intent(out)
+          !Sfcprop%tsfc                                ! intent(in)
+          !Interstitial(nt)%rain0                      ! intent(in) - not needed, coming straight from gfdl_cloud_microphys_run
+          !Interstitial(nt)%ice0                       ! intent(in) - not needed, coming straight from gfdl_cloud_microphys_run
+          !Interstitial(nt)%snow0                      ! intent(in) - not needed, coming straight from gfdl_cloud_microphys_run
+          !Interstitial(nt)%graupel0                   ! intent(in) - not needed, coming straight from gfdl_cloud_microphys_run
+          CCPP_shared(nt)%errmsg = errmsg              ! intent(out)
+          CCPP_shared(nt)%errflg = errflg              ! intent(out)
+          call ccpp_physics_run(cdata_block(nb,nt), scheme_name="gfdl_cloud_microphys_post_2", ierr=ierr)
+          ! Copy back intent(inout) interstitial variables to local variables
+          errmsg = trim(CCPP_shared(nt)%errmsg)
+          errflg = CCPP_shared(nt)%errflg
+          !
+          if (errflg/=0) then
+              write(0,*) 'Error in call to gfdl_cloud_microphys_post_2_run: ' // trim(errmsg)
+              stop
+          end if
+#else
 ! determine convective rain/snow by surface temperature
 ! determine large-scale rain/snow by rain/snow coming out directly from MP
         do i = 1, im
@@ -4858,6 +4965,7 @@ module module_physics_driver
             Sfcprop%srflag(i) = 1.                   ! clu: set srflag to 'snow' (i.e. 1)
           endif
         enddo
+#endif
       elseif( .not. Model%cal_pre) then
         do i = 1, im
           Sfcprop%tprcp(i)  = max(0.0, Diag%rain(i) )! clu: rain -> tprcp
@@ -4865,8 +4973,8 @@ module module_physics_driver
           if (t850(i) <= 273.16) then
             Sfcprop%srflag(i) = 1.                   ! clu: set srflag to 'snow' (i.e. 1)
           endif
-       enddo
-     endif
+        enddo
+      endif
 
 !  --- ...  coupling insertion
 
@@ -5035,12 +5143,13 @@ module module_physics_driver
 
       deallocate (qlcn, qicn, w_upi, cf_upi, CNV_MFD, CNV_PRC3, &
                   CNV_DQLDT, clcn, cnv_fice, cnv_ndrop, cnv_nice)
+#ifndef CCPP
       if (imp_physics == 11) then
         deallocate (delp,  dz,    uin,   vin,   pt,    qv1,   ql1, qr1,        &
                     qg1,   qa1,   qn1,   qi1,   qs1,   pt_dt, qa_dt, udt, vdt, &
                     w,     qv_dt, ql_dt, qr_dt, qi_dt, qs_dt, qg_dt)
       endif
-
+#endif
       return
 !...................................
       end subroutine GFS_physics_driver
