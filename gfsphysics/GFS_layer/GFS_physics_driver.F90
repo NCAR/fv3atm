@@ -1326,7 +1326,7 @@ module module_physics_driver
 #if defined(CCPP_OPTION_A) && defined(__INTEL_COMPILER)
 ! OPTION A - works with Intel only
       if (Model%me==0) write(0,*) 'CCPP DEBUG: calling sfc_nst through option A'
-      call sfc_nst_mp_sfc_nst_pre_run(im, islmsk, Sfcprop%oro, Sfcprop%oro_uf,       &
+      call sfc_nst_pre_mp_sfc_nst_pre_run(im, islmsk, Sfcprop%oro, Sfcprop%oro_uf,       &
                                       Sfcprop%tsfc, tsurf, tseal, errmsg, errflg)
 
       call sfc_nst_mp_sfc_nst_run(im, Model%lsoil, Statein%pgr, Statein%ugrs,        &
@@ -1348,7 +1348,7 @@ module module_physics_driver
                                   qss, gflx, Diag%cmm, Diag%chh, evap, hflx, ep1d,   &
                                   errmsg, errflg)
 
-      call sfc_nst_mp_sfc_nst_post_run(im, islmsk, Sfcprop%oro, Sfcprop%oro_uf,      &
+      call sfc_nst_post_mp_sfc_nst_post_run(im, islmsk, Sfcprop%oro, Sfcprop%oro_uf,      &
                                        Model%nstf_name(1), Model%nstf_name(4),       &
                                        Model%nstf_name(5), Sfcprop%xt, Sfcprop%xz,   &
                                        Sfcprop%dt_cool, Sfcprop%z_c, Sfcprop%slmsk,  &
@@ -2659,16 +2659,16 @@ end if
 #if defined(CCPP_OPTION_A) && defined(__INTEL_COMPILER)
 ! OPTION A - works with Intel only
       if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_DCNV_generic_pre_run through option A'
-      call GFS_DCNV_generic_pre_mp_GFS_DCNV_generic_pre_run(im, levs, &
-        Model%ldiag3d, Model%cnvgwd, Model%lgocart, Stateout%gu0,     &
-        Stateout%gv0, Stateout%gt0, Stateout%gq0(:,:,1), dudt, dvdt,  &
+      call GFS_DCNV_generic_pre_mp_GFS_DCNV_generic_pre_run(im, Model%levs, &
+        Model%ldiag3d, Model%cnvgwd, Model%lgocart, Stateout%gu0,           &
+        Stateout%gv0, Stateout%gt0, Stateout%gq0(:,:,1), dudt, dvdt,        &
         dtdt, dqdt(:,:,1), errmsg, errflg)
 #else
 ! OPTION B - works with all compilers
       if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_DCNV_generic_pre_run through option B'
       ! Copy local variables from driver to appropriate interstitial variables
       Interstitial(nt)%im = im                    ! intent(in)
-      Interstitial(nt)%ix = ix                    ! intent(in)
+      !Model%levs                                 ! intent(in)
       !Model%ldiag3d                              ! intent(in)
       !Model%cnvgwd                               ! intent(in)
       !Model%lgocart                              ! intent(in)
@@ -2676,18 +2676,18 @@ end if
       !Stateout%gv0                               ! intent(in)
       !Stateout%gt0                               ! intent(in)
       !Stateout%gq0(:,:,1)                        ! intent(in)
-      Interstitial(nt)%dudt = dudt                ! intent(inout)
-      Interstitial(nt)%dvdt = dvdt                ! intent(inout)
-      Interstitial(nt)%dtdt = dtdt                ! intent(inout)
-      Interstitial(nt)%dqdt(:,:,1) = dqdt(:,:,1)  ! intent(inout)
+      Interstitial(nt)%save_u = dudt                ! intent(inout)
+      Interstitial(nt)%save_v = dvdt                ! intent(inout)
+      Interstitial(nt)%save_t = dtdt                ! intent(inout)
+      Interstitial(nt)%save_qv = dqdt(:,:,1)  ! intent(inout)
       CCPP_shared(nt)%errmsg = errmsg             ! intent(out)
       CCPP_shared(nt)%errflg = errflg             ! intent(out)
       call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_DCNV_generic_pre", ierr=ierr)
       ! Copy back intent(inout/out) interstitial variables to local variables in driver
-      dudt = Interstitial(nt)%dudt
-      dvdt = Interstitial(nt)%dvdt
-      dtdt = Interstitial(nt)%dtdt
-      dqdt(:,:,1) = Interstitial(nt)%dqdt(:,:,1)
+      dudt = Interstitial(nt)%save_u
+      dvdt = Interstitial(nt)%save_v
+      dtdt = Interstitial(nt)%save_t
+      dqdt(:,:,1) = Interstitial(nt)%save_qv
       errmsg = trim(CCPP_shared(nt)%errmsg)
       errflg = CCPP_shared(nt)%errflg
 #endif
@@ -3306,23 +3306,33 @@ end if
 !     endif
 !
 #ifdef CCPP
+! GF* temporarily need this code until shallow convection interstitial is updated
+if ((Model%npdf3d == 3) .and. (Model%num_p3d == 4)) then
+  num2 = Model%num_p3d + 2
+  num3 = num2 + 1
+elseif ((Model%npdf3d == 0) .and. (Model%ncnvcld3d == 1)) then
+  num2 = Model%num_p3d + 1
+endif
+! *GF
+
 #if defined(CCPP_OPTION_A) && defined(__INTEL_COMPILER)
 ! OPTION A - works with Intel only
       if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_DCNV_generic_post_run through option A'
-      call GFS_DCNV_generic_post_mp_GFS_DCNV_generic_post_run(im, levs, Model%lssav, Model%ldiag3d, &
-        Model%lgocart, frain, rain1, Model%dtf, cld1d, dudt, dvdt, dtdt, dqdt(:,:,1),               &
-        Stateout%gu0, Stateout%gv0, Stateout%gt0, Stateout%gq0(:,:,1), ud_mf, dd_mf, dt_mf, con_g,  &
-        clw(:,:,1), clw(:,:,2), Model%npdf3d, Model%num_p3d, Model%ncnvcld3d, &
-        Diag%rainc, Diag%cldwrk, Diag%cnvprcp, Diag%cnvprcpb, Diag%dt3dt(:,:,4), Diag%dq3dt(:,:,2), &
-        Diag%du3dt(:,:,3), Diag%dv3dt(:,:,3), Diag%upd_mf, Diag%dwn_mf, Diag%det_mf, Coupling%dqdti,&
-        Coupling%cnvqci, Coupling%upd_mfi, Coupling%dwn_mfi, Coupling%det_mfi, cnvw, cnvc,          &
+      call GFS_DCNV_generic_post_mp_GFS_DCNV_generic_post_run(im, Model%levs, Model%lssav, Model%ldiag3d, &
+        Model%lgocart, frain, rain1, Model%dtf, cld1d, dudt, dvdt, dtdt, dqdt(:,:,1),                     &
+        Stateout%gu0, Stateout%gv0, Stateout%gt0, Stateout%gq0(:,:,1), ud_mf, dd_mf, dt_mf, con_g,        &
+        clw(:,:,1), clw(:,:,2), Model%npdf3d, Model%num_p3d, Model%ncnvcld3d,                             &
+        Diag%rainc, Diag%cldwrk, Diag%cnvprcp, Diag%cnvprcpb, Diag%dt3dt(:,:,4), Diag%dq3dt(:,:,2),       &
+        Diag%du3dt(:,:,3), Diag%dv3dt(:,:,3), Diag%upd_mf, Diag%dwn_mf, Diag%det_mf, Coupling%dqdti,      &
+        Coupling%cnvqci, Coupling%upd_mfi, Coupling%dwn_mfi, Coupling%det_mfi, cnvw, cnvc,                &
         Tbd%phy_f3d(:,:,Model%ncnvw), Tbd%phy_f3d(:,:,Model%ncnvw+1), errmsg, errflg)
+
 #else
 ! OPTION B - works with all compilers
       if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_DCNV_generic_post_run through option B'
       ! Copy local variables from driver to appropriate interstitial variables
       Interstitial(nt)%im = im                    ! intent(in)
-      Interstitial(nt)%ix = ix                    ! intent(in)
+      !Model%levs                                 ! intent(in)
       !Model%lssav                                ! intent(in)
       !Model%ldiag3d                              ! intent(in)
       !Model%lgocart                              ! intent(in)
@@ -3330,10 +3340,10 @@ end if
       Interstitial(nt)%raincd = rain1             ! intent(in)
       !Model%dtf                                  ! intent(in)
       Interstitial(nt)%cld1d = cld1d              ! intent(in)
-      Interstitial(nt)%dudt = dudt                ! intent(in)
-      Interstitial(nt)%dvdt = dvdt                ! intent(in)
-      Interstitial(nt)%dtdt = dtdt                ! intent(in)
-      Interstitial(nt)%dqdt(:,:,1) = dqdt(:,:,1)  ! intent(in)
+      Interstitial(nt)%save_u = dudt              ! intent(in)
+      Interstitial(nt)%save_v = dvdt              ! intent(in)
+      Interstitial(nt)%save_t = dtdt              ! intent(in)
+      Interstitial(nt)%save_qv = dqdt(:,:,1)      ! intent(in)
       !Stateout%gu0                               ! intent(in)
       !Stateout%gv0                               ! intent(in)
       !Stateout%gt0                               ! intent(in)
