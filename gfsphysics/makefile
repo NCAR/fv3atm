@@ -26,11 +26,13 @@ ifneq (,$(findstring CCPP,$(CPPDEFS)))
 	   ./CCPP_layer/CCPP_typedefs.F90                                            \
 	   ./CCPP_layer/CCPP_data.F90
     PHYSICS_SRCS_f =
+    PHYSICS_SRCS_F90 =
     RADIATION_SRCS_f =
     RADIATION_SRCS_F90 =
 else
     CCPP_SRCS_F90 =
     PHYSICS_SRCS_f = ./physics/cnvc90.f
+    PHYSICS_SRCS_F90 = ./physics/gfdl_cloud_microphys.F90
     RADIATION_SRCS_f = \
 	   ./physics/radiation_aerosols.f                                            \
 	   ./physics/radiation_astronomy.f                                           \
@@ -58,7 +60,7 @@ SRCS_f   =  \
 	   ./physics/gocart_tracer_config_stub.f                                     \
 	   ./physics/gscond.f                                                        \
 	   ./physics/gscondp.f                                                       \
-           ./physics/gwdc.f                                                          \
+	   ./physics/gwdc.f                                                          \
 	   ./physics/gwdps.f                                                         \
 	   ./physics/h2o_def.f                                                       \
 	   ./physics/h2oc.f                                                          \
@@ -146,7 +148,8 @@ SRCS_f90 = \
 	   ./physics/physcons.f90                                                    \
 	   ./physics/wam_f107_kp_mod.f90
 
-SRCS_F   = ./physics/aer_cloud.F                                                 \
+SRCS_F = \
+	   ./physics/aer_cloud.F                                                     \
 	   ./physics/cldmacro.F                                                      \
 	   ./physics/cldwat2m_micro.F                                                \
 	   ./physics/machine.F                                                       \
@@ -155,9 +158,9 @@ SRCS_F   = ./physics/aer_cloud.F                                                
 	   ./physics/wv_saturation.F
 
 SRCS_F90 = \
+	   $(PHYSICS_SRCS_F90)                                                       \
 	   ./physics/GFDL_parse_tracers.F90                                          \
 	   ./physics/gcycle.F90                                                      \
-	   ./physics/gfdl_cloud_microphys.F90                                        \
 	   ./physics/micro_mg_utils.F90                                              \
 	   ./physics/micro_mg2_0.F90                                                 \
 	   ./physics/micro_mg3_0.F90                                                 \

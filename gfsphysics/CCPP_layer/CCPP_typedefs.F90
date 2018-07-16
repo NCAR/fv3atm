@@ -2,28 +2,36 @@ module CCPP_typedefs
 
     implicit none
 
+#if 0
 !! \section arg_table_CCPP_typedefs
 !! | local_name                                         | standard_name                                                 | long_name                                                                | units   | rank | type                   |    kind   | intent | optional |
 !! |----------------------------------------------------|---------------------------------------------------------------|--------------------------------------------------------------------------|---------|------|------------------------|-----------|--------|----------|
 !! | CCPP_interstitial                                  | CCPP_Interstitial_type                                        | derived type CCPP_interstitial_type                                      | DDT     |    0 | CCPP_interstitial_type |           | none   | F        |
 !!
+#endif
 
     private
 
     public CCPP_shared_type, CCPP_interstitial_type
 
+#if 0
 !! \section arg_table_CCPP_shared_type
 !! | local_name                                         | standard_name                                                 | long_name                                                                           | units   | rank | type        |    kind   | intent | optional |
 !! |----------------------------------------------------|---------------------------------------------------------------|-------------------------------------------------------------------------------------|---------|------|-------------|-----------|--------|----------|
 !! | CCPP_shared(nt)%errflg                             | error_flag                                                    | error flag for error handling in CCPP                                               | flag    |    0 | integer     |           | none   | F        |
 !! | CCPP_shared(nt)%errmsg                             | error_message                                                 | error message for error handling in CCPP                                            | none    |    0 | character   | len=512   | none   | F        |
+!! | CCPP_shared(nt)%hydrostatic                        | flag_for_hydrostatic_solver                                   | flag for use the hydrostatic or nonhydrostatic solver                               | flag    |    0 | logical     |           | none   | F        |
 !! | CCPP_shared(nt)%nthreads                           | omp_threads                                                   | number of OpenMP threads available for fast physics schemes                         | count   |    0 | integer     |           | none   | F        |
+!! | CCPP_shared(nt)%phys_hydrostatic                   | flag_for_hydrostatic_heating_from_physics                     | flag for use of hydrostatic heating in physics                                      | flag    |    0 | logical     |           | none   | F        |
 !!
+#endif
   type CCPP_shared_type
 
      integer                             :: errflg
      character(len=512)                  :: errmsg
+     logical                             :: hydrostatic
      integer                             :: nthreads
+     logical                             :: phys_hydrostatic
 
   contains
 
@@ -33,6 +41,7 @@ module CCPP_typedefs
 
   end type CCPP_shared_type
 
+#if 0
 !! \section arg_table_CCPP_interstitial_type
 !! | local_name                                         | standard_name                                                 | long_name                                                                           | units   | rank | type        |    kind   | intent | optional |
 !! |----------------------------------------------------|---------------------------------------------------------------|-------------------------------------------------------------------------------------|---------|------|-------------|-----------|--------|----------|
@@ -51,6 +60,7 @@ module CCPP_typedefs
 !! | CCPP_interstitial%te0                              | atmosphere_energy_content_at_Lagrangian_surface               | atmosphere total energy at Lagrangian surface                                       | J m-2   |    3 | real        |           | none   | F        |
 !! | CCPP_interstitial%zvir                             | ratio_of_vapor_to_dry_air_gas_constants_minus_one_default_kind| zvir=rv/rd-1.0                                                                      | none    |    0 | real        |           | none   | F        |
 !!
+#endif
   type CCPP_interstitial_type
 
      real                                :: akap
@@ -82,14 +92,22 @@ contains
 !-----------------------------
 ! CCPP_shared_type
 !-----------------------------
-  subroutine shared_create (Shared)
+  subroutine shared_create (Shared, hydrostatic, phys_hydrostatic)
     !
     implicit none
     !
     class(CCPP_shared_type) :: Shared
+    logical, intent(in) :: hydrostatic
+    logical, intent(in) :: phys_hydrostatic
     !
+    Shared%hydrostatic      = hydrostatic
     ! Number of OpenMP threads available for schemes, default only one
     Shared%nthreads = 1
+    ! DH* the input phys_hydrostatic from Atm does not match
+    ! with the hardcoded value for calling GFDL MP in GFS_physics_driver.F90
+    !Shared%phys_hydrostatic = phys_hydrostatic
+    Shared%phys_hydrostatic = .true.
+    ! *DH
     !
     call Shared%reset()
     !
