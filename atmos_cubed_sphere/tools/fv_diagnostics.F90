@@ -141,7 +141,9 @@ module fv_diagnostics_mod
  use sat_vapor_pres_mod, only: compute_qs, lookup_es
 
  use fv_arrays_mod, only: max_step 
+#ifndef GFS_PHYS
  use gfdl_cloud_microphys_mod, only: wqs1, qsmith_init
+#endif
 
  implicit none
  private

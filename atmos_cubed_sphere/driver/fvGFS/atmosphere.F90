@@ -434,7 +434,8 @@ contains
 #endif
    allocate(CCPP_shared(1:nthreads))
    do i=1,nthreads
-      call CCPP_shared(i)%create()
+      call CCPP_shared(i)%create(Atm(mytile)%flagstruct%hydrostatic, &
+                                 Atm(mytile)%flagstruct%phys_hydrostatic)
    end do
 
    ! Create interstitial data type for fast physics
@@ -454,10 +455,12 @@ contains
 #include "ccpp_fields_fast_physics.inc"
    end associate
 
-   ! Initialize fast physics
-   call ccpp_physics_init(cdata, group_name="fast_physics", ierr=ierr)
-   if (ierr/=0) then
-      call mpp_error (FATAL,' atmosphere_dynamics: error in ccpp_physics_init')
+   if (Atm(mytile)%flagstruct%do_sat_adj) then
+      ! Initialize fast physics
+      call ccpp_physics_init(cdata, group_name="fast_physics", ierr=ierr)
+      if (ierr/=0) then
+         call mpp_error (FATAL,' atmosphere_dynamics: error in ccpp_physics_init')
+      end if
    end if
 #endif
 
@@ -634,8 +637,25 @@ contains
 !>@brief The subroutine 'atmosphere_end' is an API for the termination of the
 !! FV3 dynamical core responsible for writing out a restart and final diagnostic state.
  subroutine atmosphere_end (Time, Grid_box)
+#ifdef CCPP
+   use ccpp_api,          only: ccpp_physics_finalize
+   use CCPP_data,         only: cdata => cdata_tile
+#endif
    type (time_type),      intent(in)    :: Time
    type(grid_box_type),   intent(inout) :: Grid_box
+
+#ifdef CCPP
+   integer :: ierr
+
+   if (Atm(mytile)%flagstruct%do_sat_adj) then
+      ! Finalize fast physics
+      call ccpp_physics_finalize(cdata, group_name="fast_physics", ierr=ierr)
+      if (ierr/=0) then
+        write(0,'(a)') "An error occurred in ccpp_physics_finalize for group fast_physics"
+        return
+      end if
+   end if
+#endif
 
    call nullify_domain ( )
    if (first_diag) then

@@ -16,7 +16,9 @@ module GFS_driver
   use module_radsw_parameters,  only: topfsw_type, sfcfsw_type
   use module_radlw_parameters,  only: topflw_type, sfcflw_type
   use funcphys,                 only: gfuncphys
+#ifndef CCPP
   use gfdl_cloud_microphys_mod, only: gfdl_cloud_microphys_init
+#endif
   use physcons,                 only: gravit => con_g,    rair    => con_rd, &
                                       rh2o   => con_rv,                      &
                                       tmelt  => con_ttp,  cpair   => con_cp, &
@@ -328,7 +330,7 @@ module GFS_driver
         print *,'SHOC is not currently compatible with Thompson MP -- shutting down'
         stop 
       endif 
-! For CCPP the Thompson MP init are called automatically as part of CCPP physics init
+! For CCPP the Thompson MP init is called automatically as part of CCPP physics init
 #ifndef CCPP
       call thompson_init()                     !--- add aerosol version later 
       if(Model%ltaerosol) then 
@@ -345,12 +347,15 @@ module GFS_driver
       call  wsm6init()
 !      
     else if(Model%imp_physics == 11) then      !--- initialize GFDL Cloud microphysics
+! For CCPP the GFDL MP init is called automatically as part of CCPP physics init
+#ifndef CCPP
       if(Model%do_shoc) then 
          print *,'SHOC is not currently compatible with GFDL MP -- shutting down'
          stop 
       endif 
        call gfdl_cloud_microphys_init (Model%me, Model%master, Model%nlunit, Model%input_nml_file, &
                                        Init_parm%logunit, Model%fn_nml)
+#endif
     endif 
 
     !--- initialize ras
