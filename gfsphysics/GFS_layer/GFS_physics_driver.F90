@@ -4316,7 +4316,7 @@ end if
           !Model%dtp                                            ! intent(in)
           !Model%kdt                                            ! intent(in)
           !Diag%rain                                            ! intent(inout), should be zero on entry
-          !Interstitial(nt)%rainst                              ! intent(inout), should be zero on entry
+          !Interstitial(nt)%rainst                              ! intent(inout), should be zero on entry - DH* fix dynamics/physics timestep inconsistencies
           !Diag%snow                                            ! intent(inout)
           !Diag%ice                                             ! intent(inout)
           !Diag%graupel                                         ! intent(inout)
@@ -4680,7 +4680,7 @@ end if
           !Interstitial(nt)%ice0     = ice0         ! intent(in) - not needed, coming straight from gfdl_cloud_microphys_run
           !Interstitial(nt)%snow0    = snow0        ! intent(in) - not needed, coming straight from gfdl_cloud_microphys_run
           !Interstitial(nt)%graupel0 = graupel0     ! intent(in) - not needed, coming straight from gfdl_cloud_microphys_run
-          Interstitial(nt)%rainst = rain1           ! intent(out)
+          Diag%rain = rain1                         ! intent(out)
           !Diag%ice                                 ! intent(out)
           !Diag%snow                                ! intent(out)
           !Diag%graupel                             ! intent(out)
@@ -4690,7 +4690,7 @@ end if
           CCPP_shared(nt)%errflg = errflg           ! intent(out)
           call ccpp_physics_run(cdata_block(nb,nt), scheme_name="gfdl_cloud_microphys_post_1", ierr=ierr)
           ! Copy back intent(inout) interstitial variables to local variables
-          rain1 = Interstitial(nt)%rainst
+          rain1 = Diag%rain
           errmsg = trim(CCPP_shared(nt)%errmsg)
           errflg = CCPP_shared(nt)%errflg
           !
