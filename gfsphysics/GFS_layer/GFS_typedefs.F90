@@ -4346,9 +4346,10 @@ module GFS_typedefs
     class(GFS_interstitial_type)       :: Interstitial
     integer,                intent(in) :: IM
     type(GFS_control_type), intent(in) :: Model
-    !
-    ! Set up numbers of tracers for water etc - previously interstitial code: sets
-    ! Interstitial%{tracers_water,tracers_total,tracers_start_index,ntk}
+
+    allocate (Interstitial%otspt      (Model%ntrac+1,2))
+    ! Set up numbers of tracers for PBL, convection, etc: sets
+    ! Interstitial%{nncl,nvdiff,mg3_as_mg2,nn,tracers_total,ntk,otspt,nsamftrac,ncstrac}
     call interstitial_setup_tracers(Interstitial, Model)
     ! Allocate arrays
     allocate (Interstitial%adjnirbmd  (IM))
