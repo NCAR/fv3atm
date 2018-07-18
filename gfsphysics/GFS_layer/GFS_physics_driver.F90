@@ -4809,7 +4809,7 @@ endif
               stop
           end if
           !
-          if (Model%me==0) write(0,*) 'CCPP DEBUG: calling gfdl_cloud_microphys_post_1_run through option B'
+          if (Model%me==0) write(0,*) 'CCPP DEBUG: calling gfdl_cloud_microphys_post_run through option B'
           !Interstitial(nt)%im                      ! intent(in) - set in Interstitial(nt)%create
           !Interstitial(nt)%rain0    = rain0        ! intent(in) - not needed, coming straight from gfdl_cloud_microphys_run
           !Interstitial(nt)%ice0     = ice0         ! intent(in) - not needed, coming straight from gfdl_cloud_microphys_run
@@ -4823,14 +4823,14 @@ endif
           !Model%dtp                                ! intent(in)
           CCPP_shared(nt)%errmsg = errmsg           ! intent(out)
           CCPP_shared(nt)%errflg = errflg           ! intent(out)
-          call ccpp_physics_run(cdata_block(nb,nt), scheme_name="gfdl_cloud_microphys_post_1", ierr=ierr)
+          call ccpp_physics_run(cdata_block(nb,nt), scheme_name="gfdl_cloud_microphys_post", ierr=ierr)
           ! Copy back intent(inout) interstitial variables to local variables
           rain1 = Diag%rain
           errmsg = trim(CCPP_shared(nt)%errmsg)
           errflg = CCPP_shared(nt)%errflg
           !
           if (errflg/=0) then
-              write(0,*) 'Error in call to gfdl_cloud_microphys_post_1_run: ' // trim(errmsg)
+              write(0,*) 'Error in call to gfdl_cloud_microphys_post_run: ' // trim(errmsg)
               stop
           end if
 #else
