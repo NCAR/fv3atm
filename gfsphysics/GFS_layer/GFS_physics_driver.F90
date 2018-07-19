@@ -527,8 +527,8 @@ module module_physics_driver
            frland, adjsfcdsw, adjsfcnsw, adjsfcdlw, adjsfculw,          &
            adjnirbmu, adjnirdfu, adjvisbmu, adjvisdfu, adjnirbmd,       &
            adjnirdfd, adjvisbmd, adjvisdfd, gabsbdlw, xcosz, tseal,     &
-           snohf, dlqfac, work3, ctei_rml, cldf, domr, domzr, domip,    &
-           doms, psautco_l, prautco_l, ocalnirbm_cpl, ocalnirdf_cpl,    &
+           snohf, dlqfac, work3, ctei_rml, cldf,                        &
+           psautco_l, prautco_l, ocalnirbm_cpl, ocalnirdf_cpl,          &
            ocalvisbm_cpl, ocalvisdf_cpl, dtzm, temrain1,                &
 !--- coupling inputs for physics
            dtsfc_cice, dqsfc_cice, dusfc_cice, dvsfc_cice, ulwsfc_cice, &
@@ -537,6 +537,10 @@ module module_physics_driver
            wcbmax
 
 #ifndef CCPP
+!--- for precipitation type algorithm only
+      real(kind=kind_phys), dimension(size(Grid%xlon,1))  ::            &
+           domr, domzr, domip, doms
+
 !--- for GFDL MP only
       real(kind=kind_phys), dimension(size(Grid%xlon,1),1) ::           &
           area, land, rain0, snow0, ice0, graupel0
@@ -4805,7 +4809,7 @@ endif
               stop
           end if
           !
-          if (Model%me==0) write(0,*) 'CCPP DEBUG: calling gfdl_cloud_microphys_post_1_run through option B'
+          if (Model%me==0) write(0,*) 'CCPP DEBUG: calling gfdl_cloud_microphys_post_run through option B'
           !Interstitial(nt)%im                      ! intent(in) - set in Interstitial(nt)%create
           !Interstitial(nt)%rain0    = rain0        ! intent(in) - not needed, coming straight from gfdl_cloud_microphys_run
           !Interstitial(nt)%ice0     = ice0         ! intent(in) - not needed, coming straight from gfdl_cloud_microphys_run
@@ -4819,14 +4823,14 @@ endif
           !Model%dtp                                ! intent(in)
           CCPP_shared(nt)%errmsg = errmsg           ! intent(out)
           CCPP_shared(nt)%errflg = errflg           ! intent(out)
-          call ccpp_physics_run(cdata_block(nb,nt), scheme_name="gfdl_cloud_microphys_post_1", ierr=ierr)
+          call ccpp_physics_run(cdata_block(nb,nt), scheme_name="gfdl_cloud_microphys_post", ierr=ierr)
           ! Copy back intent(inout) interstitial variables to local variables
           rain1 = Diag%rain
           errmsg = trim(CCPP_shared(nt)%errmsg)
           errflg = CCPP_shared(nt)%errflg
           !
           if (errflg/=0) then
-              write(0,*) 'Error in call to gfdl_cloud_microphys_post_1_run: ' // trim(errmsg)
+              write(0,*) 'Error in call to gfdl_cloud_microphys_post_run: ' // trim(errmsg)
               stop
           end if
 #else
@@ -4975,6 +4979,70 @@ endif
         enddo
       endif
 
+#ifdef CCPP
+      ! OPTION B - works with all compilers
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_calpreciptype_run through option B'
+      !Model%kdt                                   ! intent(in)
+      !Model%nrcm                                  ! intent(in)
+      !Interstitial(nt)%im                         ! intent(in) - set in Interstitial(nt)%create
+      !Interstitial(nt)%ix                         ! intent(in) - set in Interstitial(nt)%create
+      !Model%levs                                  ! intent(in)
+      !Interstitial(nt)%levi                       ! intent(in) - set in Interstitial(nt)%create
+      !Tbd%rann                                    ! intent(in)
+      !Model%cal_pre                               ! intent(in)
+      !Model%lssav                                 ! intent(in)
+      !Model%ldiag3d                               ! intent(in)
+      !Stateout%gt0                                ! intent(in)
+      !Stateout%gq0(:,:,1)                         ! intent(in)
+      !Statein%prsl                                ! intent(in)
+      !Statein%prsi                                ! intent(in)
+      !Diag%rainc                                  ! intent(in)
+      Interstitial(nt)%frain = frain               ! intent(in)
+      Interstitial(nt)%rainst = rain1              ! intent(in)
+      !Statein%phii                                ! intent(in)
+      !Sfcprop%tsfc                                ! intent(in)
+      !Diag%rain                                   ! intent(out)
+      !Diag%ice                                    ! intent(in)
+      !Diag%snow                                   ! intent(in)
+      !Diag%graupel                                ! intent(in)
+      !Diag%tdomr                                  ! intent(inout)
+      !Diag%tdomzr                                 ! intent(inout)
+      !Diag%tdomip                                 ! intent(inout)
+      !Diag%tdoms                                  ! intent(inout)
+      !Sfcprop%srflag                              ! intent(out)
+      !Sfcprop%tprcp                               ! intent(out)
+      !Model%imp_physics                           ! intent(in)
+      !Model%imp_physics_gfdl                      ! intent(in)
+      !Diag%totprcp                                ! intent(inout)
+      !Diag%totice                                 ! intent(inout)
+      !Diag%totsnw                                 ! intent(inout)
+      !Diag%totgrp                                 ! intent(inout)
+      !Diag%totprcpb                               ! intent(inout)
+      !Diag%toticeb                                ! intent(inout)
+      !Diag%totsnwb                                ! intent(inout)
+      !Diag%totgrpb                                ! intent(inout)
+      !Diag%dt3dt(:,:,6)                           ! intent(inout)
+      !Diag%dq3dt(:,:,4)                           ! intent(inout)
+      Interstitial(nt)%dtdt = dtdt                 ! intent(in)
+      Interstitial(nt)%dqdt(:,:,1) = dqdt(:,:,1)   ! intent(in)
+      !Interstitial(nt)%rain0                      ! intent(in) - no need to set, coming straight from gfdl_cloud_microphys_run
+      !Interstitial(nt)%ice0                       ! intent(in) - no need to set, coming straight from gfdl_cloud_microphys_run
+      !Interstitial(nt)%snow0                      ! intent(in) - no need to set, coming straight from gfdl_cloud_microphys_run
+      !Interstitial(nt)%graupel0                   ! intent(in) - no need to set, coming straight from gfdl_cloud_microphys_run
+      !Model%cplflx                                ! intent(in)
+      !Coupling%rain_cpl                           ! intent(inout)
+      !Coupling%snow_cpl                           ! intent(inout)
+      CCPP_shared(nt)%errmsg = errmsg              ! intent(out)
+      CCPP_shared(nt)%errflg = errflg              ! intent(out)
+      call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_calpreciptype", ierr=ierr)
+      ! Copy back intent(inout) interstitial variables to local variables
+      errmsg = trim(CCPP_shared(nt)%errmsg)
+      errflg = CCPP_shared(nt)%errflg
+      if (errflg/=0) then
+          write(0,*) 'Error in call to GFS_calpreciptype_run: ' // trim(errmsg)
+          stop
+      end if
+#else
       Diag%rain(:)  = Diag%rainc(:) + frain * rain1(:)
 
       if (Model%cal_pre) then       ! hchuang: add dominant precipitation type algorithm
@@ -5055,31 +5123,6 @@ endif
       enddo
 
       if (Model%imp_physics == 11) then
-#ifdef CCPP
-          ! OPTION B - works with all compilers
-          if (Model%me==0) write(0,*) 'CCPP DEBUG: calling gfdl_cloud_microphys_post_2_run through option B'
-          !Interstitial(nt)%im                         ! intent(in) - set in Interstitial(nt)%create
-          !Sfcprop%tprcp                               ! intent(out)
-          !Diag%rain                                   ! intent(in)
-          !Diag%rainc                                  ! intent(in)
-          !Sfcprop%srflag                              ! intent(out)
-          !Sfcprop%tsfc                                ! intent(in)
-          !Interstitial(nt)%rain0                      ! intent(in) - not needed, coming straight from gfdl_cloud_microphys_run
-          !Interstitial(nt)%ice0                       ! intent(in) - not needed, coming straight from gfdl_cloud_microphys_run
-          !Interstitial(nt)%snow0                      ! intent(in) - not needed, coming straight from gfdl_cloud_microphys_run
-          !Interstitial(nt)%graupel0                   ! intent(in) - not needed, coming straight from gfdl_cloud_microphys_run
-          CCPP_shared(nt)%errmsg = errmsg              ! intent(out)
-          CCPP_shared(nt)%errflg = errflg              ! intent(out)
-          call ccpp_physics_run(cdata_block(nb,nt), scheme_name="gfdl_cloud_microphys_post_2", ierr=ierr)
-          ! Copy back intent(inout) interstitial variables to local variables
-          errmsg = trim(CCPP_shared(nt)%errmsg)
-          errflg = CCPP_shared(nt)%errflg
-          !
-          if (errflg/=0) then
-              write(0,*) 'Error in call to gfdl_cloud_microphys_post_2_run: ' // trim(errmsg)
-              stop
-          end if
-#else
 ! determine convective rain/snow by surface temperature
 ! determine large-scale rain/snow by rain/snow coming out directly from MP
         do i = 1, im
@@ -5096,7 +5139,6 @@ endif
             Sfcprop%srflag(i) = 1.                   ! clu: set srflag to 'snow' (i.e. 1)
           endif
         enddo
-#endif
       elseif( .not. Model%cal_pre) then
         do i = 1, im
           Sfcprop%tprcp(i)  = max(0.0, Diag%rain(i) )! clu: rain -> tprcp
@@ -5118,6 +5160,7 @@ endif
           endif
         enddo
       endif
+#endif
 
 !  --- ...  end coupling insertion
 
