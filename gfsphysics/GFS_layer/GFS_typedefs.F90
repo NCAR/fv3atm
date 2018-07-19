@@ -4502,7 +4502,6 @@ module GFS_typedefs
     Interstitial%lm           = Model%levr
     Interstitial%lmk          = Model%levr+LTP
     Interstitial%lmp          = Model%levr+1+LTP
-    Interstitial%nvdiff       = Model%ntrac
     Interstitial%oz_coeff     = oz_coeff
     Interstitial%oz_pres      = oz_pres
     Interstitial%skip_macro   = .false.
@@ -4520,9 +4519,18 @@ module GFS_typedefs
     type(GFS_control_type), intent(in) :: Model
     integer :: n, tracers
 
-    ! GF* 20180712 moved from GFS_physics_driver.F90
-    Interstitial%nncl = Model%ncld
+    !first, initialize the values (in case the values don't get initialized within if statements below)
+    Interstitial%nncl             = Model%ncld
+    Interstitial%nvdiff           = Model%ntrac
+    Interstitial%mg3_as_mg2       = .false.
+    Interstitial%nn               = Model%ntrac + 1
+    Interstitial%ntk              = 0
+    Interstitial%tracers_total    = 0
+    Interstitial%otspt(:,:)       = .true.
+    Interstitial%nsamftrac        = 0
+    Interstitial%ncstrac          = 0
 
+    ! GF* 20180712 moved from GFS_physics_driver.F90
     if (Model%imp_physics == Model%imp_physics_thompson) then
       if (Model%ltaerosol) then
         Interstitial%nvdiff = 8
@@ -4566,8 +4574,6 @@ module GFS_typedefs
     endif
     ! *DH END NEW CODE 20180626
     ! GF* 20180712 moved from GFS_physics_driver.F90
-    Interstitial%ntk       = 0
-    Interstitial%tracers_total = 0
     if (Model%cscnv .or. Model%satmedmf .or. Model%trans_trac ) then
       Interstitial%otspt(:,:)   = .true.     ! otspt is used only for cscnv
       Interstitial%otspt(1:3,:) = .false.    ! this is for sp.hum, ice and liquid water
