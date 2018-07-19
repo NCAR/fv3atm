@@ -4720,7 +4720,6 @@ module GFS_typedefs
     Interstitial%kinver       = 0
     Interstitial%kpbl         = 0
     Interstitial%ktop         = 0
-    Interstitial%nsamftrac    = 0
     Interstitial%oa4          = clear_val
     Interstitial%oc           = clear_val
     Interstitial%qss          = clear_val
