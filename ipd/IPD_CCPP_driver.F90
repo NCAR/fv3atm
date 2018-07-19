@@ -212,11 +212,11 @@ module IPD_CCPP_driver
 !         return
 !      end if
 
-    ! Radiation
-    else if (trim(step)=="radiation") then
+    ! Radiation and stochastic physics
+    else if (trim(step)=="radiation" .or. trim(step)=="stochastics") then
 
       if (.not.present(nblks)) then
-        write(0,*) 'Optional argument nblks required for IPD-CCPP radiation step'
+        write(0,*) 'Optional argument nblks required for IPD-CCPP ' // trim(step) // ' step'
         ierr = 1
         return
       end if
@@ -233,9 +233,9 @@ module IPD_CCPP_driver
         nt = 1
 #endif
         !--- Call CCPP radiation group
-        call ccpp_physics_run(cdata_block(nb,nt), group_name="radiation", ierr=ierr2)
+        call ccpp_physics_run(cdata_block(nb,nt), group_name=trim(step), ierr=ierr2)
         if (ierr2/=0) then
-           write(0,'(a,i4,a,i4)') "An error occurred in ccpp_physics_run for group radiation, block ", nb, " and thread ", nt
+           write(0,'(a,i4,a,i4)') "An error occurred in ccpp_physics_run for group " // trim(step) // ", block ", nb, " and thread ", nt
            ierr = ierr + ierr2
         end if
       end do
