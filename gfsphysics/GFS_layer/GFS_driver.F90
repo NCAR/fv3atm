@@ -22,6 +22,7 @@ module GFS_driver
                                       tmelt  => con_ttp,  cpair   => con_cp, &
                                       latvap => con_hvap, latice  => con_hfus
 
+#define CCPP_OPTION_A
 #ifdef CCPP
   use ccpp_api,                 only: ccpp_physics_run
   use CCPP_data,                only: cdata_domain, &
@@ -439,21 +440,21 @@ module GFS_driver
 #if defined(CCPP_OPTION_A) && defined(__INTEL_COMPILER)
 ! OPTION A - works with Intel only
               if (Model%me==0) write(0,*) 'CCPP DEBUG: calling time_vary_run through option A'
-              call GFS_phys_time_vary_1_run(                                        &
+              call GFS_phys_time_vary_1_mp_GFS_phys_time_vary_1_run(                                        &
                            Model,                                                   &
                            errmsg, errflg)
               if (errflg/=0) then
                   write(0,*) 'Error in call to GFS_phys_time_vary_1_run: ' // trim(errmsg)
                   stop
               end if
-              call GFS_rad_time_vary_run(                                           &
+              call GFS_rad_time_vary_mp_GFS_rad_time_vary_run(                                           &
                            Model, Statein, Tbd,                                     &
                            errmsg, errflg)
               if (errflg/=0) then
                   write(0,*) 'Error in call to GFS_rad_time_vary_run: ' // trim(errmsg)
                   stop
               end if
-              call GFS_phys_time_vary_2_run(                                        &
+              call GFS_phys_time_vary_2_mp_GFS_phys_time_vary_2_run(                                        &
                            Grid, Model, Tbd, Sfcprop, Cldprop, Diag,                &
                            errmsg, errflg)
               if (errflg/=0) then
