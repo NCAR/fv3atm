@@ -302,14 +302,16 @@ contains
       rdg     = -rdgas * agrav
 
 #ifdef CCPP
-      if (ccpp_initialized(cdata)) then
-         ! Reset interstitial data
-         call ccpp_physics_run(cdata, scheme_name='fv_sat_adj_pre', ierr=ierr)
-         if (ierr/=0) call mpp_error(FATAL, "Call to ccpp_physics_run for scheme 'fv_sat_adj_pre' failed")
-         ! Manually set runtime parameters
-         CCPP_interstitial%out_dt = (idiag%id_mdt > 0)
-      else
-        call mpp_error (FATAL, 'fv_dynamics: can not call ccpp fast physics because cdata not initialized')
+      if (flagstruct%do_sat_adj) then
+         if (ccpp_initialized(cdata)) then
+            ! Reset interstitial data
+            call ccpp_physics_run(cdata, scheme_name='fv_sat_adj_pre', ierr=ierr)
+            if (ierr/=0) call mpp_error(FATAL, "Call to ccpp_physics_run for scheme 'fv_sat_adj_pre' failed")
+            ! Manually set runtime parameters
+            CCPP_interstitial%out_dt = (idiag%id_mdt > 0)
+         else
+            call mpp_error (FATAL, 'fv_dynamics: can not call ccpp fast physics because cdata not initialized')
+         end if
       end if
 #endif
 
