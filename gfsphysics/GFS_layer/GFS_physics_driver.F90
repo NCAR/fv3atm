@@ -674,6 +674,11 @@ module module_physics_driver
 
       imp_physics = Model%imp_physics
 
+#ifdef CCPP
+      nncl = Interstitial(nt)%nncl
+      nvdiff = Interstitial(nt)%nvdiff
+      mg3_as_mg2 = Interstitial(nt)%mg3_as_mg2
+#else
       nncl = ncld
 
       if (imp_physics == 8) then
@@ -704,6 +709,7 @@ module module_physics_driver
           endif
         endif
       endif
+#endif
 
 !-------------------------------------------------------------------------------------------
 !     lprnt   = .false.
@@ -727,7 +733,9 @@ module module_physics_driver
 !-------------------------------------------------------------------------------------------
 !
       skip_macro = .false.
-
+#ifdef CCPP
+      nn = Interstitial(nt)%nn
+#else
       if (ntiw > 0) then
         if (ntclamt > 0) then
           nn = ntrac - 2
@@ -739,6 +747,7 @@ module module_physics_driver
       else
         nn = ntrac + 1
       endif
+#endif
       allocate (clw(ix,levs,nn))
 
       if (Model%imfdeepcnv >= 0 .or. Model%imfshalcnv > 0) then
@@ -2756,7 +2765,27 @@ end if
 
 !  --- ...  for convective tracer transport (while using ras, csaw, or samf)
 !           (the code here implicitly assumes that ntiw=ntcw+1)
-
+#ifdef CCPP
+      ntk = Interstitial(nt)%ntk
+      tottracer = Interstitial(nt)%tracers_total
+      otspt = Interstitial(nt)%otspt
+      nsamftrac = Interstitial(nt)%nsamftrac
+      if (Model%cscnv .or. Model%satmedmf .or. Model%trans_trac ) then
+        tracers = 2
+        do n=2,ntrac
+          if ( n /= ntcw  .and. n /= ntiw  .and. n /= ntclamt .and. &
+               n /= ntrw  .and. n /= ntsw  .and. n /= ntrnc   .and. &
+               n /= ntsnc .and. n /= ntgl  .and. n /= ntgnc) then
+            tracers = tracers + 1
+            do k=1,levs
+              do i=1,im
+                clw(i,k,tracers) = Stateout%gq0(i,k,n)
+              enddo
+            enddo
+          endif
+        enddo
+      endif ! end if_ras or cfscnv or samf
+#else
       ntk       = 0
       tottracer = 0
       if (Model%cscnv .or. Model%satmedmf .or. Model%trans_trac ) then
@@ -2785,6 +2814,7 @@ end if
         enddo
         tottracer = tracers - 2
       endif   ! end if_ras or cfscnv or samf
+#endif
 
 !    if (kdt == 1 .and. me == 0)                                       &
 !        write(0,*)' trans_trac=',Model%trans_trac,' tottracer=',      &
@@ -3041,11 +3071,13 @@ end if
                           Model%evfact_deep, Model%evfactl_deep,                 &
                           Model%pgcon_deep)
           elseif (Model%imfdeepcnv == 2) then
+#ifndef CCPP
             if(.not. Model%satmedmf .and. .not. Model%trans_trac) then
                nsamftrac = 0
             else
                nsamftrac = tottracer
             endif
+#endif
 #ifdef CCPP
 #if defined(CCPP_OPTION_A) && defined(__INTEL_COMPILER)
 ! OPTION A - works with Intel only
@@ -3840,11 +3872,13 @@ endif
             endif
 
           elseif (Model%imfshalcnv == 2) then
+#ifndef CCPP
             if(.not. Model%satmedmf .and. .not. Model%trans_trac) then
                nsamftrac = 0
             else
                nsamftrac = tottracer
             endif
+#endif
 #ifdef CCPP
 #if defined(CCPP_OPTION_A) && defined(__INTEL_COMPILER)
 ! OPTION A - works with Intel only
