@@ -4073,7 +4073,7 @@ end if
       if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_SCNV_generic_post_run through option A'
       call GFS_SCNV_generic_post_mp_GFS_SCNV_generic_post_run (im, levs, Model%lssav, Model%ldiag3d, &
         Model%lgocart, frain, Stateout%gt0, Stateout%gq0(:,:,1), dtdt, dqdt(:,:,1), Coupling%dqdti,  &
-        Diag%dt3dt(:,:,5), Diag%dq3dt(:,:,3), clw(:,:,2), errmsg, errflg)
+        Diag%dt3dt(:,:,5), Diag%dq3dt(:,:,3), clw, errmsg, errflg)
 #else
 ! OPTION B - works with all compilers
       if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_SCNV_generic_post_run through option B'
@@ -4091,12 +4091,12 @@ end if
       !Coupling%dqdti                             ! intent(inout)
       !Diag%dt3dt(:,:,5)                          ! intent(inout)
       !Diag%dq3dt(:,:,3)                          ! intent(inout)
-      Interstitial(nt)%clw(:,:,2)  = clw(:,:,2)   ! intent(inout)
+      Interstitial(nt)%clw  = clw                 ! intent(inout)
       CCPP_shared(nt)%errmsg   = errmsg           ! intent(out)
       CCPP_shared(nt)%errflg   = errflg           ! intent(out)
       call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_SCNV_generic_post", ierr=ierr)
       ! Copy back intent(inout) interstitial variables to local variables in driver
-      clw(:,:,2) = Interstitial(nt)%clw(:,:,2)
+      clw = Interstitial(nt)%clw
       errmsg = trim(CCPP_shared(nt)%errmsg)
       errflg = CCPP_shared(nt)%errflg
 #endif
