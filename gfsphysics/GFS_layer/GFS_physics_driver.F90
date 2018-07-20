@@ -3774,7 +3774,7 @@ endif
 ! OPTION A - works with Intel only
       if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_SCNV_generic_pre_run through option A'
       call GFS_SCNV_generic_pre_mp_GFS_SCNV_generic_pre_run (im, levs, Model%ldiag3d, &
-        Model%lgocart, Stateout%gt0, Stateout%gq0(:,:,1), dtdt, dqdt(:,:,1), errmsg,
+        Model%lgocart, Stateout%gt0, Stateout%gq0(:,:,1), dtdt, dqdt(:,:,1), errmsg,  &
         errflg)
 #else
 ! OPTION B - works with all compilers
