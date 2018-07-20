@@ -990,8 +990,10 @@ contains
      call del2_cubed(Atm(mytile)%diss_est, 0.25*Atm(mytile)%gridstruct%da_min, Atm(mytile)%gridstruct, &
                      Atm(mytile)%domain, npx, npy, npz, 3, Atm(mytile)%bd)
    enddo
-   ! provide back sqrt of dissipation estimate
-   Atm(mytile)%diss_est=sqrt(Atm(mytile)%diss_est)
+
+   ! provide back sqrt of dissipation estimate,
+   ! taking absolute value before taking sqrt
+   Atm(mytile)%diss_est=sqrt(abs(Atm(mytile)%diss_est))
 
  end subroutine atmosphere_diss_est
 
