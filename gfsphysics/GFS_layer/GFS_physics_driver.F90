@@ -3858,6 +3858,7 @@ end if
               num2 = Model%num_p3d + 1
             endif
 ! *GF
+#endif
             if ((Model%shcnvcw) .and. (Model%num_p3d == 4) .and. (Model%npdf3d == 3)) then
               do k=1,levs
                 do i=1,im
