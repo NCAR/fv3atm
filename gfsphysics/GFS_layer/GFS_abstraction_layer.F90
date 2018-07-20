@@ -27,7 +27,6 @@ module physics_abstraction_layer
   use GFS_driver,      only: initialize       =>  GFS_initialize,       &
                              time_vary_step   =>  GFS_time_vary_step,   &
                              physics_step1    =>  GFS_physics_driver,   &
-                             physics_step2    =>  GFS_stochastic_driver,&
                              finalize         =>  GFS_finalize
 #else
   use GFS_driver,      only: initialize       =>  GFS_initialize,       &
