@@ -3342,15 +3342,6 @@ end if
 !     endif
 !
 #ifdef CCPP
-! GF* temporarily need this code until shallow convection interstitial is updated
-if ((Model%npdf3d == 3) .and. (Model%num_p3d == 4)) then
-  num2 = Model%num_p3d + 2
-  num3 = num2 + 1
-elseif ((Model%npdf3d == 0) .and. (Model%ncnvcld3d == 1)) then
-  num2 = Model%num_p3d + 1
-endif
-! *GF
-
 #if defined(CCPP_OPTION_A) && defined(__INTEL_COMPILER)
 ! OPTION A - works with Intel only
       if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_DCNV_generic_post_run through option A'
@@ -3781,7 +3772,7 @@ endif
       if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_SCNV_generic_pre_run through option B'
       ! Copy local variables from driver to appropriate interstitial variables
       Interstitial(nt)%im = im                    ! intent(in)
-      Interstitial(nt)%ix = ix                    ! intent(in)
+      !Model%levs                                 ! intent(in)
       !Model%ldiag3d                              ! intent(in)
       !Model%lgocart                              ! intent(in)
       !Stateout%gt0                               ! intent(in)
@@ -3856,6 +3847,17 @@ endif
               enddo
             endif
 ! in shalcnv,  'cnvw' and 'cnvc' are not set to zero:
+! GF* temporarily need this code until this section is made CCPP-compliant
+! (num2 and num3 are only calculated above if CCPP is not defined; in order not
+! to break the code below, this code is necessary)
+#ifdef CCPP
+            if ((Model%npdf3d == 3) .and. (Model%num_p3d == 4)) then
+              num2 = Model%num_p3d + 2
+              num3 = num2 + 1
+            elseif ((Model%npdf3d == 0) .and. (Model%ncnvcld3d == 1)) then
+              num2 = Model%num_p3d + 1
+            endif
+! *GF
             if ((Model%shcnvcw) .and. (Model%num_p3d == 4) .and. (Model%npdf3d == 3)) then
               do k=1,levs
                 do i=1,im
@@ -3968,14 +3970,14 @@ endif
             if (Model%me==0) write(0,*) 'CCPP DEBUG: calling samfshalcnv_post_run through option A'
             call samfshalcnv_post_mp_samfshalcnv_post_run (im, levs, Model%lssav, Model%shcnvcw,    &
               frain, rain1, Model%npdf3d, Model%num_p3d, Model%ncnvcld3d, cnvc, cnvw,               &
-              Diag%rainc, Diag%cnvprcp, Diag%cnvprcpb, Tbd%phy_f3d(:,:,num2), Tbd%phy_f3d(:,:,num3),&
-              errmsg, errflg)
+              Diag%rainc, Diag%cnvprcp, Diag%cnvprcpb, Tbd%phy_f3d(:,:,Model%ncnvw),                &
+              Tbd%phy_f3d(:,:,Model%ncnvw+1),errmsg, errflg)
 #else
 ! OPTION B - works with all compilers
             if (Model%me==0) write(0,*) 'CCPP DEBUG: calling samfshalcnv_post_run through option B'
             ! Copy local variables from driver to appropriate interstitial variables
             Interstitial(nt)%im = im                    ! intent(in)
-            Interstitial(nt)%ix = ix                    ! intent(in)
+            !Model%levs                                 ! intent(in)
             !Model%lssav                                ! intent(in)
             !Model%shcnvcw                              ! intent(in)
             !Model%lgocart                              ! intent(in)
@@ -4076,7 +4078,7 @@ endif
       if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_SCNV_generic_post_run through option B'
       ! Copy local variables from driver to appropriate interstitial variables
       Interstitial(nt)%im = im                    ! intent(in)
-      Interstitial(nt)%ix = ix                    ! intent(in)
+      !Model%levs                                 ! intent(in)
       !Model%lssav                                ! intent(in)
       !Model%ldiag3d                              ! intent(in)
       !Model%lgocart                              ! intent(in)
