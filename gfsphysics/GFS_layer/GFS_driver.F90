@@ -105,7 +105,9 @@ module GFS_driver
   public  GFS_radiation_driver        !< radiation_driver (was grrad)
 #endif
   public  GFS_physics_driver          !< physics_driver (was gbphys)
+#ifndef CCPP
   public  GFS_stochastic_driver       !< stochastic physics
+#endif
 #ifdef CCPP
   public  GFS_finalize
 #endif
@@ -511,6 +513,7 @@ module GFS_driver
   end subroutine GFS_time_vary_step
 
 
+#ifndef CCPP
 !-------------------------------------------------------------------------
 ! GFS stochastic_driver
 !-------------------------------------------------------------------------
@@ -522,11 +525,7 @@ module GFS_driver
 !      6) performs surface data cycling via the GFS gcycle routine
 !-------------------------------------------------------------------------
   subroutine GFS_stochastic_driver (Model, Statein, Stateout, Sfcprop, Coupling, &
-#ifdef CCPP
-                                    Grid, Tbd, Cldprop, Radtend, Diag, Interstitial)
-#else
                                     Grid, Tbd, Cldprop, Radtend, Diag)
-#endif
 
     implicit none
 
@@ -551,9 +550,6 @@ module GFS_driver
     type(GFS_cldprop_type),         intent(inout) :: Cldprop
     type(GFS_radtend_type),         intent(inout) :: Radtend
     type(GFS_diag_type),            intent(inout) :: Diag
-#ifdef CCPP
-    type(GFS_interstitial_type), intent(inout) :: Interstitial(:)
-#endif
 #else
     type(GFS_control_type),   intent(in   ) :: Model
     type(GFS_statein_type),   intent(in   ) :: Statein
@@ -565,9 +561,6 @@ module GFS_driver
     type(GFS_cldprop_type),   intent(in   ) :: Cldprop
     type(GFS_radtend_type),   intent(in   ) :: Radtend
     type(GFS_diag_type),      intent(inout) :: Diag
-#ifdef CCPP
-    type(GFS_interstitial_type), intent(inout) :: Interstitial(:)
-#endif
 #endif
     !--- local variables
     integer :: k, i
@@ -638,7 +631,7 @@ module GFS_driver
      endif
 
   end subroutine GFS_stochastic_driver
-
+#endif
 
 
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

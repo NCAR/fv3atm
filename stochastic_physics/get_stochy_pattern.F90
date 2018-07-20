@@ -84,7 +84,7 @@ subroutine get_random_pattern_fv3(rpattern,npatterns,&
       call la2ga(workg,lonf,latg,gg_lons,gg_lats,wlon,rnlat,inttyp,&
                  pattern_1d,len,.false.,rslmsk,slmask,&
                  tlats,tlons,me)
-      pattern_2d(blk,:)=pattern_1d(:)
+      pattern_2d(blk,Model%isc:Model%isc+Model%nx-1)=pattern_1d(Model%isc:Model%isc+Model%nx-1)
       deallocate(SLMASK)
       deallocate(tlats)
       deallocate(tlons)
@@ -254,11 +254,11 @@ integer kmsk0(lonf,gis_stochy%lats_node_a),i1,i2,j1
        call la2ga(workgu,lonf,latg,gg_lons,gg_lats,wlon,rnlat,inttyp,&
                   pattern_1d,len,.false.,rslmsk,slmask,&
                   tlats,tlons,me)
-       skebu_save(blk,:,k)=pattern_1d(:)
+       skebu_save(blk,Model%isc:Model%isc+Model%nx-1,k)=pattern_1d(Model%isc:Model%isc+Model%nx-1)
        call la2ga(workgv,lonf,latg,gg_lons,gg_lats,wlon,rnlat,inttyp,&
                   pattern_1d,len,.false.,rslmsk,slmask,&
                   tlats,tlons,me)
-       skebv_save(blk,:,k)=-1*pattern_1d(:)
+       skebv_save(blk,Model%isc:Model%isc+Model%nx-1,k)=-1*pattern_1d(Model%isc:Model%isc+Model%nx-1)
        deallocate(SLMASK)
        deallocate(tlats)
        deallocate(tlons)
@@ -318,11 +318,11 @@ integer kmsk0(lonf,gis_stochy%lats_node_a),i1,i2,j1
     call la2ga(workgu,lonf,latg,gg_lons,gg_lats,wlon,rnlat,inttyp,&
                pattern_1d,len,.false.,rslmsk,slmask,&
                tlats,tlons,me)
-    skebu_save(blk,:,skeblevs)=pattern_1d(:)
+    skebu_save(blk,Model%isc:Model%isc+Model%nx-1,skeblevs)=pattern_1d(Model%isc:Model%isc+Model%nx-1)
     call la2ga(workgv,lonf,latg,gg_lons,gg_lats,wlon,rnlat,inttyp,&
                pattern_1d,len,.false.,rslmsk,slmask,&
                tlats,tlons,me)
-    skebv_save(blk,:,skeblevs)=-1*pattern_1d(:)
+    skebv_save(blk,Model%isc:Model%isc+Model%nx-1,skeblevs)=-1*pattern_1d(Model%isc:Model%isc+Model%nx-1)
     deallocate(SLMASK)
     deallocate(tlats)
     deallocate(tlons)

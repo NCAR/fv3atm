@@ -26,12 +26,16 @@ ifneq (,$(findstring CCPP,$(CPPDEFS)))
 	   ./CCPP_layer/CCPP_typedefs.F90                                            \
 	   ./CCPP_layer/CCPP_data.F90
     PHYSICS_SRCS_f =
+    PHYSICS_SRCS_f90 =
     PHYSICS_SRCS_F90 =
     RADIATION_SRCS_f =
     RADIATION_SRCS_F90 =
 else
     CCPP_SRCS_F90 =
-    PHYSICS_SRCS_f = ./physics/cnvc90.f
+    PHYSICS_SRCS_f = \
+	   ./physics/cnvc90.f
+    PHYSICS_SRCS_f90 = \
+	   ./physics/calpreciptype.f90
     PHYSICS_SRCS_F90 = ./physics/gfdl_cloud_microphys.F90
     RADIATION_SRCS_f = \
 	   ./physics/radiation_aerosols.f                                            \
@@ -134,7 +138,7 @@ SRCS_f   =  \
 	   ./physics/tridi2t3.f
 
 SRCS_f90 = \
-	   ./physics/calpreciptype.f90                                               \
+	   $(PHYSICS_SRCS_f90)                                                       \
 	   ./physics/cs_conv.f90                                                     \
 	   ./physics/funcphys.f90                                                    \
 	   ./physics/gcm_shoc.f90                                                    \
