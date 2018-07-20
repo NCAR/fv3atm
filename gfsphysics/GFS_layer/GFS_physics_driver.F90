@@ -3972,7 +3972,7 @@ end if
             call samfshalcnv_post_mp_samfshalcnv_post_run (im, levs, Model%lssav, Model%shcnvcw,    &
               frain, rain1, Model%npdf3d, Model%num_p3d, Model%ncnvcld3d, cnvc, cnvw,               &
               Diag%rainc, Diag%cnvprcp, Diag%cnvprcpb, Tbd%phy_f3d(:,:,Model%ncnvw),                &
-              Tbd%phy_f3d(:,:,Model%ncnvw+1),errmsg, errflg)
+              Tbd%phy_f3d(:,:,Model%ncnvw+1), errmsg, errflg)
 #else
 ! OPTION B - works with all compilers
             if (Model%me==0) write(0,*) 'CCPP DEBUG: calling samfshalcnv_post_run through option B'
@@ -3981,14 +3981,13 @@ end if
             !Model%levs                                 ! intent(in)
             !Model%lssav                                ! intent(in)
             !Model%shcnvcw                              ! intent(in)
-            !Model%lgocart                              ! intent(in)
             Interstitial(nt)%frain = frain              ! intent(in)
             Interstitial(nt)%raincs = rain1             ! intent(in)
             !Model%npdf3d                               ! intent(in)
             !Model%num_p3d                              ! intent(in)
             !Model%ncnvcld3d                            ! intent(in)
-            Interstitial(nt)%cnvw = cnvw                ! intent(in)
             Interstitial(nt)%cnvc = cnvc                ! intent(in)
+            Interstitial(nt)%cnvw = cnvw                ! intent(in)
             !Diag%rainc                                 ! intent(inout)
             !Diag%cnvprcp                               ! intent(inout)
             !Diag%cnvprcpb                              ! intent(inout)
@@ -4071,7 +4070,7 @@ end if
 #if defined(CCPP_OPTION_A) && defined(__INTEL_COMPILER)
 ! OPTION A - works with Intel only
       if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_SCNV_generic_post_run through option A'
-      call GFS_SCNV_generic_post_mp_GFS_SCNV_generic_post_run (im, levs, Model%lssav, Model%ldiag3d, &
+      call GFS_SCNV_generic_post_mp_GFS_SCNV_generic_post_run (im, levs, nn, Model%lssav, Model%ldiag3d, &
         Model%lgocart, frain, Stateout%gt0, Stateout%gq0(:,:,1), dtdt, dqdt(:,:,1), Coupling%dqdti,  &
         Diag%dt3dt(:,:,5), Diag%dq3dt(:,:,3), clw, errmsg, errflg)
 #else
@@ -4080,6 +4079,7 @@ end if
       ! Copy local variables from driver to appropriate interstitial variables
       Interstitial(nt)%im = im                    ! intent(in)
       !Model%levs                                 ! intent(in)
+      Interstitial(nt)%nn = nn                    ! intent(in)
       !Model%lssav                                ! intent(in)
       !Model%ldiag3d                              ! intent(in)
       !Model%lgocart                              ! intent(in)
@@ -4124,7 +4124,7 @@ end if
             enddo
           endif
         endif   ! end if_lssav
-        !
+
         do k=1,levs
           do i=1,im
             if (clw(i,k,2) <= -999.0) clw(i,k,2) = 0.0
