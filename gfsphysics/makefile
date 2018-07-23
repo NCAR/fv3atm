@@ -38,7 +38,7 @@ else
 	   ./physics/calpreciptype.f90
     PHYSICS_SRCS_F90 = ./physics/gfdl_cloud_microphys.F90
     RADIATION_SRCS_f = \
-	   ./physics/radiation_aerosols.f                                            \
+		 ./physics/radiation_aerosols.f                                            \
 	   ./physics/radiation_astronomy.f                                           \
 	   ./physics/radiation_clouds.f                                              \
 	   ./physics/radiation_gases.f                                               \
@@ -47,7 +47,9 @@ else
 	   ./physics/radsw_datatb.f                                                  \
 	   ./physics/radlw_main.f                                                    \
 	   ./physics/radsw_main.f                                                    \
-	   ./physics/rad_initialize.f
+	   ./physics/rad_initialize.f                                                \
+		 ./physics/samfdeepcnv.f                                                   \
+	   ./physics/samfshalcnv.f
     RADIATION_SRCS_F90 =  \
 	   ./GFS_layer/GFS_radiation_driver.F90
 endif
@@ -83,11 +85,11 @@ SRCS_f   =  \
 	   ./physics/iounitdef.f                                                     \
 	   ./physics/lrgsclr.f                                                       \
 	   ./physics/mersenne_twister.f                                              \
-	   ./physics/mfpbl.f                                                         \
+		 ./physics/mfpbl.f                                                         \
 	   ./physics/mfpblt.f                                                        \
 	   ./physics/mfscu.f                                                         \
 	   ./physics/module_bfmicrophysics.f                                         \
-	   ./physics/moninedmf.f                                                     \
+		 ./physics/moninedmf.f                                                     \
 	   ./physics/moninp.f                                                        \
 	   ./physics/moninp1.f                                                       \
 	   ./physics/moninq.f                                                        \
@@ -114,8 +116,6 @@ SRCS_f   =  \
 	   ./physics/rascnvv2.f                                                      \
 	   ./physics/rayleigh_damp.f                                                 \
 	   ./physics/rayleigh_damp_mesopause.f                                       \
-	   ./physics/samfdeepcnv.f                                                   \
-	   ./physics/samfshalcnv.f                                                   \
 	   ./physics/sascnv.f                                                        \
 	   ./physics/sascnvn.f                                                       \
 	   ./physics/satmedmfvdif.f                                                  \
@@ -231,4 +231,3 @@ include ./depend
 ifneq (clean,$(findstring clean,$(MAKECMDGOALS)))
    -include depend
 endif
-
