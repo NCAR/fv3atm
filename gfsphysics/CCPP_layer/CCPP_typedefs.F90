@@ -18,8 +18,6 @@ module CCPP_typedefs
 !! \section arg_table_CCPP_shared_type
 !! | local_name                                         | standard_name                                                 | long_name                                                                           | units   | rank | type        |    kind   | intent | optional |
 !! |----------------------------------------------------|---------------------------------------------------------------|-------------------------------------------------------------------------------------|---------|------|-------------|-----------|--------|----------|
-!! | CCPP_shared(nt)%errflg                             | error_flag                                                    | error flag for error handling in CCPP                                               | flag    |    0 | integer     |           | none   | F        |
-!! | CCPP_shared(nt)%errmsg                             | error_message                                                 | error message for error handling in CCPP                                            | none    |    0 | character   | len=512   | none   | F        |
 !! | CCPP_shared(nt)%hydrostatic                        | flag_for_hydrostatic_solver                                   | flag for use the hydrostatic or nonhydrostatic solver                               | flag    |    0 | logical     |           | none   | F        |
 !! | CCPP_shared(nt)%nthreads                           | omp_threads                                                   | number of OpenMP threads available for fast physics schemes                         | count   |    0 | integer     |           | none   | F        |
 !! | CCPP_shared(nt)%phys_hydrostatic                   | flag_for_hydrostatic_heating_from_physics                     | flag for use of hydrostatic heating in physics                                      | flag    |    0 | logical     |           | none   | F        |
@@ -27,8 +25,6 @@ module CCPP_typedefs
 #endif
   type CCPP_shared_type
 
-     integer                             :: errflg
-     character(len=512)                  :: errmsg
      logical                             :: hydrostatic
      integer                             :: nthreads
      logical                             :: phys_hydrostatic
@@ -103,8 +99,9 @@ contains
     Shared%hydrostatic      = hydrostatic
     ! Number of OpenMP threads available for schemes, default only one
     Shared%nthreads = 1
-    ! DH* the input phys_hydrostatic from Atm does not match
-    ! with the hardcoded value for calling GFDL MP in GFS_physics_driver.F90
+    ! DH*
+    ! The input phys_hydrostatic from Atm does not match the
+    ! hardcoded value for calling GFDL MP in GFS_physics_driver.F90
     !Shared%phys_hydrostatic = phys_hydrostatic
     Shared%phys_hydrostatic = .true.
     ! *DH
@@ -119,9 +116,6 @@ contains
     !
     class(CCPP_shared_type) :: Shared
     !
-    Shared%errmsg        = ''
-    Shared%errflg        = 0
-    !
   end subroutine shared_reset
 
   subroutine shared_print(Shared)
@@ -131,9 +125,9 @@ contains
     class(CCPP_shared_type) :: Shared
     !
     write (0,'(a)') 'Shared_print'
-    write (0,*) 'Shared%errflg            = ', Shared%errflg
-    write (0,*) 'Shared%errmsg            = ', trim(Shared%errmsg)
+    write (0,*) 'Shared%hydrostatic       = ', Shared%hydrostatic
     write (0,*) 'Shared%nthreads          = ', Shared%nthreads
+    write (0,*) 'Shared%phys_hydrostatic  = ', Shared%phys_hydrostatic
     write (0,*) 'Shared_print: end'
     !
   end subroutine shared_print
