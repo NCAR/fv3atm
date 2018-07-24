@@ -2874,11 +2874,35 @@ end if
           psautco_l(i) = Model%psautco(1)*work1(i) + Model%psautco(2)*work2(i)
           prautco_l(i) = Model%prautco(1)*work1(i) + Model%prautco(2)*work2(i)
         enddo
+
+#ifdef CCPP
+! OPTION B BEGIN
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_zhao_carr_pre_run through option B'
+      ! Copy local variables from driver to appropriate interstitial variables
+      Interstitial(nt)%im = im             ! intent(in)
+      Interstitial(nt)%ix = ix             ! intent(in)
+      ! IPD_Control%levs
+      ! Stateout%gq0(:,:,ntcw)
+      Interstitial(nt)%clw(:,:,1) = clw(:,:,1)   ! intent(out)
+      call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_zhao_carr_pre", ierr=ierr)
+      ! Copy back intent(inout) interstitial variables to local variables in driver
+      clw(:,:,1)   = Interstitial(nt)%clw(:,:,1)
+      errmsg = trim(CCPP_shared(nt)%errmsg)
+      errflg = CCPP_shared(nt)%errflg
+! OPTION B END
+      if (errflg/=0) then
+          write(0,*) 'Error in call to GFS_zhao_carr_pre_mp_GFS_zhao_carr_pre_run: ' // trim(errmsg)
+          stop
+      end if
+#else
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of GFS_zhao_carr_pre_run'
+
         do k=1,levs
           do i=1,im
             clw(i,k,1) = Stateout%gq0(i,k,ntcw)
           enddo
         enddo
+#endif
       elseif (imp_physics == 11) then
         clw(1:im,:,1) = Stateout%gq0(1:im,:,ntcw)
       elseif (imp_physics == 8) then
