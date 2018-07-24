@@ -15,6 +15,12 @@ else
     $(info )
 endif
 
+ifneq (,$(findstring CCPP,$(CPPDEFS)))
+    FAST_PHYSICS_SRCS_F90 =
+else
+    FAST_PHYSICS_SRCS_F90 = ./model/fv_cmp.F90
+endif
+
 LIBRARY  = libfv3core.a
 
 FFLAGS   += -I../fms -I../fms/include -I../gfsphysics -I../ipd -I../io
@@ -30,7 +36,7 @@ SRCS_F90 = \
 		   ./model/boundary.F90                           \
 		   ./model/dyn_core.F90                           \
 		   ./model/fv_arrays.F90                          \
-		   ./model/fv_cmp.F90                             \
+		   $(FAST_PHYSICS_SRCS_F90)                       \
 		   ./model/fv_control.F90                         \
 		   ./model/fv_dynamics.F90                        \
 		   ./model/fv_fill.F90                            \

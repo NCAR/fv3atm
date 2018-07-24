@@ -94,7 +94,7 @@ use IPD_typedefs,       only: IPD_init_type, IPD_control_type, &
 use CCPP_data,          only: ccpp_suite
 use IPD_driver,         only: IPD_initialize, IPD_step, IPD_finalize
 use IPD_CCPP_driver,    only: IPD_CCPP_step
-use physics_abstraction_layer, only: time_vary_step, physics_step1, physics_step2
+use physics_abstraction_layer, only: time_vary_step, physics_step1
 #else
 use IPD_driver,         only: IPD_initialize, IPD_step
 use physics_abstraction_layer, only: time_vary_step, radiation_step1, physics_step1, physics_step2
@@ -178,7 +178,6 @@ type(IPD_diag_type),    target      :: IPD_Diag(DIAG_SIZE)
 type(IPD_restart_type)              :: IPD_Restart
 #ifdef CCPP
 type(IPD_interstitial_type) , allocatable, target :: IPD_Interstitial(:) ! number of threads
-logical :: ccpp_physics_initialized = .false.
 #endif
 
 !--------------
@@ -247,16 +246,6 @@ subroutine update_atmos_radiation_physics (Atmos)
         IPD_Data(nb)%Stateout%gq0 = IPD_Data(nb)%Statein%qgrs
       enddo
     else
-#ifdef CCPP
-      ! Initialize the CCPP physics at the beginning of the first time step.
-      ! This must happen this late, because some physics need the model state
-      ! (height, geopotential, temperature etc.) for correct initialization
-      if (.not.ccpp_physics_initialized) then
-        call IPD_CCPP_step (step="physics_init", nblks=Atm_block%nblks, IPD_Control=IPD_Control, ierr=ierr)
-        if (ierr/=0)  call mpp_error(FATAL, 'Call to IPD-CCPP physics_init step failed')
-        ccpp_physics_initialized =.true.
-      end if
-#endif
       if (mpp_pe() == mpp_root_pe() .and. debug) write(6,*) "setup step"
 
 !--- update IPD_Control%jdat(8)
@@ -343,22 +332,19 @@ subroutine update_atmos_radiation_physics (Atmos)
 !--- execute the IPD atmospheric physics step2 subcomponent (stochastic physics driver)
 
       call mpp_clock_begin(physClock)
+#ifdef CCPP
+      call IPD_CCPP_step (step="stochastics", nblks=Atm_block%nblks, ierr=ierr)
+      if (ierr/=0)  call mpp_error(FATAL, 'Call to IPD-CCPP stochastics step failed')
+#else
       Func0d => physics_step2
 !$OMP parallel do default (none) &
 !$OMP            schedule (dynamic,1), &
-#ifdef CCPP
-!$OMP            shared   (Atm_block, IPD_Control, IPD_Data, IPD_Diag, IPD_Restart, IPD_Interstitial, Func0d) &
-#else
 !$OMP            shared   (Atm_block, IPD_Control, IPD_Data, IPD_Diag, IPD_Restart, Func0d) &
-#endif
 !$OMP            private  (nb)
       do nb = 1,Atm_block%nblks
-#ifdef CCPP
-        call IPD_step (IPD_Control, IPD_Data(nb:nb), IPD_Diag, IPD_Restart, IPD_Interstitial, IPD_func0d=Func0d)
-#else
         call IPD_step (IPD_Control, IPD_Data(nb:nb), IPD_Diag, IPD_Restart, IPD_func0d=Func0d)
-#endif
       enddo
+#endif
       call mpp_clock_end(physClock)
 
       if (chksum_debug) then
@@ -552,6 +538,11 @@ subroutine atmos_model_init (Atmos, Time_init, Time, Time_step)
                                     IPD_Interstitial=IPD_Interstitial,          &
                                     nblks=Atm_block%nblks, ierr=ierr)
    if (ierr/=0)  call mpp_error(FATAL, 'Call to IPD-CCPP init step failed')
+   ! DH* combine init and physics init again?
+   ! doing the init here will require logic in thompson aerosol init if no aerosol
+   ! profiles are specified (because temperatures etc. are not yet set)
+   call IPD_CCPP_step (step="physics_init", nblks=Atm_block%nblks, IPD_Control=IPD_Control, ierr=ierr)
+   if (ierr/=0)  call mpp_error(FATAL, 'Call to IPD-CCPP physics_init step failed')
 #endif
 
    Atmos%Diag => IPD_Diag
@@ -738,17 +729,17 @@ subroutine atmos_model_end (Atmos)
 
 !-----------------------------------------------------------------------
 !---- termination routine for atmospheric model ----
-#ifdef CCPP
-!   Both fast physics (from dynamics) and standard/slow physics (from IPD)
-!   are finalized in IPD_CCPP_step 'finalize'. This must happen before
-!   atmosphere_end, since data structures like Atm are deallocated in there.
-    call IPD_CCPP_step (step="finalize", nblks=Atm_block%nblks, ierr=ierr)
-    if (ierr/=0)  call mpp_error(FATAL, 'Call to IPD-CCPP finalize step failed')
-#endif
-
     call atmosphere_end (Atmos % Time, Atmos%grid)
     call FV3GFS_restart_write (IPD_Data, IPD_Restart, Atm_block, &
                                IPD_Control, Atmos%domain)
+
+#ifdef CCPP
+!   Fast physics (from dynamics) are finalized in atmosphere_end above;
+!   standard/slow physics (from IPD) are finalized in IPD_CCPP_step 'finalize'.
+!   The CCPP framework for all cdata structures is finalized in IPD_CCPP_step 'finalize'.
+    call IPD_CCPP_step (step="finalize", nblks=Atm_block%nblks, ierr=ierr)
+    if (ierr/=0)  call mpp_error(FATAL, 'Call to IPD-CCPP finalize step failed')
+#endif
 
 end subroutine atmos_model_end
 

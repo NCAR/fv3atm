@@ -231,7 +231,7 @@ module GFS_typedefs
 !! | IPD_Data(nb)%Statein%qgrs(:,:,IPD_Control%ntrnc)| rain_number_concentration                                 | number concentration of rain                                                        | kg-1          |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Statein%qgrs(:,:,IPD_Control%ntsnc)| snow_number_concentration                                 | number concentration of snow                                                        | kg-1          |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Statein%qgrs(:,:,IPD_Control%ntgnc)| graupel_number_concentration                              | number concentration of graupel                                                     | kg-1          |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Statein%diss_est                   |                                                           | dissipation estimate model layer mean temperature                                   | K             |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Statein%diss_est                   | dissipation_estimate_of_air_temperature_at_model_layers   | dissipation estimate model layer mean temperature                                   | K             |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Statein%smc                        |                                                           | total soil moisture                                                                 | frac          |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Statein%stc                        |                                                           | soil temperature                                                                    | K             |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Statein%slc                        |                                                           | liquid soil moisture                                                                | frac          |    2 | real    | kind_phys | none   | F        |
@@ -274,26 +274,27 @@ module GFS_typedefs
 !------------------------------------------------------------------
 #if 0
 !! \section arg_table_GFS_stateout_type
-!! | local_name                                      | standard_name                                                  | long_name                                                                                  | units   | rank | type    |    kind   | intent | optional |
-!! |-------------------------------------------------|----------------------------------------------------------------|--------------------------------------------------------------------------------------------|---------|------|---------|-----------|--------|----------|
-!! | IPD_Data(nb)%Stateout%gu0                       | x_wind_updated_by_physics                                      | zonal wind updated by physics                                                              | m s-1   |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Stateout%gv0                       | y_wind_updated_by_physics                                      | meridional wind updated by physics                                                         | m s-1   |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Stateout%gt0                       | air_temperature_updated_by_physics                             | temperature updated by physics                                                             | K       |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Stateout%gq0                       | tracer_concentration_updated_by_physics                        | tracer concentration updated by physics                                                    | kg kg-1 |    3 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Stateout%gq0(:,:,1)                | water_vapor_specific_humidity_updated_by_physics               | water vapor specific humidity updated by physics                                           | kg kg-1 |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Stateout%gq0(:,:,IPD_Control%ntoz) | ozone_concentration_updated_by_physics                         | ozone concentration updated by physics                                                     | kg kg-1 |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Stateout%gq0(:,:,IPD_Control%ntcw) | cloud_condensed_water_mixing_ratio_updated_by_physics          | moist (dry+vapor, no condensates) mixing ratio of cloud condensed water updated by physics | kg kg-1 |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Stateout%gq0(:,:,IPD_Control%ntiw) | ice_water_mixing_ratio_updated_by_physics                      | moist (dry+vapor, no condensates) mixing ratio of ice water updated by physics             | kg kg-1 |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Stateout%gq0(:,:,IPD_Control%ntrw) | rain_water_mixing_ratio_updated_by_physics                     | moist (dry+vapor, no condensates) mixing ratio of rain water updated by physics            | kg kg-1 |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Stateout%gq0(:,:,IPD_Control%ntsw) | snow_water_mixing_ratio_updated_by_physics                     | moist (dry+vapor, no condensates) mixing ratio of snow water updated by physics            | kg kg-1 |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Stateout%gq0(:,:,IPD_Control%ntgl) | graupel_mixing_ratio_updated_by_physics                        | moist (dry+vapor, no condensates) mixing ratio of graupel updated by physics               | kg kg-1 |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Stateout%gq0(:,:,IPD_Control%ntwa) | water_friendly_aerosol_number_concentration_updated_by_physics | number concentration of water-friendly aerosols updated by physics                         | kg-1    |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Stateout%gq0(:,:,IPD_Control%ntia) | ice_friendly_aerosol_number_concentration_updated_by_physics   | number concentration of ice-friendly aerosols updated by physics                           | kg-1    |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Stateout%gq0(:,:,IPD_Control%ntlnc)| cloud_droplet_number_concentration_updated_by_physics          | number concentration of cloud droplets updated by physics                                  | kg-1    |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Stateout%gq0(:,:,IPD_Control%ntinc)| ice_number_concentration_updated_by_physics                    | number concentration of ice updated by physics                                             | kg-1    |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Stateout%gq0(:,:,IPD_Control%ntrnc)| rain_number_concentration_updated_by_physics                   | number concentration of rain updated by physics                                            | kg-1    |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Stateout%gq0(:,:,IPD_Control%ntsnc)| snow_number_concentration_updated_by_physics                   | number concentration of snow updated by physics                                            | kg-1    |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Stateout%gq0(:,:,IPD_Control%ntgnc)| graupel_number_concentration_updated_by_physics                | number concentration of graupel updated by physics                                         | kg-1    |    2 | real    | kind_phys | none   | F        |
+!! | local_name                                         | standard_name                                                  | long_name                                                                                  | units   | rank | type    |    kind   | intent | optional |
+!! |----------------------------------------------------|----------------------------------------------------------------|--------------------------------------------------------------------------------------------|---------|------|---------|-----------|--------|----------|
+!! | IPD_Data(nb)%Stateout%gu0                          | x_wind_updated_by_physics                                      | zonal wind updated by physics                                                              | m s-1   |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Stateout%gv0                          | y_wind_updated_by_physics                                      | meridional wind updated by physics                                                         | m s-1   |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Stateout%gt0                          | air_temperature_updated_by_physics                             | temperature updated by physics                                                             | K       |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Stateout%gq0                          | tracer_concentration_updated_by_physics                        | tracer concentration updated by physics                                                    | kg kg-1 |    3 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Stateout%gq0(:,:,1)                   | water_vapor_specific_humidity_updated_by_physics               | water vapor specific humidity updated by physics                                           | kg kg-1 |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Stateout%gq0(:,:,IPD_Control%ntoz)    | ozone_concentration_updated_by_physics                         | ozone concentration updated by physics                                                     | kg kg-1 |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Stateout%gq0(:,:,IPD_Control%ntcw)    | cloud_condensed_water_mixing_ratio_updated_by_physics          | moist (dry+vapor, no condensates) mixing ratio of cloud condensed water updated by physics | kg kg-1 |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Stateout%gq0(:,:,IPD_Control%ntiw)    | ice_water_mixing_ratio_updated_by_physics                      | moist (dry+vapor, no condensates) mixing ratio of ice water updated by physics             | kg kg-1 |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Stateout%gq0(:,:,IPD_Control%ntrw)    | rain_water_mixing_ratio_updated_by_physics                     | moist (dry+vapor, no condensates) mixing ratio of rain water updated by physics            | kg kg-1 |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Stateout%gq0(:,:,IPD_Control%ntsw)    | snow_water_mixing_ratio_updated_by_physics                     | moist (dry+vapor, no condensates) mixing ratio of snow water updated by physics            | kg kg-1 |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Stateout%gq0(:,:,IPD_Control%ntgl)    | graupel_mixing_ratio_updated_by_physics                        | moist (dry+vapor, no condensates) mixing ratio of graupel updated by physics               | kg kg-1 |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Stateout%gq0(:,:,IPD_Control%ntwa)    | water_friendly_aerosol_number_concentration_updated_by_physics | number concentration of water-friendly aerosols updated by physics                         | kg-1    |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Stateout%gq0(:,:,IPD_Control%ntia)    | ice_friendly_aerosol_number_concentration_updated_by_physics   | number concentration of ice-friendly aerosols updated by physics                           | kg-1    |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Stateout%gq0(:,:,IPD_Control%ntlnc)   | cloud_droplet_number_concentration_updated_by_physics          | number concentration of cloud droplets updated by physics                                  | kg-1    |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Stateout%gq0(:,:,IPD_Control%ntinc)   | ice_number_concentration_updated_by_physics                    | number concentration of ice updated by physics                                             | kg-1    |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Stateout%gq0(:,:,IPD_Control%ntrnc)   | rain_number_concentration_updated_by_physics                   | number concentration of rain updated by physics                                            | kg-1    |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Stateout%gq0(:,:,IPD_Control%ntsnc)   | snow_number_concentration_updated_by_physics                   | number concentration of snow updated by physics                                            | kg-1    |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Stateout%gq0(:,:,IPD_Control%ntgnc)   | graupel_number_concentration_updated_by_physics                | number concentration of graupel updated by physics                                         | kg-1    |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Stateout%gq0(:,:,IPD_Control%ntclamt) | cloud_fraction_updated_by_physics                              | cloud fraction updated by physics                                                          | frac    |    2 | real    | kind_phys | none   | F        |
 !!
 #endif
   type GFS_stateout_type
@@ -507,8 +508,8 @@ module GFS_typedefs
 !! | IPD_Data(nb)%Coupling%hicein_cpl     |                                                                                           | aoi_fld%hicein(item,lan)                             |               |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Coupling%hsnoin_cpl     |                                                                                           | aoi_fld%hsnoin(item,lan)                             |               |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Coupling%slimskin_cpl   |                                                                                           | aoi_fld%slimskin(item,lan)                           |               |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Coupling%rain_cpl       |                                                                                           | total rain precipitation                             |               |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Coupling%snow_cpl       |                                                                                           | total snow precipitation                             |               |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Coupling%rain_cpl       | lwe_thickness_of_precipitation_amount_for_coupling                                        | total rain precipitation                             | m             |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Coupling%snow_cpl       | lwe_thickness_of_snow_amount_for_coupling                                                 | total snow precipitation                             | m             |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Coupling%dusfc_cpl      |                                                                                           | sfc u momentum flux                                  |               |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Coupling%dvsfc_cpl      |                                                                                           | sfc v momentum flux                                  |               |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Coupling%dtsfc_cpl      |                                                                                           | sfc sensible heat flux                               |               |    1 | real    | kind_phys | none   | F        |
@@ -549,19 +550,19 @@ module GFS_typedefs
 !! | IPD_Data(nb)%Coupling%psurfi_cpl     |                                                                                           | instantaneous sfc pressure                           |               |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Coupling%oro_cpl        |                                                                                           | orography                                            |               |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Coupling%slmsk_cpl      |                                                                                           | land/sea/ice mask                                    |               |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Coupling%shum_wts       |                                                                                           |                                                      |               |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Coupling%sppt_wts       |                                                                                           |                                                      |               |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Coupling%skebu_wts      |                                                                                           |                                                      |               |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Coupling%skebv_wts      |                                                                                           |                                                      |               |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Coupling%shum_wts       | weights_for_stochastic_shum_perturbation                                                  | weights for stochastic shum perturbation             | none          |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Coupling%sppt_wts       | weights_for_stochastic_surface_physics_perturbation                                       | weights for stochastic surface physics perturbation  | none          |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Coupling%skebu_wts      | weights_for_stochastic_skeb_perturbation_of_x_wind                                        | weights for stochastic skeb perturbation of x wind   | none          |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Coupling%skebv_wts      | weights_for_stochastic_skeb_perturbation_of_y_wind                                        | weights for stochastic skeb perturbation of y wind   | none          |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Coupling%sfc_wts        |                                                                                           |                                                      |               |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Coupling%nsfcpert       | number_of_surface_perturbations                                                           | number of surface perturbations                      |               |    0 | integer |           | none   | F        |
 !! | IPD_Data(nb)%Coupling%vcu_wts        |                                                                                           |                                                      |               |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Coupling%vcv_wts        |                                                                                           |                                                      |               |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Coupling%dqdti          |                                                                                           | instantaneous total moisture tendency                | kg kg-1 s-1   |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Coupling%cnvqci         |                                                                                           | instantaneous total convective conensate             | kg kg-1       |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Coupling%upd_mfi        |                                                                                           | instantaneous convective updraft mass flux           |               |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Coupling%dwn_mfi        |                                                                                           | instantaneous convective downdraft mass flux         |               |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Coupling%det_mfi        |                                                                                           | instantaneous convective detrainment mass flux       |               |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Coupling%dqdti          | instantaneous_water_vapor_specific_humidity_tendency_due_to_convection_on_dynamics_timestep | instantaneous total moisture tendency              | kg kg-1 s-1   |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Coupling%cnvqci         | instantaneous_deep_convective_cloud_condensate_mixing_ratio_on_dynamics_time_step           | instantaneous total convective condensate mixing ratio | kg kg-1       |    2 | real              | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Coupling%upd_mfi        | instantaneous_atmosphere_updraft_convective_mass_flux_on_dynamics_timestep                  | (updraft mass flux) * delt                         | kg m-2        |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Coupling%dwn_mfi        | instantaneous_atmosphere_downdraft_convective_mass_flux_on_dynamics_timestep                | (downdraft mass flux) * delt                       | kg m-2        |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Coupling%det_mfi        | instantaneous_atmosphere_detrainment_convective_mass_flux_on_dynamics_timestep              | (detrainment mass flux) * delt                     | kg m-2        |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Coupling%cldcovi        |                                                                                           | instantaneous 3D cloud fraction                      |               |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Coupling%nwfa2d         | tendency_of_water_friendly_surface_aerosols_at_surface                                    | instantaneous sfc aerosol source                     | kg-1 s-1      |    1 | real    | kind_phys | none   | F        |
 !!
@@ -683,13 +684,15 @@ module GFS_typedefs
 !! | IPD_Control%me                       | mpi_rank                                                                      | current MPI-rank                                        | index         |    0 | integer   |           | none   | F        |
 !! | IPD_Control%master                   | mpi_root                                                                      | master MPI-rank                                         | index         |    0 | integer   |           | none   | F        |
 !! | IPD_Control%communicator             | mpi_comm                                                                      | MPI communicator                                        | index         |    0 | integer   |           | none   | F        |
-!! | IPD_Control%nlunit                   |                                                                               | fortran unit number for file opens                      | none          |    0 | integer   |           | none   | F        |
-!! | IPD_Control%fn_nml                   |                                                                               | namelist filename                                       | none          |    0 | charater  |           | none   | F        |
+!! | IPD_Control%nlunit                   | iounit_namelist                                                               | fortran unit number for file opens                      | none          |    0 | integer   |           | none   | F        |
+!! | IPD_Control%fn_nml                   | namelist_filename                                                             | namelist filename                                       | none          |    0 | character | len=64    | none   | F        |
+!! | IPD_Control%input_nml_file           | namelist_filename_for_internal_file_reads                                     | namelist filename for internal file reads               | none          |    1 | character | len=256   | none   | F        |
+!! | IPD_Control%logunit                  | iounit_log                                                                    | fortran unit number for logfile                         | none          |    0 | integer   |           | none   | F        |
 !! | IPD_Control%fhzero                   |                                                                               | seconds between clearing of diagnostic buckets          | s             |    0 | real      | kind_phys | none   | F        |
 !! | IPD_Control%ldiag3d                  | flag_diagnostics_3D                                                           | flag for 3d diagnostic fields                           | flag          |    0 | logical   |           | none   | F        |
 !! | IPD_Control%lssav                    | flag_diagnostics                                                              | logical flag for storing diagnostics                    | flag          |    0 | logical   |           | none   | F        |
 !! | IPD_Control%fhcyc                    |                                                                               | frequency for surface data cycling (secs)               | s             |    0 | real      | kind_phys | none   | F        |
-!! | IPD_Control%lgocart                  |                                                                               | flag for 3d diagnostic fields for gocart 1              | flag          |    0 | logical   |           | none   | F        |
+!! | IPD_Control%lgocart                  | flag_gocart                                                                   | flag for 3d diagnostic fields for gocart 1              | flag          |    0 | logical   |           | none   | F        |
 !! | IPD_Control%fhgoc3d                  |                                                                               | seconds between calls to gocart                         | s             |    0 | real      | kind_phys | none   | F        |
 !! | IPD_Control%thermodyn_id             |                                                                               | valid for GFS only for get_prs/phi                      | index         |    0 | integer   |           | none   | F        |
 !! | IPD_Control%sfcpress_id              |                                                                               | valid for GFS only for get_prs/phi                      | index         |    0 | integer   |           | none   | F        |
@@ -704,8 +707,8 @@ module GFS_typedefs
 !! | IPD_Control%lonr                     | number_of_equatorial_longitude_points                                         | number of global points in x-dir (i) along the equator  | count         |    0 | integer   |           | none   | F        |
 !! | IPD_Control%latr                     |                                                                               | number of global points in y-dir (j) along the meridian | count         |    0 | integer   |           | none   | F        |
 !! | IPD_Control%blksz                    | horizontal_block_size                                                         | for explicit data blocking: block sizes of all blocks   | count         |    1 | integer   |           | none   | F        |
-!! | IPD_Control%cplflx                   |                                                                               | flag controlloing cplflx collection (default off)       | flag          |    0 | logical   |           | none   | F        |
-!! | IPD_Control%cplwav                   |                                                                               | flag controlloing cplwav collection (default off)       | flag          |    0 | logical   |           | none   | F        |
+!! | IPD_Control%cplflx                   | flag_for_flux_coupling                                                        | flag controlling cplflx collection (default off)        | flag          |    0 | logical   |           | none   | F        |
+!! | IPD_Control%cplwav                   |                                                                               | flag controlling cplwav collection (default off)        | flag          |    0 | logical   |           | none   | F        |
 !! | IPD_Control%lsidea                   | flag_idealized_physics                                                        | flag for idealized physics                              | flag          |    0 | logical   |           | none   | F        |
 !! | IPD_Control%dtp                      | time_step_for_physics                                                         | physics timestep                                        | s             |    0 | real      | kind_phys | none   | F        |
 !! | IPD_Control%dtf                      | time_step_for_dynamics                                                        | dynamics timestep                                       | s             |    0 | real      | kind_phys | none   | F        |
@@ -741,6 +744,7 @@ module GFS_typedefs
 !! | IPD_Control%swhtr                    | flag_for_output_of_shortwave_heating_rate                                     | flag to output sw heating rate (Radtend%swhc)           | flag          |    0 | logical   |           | none   | F        |
 !! | IPD_Control%ncld                     | number_of_hydrometeors                                                        | choice of cloud scheme / number of hydrometeors         | count         |    0 | integer   |           | none   | F        |
 !! | IPD_Control%imp_physics              | flag_for_microphysics_scheme                                                  | choice of microphysics scheme                           | flag          |    0 | integer   |           | none   | F        |
+!! | IPD_Control%imp_physics_gfdl         | flag_for_gfdl_microphysics_scheme                                             | choice of GFDL microphysics scheme                      | flag          |    0 | integer   |           | none   | F        |
 !! | IPD_Control%imp_physics_thompson     | flag_for_thompson_microphysics_scheme                                         | choice of Thompson microphysics scheme                  | flag          |    0 | integer   |           | none   | F        |
 !! | IPD_Control%psautco                  | coefficient_from_cloud_ice_to_snow                                            | auto conversion coeff from ice to snow                  | none          |    1 | real      | kind_phys | none   | F        |
 !! | IPD_Control%prautco                  | coefficient_from_cloud_water_to_rain                                          | auto conversion coeff from cloud to rain                | none          |    1 | real      | kind_phys | none   | F        |
@@ -784,7 +788,7 @@ module GFS_typedefs
 !! | IPD_Control%flipv                    |                                                                               | flag for vertical direction flip (ras)                  |               |    0 | logical   |           | none   | F        |
 !! | IPD_Control%trans_trac               |                                                                               | flag for convective transport of tracers                |               |    0 | logical   |           | none   | F        |
 !! | IPD_Control%old_monin                |                                                                               | flag for diff monin schemes                             |               |    0 | logical   |           | none   | F        |
-!! | IPD_Control%cnvgwd                   |                                                                               | flag for conv gravity wave drag                         |               |    0 | logical   |           | none   | F        |
+!! | IPD_Control%cnvgwd                   | flag_convective_gravity_wave_drag                                             | flag for conv gravity wave drag                         | flag          |    0 | logical   |           | none   | F        |
 !! | IPD_Control%mstrat                   |                                                                               | flag for moorthi approach for stratus                   |               |    0 | logical   |           | none   | F        |
 !! | IPD_Control%moist_adj                |                                                                               | flag for moist convective adjustment                    |               |    0 | logical   |           | none   | F        |
 !! | IPD_Control%cscnv                    |                                                                               | flag for Chikira-Sugiyama convection                    |               |    0 | logical   |           | none   | F        |
@@ -792,13 +796,13 @@ module GFS_typedefs
 !! | IPD_Control%do_aw                    |                                                                               | AW scale-aware option in cs convection                  |               |    0 | logical   |           | none   | F        |
 !! | IPD_Control%do_awdd                  |                                                                               | AW scale-aware option in cs convection                  |               |    0 | logical   |           | none   | F        |
 !! | IPD_Control%flx_form                 |                                                                               | AW scale-aware option in cs convection                  |               |    0 | logical   |           | none   | F        |
-!! | IPD_Control%do_shoc                  |                                                                               | flag for SHOC                                           |               |    0 | logical   |           | none   | F        |
+!! | IPD_Control%do_shoc                  | flag_for_shoc                                                                 | flag for SHOC                                           | flag          |    0 | logical   |           | none   | F        |
 !! | IPD_Control%shocaftcnv               |                                                                               | flag for SHOC                                           |               |    0 | logical   |           | none   | F        |
 !! | IPD_Control%shoc_cld                 |                                                                               | flag for clouds                                         |               |    0 | logical   |           | none   | F        |
 !! | IPD_Control%uni_cld                  |                                                                               | flag for clouds in grrad                                |               |    0 | logical   |           | none   | F        |
 !! | IPD_Control%h2o_phys                 |                                                                               | flag for stratosphere h2o                               |               |    0 | logical   |           | none   | F        |
 !! | IPD_Control%pdfcld                   |                                                                               | flag for pdfcld                                         |               |    0 | logical   |           | none   | F        |
-!! | IPD_Control%shcnvcw                  |                                                                               | flag for shallow convective cloud                       |               |    0 | logical   |           | none   | F        |
+!! | IPD_Control%shcnvcw                  | flag_shallow_convective_cloud                                                 | flag for shallow convective cloud                       |               |    0 | logical   |           | none   | F        |
 !! | IPD_Control%redrag                   | flag_for_reduced_drag_coefficient_over_sea                                    | flag for reduced drag coeff. over sea                   | flag          |    0 | logical   |           | none   | F        |
 !! | IPD_Control%hybedmf                  |                                                                               | flag for hybrid edmf pbl scheme                         |               |    0 | logical   |           | none   | F        |
 !! | IPD_Control%dspheat                  | flag_TKE_dissipation_heating                                                  | flag for tke dissipative heating                        | flag          |    0 | logical   |           | none   | F        |
@@ -848,10 +852,10 @@ module GFS_typedefs
 !! | IPD_Control%nstf_name(5)             | vertical_temperature_average_range_upper_bound                                | zsea2 in mm                                             | mm            |    0 | integer   |           | none   | F        |
 !! | IPD_Control%xkzminv                  | atmosphere_heat_diffusivity_background_maximum                                | maximum background value of heat diffusivity            | m2 s-1        |    0 | real      | kind_phys | none   | F        |
 !! | IPD_Control%moninq_fac               | atmosphere_diffusivity_coefficient_factor                                     | multiplicative constant for atmospheric diffusivities   | none          |    0 | real      | kind_phys | none   | F        |
-!! | IPD_Control%do_sppt                  |                                                                               |                                                         |               |    0 | logical   |           | none   | F        |
-!! | IPD_Control%use_zmtnblck             |                                                                               |                                                         |               |    0 | logical   |           | none   | F        |
-!! | IPD_Control%do_shum                  |                                                                               |                                                         |               |    0 | logical   |           | none   | F        |
-!! | IPD_Control%do_skeb                  |                                                                               |                                                         |               |    0 | logical   |           | none   | F        |
+!! | IPD_Control%do_sppt                  | flag_for_stochastic_surface_physics_perturbations                             | flag for stochastic surface physics perturbations       | flag          |    0 | logical   |           | none   | F        |
+!! | IPD_Control%use_zmtnblck             | flag_for_mountain_blocking                                                    | flag for mountain blocking                              | flag          |    0 | logical   |           | none   | F        |
+!! | IPD_Control%do_shum                  | flag_for_stochastic_shum_option                                               | flag for stochastic shum option                         | flag          |    0 | logical   |           | none   | F        |
+!! | IPD_Control%do_skeb                  | flag_for_stochastic_skeb_option                                               | flag for stochastic skeb option                         | flag          |    0 | logical   |           | none   | F        |
 !! | IPD_Control%skeb_npass               |                                                                               |                                                         |               |    0 | integer   |           | none   | F        |
 !! | IPD_Control%do_sfcperts              |                                                                               |                                                         |               |    0 | logical   |           | none   | F        |
 !! | IPD_Control%nsfcpert                 |                                                                               |                                                         |               |    0 | integer   |           | none   | F        |
@@ -886,7 +890,7 @@ module GFS_typedefs
 !! | IPD_Control%num_p3d                  | array_dimension_of_3d_arrays_for_microphysics                                 | number of 3D arrays needed for microphysics             | count         |    0 | integer   |           | none   | F        |
 !! | IPD_Control%nshoc_2d                 |                                                                               | number of 2d fields for SHOC                            |               |    0 | integer   |           | none   | F        |
 !! | IPD_Control%nshoc_3d                 |                                                                               | number of 3d fields for SHOC                            |               |    0 | integer   |           | none   | F        |
-!! | IPD_Control%ncnvcld3d                |                                                                               | number of convective 3d clouds fields                   |               |    0 | integer   |           | none   | F        |
+!! | IPD_Control%ncnvcld3d                | number_of_convective_3d_cloud_fields                                          | number of convective 3d clouds fields                   | count         |    0 | integer   |           | none   | F        |
 !! | IPD_Control%npdf3d                   | number_of_3d_arrays_associated_with_pdf-based_clouds                          | number of 3d arrays associated with pdf based clouds/mp | count         |    0 | integer   |           | none   | F        |
 !! | IPD_Control%nctp                     |                                                                               | number of cloud types in Chikira-Sugiyama scheme        |               |    0 | integer   |           | none   | F        |
 !! | IPD_Control%ncnvw                    |                                                                               | the index of cnvw in phy_f3d                            |               |    0 | integer   |           | none   | F        |
@@ -925,6 +929,9 @@ module GFS_typedefs
     character(len=64)    :: fn_nml          !< namelist filename for surface data cycling
     character(len=256), pointer :: input_nml_file(:) !< character string containing full namelist
                                                    !< for use with internal file reads
+#ifdef CCPP
+    integer              :: logunit
+#endif
     real(kind=kind_phys) :: fhzero          !< seconds between clearing of diagnostic buckets
     logical              :: ldiag3d         !< flag for 3d diagnostic fields
     logical              :: lssav           !< logical flag for storing diagnostics
@@ -1012,7 +1019,8 @@ module GFS_typedefs
     integer              :: ncld            !< choice of cloud scheme
     !--- new microphysical switch
     integer              :: imp_physics        !< choice of microphysics scheme
-    integer              :: imp_physics_thompson = 8 !< choice of Thompson microphysics scheme
+    integer              :: imp_physics_gfdl = 11     !< choice of GFDL     microphysics scheme
+    integer              :: imp_physics_thompson = 8  !< choice of Thompson microphysics scheme
     !--- Z-C microphysical parameters
     real(kind=kind_phys) :: psautco(2)         !< [in] auto conversion coeff from ice to snow
     real(kind=kind_phys) :: prautco(2)         !< [in] auto conversion coeff from cloud to rain
@@ -1326,11 +1334,11 @@ module GFS_typedefs
 !! | IPD_Data(nb)%Tbd%acv                            | accumulated_lwe_thickness_of_convective_precipitation_amount_cnvc90                            | accumulated convective rainfall amount for cnvc90 only  | m             |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Tbd%acvb                           | smallest_cloud_base_vertical_index_encountered_thus_far                                        | smallest cloud base vertical index encountered thus far | index         |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Tbd%acvt                           | largest_cloud_top_vertical_index_encountered_thus_far                                          | largest cloud top vertical index encountered thus far   | index         |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Tbd%dtdtr                          |                                                                                                | temp. change due to radiative heating per time step     | K             |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Tbd%dtdtr                          | tendency_of_air_temperature_due_to_radiative_heating_on_physics_time_step                      | temp. change due to radiative heating per time step     | K             |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Tbd%dtotprcp                       |                                                                                                | change in totprcp  (diag_type)                          |               |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Tbd%dcnvprcp                       |                                                                                                | change in cnvprcp  (diag_type)                          |               |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Tbd%drain_cpl                      |                                                                                                | change in rain_cpl (coupling_type)                      |               |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Tbd%dsnow_cpl                      |                                                                                                | change in show_cpl (coupling_type)                      |               |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Tbd%drain_cpl                      | tendency_of_lwe_thickness_of_precipitation_amount_for_coupling                                 | change in rain_cpl (coupling_type)                      | m             |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Tbd%dsnow_cpl                      | tendency_of_lwe_thickness_of_snow_amount_for_coupling                                          | change in show_cpl (coupling_type)                      | m             |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Tbd%phy_fctd                       |                                                                                                | for CS convection                                       |               |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Tbd%phy_f2d                        |                                                                                                | 2d arrays saved for restart                             |               |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Tbd%phy_f2d(:,1)                   | surface_air_pressure_two_time_steps_back                                                       | surface air pressure two time steps back                | Pa            |    1 | real    | kind_phys | none   | F        |
@@ -1341,6 +1349,8 @@ module GFS_typedefs
 !! | IPD_Data(nb)%Tbd%phy_f3d(:,:,2)                 | water_vapor_specific_humidity_two_time_steps_back                                              | water vapor specific humidity two time steps back       | kg kg-1       |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Tbd%phy_f3d(:,:,3)                 | air_temperature_at_previous_time_step                                                          | air temperature at previous time step                   | K             |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Tbd%phy_f3d(:,:,4)                 | water_vapor_specific_humidity_at_previous_time_step                                            | water vapor specific humidity at previous time step     | kg kg-1       |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Tbd%phy_f3d(:,:,IPD_Control%ncnvw)   | convective_cloud_water_mixing_ratio_in_phy_f3d                                                 | convective cloud water mixing ratio in the phy_f3d array| kg kg-1       |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Tbd%phy_f3d(:,:,IPD_Control%ncnvw+1) | convective_cloud_cover_in_phy_f3d                                                              | convective cloud cover in the phy_f3d array             | frac          |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Tbd%blkno                          | block_number                                                                                   | for explicit data blocking: block number of this block  | index         |    0 | integer |           | none   | F        |
 !! | IPD_Data(nb)%Tbd%htlwc                          | tendency_of_air_temperature_due_to_longwave_heating_on_radiation_time_step                     | total sky heating rate due to longwave radiation        | K s-1         |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Tbd%htlw0                          | tendency_of_air_temperature_due_to_longwave_heating_assuming_clear_sky_on_radiation_time_step  | clear sky heating rate due to longwave radiation        | K s-1         |    2 | real    | kind_phys | none   | F        |
@@ -1508,19 +1518,25 @@ module GFS_typedefs
 !! | IPD_Data(nb)%Intdiag%dtsfc                |                                                                         | sensible heat flux                                              | W m-2         |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%dqsfc                |                                                                         | latent heat flux                                                | W m-2         |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%totprcp              | accumulated_lwe_thickness_of_precipitation_amount                       | accumulated total precipitation                                 | m             |    1 | real        | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Intdiag%totprcpb             |                                                                         | accumulated total precipitation in bucket                       |               |    1 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%totice               | accumulated_lwe_thickness_of_ice_amount                                 | accumulated ice precipitation                                   | kg m-2        |    1 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%totsnw               | accumulated_lwe_thickness_of_snow_amount                                | accumulated snow precipitation                                  | kg m-2        |    1 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%totgrp               | accumulated_lwe_thickness_of_graupel_amount                             | accumulated graupel precipitation                               | kg m-2        |    1 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%totprcpb             | accumulated_lwe_thickness_of_precipitation_amount_in_bucket             | accumulated total precipitation in bucket                       | m             |    1 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%toticeb              | accumulated_lwe_thickness_of_ice_amount_in_bucket                       | accumulated ice precipitation in bucket                         | kg m-2        |    1 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%totsnwb              | accumulated_lwe_thickness_of_snow_amount_in_bucket                      | accumulated snow precipitation in bucket                        | kg m-2        |    1 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%totgrpb              | accumulated_lwe_thickness_of_graupel_amount_in_bucket                   | accumulated graupel precipitation in bucket                     | kg m-2        |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%gflux                |                                                                         | groud conductive heat flux                                      | W m-2         |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%dlwsfc               |                                                                         | time accumulated sfc dn lw flux                                 | W m-2         |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%ulwsfc               |                                                                         | time accumulated sfc up lw flux                                 | W m-2         |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%suntim               |                                                                         | sunshine duration time                                          | s             |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%runoff               | total_runoff                                                            | total water runoff                                              | kg m-2        |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%ep                   |                                                                         | potential evaporation                                           | W m-2         |    1 | real        | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Intdiag%cldwrk               |                                                                         | cloud workfunction (valid only with sas)                        |               |    1 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%cldwrk               | cumulative_cloud_work_function                                          | cumulative cloud work function (valid only with sas)            | m2 s-1        |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%dugwd                | time_integral_of_x_stress_due_to_gravity_wave_drag                      | vertically integrated u change by OGWD                          | Pa s          |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%dvgwd                | time_integral_of_y_stress_due_to_gravity_wave_drag                      | vertically integrated v change by OGWD                          | Pa s          |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%psmean               |                                                                         | surface pressure                                                | kPa           |    1 | real        | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Intdiag%cnvprcp              |                                                                         | accumulated convective precipitation                            | kg m-2        |    1 | real        | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Intdiag%cnvprcpb             |                                                                         | accumulated convective precipitation in bucket                  |               |    1 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%cnvprcp              | cumulative_lwe_thickness_of_convective_precipitation_amount             | cumulative convective precipitation                             | m             |    1 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%cnvprcpb             | cumulative_lwe_thickness_of_convective_precipitation_amount_in_bucket   | cumulative convective precipitation in bucket                   | m             |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%spfhmin              |                                                                         | minimum specific humidity                                       | kg kg-1       |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%spfhmax              |                                                                         | maximum specific humidity                                       | kg kg-1       |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%u10mmax              |                                                                         | maximum u-wind                                                  |               |    1 | real        | kind_phys | none   | F        |
@@ -1531,12 +1547,6 @@ module GFS_typedefs
 !! | IPD_Data(nb)%Intdiag%ice                  | lwe_thickness_of_ice_amount_on_dynamics_timestep                        | ice fall at this time step                                      | m             |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%snow                 | lwe_thickness_of_snow_amount_on_dynamics_timestep                       | snow fall at this time step                                     | m             |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%graupel              | lwe_thickness_of_graupel_amount_on_dynamics_timestep                    | graupel fall at this time step                                  | m             |    1 | real        | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Intdiag%totice               |                                                                         | accumulated ice precipitation                                   | kg m-2        |    1 | real        | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Intdiag%totsnw               |                                                                         | accumulated snow precipitation                                  | kg m-2        |    1 | real        | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Intdiag%totgrp               |                                                                         | accumulated graupel precipitation                               | kg m-2        |    1 | real        | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Intdiag%toticeb              |                                                                         | accumulated ice precipitation in bucket                         | kg m-2        |    1 | real        | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Intdiag%totsnwb              |                                                                         | accumulated snow precipitation in bucket                        | kg m-2        |    1 | real        | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Intdiag%totgrpb              |                                                                         | accumulated graupel precipitation in bucket                     | kg m-2        |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%u10m                 | x_wind_at_10m                                                           | 10 meter u wind speed                                           | m s-1         |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%v10m                 | y_wind_at_10m                                                           | 10 meter v wind speed                                           | m s-1         |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%dpt2m                |                                                                         | 2 meter dew point temperature                                   |               |    1 | real        | kind_phys | none   | F        |
@@ -1568,25 +1578,31 @@ module GFS_typedefs
 !! | IPD_Data(nb)%Intdiag%tdomzr               | dominant_freezing_rain_type                                             | dominant freezing rain type                                     | none          |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%tdomip               | dominant_sleet_type                                                     | dominant sleet type                                             | none          |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%tdoms                | dominant_snow_type                                                      | dominant snow type                                              | none          |    1 | real        | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Intdiag%skebu_wts            |                                                                         |                                                                 |               |    2 | real        | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Intdiag%skebv_wts            |                                                                         |                                                                 |               |    2 | real        | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Intdiag%sppt_wts             |                                                                         |                                                                 |               |    2 | real        | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Intdiag%shum_wts             |                                                                         |                                                                 |               |    2 | real        | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Intdiag%zmtnblck             | level_of_dividing_streamline                                            | level of the dividing streamline                                | none          |    1 | real        | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Intdiag%du3dt                |                                                                         | u momentum change due to physics                                |               |    3 | real        | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Intdiag%du3dt(:,:,2)         | cumulative_change_in_x_wind_due_to_surface_processes                    | cumulative change in x wind due to surface processes            | m s-1         |    2 | real        | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Intdiag%du3dt(:,:,4)         | cumulative_change_in_x_wind_due_to_convective_gravity_wave_drag         | cumulative change in x wind due to convective gravity wave drag | m s-1         |    2 | real        | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Intdiag%dv3dt                |                                                                         | v momentum change due to physics                                |               |    3 | real        | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Intdiag%dv3dt(:,:,2)         | cumulative_change_in_y_wind_due_to_surface_processes                    | cumulative change in y wind due to surface processes            | m s-1         |    2 | real        | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Intdiag%dv3dt(:,:,4)         | cumulative_change_in_y_wind_due_to_convective_gravity_wave_drag         | cumulative change in y wind due to convective gravity wave drag | m s-1         |    2 | real        | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Intdiag%dt3dt                |                                                                         | temperature change due to physics                               |               |    3 | real        | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Intdiag%dt3dt(:,:,2)         | cumulative_change_in_temperature_due_to_surface_processes               | cumulative change in temperature due to surface processes       | K             |    2 | real        | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Intdiag%dt3dt(:,:,6)         | large_scale_condensate_heating_rate_at_model_layers                     | large scale condensate heating rate at model layers             | K s-1         |    2 | real        | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Intdiag%dq3dt                |                                                                         | moisture change due to physics                                  |               |    3 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%skebu_wts            | weights_for_stochastic_skeb_perturbation_of_x_wind_flipped              | weights for stochastic skeb perturbation of x wind, flipped     | none          |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%skebv_wts            | weights_for_stochastic_skeb_perturbation_of_y_wind_flipped              | weights for stochastic skeb perturbation of y wind, flipped     | none          |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%sppt_wts             | weights_for_stochastic_surface_physics_perturbation_flipped             | weights for stochastic surface physics perturbation, flipped    | none          |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%shum_wts             | weights_for_stochastic_shum_perturbation_flipped                        | weights for stochastic shum perturbation, flipped               | none          |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%zmtnblck             | level_of_dividing_streamline                                            | level of the dividing streamline                                       | none          |    1 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%du3dt                |                                                                         | u momentum change due to physics                                       |               |    3 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%du3dt(:,:,2)         | cumulative_change_in_x_wind_due_to_surface_processes                    | cumulative change in x wind due to surface processes                   | m s-1         |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%du3dt(:,:,3)         | cumulative_change_in_x_wind_due_to_deep_convection                      | cumulative change in x wind due to deep convection                     | m s-1         |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%du3dt(:,:,4)         | cumulative_change_in_x_wind_due_to_convective_gravity_wave_drag         | cumulative change in x wind due to convective gravity wave drag        | m s-1         |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%dv3dt                |                                                                         | v momentum change due to physics                                       |               |    3 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%dv3dt(:,:,2)         | cumulative_change_in_y_wind_due_to_surface_processes                    | cumulative change in y wind due to surface processes                   | m s-1         |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%dv3dt(:,:,3)         | cumulative_change_in_y_wind_due_to_deep_convection                      | cumulative change in y wind due to deep convection                     | m s-1         |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%dv3dt(:,:,4)         | cumulative_change_in_y_wind_due_to_convective_gravity_wave_drag         | cumulative change in y wind due to convective gravity wave drag        | m s-1         |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%dt3dt                |                                                                         | temperature change due to physics                                      |               |    3 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%dt3dt(:,:,2)         | cumulative_change_in_temperature_due_to_surface_processes               | cumulative change in temperature due to surface processes              | K             |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%dt3dt(:,:,4)         | cumulative_change_in_temperature_due_to_deep_convection                 | cumulative change in temperature due to deep conv.                     | K             |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%dt3dt(:,:,5)         | cumulative_change_in_temperature_due_to_shal_convection                 | cumulative change in temperature due to shal conv.              | K             |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%dt3dt(:,:,6)         | large_scale_condensate_heating_rate_at_model_layers                     | large scale condensate heating rate at model layers                    | K s-1         |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%dq3dt                |                                                                         | moisture change due to physics                                         |               |    3 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%dq3dt(:,:,2)         | cumulative_change_in_water_vapor_specific_humidity_due_to_deep_convection | cumulative change in water vapor specific humidity due to deep conv. | kg kg-1       |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%dq3dt(:,:,3)         | cumulative_change_in_water_vapor_specific_humidity_due_to_shal_convection | cumulative change in water vapor specific humidity due to shal conv. | kg kg-1       |    2 | real              | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%dq3dt(:,:,4)         | large_scale_condensate_moistening_rate_at_model_layers                  | large scale condensate moistening rate at model layers          | kg kg-1 s-1   |    2 | real        | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Intdiag%upd_mf               |                                                                         | instantaneous convective updraft mass flux                      |               |    2 | real        | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Intdiag%dwn_mf               |                                                                         | instantaneous convective downdraft mass flux                    |               |    2 | real        | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Intdiag%det_mf               |                                                                         | instantaneous convective detrainment mass flux                  |               |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%upd_mf               | cumulative_atmosphere_updraft_convective_mass_flux                      | cumulative updraft mass flux                                    | Pa            |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%dwn_mf               | cumulative_atmosphere_downdraft_convective_mass_flux                    | cumulative downdraft mass flux                                  | Pa            |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%det_mf               | cumulative_atmosphere_detrainment_convective_mass_flux                  | cumulative detrainment mass flux                                | Pa            |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%cldcov               |                                                                         | instantaneous 3D cloud fraction                                 |               |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%refl_10cm            | radar_reflectivity_10cm                                                 | instantaneous refl_10cm                                         | dBZ           |    2 | real        | kind_phys | none   | F        |
 !!
@@ -1764,7 +1780,8 @@ module GFS_typedefs
 !! | IPD_Interstitial(nt)%del_gz                        | geopotential_difference_between_midlayers_divided_by_midlayer_virtual_temperature              | difference between mid-layer geopotentials divided by mid-layer virtual temperature | m2 s-2 K-1    |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%dkt                           | atmosphere_heat_diffusivity                                                                    | diffusivity for heat                                                                | m2 s-1        |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%dlength                       | characteristic_grid_length_scale                                                               | representative horizontal length scale of grid box                                  | m             |    1 | real        | kind_phys | none   | F        |
-!! | IPD_Interstitial(nt)%dqdt                          | tendency_of_tracers_due_to_model_physics                                                       | updated tendency of the tracers                                                     | kg kg-1 s-1   |    3 | real        | kind_phys | none   | F        |
+!! | IPD_Interstitial(nt)%dqdt                          | tendency_of_tracers_due_to_model_physics                                                       | updated tendency of the tracers due to model physics                                | kg kg-1 s-1   |    3 | real        | kind_phys | none   | F        |
+!! | IPD_Interstitial(nt)%dqdt(:,:,1)                   | tendency_of_water_vapor_specific_humidity_due_to_model_physics                                 | water vapor specific humidity tendency due to model physics                         | kg kg-1 s-1   |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%dqsfc1                        | instantaneous_surface_upward_latent_heat_flux                                                  | surface upward latent heat flux                                                     | W m-2         |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%dq3dt_loc                     |                                                                                                |                                                                                     |               |    3 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%dq3dt_loc(:,:,6:6+IPD_Interstitial(nt)%oz_coeff-1) | change_in_ozone_concentration                                             | change in ozone concentration                                                       | kg kg-1       |    3 | real        | kind_phys | none   | F        |
@@ -1798,6 +1815,7 @@ module GFS_typedefs
 !! | IPD_Interstitial(nt)%flag_iter                     | flag_for_iteration                                                                             | flag for iteration                                                                  | flag          |    1 | logical     |           | none   | F        |
 !! | IPD_Interstitial(nt)%fm10                          | Monin-Obukhov_similarity_function_for_momentum_at_10m                                          | Monin-Obukhov similarity parameter for momentum at 10m                              | none          |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%frain                         | dynamics_to_physics_timestep_ratio                                                             | ratio of dynamics timestep to physics timestep                                      | none          |    0 | real        | kind_phys | none   | F        |
+!! | IPD_Interstitial(nt)%frland                        | land_area_fraction                                                                             | land area fraction                                                                  | frac          |    1 | real        | kind_phys | none   | F       |
 !! | IPD_Interstitial(nt)%gabsbdlw                      | surface_downwelling_longwave_flux_absorbed_by_ground                                           | total sky surface downward longwave flux absorbed by the ground                     | W m-2         |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%gamma                         | anisotropy_of_subgrid_orography                                                                | anisotropy of subgrid orography                                                     | none          |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%gamq                          | countergradient_mixing_term_for_water_vapor                                                    | countergradient mixing term for water vapor                                         | kg kg-1       |    1 | real        | kind_phys | none   | F        |
@@ -1839,15 +1857,19 @@ module GFS_typedefs
 !! | IPD_Interstitial(nt)%lmk                           | adjusted_vertical_layer_dimension_for_radiation                                                | adjusted number of vertical layers for radiation                                    | count         |    0 | integer     |           | none   | F        |
 !! | IPD_Interstitial(nt)%lmp                           | adjusted_vertical_level_dimension_for_radiation                                                | adjusted number of vertical levels for radiation                                    | count         |    0 | integer     |           | none   | F        |
 !! | IPD_Interstitial(nt)%mbota                         | model_layer_number_at_cloud_base                                                               | vertical indices for low, middle and high cloud bases                               | index         |    2 | integer     |           | none   | F        |
+!! | IPD_Interstitial(nt)%mg3_as_mg2                    | flag_mg3_as_mg2                                                                                | flag for controlling prep for Morrison-Gettleman microphysics                       | flag          |    0 | logical     |           | none   | F        |
 !! | IPD_Interstitial(nt)%mtopa                         | model_layer_number_at_cloud_top                                                                | vertical indices for low, middle and high cloud tops                                | index         |    2 | integer     |           | none   | F        |
+!! | IPD_Interstitial(nt)%ncstrac                       | number_of_tracers_for_CS                                                                       | number of convectively transported tracers in Chikira-Sugiyama deep conv. scheme    | count         |    0 | integer     |           | none   | F        |
 !! | IPD_Interstitial(nt)%nday                          | daytime_points_dimension                                                                       | daytime points dimension                                                            | count         |    0 | integer     |           | none   | F        |
 !! | IPD_Interstitial(nt)%nn                            | number_of_tracers_for_allocating_cloud_work_function                                           | number of tracers for allocating cloud work function                                | count         |    0 | integer     |           | none   | F        |
+!! | IPD_Interstitial(nt)%nncl                          | number_of_tracers_for_cloud_condensate                                                         | number of tracers for cloud condensate                                              | count         |    0 | integer     |           | none   | F        |
 !! | IPD_Interstitial(nt)%nsamftrac                     | number_of_tracers_for_samf                                                                     | number of tracers for scale-aware mass flux schemes                                 | count         |    0 | integer     |           | none   | F        |
 !! | IPD_Interstitial(nt)%ntk                           | index_of_TKE_convective_transport_tracer                                                       | index of TKE in the convectively transported tracer array                           | index         |    0 | integer     |           | none   | F        |
 !! | IPD_Interstitial(nt)%nvdiff                        | number_of_vertical_diffusion_tracers                                                           | number of tracers to diffuse vertically                                             | count         |    0 | integer     |           | none   | F        |
 !! | IPD_Interstitial(nt)%oa4                           | asymmetry_of_subgrid_orography                                                                 | asymmetry of subgrid orography                                                      | none          |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%oc                            | convexity_of_subgrid_orography                                                                 | convexity of subgrid orography                                                      | none          |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%olyr                          | ozone_concentration_at_layer_for_radiation                                                     | ozone concentration layer                                                           | kg kg-1       |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Interstitial(nt)%otspt                         |                                                                                                |                                                                                     | none          |    2 | logical     |           | none   | F        |
 !! | IPD_Interstitial(nt)%oz_coeff                      | number_of_coefficients_in_ozone_forcing_data                                                   | number of coefficients in ozone forcing data                                        | index         |    0 | integer     |           | none   | F        |
 !! | IPD_Interstitial(nt)%oz_pres                       | natural_log_of_ozone_forcing_data_pressure_levels                                              | natural log of ozone forcing data pressure levels                                   | log(Pa)       |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%plvl                          | air_pressure_at_interface_for_radiation_in_hPa                                                 | air pressure at vertical interface for radiation calculation                        | hPa           |    2 | real        | kind_phys | none   | F        |
@@ -1912,7 +1934,12 @@ module GFS_typedefs
 !! | IPD_Interstitial(nt)%z01d                          | perturbation_of_momentum_roughness_length                                                      | perturbation of momentum roughness length                                           | frac          |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%zice                          | sea_ice_thickness_for_physics                                                                  | sea-ice thickness                                                                   | m             |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%zt1d                          | perturbation_of_heat_to_momentum_roughness_length_ratio                                        | perturbation of heat to momentum roughness length ratio                             | frac          |    1 | real        | kind_phys | none   | F        |
+!! | IPD_Interstitial(nt)%rain0                         | lwe_thickness_of_stratiform_precipitation_amount_per_day                                       | stratiform rain over 24h period                                                     | mm            |    1 | real        | kind_phys | none   | F        |
+!! | IPD_Interstitial(nt)%ice0                          | lwe_thickness_of_ice_amount_per_day                                                            | ice fall over 24h period                                                            | mm            |    1 | real        | kind_phys | none   | F        |
+!! | IPD_Interstitial(nt)%snow0                         | lwe_thickness_of_snow_amount_per_day                                                           | snow fall over 24h period                                                           | mm            |    1 | real        | kind_phys | none   | F        |
+!! | IPD_Interstitial(nt)%graupel0                      | lwe_thickness_of_graupel_amount_per_day                                                        | graupel fall over 24h period                                                        | mm            |    1 | real        | kind_phys | none   | F        |
 !!
+! DH* sort in list rain0 ...
 #endif
   type GFS_interstitial_type
 
@@ -1978,6 +2005,7 @@ module GFS_typedefs
     real (kind=kind_phys), pointer      :: flag_frsoil(:)   => null()  !<
     real (kind=kind_phys), pointer      :: fm10(:)          => null()  !<
     real (kind=kind_phys)               :: frain                       !<
+    real (kind=kind_phys), pointer      :: frland(:)        => null()  !<
     real (kind=kind_phys), pointer      :: gabsbdlw(:)      => null()  !<
     real (kind=kind_phys), pointer      :: gamma(:)         => null()  !<
     real (kind=kind_phys), pointer      :: gamq(:)          => null()  !<
@@ -2009,15 +2037,19 @@ module GFS_typedefs
     integer                             :: lmk                         !<
     integer                             :: lmp                         !<
     integer,               pointer      :: mbota(:,:)       => null()  !<
+    logical                             :: mg3_as_mg2                  !<
     integer,               pointer      :: mtopa(:,:)       => null()  !<
+    integer                             :: ncstrac                     !<
     integer                             :: nday                        !<
     integer                             :: nn                          !<
+    integer                             :: nncl                        !<
     integer                             :: nsamftrac                   !<
     integer                             :: ntk                         !<
     integer                             :: nvdiff                      !<
     real (kind=kind_phys), pointer      :: oa4(:,:)         => null()  !<
     real (kind=kind_phys), pointer      :: oc(:)            => null()  !<
     real (kind=kind_phys), pointer      :: olyr(:,:)        => null()  !<
+    logical              , pointer      :: otspt(:,:)       => null()  !<
     integer                             :: oz_coeff                    !<
     real (kind=kind_phys), pointer      :: oz_pres(:)       => null()  !<
     real (kind=kind_phys), pointer      :: plvl(:,:)        => null()  !<
@@ -2029,6 +2061,12 @@ module GFS_typedefs
     real (kind=kind_phys), pointer      :: raincs(:)        => null()  !<
     real (kind=kind_phys), pointer      :: rainmcadj(:)     => null()  !<
     real (kind=kind_phys), pointer      :: rainp(:,:)       => null()  !<
+    ! DH* sort in list rain0 ...
+    real (kind=kind_phys), pointer      :: rain0(:)         => null()  !<
+    real (kind=kind_phys), pointer      :: ice0(:)          => null()  !<
+    real (kind=kind_phys), pointer      :: snow0(:)         => null()  !<
+    real (kind=kind_phys), pointer      :: graupel0(:)      => null()  !<
+    ! *DH
     real (kind=kind_phys), pointer      :: rainst(:)        => null()  !<
     real (kind=kind_phys), pointer      :: rb(:)            => null()  !<
     real (kind=kind_phys), pointer      :: rhc(:,:)         => null()  !<
@@ -2981,6 +3019,9 @@ module GFS_typedefs
 #endif
     Model%nlunit           = nlunit
     Model%fn_nml           = fn_nml
+#ifdef CCPP
+    Model%logunit          = logunit
+#endif
     Model%fhzero           = fhzero
     Model%ldiag3d          = ldiag3d
     Model%lssav            = lssav
@@ -3493,7 +3534,7 @@ module GFS_typedefs
                  ' sed_supersat=',  Model%sed_supersat ,' do_sb_physics=', Model%do_sb_physics,&
                  ' ncnd=',Model%ncnd
 
-    elseif (Model%imp_physics == 11) then !GFDL microphysics
+    elseif (Model%imp_physics == Model%imp_physics_gfdl) then !GFDL microphysics
       Model%npdf3d  = 0
       Model%num_p3d = 1 ! rsun 4 before
       Model%num_p2d = 1
@@ -3680,7 +3721,7 @@ module GFS_typedefs
         print *, ' mg_ts_auto_ice    : ', Model%mg_ts_auto_ice
         print *, ' '
       endif
-      if (Model%imp_physics == 11) then
+      if (Model%imp_physics == Model%imp_physics_gfdl) then
         print *, ' GFDL microphysical parameters'
         print *, ' GFDL MP radiation inter: ', Model%lgfdlmprad
         print *, ' '
@@ -4315,9 +4356,10 @@ module GFS_typedefs
     class(GFS_interstitial_type)       :: Interstitial
     integer,                intent(in) :: IM
     type(GFS_control_type), intent(in) :: Model
-    !
-    ! Set up numbers of tracers for water etc - previously interstitial code: sets
-    ! Interstitial%{tracers_water,tracers_total,tracers_start_index,ntk}
+
+    allocate (Interstitial%otspt      (Model%ntrac+1,2))
+    ! Set up numbers of tracers for PBL, convection, etc: sets
+    ! Interstitial%{nncl,nvdiff,mg3_as_mg2,nn,tracers_total,ntk,otspt,nsamftrac,ncstrac}
     call interstitial_setup_tracers(Interstitial, Model)
     ! Allocate arrays
     allocate (Interstitial%adjnirbmd  (IM))
@@ -4378,6 +4420,7 @@ module GFS_typedefs
     allocate (Interstitial%flag_guess (IM))
     allocate (Interstitial%flag_iter  (IM))
     allocate (Interstitial%fm10       (IM))
+    allocate (Interstitial%frland     (IM))
     allocate (Interstitial%gabsbdlw   (IM))
     allocate (Interstitial%gamma      (IM))
     allocate (Interstitial%gamq       (IM))
@@ -4405,6 +4448,14 @@ module GFS_typedefs
     allocate (Interstitial%plyr       (IM,Model%levr+LTP))
     allocate (Interstitial%qlyr       (IM,Model%levr+LTP))
     allocate (Interstitial%qss        (IM))
+    ! DH* sort in list
+    if (Model%imp_physics == Model%imp_physics_gfdl) then
+       allocate (Interstitial%rain0      (IM))
+       allocate (Interstitial%ice0       (IM))
+       allocate (Interstitial%snow0      (IM))
+       allocate (Interstitial%graupel0   (IM))
+    end if
+    ! *DH
     allocate (Interstitial%raincd     (IM))
     allocate (Interstitial%raincs     (IM))
     allocate (Interstitial%rainmcadj  (IM))
@@ -4461,13 +4512,12 @@ module GFS_typedefs
     Interstitial%lm           = Model%levr
     Interstitial%lmk          = Model%levr+LTP
     Interstitial%lmp          = Model%levr+1+LTP
-    Interstitial%nvdiff       = Model%ntrac
     Interstitial%oz_coeff     = oz_coeff
     Interstitial%oz_pres      = oz_pres
     Interstitial%skip_macro   = .false.
     ! Reset all other variables
     call Interstitial%rad_reset ()
-    call Interstitial%phys_reset ()
+    call Interstitial%phys_reset (Model)
     !
   end subroutine interstitial_create
 
@@ -4477,38 +4527,49 @@ module GFS_typedefs
     !
     class(GFS_interstitial_type)       :: Interstitial
     type(GFS_control_type), intent(in) :: Model
-    !
-    ! DH* 20180709 most of this first part may no longer be needed, check and remove!
-    Interstitial%tracers_water = 0
-    Interstitial%tracers_total = 0
-    Interstitial%tracers_start_index = 0
-    !
-    Interstitial%ntk = 0
-    !
-    if (Model%trans_trac .or. Model%cscnv) then
-      !
-      if (Model%ntcw > 0) then
-        if (Model%ntoz < Model%ntcw) then
-          Interstitial%tracers_start_index = Model%ntcw + Model%ncld - 1
-        else
-          Interstitial%tracers_start_index = Model%ntoz
-        endif
-      elseif (Model%ntoz > 0) then
-        Interstitial%tracers_start_index = Model%ntoz
+    integer :: n, tracers
+
+    !first, initialize the values (in case the values don't get initialized within if statements below)
+    Interstitial%nncl             = Model%ncld
+    Interstitial%nvdiff           = Model%ntrac
+    Interstitial%mg3_as_mg2       = .false.
+    Interstitial%nn               = Model%ntrac + 1
+    Interstitial%ntk              = 0
+    Interstitial%tracers_total    = 0
+    Interstitial%otspt(:,:)       = .true.
+    Interstitial%nsamftrac        = 0
+    Interstitial%ncstrac          = 0
+
+    ! GF* 20180712 moved from GFS_physics_driver.F90
+    if (Model%imp_physics == Model%imp_physics_thompson) then
+      if (Model%ltaerosol) then
+        Interstitial%nvdiff = 8
       else
-        Interstitial%tracers_start_index = 1
+        Interstitial%nvdiff = 5
       endif
-      !
-      Interstitial%tracers_water = Model%ntrac - Interstitial%tracers_start_index
-      Interstitial%tracers_total = Interstitial%tracers_water
-      !
-      if (Model%ntoz > 0) Interstitial%tracers_total = Interstitial%tracers_total + 1  ! ozone is added separately
-      !
+      Interstitial%nncl = 5
+    elseif (Model%imp_physics == 6) then
+      Interstitial%nvdiff = Model%ntrac -3
+      Interstitial%nncl = 5
+    elseif (Model%ntclamt > 0) then             ! for GFDL MP don't diffuse cloud amount
+      Interstitial%nvdiff = Model%ntrac - 1
     endif
-    !
-    if (Model%ntke > 0) Interstitial%ntk = Model%ntke - Interstitial%tracers_start_index + 3
-    ! *DH 20180709
-    !
+
+    if (Model%imp_physics == 10) then
+      if (abs(Model%fprcp) == 1) then
+        Interstitial%nncl = 4                          ! MG2 with rain and snow
+        Interstitial%mg3_as_mg2 = .false.
+      elseif (Model%fprcp >= 2) then
+        if(Model%ntgl > 0 .and. (Model%mg_do_graupel .or. Model%mg_do_hail)) then
+          Interstitial%nncl = 5                        ! MG3 with rain and snow and grapuel/hail
+          Interstitial%mg3_as_mg2 = .false.
+        else                              ! MG3 code run without graupel/hail i.e. as MG2
+          Interstitial%nncl = 4
+          Interstitial%mg3_as_mg2 = .true.
+        endif
+      endif
+    endif
+    ! *GF
     ! DH* NEW CODE 20180626
     if (Model%ntiw > 0) then
       if (Model%ntclamt > 0) then
@@ -4522,6 +4583,35 @@ module GFS_typedefs
       Interstitial%nn = Model%ntrac + 1
     endif
     ! *DH END NEW CODE 20180626
+    ! GF* 20180712 moved from GFS_physics_driver.F90
+    if (Model%cscnv .or. Model%satmedmf .or. Model%trans_trac ) then
+      Interstitial%otspt(:,:)   = .true.     ! otspt is used only for cscnv
+      Interstitial%otspt(1:3,:) = .false.    ! this is for sp.hum, ice and liquid water
+      tracers = 2
+      do n=2,Model%ntrac
+        if ( n /= Model%ntcw  .and. n /= Model%ntiw  .and. n /= Model%ntclamt .and. &
+             n /= Model%ntrw  .and. n /= Model%ntsw  .and. n /= Model%ntrnc   .and. &
+             n /= Model%ntsnc .and. n /= Model%ntgl  .and. n /= Model%ntgnc) then
+          tracers = tracers + 1
+          if (Model%ntke  == n ) then
+            Interstitial%otspt(tracers+1,1) = .false.
+            Interstitial%ntk = tracers
+          endif
+          if (Model%ntlnc == n .or. Model%ntinc == n .or. Model%ntrnc == n .or. Model%ntsnc == n .or. Model%ntgnc == n)    &
+!           if (ntlnc == n .or. ntinc == n .or. ntrnc == n .or. ntsnc == n .or.&
+!               ntrw  == n .or. ntsw  == n .or. ntgl  == n)                    &
+                  Interstitial%otspt(tracers+1,1) = .false.
+        endif
+      enddo
+      Interstitial%tracers_total = tracers - 2
+    endif   ! end if_ras or cfscnv or samf
+    if(.not. Model%satmedmf .and. .not. Model%trans_trac) then
+       Interstitial%nsamftrac = 0
+    else
+       Interstitial%nsamftrac = Interstitial%tracers_total
+    endif
+    Interstitial%ncstrac = Interstitial%tracers_total + 3
+    ! *GF
   end subroutine interstitial_setup_tracers
 
   subroutine interstitial_rad_reset (Interstitial)
@@ -4563,11 +4653,12 @@ module GFS_typedefs
     !
   end subroutine interstitial_rad_reset
 
-  subroutine interstitial_phys_reset (Interstitial)
+  subroutine interstitial_phys_reset (Interstitial, Model)
     !
     implicit none
     !
     class(GFS_interstitial_type) :: Interstitial
+    type(GFS_control_type), intent(in) :: Model
     !
     Interstitial%adjnirbmd    = clear_val
     Interstitial%adjnirbmu    = clear_val
@@ -4622,6 +4713,7 @@ module GFS_typedefs
     Interstitial%flag_iter    = .false.
     Interstitial%fm10         = clear_val
     Interstitial%frain        = clear_val
+    Interstitial%frland       = clear_val
     Interstitial%gabsbdlw     = clear_val
     Interstitial%gamma        = clear_val
     Interstitial%gamq         = clear_val
@@ -4638,7 +4730,6 @@ module GFS_typedefs
     Interstitial%kinver       = 0
     Interstitial%kpbl         = 0
     Interstitial%ktop         = 0
-    Interstitial%nsamftrac    = 0
     Interstitial%oa4          = clear_val
     Interstitial%oc           = clear_val
     Interstitial%qss          = clear_val
@@ -4647,6 +4738,14 @@ module GFS_typedefs
     Interstitial%rainmcadj    = clear_val
     Interstitial%rainp        = clear_val
     Interstitial%rainst       = clear_val
+    ! DH* sort in list
+    if (Model%imp_physics == Model%imp_physics_gfdl) then
+       Interstitial%rain0    = clear_val
+       Interstitial%ice0     = clear_val
+       Interstitial%snow0    = clear_val
+       Interstitial%graupel0 = clear_val
+    end if
+    ! *DH
     Interstitial%rb           = clear_val
     Interstitial%rhc          = clear_val
     Interstitial%rhcbot       = clear_val
@@ -4688,11 +4787,12 @@ module GFS_typedefs
     !
   end subroutine interstitial_phys_reset
 
-  subroutine interstitial_print(Interstitial, mpirank, omprank, blkno)
+  subroutine interstitial_print(Interstitial, Model, mpirank, omprank, blkno)
     !
     implicit none
     !
     class(GFS_interstitial_type) :: Interstitial
+    type(GFS_control_type), intent(in) :: Model
     integer, intent(in) :: mpirank, omprank, blkno
     !
     ! Print static variables
@@ -4773,6 +4873,7 @@ module GFS_typedefs
     write (0,*) 'Interstitial%flag_iter(1)      = ', Interstitial%flag_iter(1)
     write (0,*) 'sum(Interstitial%fm10        ) = ', sum(Interstitial%fm10        )
     write (0,*) 'Interstitial%frain             = ', Interstitial%frain
+    write (0,*) 'sum(Interstitial%frland      ) = ', sum(Interstitial%frland      )
     write (0,*) 'sum(Interstitial%gabsbdlw    ) = ', sum(Interstitial%gabsbdlw    )
     write (0,*) 'sum(Interstitial%gamma       ) = ', sum(Interstitial%gamma       )
     write (0,*) 'sum(Interstitial%gamq        ) = ', sum(Interstitial%gamq        )
@@ -4810,6 +4911,14 @@ module GFS_typedefs
     write (0,*) 'sum(Interstitial%rainmcadj   ) = ', sum(Interstitial%rainmcadj   )
     write (0,*) 'sum(Interstitial%rainp       ) = ', sum(Interstitial%rainp       )
     write (0,*) 'sum(Interstitial%rainst      ) = ', sum(Interstitial%rainst      )
+    ! DH* sort in list
+    if (Model%imp_physics == Model%imp_physics_gfdl) then
+       write (0,*) 'sum(Interstitial%rain0    ) = ', sum(Interstitial%rain0       )
+       write (0,*) 'sum(Interstitial%ice0     ) = ', sum(Interstitial%ice0        )
+       write (0,*) 'sum(Interstitial%snow0    ) = ', sum(Interstitial%snow0       )
+       write (0,*) 'sum(Interstitial%graupel0 ) = ', sum(Interstitial%graupel0    )
+    end if
+    ! *DH
     write (0,*) 'sum(Interstitial%rb          ) = ', sum(Interstitial%rb          )
     write (0,*) 'sum(Interstitial%rhc         ) = ', sum(Interstitial%rhc         )
     write (0,*) 'Interstitial%rhcbot            = ', Interstitial%rhcbot

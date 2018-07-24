@@ -58,7 +58,9 @@ module fv_sg_mod
   use constants_mod,      only: rdgas, rvgas, cp_air, cp_vapor, hlv, hlf, kappa, grav
   use tracer_manager_mod, only: get_tracer_index
   use field_manager_mod,  only: MODEL_ATMOS
+#ifndef GFS_PHYS
   use gfdl_cloud_microphys_mod, only: wqs1, wqs2, wqsat2_moist
+#endif
   use fv_mp_mod,          only: mp_reduce_min, is_master
 
 implicit none
