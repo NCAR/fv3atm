@@ -1281,6 +1281,7 @@ module GFS_typedefs
 !! | IPD_Data(nb)%Grid%area               | cell_area                                                       | area of the grid cell               | m2            |    1 | real     | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Grid%dx                 | cell_size                                                       | relative dx for the grid cell       | m             |    1 | real     | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Grid%xlon               | longitude                                                       | longitude                           | radians       |    1 | real     | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Grid%coslat             | cosine_of_latitude                                              | cosine of latitude                  | none          |    1 | real     | kind_phys | in     | F        |
 !! | IPD_Data(nb)%Grid%sinlat             | sine_of_latitude                                                | sine of latitude                    | none          |    1 | real     | kind_phys | in     | F        |
 !!
 #endif
@@ -1553,10 +1554,11 @@ module GFS_typedefs
 !! | IPD_Data(nb)%Intdiag%v1                   |                                                                         | layer 1 merdional wind                                          | m s-1         |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%chh                  | surface_drag_mass_flux_for_heat_and_moisture_in_air                     | thermal exchange coefficient                                    | kg m-2 s-1    |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%cmm                  | surface_drag_wind_speed_for_momentum_in_air                             | momentum exchange coefficient                                   | m s-1         |    1 | real        | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Intdiag%dlwsfci              |                                                                         | instantaneous sfc dnwd lw flux                                  | W m-2         |    1 | real        | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Intdiag%ulwsfci              |                                                                         | instantaneous sfc upwd lw flux                                  | W m-2         |    1 | real        | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Intdiag%dswsfci              |                                                                         | instantaneous sfc dnwd sw flux                                  | W m-2         |    1 | real        | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Intdiag%uswsfci              |                                                                         | instantaneous sfc upwd sw flux                                  | W m-2         |    1 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%dlwsfci              | surface_downwelling_longwave_flux                                       | surface downwelling longwave flux at current time               | W m-2         |    1 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%ulwsfci              | surface_upwelling_longwave_flux                                         | surface upwelling longwave flux at current time                 | W m-2         |    1 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%dswsfci              | surface_downwelling_shortwave_flux                                      | surface downwelling shortwave flux at current time              | W m-2         |    1 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%nswsfci              | surface_net_downwelling_shortwave_flux                                  | surface net downwelling shortwave flux at current time          | W m-2         |    1 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%uswsfci              | surface_upwelling_shortwave_flux                                        | surface upwelling shortwave flux at current time                | W m-2         |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%dusfci               |                                                                         | instantaneous u component of surface stress                     | Pa            |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%dvsfci               |                                                                         | instantaneous v component of surface stress                     | Pa            |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%dtsfci               |                                                                         | instantaneous sfc sensible heat flux                            | W m-2         |    1 | real        | kind_phys | none   | F        |
@@ -1676,6 +1678,9 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: dlwsfci(:)     => null()   !< instantaneous sfc dnwd lw flux ( w/m**2 )
     real (kind=kind_phys), pointer :: ulwsfci(:)     => null()   !< instantaneous sfc upwd lw flux ( w/m**2 )
     real (kind=kind_phys), pointer :: dswsfci(:)     => null()   !< instantaneous sfc dnwd sw flux ( w/m**2 )
+#ifdef CCPP
+    real (kind=kind_phys), pointer :: nswsfci(:)     => null()   !< instantaneous sfc net dnwd sw flux ( w/m**2 )
+#endif
     real (kind=kind_phys), pointer :: uswsfci(:)     => null()   !< instantaneous sfc upwd sw flux ( w/m**2 )
     real (kind=kind_phys), pointer :: dusfci (:)     => null()   !< instantaneous u component of surface stress
     real (kind=kind_phys), pointer :: dvsfci (:)     => null()   !< instantaneous v component of surface stress
@@ -1732,10 +1737,6 @@ module GFS_typedefs
 !! | IPD_Interstitial(nt)%adjnirbmu                     | surface_upwelling_direct_near_infrared_shortwave_flux                                          | surface upwelling beam near-infrared shortwave flux at current time                 | W m-2         |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%adjnirdfd                     | surface_downwelling_diffuse_near_infrared_shortwave_flux                                       | surface downwelling diffuse near-infrared shortwave flux at current time            | W m-2         |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%adjnirdfu                     | surface_upwelling_diffuse_near_infrared_shortwave_flux                                         | surface upwelling diffuse near-infrared shortwave flux at current time              | W m-2         |    1 | real        | kind_phys | none   | F        |
-!! | IPD_Interstitial(nt)%adjsfcdlw                     | surface_downwelling_longwave_flux                                                              | surface downwelling longwave flux at current time                                   | W m-2         |    1 | real        | kind_phys | none   | F        |
-!! | IPD_Interstitial(nt)%adjsfcdsw                     | surface_downwelling_shortwave_flux                                                             | surface downwelling shortwave flux at current time                                  | W m-2         |    1 | real        | kind_phys | none   | F        |
-!! | IPD_Interstitial(nt)%adjsfcnsw                     | surface_net_downwelling_shortwave_flux                                                         | surface net downwelling shortwave flux at current time                              | W m-2         |    1 | real        | kind_phys | none   | F        |
-!! | IPD_Interstitial(nt)%adjsfculw                     | surface_upwelling_longwave_flux                                                                | surface upwelling longwave flux at current time                                     | W m-2         |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%adjvisbmd                     | surface_downwelling_direct_ultraviolet_and_visible_shortwave_flux                              | surface downwelling beam ultraviolet plus visible shortwave flux at current time    | W m-2         |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%adjvisbmu                     | surface_upwelling_direct_ultraviolet_and_visible_shortwave_flux                                | surface upwelling beam ultraviolet plus visible shortwave flux at current time      | W m-2         |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%adjvisdfu                     | surface_upwelling_diffuse_ultraviolet_and_visible_shortwave_flux                               | surface upwelling diffuse ultraviolet plus visible shortwave flux at current time   | W m-2         |    1 | real        | kind_phys | none   | F        |
@@ -1940,10 +1941,6 @@ module GFS_typedefs
     real (kind=kind_phys), pointer      :: adjnirbmu(:)     => null()  !<
     real (kind=kind_phys), pointer      :: adjnirdfd(:)     => null()  !<
     real (kind=kind_phys), pointer      :: adjnirdfu(:)     => null()  !<
-    real (kind=kind_phys), pointer      :: adjsfcdlw(:)     => null()  !<
-    real (kind=kind_phys), pointer      :: adjsfcdsw(:)     => null()  !<
-    real (kind=kind_phys), pointer      :: adjsfcnsw(:)     => null()  !<
-    real (kind=kind_phys), pointer      :: adjsfculw(:)     => null()  !<
     real (kind=kind_phys), pointer      :: adjvisbmd(:)     => null()  !<
     real (kind=kind_phys), pointer      :: adjvisbmu(:)     => null()  !<
     real (kind=kind_phys), pointer      :: adjvisdfu(:)     => null()  !<
@@ -4160,6 +4157,9 @@ module GFS_typedefs
     allocate (Diag%dlwsfci (IM))
     allocate (Diag%ulwsfci (IM))
     allocate (Diag%dswsfci (IM))
+#ifdef CCPP
+    allocate (Diag%nswsfci (IM))
+#endif
     allocate (Diag%uswsfci (IM))
     allocate (Diag%dusfci  (IM))
     allocate (Diag%dvsfci  (IM))
@@ -4285,6 +4285,9 @@ module GFS_typedefs
     Diag%dlwsfci    = zero
     Diag%ulwsfci    = zero
     Diag%dswsfci    = zero
+#ifdef CCPP
+    Diag%nswsfci    = zero
+#endif
     Diag%uswsfci    = zero
     Diag%dusfci     = zero
     Diag%dvsfci     = zero
@@ -4359,10 +4362,6 @@ module GFS_typedefs
     allocate (Interstitial%adjnirbmu  (IM))
     allocate (Interstitial%adjnirdfd  (IM))
     allocate (Interstitial%adjnirdfu  (IM))
-    allocate (Interstitial%adjsfcdlw  (IM))
-    allocate (Interstitial%adjsfcdsw  (IM))
-    allocate (Interstitial%adjsfcnsw  (IM))
-    allocate (Interstitial%adjsfculw  (IM))
     allocate (Interstitial%adjvisbmd  (IM))
     allocate (Interstitial%adjvisbmu  (IM))
     allocate (Interstitial%adjvisdfu  (IM))
@@ -4657,10 +4656,6 @@ module GFS_typedefs
     Interstitial%adjnirbmu    = clear_val
     Interstitial%adjnirdfd    = clear_val
     Interstitial%adjnirdfu    = clear_val
-    Interstitial%adjsfcdlw    = clear_val
-    Interstitial%adjsfcdsw    = clear_val
-    Interstitial%adjsfcnsw    = clear_val
-    Interstitial%adjsfculw    = clear_val
     Interstitial%adjvisbmd    = clear_val
     Interstitial%adjvisbmu    = clear_val
     Interstitial%adjvisdfu    = clear_val
@@ -4811,10 +4806,6 @@ module GFS_typedefs
     write (0,*) 'sum(Interstitial%adjnirbmu   ) = ', sum(Interstitial%adjnirbmu   )
     write (0,*) 'sum(Interstitial%adjnirdfd   ) = ', sum(Interstitial%adjnirdfd   )
     write (0,*) 'sum(Interstitial%adjnirdfu   ) = ', sum(Interstitial%adjnirdfu   )
-    write (0,*) 'sum(Interstitial%adjsfcdlw   ) = ', sum(Interstitial%adjsfcdlw   )
-    write (0,*) 'sum(Interstitial%adjsfcdsw   ) = ', sum(Interstitial%adjsfcdsw   )
-    write (0,*) 'sum(Interstitial%adjsfcnsw   ) = ', sum(Interstitial%adjsfcnsw   )
-    write (0,*) 'sum(Interstitial%adjsfculw   ) = ', sum(Interstitial%adjsfculw   )
     write (0,*) 'sum(Interstitial%adjvisbmd   ) = ', sum(Interstitial%adjvisbmd   )
     write (0,*) 'sum(Interstitial%adjvisbmu   ) = ', sum(Interstitial%adjvisbmu   )
     write (0,*) 'sum(Interstitial%adjvisdfu   ) = ', sum(Interstitial%adjvisdfu   )
