@@ -2887,8 +2887,8 @@ end if
       call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_zhao_carr_pre", ierr=ierr)
       ! Copy back intent(inout) interstitial variables to local variables in driver
       clw(:,:,1)   = Interstitial(nt)%clw(:,:,1)
-      errmsg = trim(CCPP_shared(nt)%errmsg)
-      errflg = CCPP_shared(nt)%errflg
+      errmsg = trim(cdata_block(nb,nt)%errmsg)
+      errflg = cdata_block(nb,nt)%errflg
 ! OPTION B END
       if (errflg/=0) then
           write(0,*) 'Error in call to GFS_zhao_carr_pre_mp_GFS_zhao_carr_pre_run: ' // trim(errmsg)
