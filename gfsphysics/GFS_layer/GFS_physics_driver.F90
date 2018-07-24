@@ -2879,10 +2879,10 @@ end if
 ! OPTION B BEGIN
       if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_zhao_carr_pre_run through option B'
       ! Copy local variables from driver to appropriate interstitial variables
-      Interstitial(nt)%im = im             ! intent(in)
-      Interstitial(nt)%ix = ix             ! intent(in)
-      ! IPD_Control%levs
-      ! Stateout%gq0(:,:,ntcw)
+      !Interstitial(nt)%im = im             ! intent(in) - set in Interstitial(nt)%create
+      !Interstitial(nt)%ix = ix             ! intent(in) - set in Interstitial(nt)%create
+      !Model%levs
+      !Stateout%gq0(:,:,ntcw)
       Interstitial(nt)%clw(:,:,1) = clw(:,:,1)   ! intent(out)
       call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_zhao_carr_pre", ierr=ierr)
       ! Copy back intent(inout) interstitial variables to local variables in driver
