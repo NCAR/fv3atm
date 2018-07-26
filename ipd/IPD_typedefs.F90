@@ -11,12 +11,14 @@ module IPD_typedefs
                                        cldprop_type,  radtend_type,          &
                                        intdiag_type
 #ifdef CCPP
-  use physics_abstraction_layer, only: IPD_interstitial_type => interstitial_type
+  use physics_abstraction_layer, only: IPD_interstitial_type => interstitial_type, &
+                                       IPD_data_type         => data_type
 #endif
 
 !--------------------
 !  IPD sub-containers
 !--------------------
+#ifndef CCPP
   type IPD_data_type
     type(statein_type)  :: Statein
     type(stateout_type) :: Stateout
@@ -28,6 +30,7 @@ module IPD_typedefs
     type(radtend_type)  :: Radtend
     type(intdiag_type)  :: Intdiag
   end type IPD_data_type
+#endif
 
 !------------------------
 !  IPD function procedure
