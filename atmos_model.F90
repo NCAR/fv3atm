@@ -533,6 +533,7 @@ subroutine atmos_model_init (Atmos, Time_init, Time, Time_step)
 #ifdef CCPP
    ! Update the MPI communicator in IPD_Control that gets passed to CCPP physics
    IPD_Control%communicator = commglobal
+   ! Initialize the CCPP framework
    call IPD_CCPP_step (step="init", IPD_Control=IPD_Control, IPD_Data=IPD_Data, &
                                     IPD_Diag=IPD_Diag, IPD_Restart=IPD_Restart, &
                                     IPD_Interstitial=IPD_Interstitial,          &
@@ -541,7 +542,7 @@ subroutine atmos_model_init (Atmos, Time_init, Time, Time_step)
    ! DH* combine init and physics init again?
    ! doing the init here will require logic in thompson aerosol init if no aerosol
    ! profiles are specified (because temperatures etc. are not yet set)
-   call IPD_CCPP_step (step="physics_init", nblks=Atm_block%nblks, IPD_Control=IPD_Control, ierr=ierr)
+   call IPD_CCPP_step (step="physics_init", nblks=Atm_block%nblks, ierr=ierr)
    if (ierr/=0)  call mpp_error(FATAL, 'Call to IPD-CCPP physics_init step failed')
 #endif
 

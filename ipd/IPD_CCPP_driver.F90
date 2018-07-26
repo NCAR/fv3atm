@@ -178,16 +178,10 @@ module IPD_CCPP_driver
         return
       end if
 
-      if (.not.present(IPD_Control)) then
-        write(0,*) 'Optional argument IPD_Control required for IPD-CCPP physics_init step'
-        ierr = 1
-        return
-      end if
-
       ! Loop over blocks, don't use threading on the outside but allowing threading
       ! inside the initialization, because physics initialization code does a lot of
       ! reading/writing data from disk, allocating fields, etc.
-      CCPP_shared%nthreads = nthrds
+      CCPP_shared(:)%nthreads = nthrds
 
       ! Since physics init can only affect block- (and not thread-) dependent data
       ! structures, it is sufficient to run this over all blocks for one thread only
@@ -197,23 +191,43 @@ module IPD_CCPP_driver
         call ccpp_physics_init(cdata_block(nb,nt), ierr=ierr)
         if (ierr/=0) then
           write(0,'(2(a,i4))') "An error occurred in ccpp_physics_init for block ", nb, " and thread ", nt
-          if (ierr/=0) return
+          return
         end if
       end do
 
-      ! Reset number of threads available to physisc schemes to default value
-      CCPP_shared%nthreads = 1
+      ! Reset number of threads available to physics schemes to default value
+      CCPP_shared(:)%nthreads = 1
 
-!    else if (trim(step)=="fast_physics") then
+! DH* can only use this when stochastic_physics is also run through CCPP
+!   else if (trim(step)=="time_vary") then
 !
-!      call ccpp_physics_run(cdata_domain, group_name='fast_physics', ierr=ierr)
-!      if (ierr/=0) then
-!         write(0,'(a)') "An error occurred in ccpp_physics_run for group fast_physics"
-!         return
+!      if (.not.present(nblks)) then
+!        write(0,*) 'Optional argument nblks required for IPD-CCPP time_vary step'
+!        ierr = 1
+!        return
 !      end if
+!
+!      ! Loop over blocks, don't use threading on the outside but allowing threading
+!      ! inside the time_vary routines. The time_vary routines contain calls to gcycle.f90
+!      ! and sfcsub.F, which do a lot of I/O and are highly inefficient if executed
+!      ! nthread times.
+!      CCPP_shared%nthreads = nthrds
+!
+!      ! Since the time_vary steps only use data structures for all blocks (except the
+!      ! CCPP-internal variables ccpp_error_flag and ccpp_error_message, which are defined
+!      ! for all cdata structures independently), we can use cdata_domain here.
+!      call ccpp_physics_run(cdata_domain, group_name="time_vary", ierr=ierr)
+!      if (ierr/=0) then
+!        write(0,'(2(a,i4))') "An error occurred in ccpp_physics_run for group time_vary"
+!        return
+!      end if
+!
+!      ! Reset number of threads available to physics schemes to default value
+!      CCPP_shared%nthreads = 1
+! *DH
 
     ! Radiation and stochastic physics
-    else if (trim(step)=="radiation" .or. trim(step)=="stochastics") then
+   else if (trim(step)=="radiation" .or. trim(step)=="stochastics") then
 
       if (.not.present(nblks)) then
         write(0,*) 'Optional argument nblks required for IPD-CCPP ' // trim(step) // ' step'
@@ -242,8 +256,8 @@ module IPD_CCPP_driver
 !$OMP end parallel do
       if (ierr/=0) return
 
-    ! Finalize
-    else if (trim(step)=="finalize") then
+   ! Finalize
+   else if (trim(step)=="finalize") then
 
       if (.not.present(nblks)) then
         write(0,*) 'Optional argument nblks required for IPD-CCPP finalize step'
