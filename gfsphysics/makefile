@@ -33,12 +33,15 @@ ifneq (,$(findstring CCPP,$(CPPDEFS)))
 else
     CCPP_SRCS_F90 =
     PHYSICS_SRCS_f = \
-	   ./physics/cnvc90.f
+	   ./physics/cnvc90.f                                                        \
+	   ./physics/samfdeepcnv.f                                                   \
+	   ./physics/samfshalcnv.f
     PHYSICS_SRCS_f90 = \
 	   ./physics/calpreciptype.f90
-    PHYSICS_SRCS_F90 = ./physics/gfdl_cloud_microphys.F90
+    PHYSICS_SRCS_F90 = \
+	   ./physics/gfdl_cloud_microphys.F90
     RADIATION_SRCS_f = \
-		 ./physics/radiation_aerosols.f                                            \
+	   ./physics/radiation_aerosols.f                                            \
 	   ./physics/radiation_astronomy.f                                           \
 	   ./physics/radiation_clouds.f                                              \
 	   ./physics/radiation_gases.f                                               \
@@ -47,9 +50,7 @@ else
 	   ./physics/radsw_datatb.f                                                  \
 	   ./physics/radlw_main.f                                                    \
 	   ./physics/radsw_main.f                                                    \
-	   ./physics/rad_initialize.f                                                \
-		 ./physics/samfdeepcnv.f                                                   \
-	   ./physics/samfshalcnv.f
+	   ./physics/rad_initialize.f
     RADIATION_SRCS_F90 =  \
 	   ./GFS_layer/GFS_radiation_driver.F90
 endif
