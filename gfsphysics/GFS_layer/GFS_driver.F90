@@ -24,13 +24,6 @@ module GFS_driver
                                       tmelt  => con_ttp,  cpair   => con_cp, &
                                       latvap => con_hvap, latice  => con_hfus
 
-#define CCPP_OPTION_A
-#ifdef CCPP
-  use ccpp_api,                 only: ccpp_physics_run
-  use CCPP_data,                only: cdata_domain, &
-                                   CCPP_shared
-#endif
-
   implicit none
 
   private
@@ -403,7 +396,7 @@ module GFS_driver
 
 #ifdef CCPP
   use ccpp_api,              only: ccpp_physics_run
-  use CCPP_data,             only: cdata_domain
+  use CCPP_data,             only: cdata_domain, CCPP_shared
 #ifdef OPENMP
   use omp_lib
 #endif
@@ -432,68 +425,53 @@ module GFS_driver
     real(kind=kind_phys) :: sec
 
 #ifdef CCPP
+    integer :: nthrds
+    integer :: ierr
+    character(len=512) :: errmsg
+    integer            :: errflg
 
-      integer :: nt
-      integer :: ierr
-      character(len=512) :: errmsg
-      integer            :: errflg
+    errmsg = ''
+    errflg = 0
 
-      errmsg = ''
-      errflg = 0
-
-    ! Calls to time_vary are not threaded. Can use cdata_domain here, because radupdate only uses Model%...,
-    ! which is independent of block number and thread number
-              nt=1
-#if defined(CCPP_OPTION_A) && defined(__INTEL_COMPILER)
-! OPTION A - works with Intel only
-              if (Model%me==0) write(0,*) 'CCPP DEBUG: calling time_vary_run through option A'
-              call GFS_phys_time_vary_1_mp_GFS_phys_time_vary_1_run(                &
-                           Model,                                                   &
-                           errmsg, errflg)
-              if (errflg/=0) then
-                  write(0,*) 'Error in call to GFS_phys_time_vary_1_run: ' // trim(errmsg)
-                  stop
-              end if
-              call GFS_rad_time_vary_mp_GFS_rad_time_vary_run(                      &
-                           Model, Statein, Tbd,                                     &
-                           errmsg, errflg)
-              if (errflg/=0) then
-                  write(0,*) 'Error in call to GFS_rad_time_vary_run: ' // trim(errmsg)
-                  stop
-              end if
-              call GFS_phys_time_vary_2_mp_GFS_phys_time_vary_2_run(                &
-                           Grid, Model, Tbd, Sfcprop, Cldprop, Diag,                &
-                           errmsg, errflg)
-              if (errflg/=0) then
-                  write(0,*) 'Error in call to GFS_phys_time_vary_2_run: ' // trim(errmsg)
-                  stop
-              end if
+#ifdef OPENMP
+    nthrds = OMP_GET_NUM_THREADS()
 #else
-! OPTION B - works with all compilers
-              if (Model%me==0) write(0,*) 'CCPP DEBUG: calling time_vary_run through option B'
-
-              call ccpp_physics_run(cdata_domain, scheme_name="GFS_phys_time_vary_1_run", ierr=ierr)
-              errmsg = trim(CCPP_shared(nt)%errmsg)
-              errflg = CCPP_shared(nt)%errflg
-              if (errflg/=0) then
-                  write(0,*) 'Error in call to GFS_phys_time_vary_1_run: ' // trim(errmsg)
-                  stop
-              end if
-              call ccpp_physics_run(cdata_domain, scheme_name="GFS_rad_time_vary_run", ierr=ierr)
-              errmsg = trim(CCPP_shared(nt)%errmsg)
-              errflg = CCPP_shared(nt)%errflg
-              if (errflg/=0) then
-                  write(0,*) 'Error in call to GFS_rad_time_vary_run: ' // trim(errmsg)
-                  stop
-              end if
-              call ccpp_physics_run(cdata_domain, scheme_name="GFS_phys_time_vary_2_run", ierr=ierr)
-              errmsg = trim(CCPP_shared(nt)%errmsg)
-              errflg = CCPP_shared(nt)%errflg
-              if (errflg/=0) then
-                  write(0,*) 'Error in call to GFS_phys_time_vary_2_run: ' // trim(errmsg)
-                  stop
-              end if
+    nthrds = 1
 #endif
+
+    ! Set number of threads available to physics schemes
+    ! (since no threading over blocks on the outside)
+    CCPP_shared(:)%nthreads = nthrds
+
+    if (Model%me==0) write(0,*) 'CCPP DEBUG: calling time_vary_run through option B'
+
+    call ccpp_physics_run(cdata_domain, scheme_name="GFS_time_vary_pre", ierr=ierr)
+    errmsg = trim(cdata_domain%errmsg)
+    errflg = cdata_domain%errflg
+    if (errflg/=0) then
+        write(0,*) 'Error in call to GFS_time_vary_pre_run: ' // trim(errmsg)
+        stop
+    end if
+    ! Former GFS_radupdate inside GFS_rad_time_vary
+    call ccpp_physics_run(cdata_domain, scheme_name="GFS_rrtmg_setup", ierr=ierr)
+    if (ierr/=0) then
+       write(0,*) 'Error in call to GFS_rrtmg_setup_run: ' // trim(errmsg)
+       stop
+    end if
+    call ccpp_physics_run(cdata_domain, scheme_name="GFS_rad_time_vary", ierr=ierr)
+    errmsg = trim(cdata_domain%errmsg)
+    errflg = cdata_domain%errflg
+    if (errflg/=0) then
+        write(0,*) 'Error in call to GFS_rad_time_vary_run: ' // trim(errmsg)
+        stop
+    end if
+    call ccpp_physics_run(cdata_domain, scheme_name="GFS_phys_time_vary", ierr=ierr)
+    errmsg = trim(cdata_domain%errmsg)
+    errflg = cdata_domain%errflg
+    if (errflg/=0) then
+        write(0,*) 'Error in call to GFS_phys_time_vary_run: ' // trim(errmsg)
+        stop
+    end if
 #else
 
     nblks = size(blksz)
@@ -502,11 +480,6 @@ module GFS_driver
     rinc(1:5)   = 0
     call w3difdat(Model%jdat,Model%idat,4,rinc)
     sec = rinc(4)
-#ifdef CCPP
-    ! Update model state variable Model%sec, needs to be done explicitly
-    ! as long as the time vary steps are not run through CCPP.
-    Model%sec = sec
-#endif
     Model%phour = sec/con_hr
     !--- set current bucket hour
     Model%zhour = Model%phour
@@ -560,7 +533,13 @@ module GFS_driver
     !!!!  THIS IS THE POINT AT WHICH DIAG%ZHOUR NEEDS TO BE UPDATED
       enddo
     endif
+#endif
+
+    ! DH* should this become a 'physics scheme' inside CCPP?
+    nblks = size(blksz) ! This line can go once run_stochastic_physics is a scheme
     call run_stochastic_physics(nblks,Model,Grid(:),Coupling(:))
+
+! DH* check if this can be moved to GFS_stochastics?
 ! kludge for output
     if (Model%do_skeb) then
        do nb = 1,nblks
@@ -584,8 +563,6 @@ module GFS_driver
           enddo
        enddo
     endif
-
-#endif
 
   end subroutine GFS_time_vary_step
 
@@ -708,7 +685,6 @@ module GFS_driver
      endif
 
   end subroutine GFS_stochastic_driver
-#endif
 
 
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -739,33 +715,12 @@ module GFS_driver
     type (random_stat) :: stat
     integer :: ix, nb, j, i, nblks, ipseed
     integer :: numrdm(Model%cnx*Model%cny*2)
-#ifdef CCPP
-    integer :: ierr
-#endif
 
     nblks = size(blksz,1)
 
-#ifdef CCPP
-    ! DH*
-    ! This is an temporary solution until the entire time_vary_steps are run through CCPP (if possible).
-    ! Calls to time_vary are not threaded. Can use cdata_domain here, because radupdate only uses Model%...,
-    ! which is independent of block number and thread number
-    call ccpp_physics_run(cdata_domain, scheme_name="GFS_rrtmg_setup", ierr=ierr)
-    if (ierr/=0) then
-       write(0,'(a)') "An error occurred in ccpp_physics_run for scheme GFS_rrtmg_setup - aborting."
-       ! DH* better way to abort the model here or return with an error to the calling routine?
-       stop
-       ! *DH
-    end if
-    ! *DH
-#else
     call radupdate (Model%idat, Model%jdat, Model%fhswr, Model%dtf,  Model%lsswr, &
                     Model%me,   Model%slag, Model%sdec,  Model%cdec, Model%solcon)
-#endif
 
-#ifdef CCPP
-    ! DH* make the remainder of this routine a separate scheme and call after GFS_rrtmg_setup in SDF group "time_vary"?
-#endif
     !--- set up random seed index in a reproducible way for entire cubed-sphere face (lat-lon grid)
     if ((Model%isubc_lw==2) .or. (Model%isubc_sw==2)) then
       ipseed = mod(nint(con_100*sqrt(sec)), ipsdlim) + 1 + ipsd0
@@ -891,6 +846,7 @@ module GFS_driver
      endif
 
   end subroutine GFS_phys_time_vary
+#endif
 
 
 !------------------
