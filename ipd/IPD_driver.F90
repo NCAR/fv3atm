@@ -15,10 +15,9 @@ module IPD_driver
 #endif
 
 #ifdef CCPP
-  use physics_abstraction_layer,  only: initialize,          time_vary_step,   &
-                                        physics_step1,       physics_step2,    &
-                                        diagnostic_populate, restart_populate, &
-                                        finalize
+  use physics_abstraction_layer,  only: initialize,        time_vary_step,      &
+                                        physics_step1,     diagnostic_populate, &
+                                        restart_populate,  finalize
 #else
   use physics_abstraction_layer,  only: initialize,        time_vary_step,   &
                                         radiation_step1,   physics_step1,    &

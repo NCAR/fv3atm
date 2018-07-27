@@ -13,7 +13,8 @@ module physics_abstraction_layer
                              radtend_type     =>  GFS_radtend_type,  &
                              intdiag_type     =>  GFS_diag_type
 #ifdef CCPP
-  use GFS_typedefs,    only: interstitial_type=>  GFS_interstitial_type
+  use GFS_typedefs,    only: interstitial_type =>  GFS_interstitial_type, &
+                             data_type         =>  GFS_data_type
 #endif
 
 
@@ -85,7 +86,9 @@ module physics_abstraction_layer
   public  radiation_step1
 #endif
   public  physics_step1
+#ifndef CCPP
   public  physics_step2
+#endif
 
 CONTAINS
 
