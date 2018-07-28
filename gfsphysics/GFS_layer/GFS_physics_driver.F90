@@ -2086,9 +2086,6 @@ module module_physics_driver
                          Model%xkzm_m, Model%xkzm_h, Model%xkzm_s, lprnt, ipr, me)
 !  if (lprnt) write(0,*)'aftmonshoc=',Statein%tgrs(ipr,:)
 !  if (lprnt) write(0,*)'aftmonshocdtdt=',dtdt(ipr,1:10)
-! #ifdef CCPP
-!           Interstitial(nt)%dvdftra = dqdt
-! #endif
         else
           if (Model%satmedmf) then
               call satmedmfvdif(ix, im, levs, nvdiff, ntcw, ntke,                   &
@@ -2101,9 +2098,6 @@ module module_physics_driver
                        Statein%prslk, Statein%phii, Statein%phil, dtp,              &
                        Model%dspheat, dusfc1, dvsfc1, dtsfc1, dqsfc1, Diag%hpbl,    &
                        kinver, Model%xkzm_m, Model%xkzm_h, Model%xkzm_s)
-! #ifdef CCPP
-!               Interstitial(nt)%dvdftra = dqdt
-! #endif
           elseif (Model%hybedmf) then
 #ifdef CCPP
 #if defined(CCPP_OPTION_A) && defined(__INTEL_COMPILER)
@@ -2268,9 +2262,6 @@ module module_physics_driver
                         gamt, gamq, dkt, kinver, Model%xkzm_m, Model%xkzm_h,        &
                         Model%xkzm_s, lprnt, ipr,                                   &
                         Model%xkzminv, Model%moninq_fac, Model%rbcr)
-! #ifdef CCPP
-!             Interstitial(nt)%dvdftra = dqdt
-! #endif
           else
             if (Model%mstrat) then
               call moninp1(ix, im, levs, nvdiff, dvdt, dudt, dtdt, dqdt,            &
@@ -2281,9 +2272,6 @@ module module_physics_driver
                            Statein%phii, Statein%phil, dtp, dusfc1, dvsfc1,         &
                            dtsfc1, dqsfc1, Diag%hpbl, gamt, gamq, dkt, kinver,      &
                            Model%xkzm_m, Model%xkzm_h)
-! #ifdef CCPP
-!               Interstitial(nt)%dvdftra = dqdt
-! #endif
             else
               call moninp(ix, im, levs, nvdiff, dvdt, dudt, dtdt, dqdt,             &
                            Statein%ugrs, Statein%vgrs, Statein%tgrs, Statein%qgrs,  &
@@ -2292,9 +2280,6 @@ module module_physics_driver
                            Statein%prsi, del, Statein%prsl, Statein%phii,           &
                            Statein%phil, dtp, dusfc1, dvsfc1, dtsfc1, dqsfc1,       &
                            Diag%hpbl, gamt, gamq, dkt, Model%xkzm_m, Model%xkzm_h)
-! #ifdef CCPP
-!               Interstitial(nt)%dvdftra = dqdt
-! #endif
             endif
 
           endif   ! end if_hybedmf
