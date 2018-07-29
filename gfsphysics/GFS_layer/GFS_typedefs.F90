@@ -42,6 +42,7 @@ module GFS_typedefs
 !! | local_name                      | standard_name                                          | long_name                                               | units         | rank | type                  |    kind   | intent | optional |
 !! |---------------------------------|--------------------------------------------------------|---------------------------------------------------------|---------------|------|-----------------------|-----------|--------|----------|
 !! | IPD_Control                     | FV3-GFS_Control_type                                   | derived type GFS_control_type in FV3                    | DDT           |    0 | GFS_control_type      |           | none   | F        |
+!! | IPD_Data(nb)                    | FV3-GFS_Data_type                                      | derived type GFS_data_type in FV3                       | DDT           |    0 | GFS_data_type         |           | none   | F        |
 !! | IPD_Data(nb)%Cldprop            | FV3-GFS_Cldprop_type                                   | derived type GFS_cldprop_type in FV3                    | DDT           |    0 | GFS_cldprop_type      |           | none   | F        |
 !! | IPD_Data(nb)%Coupling           | FV3-GFS_Coupling_type                                  | derived type GFS_coupling_type in FV3                   | DDT           |    0 | GFS_coupling_type     |           | none   | F        |
 !! | IPD_Data(nb)%Intdiag            | FV3-GFS_Diag_type                                      | derived type GFS_diag_type in FV3                       | DDT           |    0 | GFS_diag_type         |           | none   | F        |
@@ -52,6 +53,14 @@ module GFS_typedefs
 !! | IPD_Data(nb)%Stateout           | FV3-GFS_Stateout_type                                  | derived type GFS_stateout_type in FV3                   | DDT           |    0 | GFS_stateout_type     |           | none   | F        |
 !! | IPD_Data(nb)%Tbd                | FV3-GFS_Tbd_type                                       | derived type GFS_tbd_type in FV3                        | DDT           |    0 | GFS_tbd_type          |           | none   | F        |
 !! | IPD_Interstitial(nt)            | FV3-GFS_Interstitial_type                              | derived type GFS_interstitial_type in FV3               | DDT           |    0 | GFS_interstitial_type |           | none   | F        |
+!! | IPD_Data(:)                     | FV3-GFS_Data_type_all_blocks                           | derived type GFS_data_type in FV3                       | DDT           |    1 | GFS_data_type         |           | none   | F        |
+!! | IPD_Data(:)%Statein             | FV3-GFS_Statein_type_all_blocks                        | derived type GFS_statein_type in FV3                    | DDT           |    1 | GFS_statein_type      |           | none   | F        |
+!! | IPD_Data(:)%Grid                | FV3-GFS_Grid_type_all_blocks                           | derived type GFS_grid_type in FV3                       | DDT           |    1 | GFS_grid_type         |           | none   | F        |
+!! | IPD_Data(:)%Tbd                 | FV3-GFS_Tbd_type_all_blocks                            | derived type GFS_tbd_type in FV3                        | DDT           |    1 | GFS_tbd_type          |           | none   | F        |
+!! | IPD_Data(:)%Sfcprop             | FV3-GFS_Sfcprop_type_all_blocks                        | derived type GFS_sfcprop_type in FV3                    | DDT           |    1 | GFS_sfcprop_type      |           | none   | F        |
+!! | IPD_Data(:)%Cldprop             | FV3-GFS_Cldprop_type_all_blocks                        | derived type GFS_cldprop_type in FV3                    | DDT           |    1 | GFS_cldprop_type      |           | none   | F        |
+!! | IPD_Data(:)%Coupling            | FV3-GFS_Coupling_type_all_blocks                       | derived type GFS_coupling_type in FV3                   | DDT           |    1 | GFS_coupling_type     |           | none   | F        |
+!! | IPD_Data(:)%Intdiag             | FV3-GFS_Diag_type_all_blocks                           | derived type GFS_diag_type in FV3                       | DDT           |    1 | GFS_diag_type         |           | none   | F        |
 !! | LTP                             | extra_top_layer                                        | extra top layer for radiation                           | none          |    0 | integer               |           | none   | F        |
 !! | con_cp                          | specific_heat_of_dry_air_at_constant_pressure          | specific heat of dry air at constant pressure           | J kg-1 K-1    |    0 | real                  | kind_phys | none   | F        |
 !! | con_fvirt                       | ratio_of_vapor_to_dry_air_gas_constants_minus_one      | rv/rd - 1 (rv = ideal gas constant for water vapor)     | none          |    0 | real                  | kind_phys | none   | F        |
@@ -104,7 +113,10 @@ module GFS_typedefs
 !    GFS_cldprop_type        !< cloud fields needed by radiation from physics
 !    GFS_radtend_type        !< radiation tendencies needed in physics
 !    GFS_diag_type           !< fields targetted for diagnostic output
+#ifdef CCPP
 !    GFS_interstitial_type   !< fields required to replace interstitial code in GFS_{physics,radiation}_driver.F90 in CCPP
+!    GFS_data_type           !< combined type of all of the above except GFS_control_type and GFS_interstitial_type
+#endif
 
 !--------------------------------------------------------------------------------
 ! GFS_init_type
@@ -135,7 +147,7 @@ module GFS_typedefs
 !! | dt_phys        |                                                        | physics  time step in seconds                           | s             |    0 | real     | kind_phys | none   | F        |
 !! | blksz          |                                                        | for explicit data blocking                              | count         |    1 | integer  |           | none   | F        |
 !! | ak             |                                                        | a parameter for sigma pressure level calculations       | Pa            |    1 | real     | kind_phys | none   | F        |
-!! | bk             |                                                        | a parameter for sigma pressure level calculations       | none          |    1 | real     | kind_phys | none   | F        |
+!! | bk             |                                                        | b parameter for sigma pressure level calculations       | none          |    1 | real     | kind_phys | none   | F        |
 !! | xlon           |                                                        | column longitude for MPI rank                           | radians (???) |    2 | real     | kind_phys | none   | F        |
 !! | xlat           |                                                        | column latitude  for MPI rank                           | radians (???) |    2 | real     | kind_phys | none   | F        |
 !! | area           |                                                        | column area for length scale calculations               | m2 (???)      |    2 | real     | kind_phys | none   | F        |
@@ -711,7 +723,7 @@ module GFS_typedefs
 !! | IPD_Control%idat                     | date_and_time_at_model_initialization                                         | initialization date and time                            | none          |    1 | integer   |           | none   | F        |
 !! | IPD_Control%idate                    | date_and_time_at_model_initialization_reordered                               | initial date with different size and ordering           | none          |    1 | integer   |           | none   | F        |
 !! | IPD_Control%fhswr                    | frequency_for_shortwave_radiation                                             | frequency for shortwave radiation                       | s             |    0 | real      | kind_phys | none   | F        |
-!! | IPD_Control%fhlwr                    |                                                                               | frequency for longwave radiation                        | s             |    0 | real      | kind_phys | none   | F        |
+!! | IPD_Control%fhlwr                    | frequency_for_longwave_radiation                                              | frequency for longwave radiation                        | s             |    0 | real      | kind_phys | none   | F        |
 !! | IPD_Control%nsswr                    |                                                                               | integer trigger for shortwave radiation                 |               |    0 | integer   |           | none   | F        |
 !! | IPD_Control%nslwr                    |                                                                               | integer trigger for longwave  radiation                 |               |    0 | integer   |           | none   | F        |
 !! | IPD_Control%levr                     | number_of_vertical_layers_for_radiation_calculations                          | number of vertical levels for radiation calculations    | count         |    0 | integer   |           | none   | F        |
@@ -2139,6 +2151,23 @@ module GFS_typedefs
       procedure :: mprint      => interstitial_print      !<   print array data
 
   end type GFS_interstitial_type
+#endif
+
+!-------------------------
+! GFS sub-containers
+!-------------------------
+#ifdef CCPP
+  type GFS_data_type
+     type(GFS_statein_type)  :: Statein
+     type(GFS_stateout_type) :: Stateout
+     type(GFS_sfcprop_type)  :: Sfcprop
+     type(GFS_coupling_type) :: Coupling
+     type(GFS_grid_type)     :: Grid
+     type(GFS_tbd_type)      :: Tbd
+     type(GFS_cldprop_type)  :: Cldprop
+     type(GFS_radtend_type)  :: Radtend
+     type(GFS_diag_type)     :: Intdiag
+  end type GFS_data_type
 #endif
 
 !----------------
