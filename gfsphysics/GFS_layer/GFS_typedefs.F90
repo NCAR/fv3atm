@@ -2056,8 +2056,8 @@ module GFS_typedefs
     real (kind=kind_phys), pointer      :: fm10(:)          => null()  !<
     real (kind=kind_phys)               :: frain                       !<
     real (kind=kind_phys), pointer      :: frland(:)        => null()  !<
-!JLS    real (kind=kind_phys), pointer      :: fscav(:)         => null()  !<
-!JLS    real (kind=kind_phys), pointer      :: fswtr(:)         => null()  !<
+    real (kind=kind_phys), pointer      :: fscav(:)         => null()  !<
+    real (kind=kind_phys), pointer      :: fswtr(:)         => null()  !<
     real (kind=kind_phys), pointer      :: gabsbdlw(:)      => null()  !<
     real (kind=kind_phys), pointer      :: gamma(:)         => null()  !<
     real (kind=kind_phys), pointer      :: gamq(:)          => null()  !<
@@ -4508,8 +4508,8 @@ module GFS_typedefs
     allocate (Interstitial%flag_iter  (IM))
     allocate (Interstitial%fm10       (IM))
     allocate (Interstitial%frland     (IM))
-!JLS    allocate (Interstitial%fscav      (Model%ntr))
-!JLS    allocate (Interstitial%fswtr      (Model%ntr))
+    allocate (Interstitial%fscav      (Model%ntrac+1))
+    allocate (Interstitial%fswtr      (Model%ntrac+1))
     allocate (Interstitial%gabsbdlw   (IM))
     allocate (Interstitial%gamma      (IM))
     allocate (Interstitial%gamq       (IM))
@@ -4815,8 +4815,8 @@ module GFS_typedefs
     Interstitial%fm10         = clear_val
     Interstitial%frain        = clear_val
     Interstitial%frland       = clear_val
-!JLS    Interstitial%fscav        = clear_val
-!JLS    Interstitial%fswtr        = clear_val
+    Interstitial%fscav        = clear_val
+    Interstitial%fswtr        = clear_val
     Interstitial%gabsbdlw     = clear_val
     Interstitial%gamma        = clear_val
     Interstitial%gamq         = clear_val
@@ -4990,8 +4990,8 @@ module GFS_typedefs
     write (0,*) 'sum(Interstitial%fm10        ) = ', sum(Interstitial%fm10        )
     write (0,*) 'Interstitial%frain             = ', Interstitial%frain
     write (0,*) 'sum(Interstitial%frland      ) = ', sum(Interstitial%frland      )
- !JLS   write (0,*) 'sum(Interstitial%fscav       ) = ', sum(Interstitial%fscav       )
- !JLS   write (0,*) 'sum(Interstitial%fswtr       ) = ', sum(Interstitial%fswtr       )
+    write (0,*) 'sum(Interstitial%fscav       ) = ', sum(Interstitial%fscav       )
+    write (0,*) 'sum(Interstitial%fswtr       ) = ', sum(Interstitial%fswtr       )
     write (0,*) 'sum(Interstitial%gabsbdlw    ) = ', sum(Interstitial%gabsbdlw    )
     write (0,*) 'sum(Interstitial%gamma       ) = ', sum(Interstitial%gamma       )
     write (0,*) 'sum(Interstitial%gamq        ) = ', sum(Interstitial%gamq        )
