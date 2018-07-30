@@ -26,13 +26,20 @@ ifneq (,$(findstring CCPP,$(CPPDEFS)))
 	   ./CCPP_layer/CCPP_typedefs.F90                                            \
 	   ./CCPP_layer/CCPP_data.F90
     PHYSICS_SRCS_f =
+    PHYSICS_SRCS_f90 =
     PHYSICS_SRCS_F90 =
     RADIATION_SRCS_f =
     RADIATION_SRCS_F90 =
 else
     CCPP_SRCS_F90 =
-    PHYSICS_SRCS_f = ./physics/cnvc90.f
-    PHYSICS_SRCS_F90 = ./physics/gfdl_cloud_microphys.F90
+    PHYSICS_SRCS_f = \
+	   ./physics/cnvc90.f                                                        \
+	   ./physics/samfdeepcnv.f                                                   \
+	   ./physics/samfshalcnv.f
+    PHYSICS_SRCS_f90 = \
+	   ./physics/calpreciptype.f90
+    PHYSICS_SRCS_F90 = \
+	   ./physics/gfdl_cloud_microphys.F90
     RADIATION_SRCS_f = \
 	   ./physics/radiation_aerosols.f                                            \
 	   ./physics/radiation_astronomy.f                                           \
@@ -110,8 +117,6 @@ SRCS_f   =  \
 	   ./physics/rascnvv2.f                                                      \
 	   ./physics/rayleigh_damp.f                                                 \
 	   ./physics/rayleigh_damp_mesopause.f                                       \
-	   ./physics/samfdeepcnv.f                                                   \
-	   ./physics/samfshalcnv.f                                                   \
 	   ./physics/sascnv.f                                                        \
 	   ./physics/sascnvn.f                                                       \
 	   ./physics/satmedmfvdif.f                                                  \
@@ -134,7 +139,7 @@ SRCS_f   =  \
 	   ./physics/tridi2t3.f
 
 SRCS_f90 = \
-	   ./physics/calpreciptype.f90                                               \
+	   $(PHYSICS_SRCS_f90)                                                       \
 	   ./physics/cs_conv.f90                                                     \
 	   ./physics/funcphys.f90                                                    \
 	   ./physics/gcm_shoc.f90                                                    \
@@ -194,9 +199,11 @@ all default: depend $(LIBRARY)
 $(LIBRARY): $(OBJS)
 	$(AR) $(ARFLAGS) $@ $?
 
+
 # this is the place to override default (implicit) compilation rules
 # and create specific (explicit) rules
 
+# Reduce optimization (substitute -xCORE-AVX2 or -xHost with -xCORE-AVX-I) for radiation_aerosols.f
 ifneq (,$(findstring xCORE-AVX2,$(FFLAGS)))
 FFLAGS_LOPT=$(subst xCORE-AVX2,xCORE-AVX-I,$(FFLAGS))
 ./physics/radiation_aerosols.o : ./physics/radiation_aerosols.f
@@ -209,8 +216,19 @@ else
 ./physics/radiation_aerosols.o : ./physics/radiation_aerosols.f
 	$(FC) $(FFLAGS) $(OTHER_FFLAGS) -c $< -o $@
 endif
+
+# Reduce optimization (add -O0) for GFS_diagnsostics.F90
 ./GFS_layer/GFS_diagnostics.o : ./GFS_layer/GFS_diagnostics.F90
 	$(FC) $(FFLAGS) $(OTHER_FFLAGS) -O0 -c $< -o $@
+
+# Do preprocessing of the GFS physics driver in two steps to
+# be able to look at the actual .f90 file that iss compiled
+ifneq (,$(findstring CCPP,$(CPPDEFS)))
+./GFS_layer/GFS_physics_driver.o: ./GFS_layer/GFS_physics_driver.F90
+	$(CPP) $(CPPDEFS) $(CPPFLAGS) $< > $*.tmp.f90
+	$(FC) $(FFLAGS) $(OTHER_FFLAGS) -c $*.tmp.f90 -o $@
+endif
+
 
 .PHONY: clean
 clean:
@@ -227,4 +245,3 @@ include ./depend
 ifneq (clean,$(findstring clean,$(MAKECMDGOALS)))
    -include depend
 endif
-

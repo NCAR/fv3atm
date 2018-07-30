@@ -24,11 +24,6 @@ module GFS_driver
                                       tmelt  => con_ttp,  cpair   => con_cp, &
                                       latvap => con_hvap, latice  => con_hfus
 
-#ifdef CCPP
-  use ccpp_api,                 only: ccpp_physics_run
-  use CCPP_data,                only: cdata_domain
-#endif
-
   implicit none
 
   private
@@ -105,7 +100,9 @@ module GFS_driver
   public  GFS_radiation_driver        !< radiation_driver (was grrad)
 #endif
   public  GFS_physics_driver          !< physics_driver (was gbphys)
+#ifndef CCPP
   public  GFS_stochastic_driver       !< stochastic physics
+#endif
 #ifdef CCPP
   public  GFS_finalize
 #endif
@@ -397,6 +394,14 @@ module GFS_driver
                                  Grid, Tbd, Cldprop, Radtend, Diag)
 #endif
 
+#ifdef CCPP
+  use ccpp_api,              only: ccpp_physics_run
+  use CCPP_data,             only: cdata_domain, CCPP_shared
+#ifdef OPENMP
+  use omp_lib
+#endif
+#endif
+
     implicit none
 
     !--- interface variables
@@ -419,17 +424,62 @@ module GFS_driver
     real(kind=kind_phys) :: rinc(5)
     real(kind=kind_phys) :: sec
 
+#ifdef CCPP
+    integer :: nthrds
+    integer :: ierr
+    character(len=512) :: errmsg
+    integer            :: errflg
+
+    errmsg = ''
+    errflg = 0
+
+#ifdef OPENMP
+    nthrds = OMP_GET_NUM_THREADS()
+#else
+    nthrds = 1
+#endif
+
+    ! Set number of threads available to physics schemes
+    ! (since no threading over blocks on the outside)
+    CCPP_shared(:)%nthreads = nthrds
+
+    if (Model%me==0) write(0,*) 'CCPP DEBUG: calling time_vary_run through option B'
+
+    call ccpp_physics_run(cdata_domain, scheme_name="GFS_time_vary_pre", ierr=ierr)
+    errmsg = trim(cdata_domain%errmsg)
+    errflg = cdata_domain%errflg
+    if (errflg/=0) then
+        write(0,*) 'Error in call to GFS_time_vary_pre_run: ' // trim(errmsg)
+        stop
+    end if
+    ! Former GFS_radupdate inside GFS_rad_time_vary
+    call ccpp_physics_run(cdata_domain, scheme_name="GFS_rrtmg_setup", ierr=ierr)
+    if (ierr/=0) then
+       write(0,*) 'Error in call to GFS_rrtmg_setup_run: ' // trim(errmsg)
+       stop
+    end if
+    call ccpp_physics_run(cdata_domain, scheme_name="GFS_rad_time_vary", ierr=ierr)
+    errmsg = trim(cdata_domain%errmsg)
+    errflg = cdata_domain%errflg
+    if (errflg/=0) then
+        write(0,*) 'Error in call to GFS_rad_time_vary_run: ' // trim(errmsg)
+        stop
+    end if
+    call ccpp_physics_run(cdata_domain, scheme_name="GFS_phys_time_vary", ierr=ierr)
+    errmsg = trim(cdata_domain%errmsg)
+    errflg = cdata_domain%errflg
+    if (errflg/=0) then
+        write(0,*) 'Error in call to GFS_phys_time_vary_run: ' // trim(errmsg)
+        stop
+    end if
+#else
+
     nblks = size(blksz)
     !--- Model%jdat is being updated directly inside of FV3GFS_cap.F90
     !--- update calendars and triggers
     rinc(1:5)   = 0
     call w3difdat(Model%jdat,Model%idat,4,rinc)
     sec = rinc(4)
-#ifdef CCPP
-    ! Update model state variable Model%sec, needs to be done explicitly
-    ! as long as the time vary steps are not run through CCPP.
-    Model%sec = sec
-#endif
     Model%phour = sec/con_hr
     !--- set current bucket hour
     Model%zhour = Model%phour
@@ -483,7 +533,13 @@ module GFS_driver
     !!!!  THIS IS THE POINT AT WHICH DIAG%ZHOUR NEEDS TO BE UPDATED
       enddo
     endif
+#endif
+
+    ! DH* should this become a 'physics scheme' inside CCPP?
+    nblks = size(blksz) ! This line can go once run_stochastic_physics is a scheme
     call run_stochastic_physics(nblks,Model,Grid(:),Coupling(:))
+
+! DH* check if this can be moved to GFS_stochastics?
 ! kludge for output
     if (Model%do_skeb) then
        do nb = 1,nblks
@@ -511,6 +567,7 @@ module GFS_driver
   end subroutine GFS_time_vary_step
 
 
+#ifndef CCPP
 !-------------------------------------------------------------------------
 ! GFS stochastic_driver
 !-------------------------------------------------------------------------
@@ -522,11 +579,7 @@ module GFS_driver
 !      6) performs surface data cycling via the GFS gcycle routine
 !-------------------------------------------------------------------------
   subroutine GFS_stochastic_driver (Model, Statein, Stateout, Sfcprop, Coupling, &
-#ifdef CCPP
-                                    Grid, Tbd, Cldprop, Radtend, Diag, Interstitial)
-#else
                                     Grid, Tbd, Cldprop, Radtend, Diag)
-#endif
 
     implicit none
 
@@ -551,9 +604,6 @@ module GFS_driver
     type(GFS_cldprop_type),         intent(inout) :: Cldprop
     type(GFS_radtend_type),         intent(inout) :: Radtend
     type(GFS_diag_type),            intent(inout) :: Diag
-#ifdef CCPP
-    type(GFS_interstitial_type), intent(inout) :: Interstitial(:)
-#endif
 #else
     type(GFS_control_type),   intent(in   ) :: Model
     type(GFS_statein_type),   intent(in   ) :: Statein
@@ -565,9 +615,6 @@ module GFS_driver
     type(GFS_cldprop_type),   intent(in   ) :: Cldprop
     type(GFS_radtend_type),   intent(in   ) :: Radtend
     type(GFS_diag_type),      intent(inout) :: Diag
-#ifdef CCPP
-    type(GFS_interstitial_type), intent(inout) :: Interstitial(:)
-#endif
 #endif
     !--- local variables
     integer :: k, i
@@ -640,7 +687,6 @@ module GFS_driver
   end subroutine GFS_stochastic_driver
 
 
-
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 !
 !                     PRIVATE SUBROUTINES
@@ -669,33 +715,12 @@ module GFS_driver
     type (random_stat) :: stat
     integer :: ix, nb, j, i, nblks, ipseed
     integer :: numrdm(Model%cnx*Model%cny*2)
-#ifdef CCPP
-    integer :: ierr
-#endif
 
     nblks = size(blksz,1)
 
-#ifdef CCPP
-    ! DH*
-    ! This is an temporary solution until the entire time_vary_steps are run through CCPP (if possible).
-    ! Calls to time_vary are not threaded. Can use cdata_domain here, because radupdate only uses Model%...,
-    ! which is independent of block number and thread number
-    call ccpp_physics_run(cdata_domain, scheme_name="GFS_rrtmg_setup", ierr=ierr)
-    if (ierr/=0) then
-       write(0,'(a)') "An error occurred in ccpp_physics_run for scheme GFS_rrtmg_setup - aborting."
-       ! DH* better way to abort the model here or return with an error to the calling routine?
-       stop
-       ! *DH
-    end if
-    ! *DH
-#else
     call radupdate (Model%idat, Model%jdat, Model%fhswr, Model%dtf,  Model%lsswr, &
                     Model%me,   Model%slag, Model%sdec,  Model%cdec, Model%solcon)
-#endif
 
-#ifdef CCPP
-    ! DH* make the remainder of this routine a separate scheme and call after GFS_rrtmg_setup in SDF group "time_vary"?
-#endif
     !--- set up random seed index in a reproducible way for entire cubed-sphere face (lat-lon grid)
     if ((Model%isubc_lw==2) .or. (Model%isubc_sw==2)) then
       ipseed = mod(nint(con_100*sqrt(sec)), ipsdlim) + 1 + ipsd0
@@ -821,6 +846,7 @@ module GFS_driver
      endif
 
   end subroutine GFS_phys_time_vary
+#endif
 
 
 !------------------

@@ -446,10 +446,9 @@ contains
                                  cld_amt>0, kappa, Atm(mytile)%flagstruct%hydrostatic)
 
 ! Populate cdata structure with fields required to run fast physics (auto-generated).
-! Some of the shared data require an argument nt = thread (currently only errmsg and
-! errflg). For the fast physics in FV3, it is sufficient to set this to nt = 1 and
-! remember that all threads inside the gfdl_fv_sat_adj runs will write to the first
-! thread's errmsg/errflg data (currently errmsg and errflg not used in fv_sat_adj)
+! Some of the shared data require an argument nt = thread (currently only 'hydrostatic'
+! and 'nthreads'. For the fast physics in FV3, it is sufficient to set nt = 1 and use
+! this value for all threads, since these fields are the same and do not change.
    i = 1
    associate(nt=>i)
 #include "ccpp_fields_fast_physics.inc"
@@ -990,8 +989,10 @@ contains
      call del2_cubed(Atm(mytile)%diss_est, 0.25*Atm(mytile)%gridstruct%da_min, Atm(mytile)%gridstruct, &
                      Atm(mytile)%domain, npx, npy, npz, 3, Atm(mytile)%bd)
    enddo
-   ! provide back sqrt of dissipation estimate
-   Atm(mytile)%diss_est=sqrt(Atm(mytile)%diss_est)
+
+   ! provide back sqrt of dissipation estimate,
+   ! taking absolute value before taking sqrt
+   Atm(mytile)%diss_est=sqrt(abs(Atm(mytile)%diss_est))
 
  end subroutine atmosphere_diss_est
 
