@@ -198,33 +198,31 @@ module IPD_CCPP_driver
       ! Reset number of threads available to physics schemes to default value
       CCPP_shared(:)%nthreads = 1
 
-! DH* can only use this when stochastic_physics is also run through CCPP
-!   else if (trim(step)=="time_vary") then
-!
-!      if (.not.present(nblks)) then
-!        write(0,*) 'Optional argument nblks required for IPD-CCPP time_vary step'
-!        ierr = 1
-!        return
-!      end if
-!
-!      ! Loop over blocks, don't use threading on the outside but allowing threading
-!      ! inside the time_vary routines. The time_vary routines contain calls to gcycle.f90
-!      ! and sfcsub.F, which do a lot of I/O and are highly inefficient if executed
-!      ! nthread times.
-!      CCPP_shared%nthreads = nthrds
-!
-!      ! Since the time_vary steps only use data structures for all blocks (except the
-!      ! CCPP-internal variables ccpp_error_flag and ccpp_error_message, which are defined
-!      ! for all cdata structures independently), we can use cdata_domain here.
-!      call ccpp_physics_run(cdata_domain, group_name="time_vary", ierr=ierr)
-!      if (ierr/=0) then
-!        write(0,'(2(a,i4))') "An error occurred in ccpp_physics_run for group time_vary"
-!        return
-!      end if
-!
-!      ! Reset number of threads available to physics schemes to default value
-!      CCPP_shared%nthreads = 1
-! *DH
+   else if (trim(step)=="time_vary") then
+
+      if (.not.present(nblks)) then
+        write(0,*) 'Optional argument nblks required for IPD-CCPP time_vary step'
+        ierr = 1
+        return
+      end if
+
+      ! Loop over blocks, don't use threading on the outside but allowing threading
+      ! inside the time_vary routines. This is because the time_vary routines contain
+      ! calls to gcycle.f90 and sfcsub.F, which do a lot of I/O and are highly
+      !inefficient if executed nthread times.
+      CCPP_shared%nthreads = nthrds
+
+      ! Since the time_vary steps only use data structures for all blocks (except the
+      ! CCPP-internal variables ccpp_error_flag and ccpp_error_message, which are defined
+      ! for all cdata structures independently), we can use cdata_domain here.
+      call ccpp_physics_run(cdata_domain, group_name="time_vary", ierr=ierr)
+      if (ierr/=0) then
+        write(0,'(2(a,i4))') "An error occurred in ccpp_physics_run for group time_vary"
+        return
+      end if
+
+      ! Reset number of threads available to physics schemes to default value
+      CCPP_shared%nthreads = 1
 
     ! Radiation and stochastic physics
    else if (trim(step)=="radiation" .or. trim(step)=="stochastics") then
