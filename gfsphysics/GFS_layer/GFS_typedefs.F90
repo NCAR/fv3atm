@@ -7,7 +7,9 @@ module GFS_typedefs
        use machine,                  only: kind_phys, kind_evod
 #ifdef CCPP
        use physcons,                 only: con_cp, con_fvirt, con_g, &
-                                           con_hvap, con_pi, con_rd, con_rv
+                                           con_hvap, con_pi, con_rd, con_rv, &
+                                           con_t0c, con_cvap, con_cliq, con_eps, &
+                                           con_epsm1
        use module_radsw_parameters,  only: topfsw_type, sfcfsw_type, cmpfsw_type, NBDSW
        use module_radlw_parameters,  only: topflw_type, sfcflw_type, NBDLW
        use ozne_def,                 only: levozp, oz_coeff, oz_pres
@@ -39,36 +41,41 @@ module GFS_typedefs
 
 #if 0
 !> \section arg_table_GFS_typedefs
-!! | local_name                      | standard_name                                          | long_name                                               | units         | rank | type                  |    kind   | intent | optional |
-!! |---------------------------------|--------------------------------------------------------|---------------------------------------------------------|---------------|------|-----------------------|-----------|--------|----------|
-!! | IPD_Control                     | FV3-GFS_Control_type                                   | derived type GFS_control_type in FV3                    | DDT           |    0 | GFS_control_type      |           | none   | F        |
-!! | IPD_Data(nb)                    | FV3-GFS_Data_type                                      | derived type GFS_data_type in FV3                       | DDT           |    0 | GFS_data_type         |           | none   | F        |
-!! | IPD_Data(nb)%Cldprop            | FV3-GFS_Cldprop_type                                   | derived type GFS_cldprop_type in FV3                    | DDT           |    0 | GFS_cldprop_type      |           | none   | F        |
-!! | IPD_Data(nb)%Coupling           | FV3-GFS_Coupling_type                                  | derived type GFS_coupling_type in FV3                   | DDT           |    0 | GFS_coupling_type     |           | none   | F        |
-!! | IPD_Data(nb)%Intdiag            | FV3-GFS_Diag_type                                      | derived type GFS_diag_type in FV3                       | DDT           |    0 | GFS_diag_type         |           | none   | F        |
-!! | IPD_Data(nb)%Grid               | FV3-GFS_Grid_type                                      | derived type GFS_grid_type in FV3                       | DDT           |    0 | GFS_grid_type         |           | none   | F        |
-!! | IPD_Data(nb)%Radtend            | FV3-GFS_Radtend_type                                   | derived type GFS_radtend_type in FV3                    | DDT           |    0 | GFS_radtend_type      |           | none   | F        |
-!! | IPD_Data(nb)%Sfcprop            | FV3-GFS_Sfcprop_type                                   | derived type GFS_sfcprop_type in FV3                    | DDT           |    0 | GFS_sfcprop_type      |           | none   | F        |
-!! | IPD_Data(nb)%Statein            | FV3-GFS_Statein_type                                   | derived type GFS_statein_type in FV3                    | DDT           |    0 | GFS_statein_type      |           | none   | F        |
-!! | IPD_Data(nb)%Stateout           | FV3-GFS_Stateout_type                                  | derived type GFS_stateout_type in FV3                   | DDT           |    0 | GFS_stateout_type     |           | none   | F        |
-!! | IPD_Data(nb)%Tbd                | FV3-GFS_Tbd_type                                       | derived type GFS_tbd_type in FV3                        | DDT           |    0 | GFS_tbd_type          |           | none   | F        |
-!! | IPD_Interstitial(nt)            | FV3-GFS_Interstitial_type                              | derived type GFS_interstitial_type in FV3               | DDT           |    0 | GFS_interstitial_type |           | none   | F        |
-!! | IPD_Data(:)                     | FV3-GFS_Data_type_all_blocks                           | derived type GFS_data_type in FV3                       | DDT           |    1 | GFS_data_type         |           | none   | F        |
-!! | IPD_Data(:)%Statein             | FV3-GFS_Statein_type_all_blocks                        | derived type GFS_statein_type in FV3                    | DDT           |    1 | GFS_statein_type      |           | none   | F        |
-!! | IPD_Data(:)%Grid                | FV3-GFS_Grid_type_all_blocks                           | derived type GFS_grid_type in FV3                       | DDT           |    1 | GFS_grid_type         |           | none   | F        |
-!! | IPD_Data(:)%Tbd                 | FV3-GFS_Tbd_type_all_blocks                            | derived type GFS_tbd_type in FV3                        | DDT           |    1 | GFS_tbd_type          |           | none   | F        |
-!! | IPD_Data(:)%Sfcprop             | FV3-GFS_Sfcprop_type_all_blocks                        | derived type GFS_sfcprop_type in FV3                    | DDT           |    1 | GFS_sfcprop_type      |           | none   | F        |
-!! | IPD_Data(:)%Cldprop             | FV3-GFS_Cldprop_type_all_blocks                        | derived type GFS_cldprop_type in FV3                    | DDT           |    1 | GFS_cldprop_type      |           | none   | F        |
-!! | IPD_Data(:)%Coupling            | FV3-GFS_Coupling_type_all_blocks                       | derived type GFS_coupling_type in FV3                   | DDT           |    1 | GFS_coupling_type     |           | none   | F        |
-!! | IPD_Data(:)%Intdiag             | FV3-GFS_Diag_type_all_blocks                           | derived type GFS_diag_type in FV3                       | DDT           |    1 | GFS_diag_type         |           | none   | F        |
-!! | LTP                             | extra_top_layer                                        | extra top layer for radiation                           | none          |    0 | integer               |           | none   | F        |
-!! | con_cp                          | specific_heat_of_dry_air_at_constant_pressure          | specific heat of dry air at constant pressure           | J kg-1 K-1    |    0 | real                  | kind_phys | none   | F        |
-!! | con_fvirt                       | ratio_of_vapor_to_dry_air_gas_constants_minus_one      | rv/rd - 1 (rv = ideal gas constant for water vapor)     | none          |    0 | real                  | kind_phys | none   | F        |
-!! | con_g                           | gravitational_acceleration                             | gravitational acceleration                              | m s-2         |    0 | real                  | kind_phys | none   | F        |
-!! | con_hvap                        | latent_heat_of_vaporization_of_water_at_0C             | latent heat of evaporation/sublimation                  | J kg-1        |    0 | real                  | kind_phys | none   | F        |
-!! | con_pi                          | pi                                                     | ratio of a circle's circumference to its diameter       | radians       |    0 | real                  | kind_phys | none   | F        |
-!! | con_rd                          | gas_constant_dry_air                                   | ideal gas constant for dry air                          | J kg-1 K-1    |    0 | real                  | kind_phys | none   | F        |
-!! | con_rv                          | gas_constant_water_vapor                               | ideal gas constant for water vapor                      | J kg-1 K-1    |    0 | real                  | kind_phys | none   | F        |
+!! | local_name                      | standard_name                                            | long_name                                               | units         | rank | type                  |    kind   | intent | optional |
+!! |---------------------------------|----------------------------------------------------------|---------------------------------------------------------|---------------|------|-----------------------|-----------|--------|----------|
+!! | IPD_Control                     | FV3-GFS_Control_type                                     | derived type GFS_control_type in FV3                    | DDT           |    0 | GFS_control_type      |           | none   | F        |
+!! | IPD_Data(nb)                    | FV3-GFS_Data_type                                        | derived type GFS_data_type in FV3                       | DDT           |    0 | GFS_data_type         |           | none   | F        |
+!! | IPD_Data(nb)%Cldprop            | FV3-GFS_Cldprop_type                                     | derived type GFS_cldprop_type in FV3                    | DDT           |    0 | GFS_cldprop_type      |           | none   | F        |
+!! | IPD_Data(nb)%Coupling           | FV3-GFS_Coupling_type                                    | derived type GFS_coupling_type in FV3                   | DDT           |    0 | GFS_coupling_type     |           | none   | F        |
+!! | IPD_Data(nb)%Intdiag            | FV3-GFS_Diag_type                                        | derived type GFS_diag_type in FV3                       | DDT           |    0 | GFS_diag_type         |           | none   | F        |
+!! | IPD_Data(nb)%Grid               | FV3-GFS_Grid_type                                        | derived type GFS_grid_type in FV3                       | DDT           |    0 | GFS_grid_type         |           | none   | F        |
+!! | IPD_Data(nb)%Radtend            | FV3-GFS_Radtend_type                                     | derived type GFS_radtend_type in FV3                    | DDT           |    0 | GFS_radtend_type      |           | none   | F        |
+!! | IPD_Data(nb)%Sfcprop            | FV3-GFS_Sfcprop_type                                     | derived type GFS_sfcprop_type in FV3                    | DDT           |    0 | GFS_sfcprop_type      |           | none   | F        |
+!! | IPD_Data(nb)%Statein            | FV3-GFS_Statein_type                                     | derived type GFS_statein_type in FV3                    | DDT           |    0 | GFS_statein_type      |           | none   | F        |
+!! | IPD_Data(nb)%Stateout           | FV3-GFS_Stateout_type                                    | derived type GFS_stateout_type in FV3                   | DDT           |    0 | GFS_stateout_type     |           | none   | F        |
+!! | IPD_Data(nb)%Tbd                | FV3-GFS_Tbd_type                                         | derived type GFS_tbd_type in FV3                        | DDT           |    0 | GFS_tbd_type          |           | none   | F        |
+!! | IPD_Interstitial(nt)            | FV3-GFS_Interstitial_type                                | derived type GFS_interstitial_type in FV3               | DDT           |    0 | GFS_interstitial_type |           | none   | F        |
+!! | IPD_Data(:)                     | FV3-GFS_Data_type_all_blocks                             | derived type GFS_data_type in FV3                       | DDT           |    1 | GFS_data_type         |           | none   | F        |
+!! | IPD_Data(:)%Statein             | FV3-GFS_Statein_type_all_blocks                          | derived type GFS_statein_type in FV3                    | DDT           |    1 | GFS_statein_type      |           | none   | F        |
+!! | IPD_Data(:)%Grid                | FV3-GFS_Grid_type_all_blocks                             | derived type GFS_grid_type in FV3                       | DDT           |    1 | GFS_grid_type         |           | none   | F        |
+!! | IPD_Data(:)%Tbd                 | FV3-GFS_Tbd_type_all_blocks                              | derived type GFS_tbd_type in FV3                        | DDT           |    1 | GFS_tbd_type          |           | none   | F        |
+!! | IPD_Data(:)%Sfcprop             | FV3-GFS_Sfcprop_type_all_blocks                          | derived type GFS_sfcprop_type in FV3                    | DDT           |    1 | GFS_sfcprop_type      |           | none   | F        |
+!! | IPD_Data(:)%Cldprop             | FV3-GFS_Cldprop_type_all_blocks                          | derived type GFS_cldprop_type in FV3                    | DDT           |    1 | GFS_cldprop_type      |           | none   | F        |
+!! | IPD_Data(:)%Coupling            | FV3-GFS_Coupling_type_all_blocks                         | derived type GFS_coupling_type in FV3                   | DDT           |    1 | GFS_coupling_type     |           | none   | F        |
+!! | IPD_Data(:)%Intdiag             | FV3-GFS_Diag_type_all_blocks                             | derived type GFS_diag_type in FV3                       | DDT           |    1 | GFS_diag_type         |           | none   | F        |
+!! | LTP                             | extra_top_layer                                          | extra top layer for radiation                           | none          |    0 | integer               |           | none   | F        |
+!! | con_cliq                        | specific_heat_of_liquid_water_at_constant_pressure       | specific heat of liquid water at constant pressure      | J kg-1 K-1    |    0 | real                  | kind_phys | none   | F        |
+!! | con_cp                          | specific_heat_of_dry_air_at_constant_pressure            | specific heat of dry air at constant pressure           | J kg-1 K-1    |    0 | real                  | kind_phys | none   | F        |
+!! | con_cvap                        | specific_heat_of_water_vapor_at_constant_pressure        | specific heat of water vapor at constant pressure       | J kg-1 K-1    |    0 | real                  | kind_phys | none   | F        |
+!! | con_eps                         | ratio_of_dry_air_to_water_vapor_gas_constants            | rd/rv                                                   | none          |    0 | real                  | kind_phys | none   | F        |
+!! | con_epsm1                       | ratio_of_dry_air_to_water_vapor_gas_constants_minus_one  | (rd/rv) - 1                                             | none          |    0 | real                  | kind_phys | none   | F        |
+!! | con_fvirt                       | ratio_of_vapor_to_dry_air_gas_constants_minus_one        | (rv/rd) - 1 (rv = ideal gas constant for water vapor)   | none          |    0 | real                  | kind_phys | none   | F        |
+!! | con_g                           | gravitational_acceleration                               | gravitational acceleration                              | m s-2         |    0 | real                  | kind_phys | none   | F        |
+!! | con_hvap                        | latent_heat_of_vaporization_of_water_at_0C               | latent heat of evaporation/sublimation                  | J kg-1        |    0 | real                  | kind_phys | none   | F        |
+!! | con_pi                          | pi                                                       | ratio of a circle's circumference to its diameter       | radians       |    0 | real                  | kind_phys | none   | F        |
+!! | con_rd                          | gas_constant_dry_air                                     | ideal gas constant for dry air                          | J kg-1 K-1    |    0 | real                  | kind_phys | none   | F        |
+!! | con_rv                          | gas_constant_water_vapor                                 | ideal gas constant for water vapor                      | J kg-1 K-1    |    0 | real                  | kind_phys | none   | F        |
+!! | con_t0c                         | temperature_at_zero_celsius                              | temperature at 0 degrees Celsius                        | K             |    0 | real                  | kind_phys | none   | F        |
 !!
 #endif
 
