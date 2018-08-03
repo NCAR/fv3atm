@@ -95,8 +95,8 @@ module GFS_driver
 ! Public entities
 !----------------
   public  GFS_initialize              !< GFS initialization routine
-  public  GFS_time_vary_step          !< perform operations needed prior radiation or physics
 #ifndef CCPP
+  public  GFS_time_vary_step          !< perform operations needed prior radiation or physics
   public  GFS_radiation_driver        !< radiation_driver (was grrad)
 #endif
   public  GFS_physics_driver          !< physics_driver (was gbphys)
@@ -117,7 +117,8 @@ module GFS_driver
   subroutine GFS_initialize (Model, Statein, Stateout, Sfcprop,     &
                              Coupling, Grid, Tbd, Cldprop, Radtend, & 
 #ifdef CCPP
-                             Diag, Interstitial, Init_parm)
+                             Diag, Interstitial, communicator,      &
+                             ntasks, Init_parm)
 #else
                              Diag, Init_parm)
 #endif
@@ -150,6 +151,8 @@ module GFS_driver
     type(GFS_diag_type),      intent(inout) :: Diag(:)
 #ifdef CCPP
     type(GFS_interstitial_type), intent(inout) :: Interstitial(:)
+    integer,                  intent(in)    :: communicator
+    integer,                  intent(in)    :: ntasks
 #endif
     type(GFS_init_type),      intent(in)    :: Init_parm
 
@@ -164,9 +167,8 @@ module GFS_driver
     integer :: ix
 #ifndef CCPP
     real(kind=kind_phys), allocatable :: si(:)
-#endif
     real(kind=kind_phys), parameter   :: p_ref = 101325.0d0
-
+#endif
 
     nblks = size(Init_parm%blksz)
     ntrac = size(Init_parm%tracer_names)
@@ -184,7 +186,9 @@ module GFS_driver
                      Init_parm%bdat, Init_parm%cdat,               &
                      Init_parm%tracer_names,                       &
 #ifdef CCPP
-                     Init_parm%input_nml_file, Init_parm%blksz)
+                     Init_parm%input_nml_file, Init_parm%ak,       &
+                     Init_parm%bk, Init_parm%blksz, communicator,  &
+                     ntasks)
 #else
                      Init_parm%input_nml_file)
 #endif
@@ -192,9 +196,12 @@ module GFS_driver
     call read_o3data  (Model%ntoz, Model%me, Model%master)
     call read_h2odata (Model%h2o_phys, Model%me, Model%master)
 
+! For CCPP,  stochastic_physics_init is called automatically as part of CCPP physics init
+#ifndef CCPP
     !--- initializing stochastic physics
     call init_stochastic_physics(Model,Init_parm,nblks,Grid)
     if(Model%me == Model%master) print*,'do_skeb=',Model%do_skeb
+#endif
 
     do nb = 1,nblks
       ix = Init_parm%blksz(nb)
@@ -237,9 +244,12 @@ module GFS_driver
     !--- populate the grid components
     call GFS_grid_populate (Grid, Init_parm%xlon, Init_parm%xlat, Init_parm%area)
 
+! For CCPP, stochastic_physics_sfc_init is called automatically as part of CCPP physics init
+#ifndef CCPP
 !   get land surface perturbations here (move to GFS_time_vary if wanting to
 !   update each time-step
     call run_stochastic_physics_sfc(nblks,Model,Grid,Coupling)
+#endif
 
     !--- read in and initialize ozone and water
     if (Model%ntoz > 0) then
@@ -261,15 +271,14 @@ module GFS_driver
 
 !   call gsmconst (Model%dtp, Model%me, .TRUE.) ! This is for Ferrier microphysics - notused - moorthi
 
-    !--- define sigma level for radiation initialization 
-    !--- The formula converting hybrid sigma pressure coefficients to sigma coefficients follows Eckermann (2009, MWR)
-    !--- ps is replaced with p0. The value of p0 uses that in http://www.emc.ncep.noaa.gov/officenotes/newernotes/on461.pdf
-    !--- ak/bk have been flipped from their original FV3 orientation and are defined sfc -> toa
 #ifdef CCPP
-    Model%si = (Init_parm%ak + Init_parm%bk * p_ref - Init_parm%ak(Model%levr+1)) &
-                   / (p_ref - Init_parm%ak(Model%levr+1))
-    ! no need to call rad_initialize here, will be called as part of CCPP's physics_init
+    ! For CCPP, Model%si is calculated in Model%init, and rad_initialize
+    ! is run automatically as part of GFS_rrtmg_setup
 #else
+!--- define sigma level for radiation initialization 
+!--- The formula converting hybrid sigma pressure coefficients to sigma coefficients follows Eckermann (2009, MWR)
+!--- ps is replaced with p0. The value of p0 uses that in http://www.emc.ncep.noaa.gov/officenotes/newernotes/on461.pdf
+!--- ak/bk have been flipped from their original FV3 orientation and are defined sfc -> toa
     allocate(si(Model%levr+1))
     si = (Init_parm%ak + Init_parm%bk * p_ref - Init_parm%ak(Model%levr+1)) &
              / (p_ref - Init_parm%ak(Model%levr+1))
@@ -377,6 +386,7 @@ module GFS_driver
   end subroutine GFS_initialize
 
 
+#ifndef CCPP
 !-------------------------------------------------------------------------
 ! time_vary_step
 !-------------------------------------------------------------------------
@@ -388,19 +398,7 @@ module GFS_driver
 !      6) performs surface data cycling via the GFS gcycle routine
 !-------------------------------------------------------------------------
   subroutine GFS_time_vary_step (Model, Statein, Stateout, Sfcprop, Coupling, & 
-#ifdef CCPP
-                                 Grid, Tbd, Cldprop, Radtend, Diag, Interstitial)
-#else
                                  Grid, Tbd, Cldprop, Radtend, Diag)
-#endif
-
-#ifdef CCPP
-  use ccpp_api,              only: ccpp_physics_run
-  use CCPP_data,             only: cdata_domain, CCPP_shared
-#ifdef OPENMP
-  use omp_lib
-#endif
-#endif
 
     implicit none
 
@@ -415,64 +413,11 @@ module GFS_driver
     type(GFS_cldprop_type),   intent(inout) :: Cldprop(:)
     type(GFS_radtend_type),   intent(inout) :: Radtend(:)
     type(GFS_diag_type),      intent(inout) :: Diag(:)
-#ifdef CCPP
-    type(GFS_interstitial_type), intent(inout) :: Interstitial(:)
-#endif
 
     !--- local variables
     integer :: nb, nblks, k
     real(kind=kind_phys) :: rinc(5)
     real(kind=kind_phys) :: sec
-
-#ifdef CCPP
-    integer :: nthrds
-    integer :: ierr
-    character(len=512) :: errmsg
-    integer            :: errflg
-
-    errmsg = ''
-    errflg = 0
-
-#ifdef OPENMP
-    nthrds = OMP_GET_NUM_THREADS()
-#else
-    nthrds = 1
-#endif
-
-    ! Set number of threads available to physics schemes
-    ! (since no threading over blocks on the outside)
-    CCPP_shared(:)%nthreads = nthrds
-
-    if (Model%me==0) write(0,*) 'CCPP DEBUG: calling time_vary_run through option B'
-
-    call ccpp_physics_run(cdata_domain, scheme_name="GFS_time_vary_pre", ierr=ierr)
-    errmsg = trim(cdata_domain%errmsg)
-    errflg = cdata_domain%errflg
-    if (errflg/=0) then
-        write(0,*) 'Error in call to GFS_time_vary_pre_run: ' // trim(errmsg)
-        stop
-    end if
-    ! Former GFS_radupdate inside GFS_rad_time_vary
-    call ccpp_physics_run(cdata_domain, scheme_name="GFS_rrtmg_setup", ierr=ierr)
-    if (ierr/=0) then
-       write(0,*) 'Error in call to GFS_rrtmg_setup_run: ' // trim(errmsg)
-       stop
-    end if
-    call ccpp_physics_run(cdata_domain, scheme_name="GFS_rad_time_vary", ierr=ierr)
-    errmsg = trim(cdata_domain%errmsg)
-    errflg = cdata_domain%errflg
-    if (errflg/=0) then
-        write(0,*) 'Error in call to GFS_rad_time_vary_run: ' // trim(errmsg)
-        stop
-    end if
-    call ccpp_physics_run(cdata_domain, scheme_name="GFS_phys_time_vary", ierr=ierr)
-    errmsg = trim(cdata_domain%errmsg)
-    errflg = cdata_domain%errflg
-    if (errflg/=0) then
-        write(0,*) 'Error in call to GFS_phys_time_vary_run: ' // trim(errmsg)
-        stop
-    end if
-#else
 
     nblks = size(blksz)
     !--- Model%jdat is being updated directly inside of FV3GFS_cap.F90
@@ -533,13 +478,9 @@ module GFS_driver
     !!!!  THIS IS THE POINT AT WHICH DIAG%ZHOUR NEEDS TO BE UPDATED
       enddo
     endif
-#endif
 
-    ! DH* should this become a 'physics scheme' inside CCPP?
-    nblks = size(blksz) ! This line can go once run_stochastic_physics is a scheme
     call run_stochastic_physics(nblks,Model,Grid(:),Coupling(:))
 
-! DH* check if this can be moved to GFS_stochastics?
 ! kludge for output
     if (Model%do_skeb) then
        do nb = 1,nblks
@@ -567,7 +508,6 @@ module GFS_driver
   end subroutine GFS_time_vary_step
 
 
-#ifndef CCPP
 !-------------------------------------------------------------------------
 ! GFS stochastic_driver
 !-------------------------------------------------------------------------
