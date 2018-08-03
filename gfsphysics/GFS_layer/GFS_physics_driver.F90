@@ -9,7 +9,8 @@ module module_physics_driver
   use physcons,              only: con_cp, con_fvirt, con_g, con_rd,    &
                                    con_rv, con_hvap, con_hfus,          &
                                    con_rerth, con_pi, rhc_max, dxmin,   &
-                                   dxinv, pa2mb, rlapse, con_eps, con_epsm1
+                                   dxinv, pa2mb, rlapse, con_eps,       &
+                                   con_epsm1, con_cliq, con_cvap, con_t0c
   use cs_conv,               only: cs_convr
   use ozne_def,              only: levozp,  oz_coeff, oz_pres
   use h2o_def,               only: levh2o, h2o_coeff, h2o_pres
@@ -3516,7 +3517,10 @@ module module_physics_driver
 ! OPTION A - works with Intel only
             if (Model%me==0) write(0,*) 'CCPP DEBUG: calling samfdeepcnv_run through option A'
             call samfdeepcnv_mp_samfdeepcnv_run(                          &
-                      im, ix, levs, dtp, ntk, nsamftrac, del,             &
+                      im, ix, levs, con_cliq, con_cp, con_cvap,           &
+                      con_eps,con_epsm1,con_fvirt,con_grav,con_hvap,      &
+                      con_rd,con_rv, con_t0c,                             &
+                      dtp, ntk, nsamftrac, del,                           &
                       Statein%prsl, Statein%pgr, Statein%phil, clw,       &
                       Stateout%gq0(:,:,1), Stateout%gt0,                  &
                       Stateout%gu0, Stateout%gv0,                         &
@@ -3534,6 +3538,7 @@ module module_physics_driver
             !Interstitial(nt)%im = im             ! intent(in) - set in Interstitial(nt)%create()
             !Interstitial(nt)%ix = ix             ! intent(in) - set in Interstitial(nt)%create()
             !Model%levs                           ! intent(in)
+            !physical constants                   ! intent(in) - physical constant in physcons.f90
             !Model%dtp                            ! intent(in)
             Interstitial(nt)%ntk = ntk            ! intent(in)
             Interstitial(nt)%nsamftrac = nsamftrac! intent(in)
@@ -4319,7 +4324,10 @@ module module_physics_driver
 #if defined(CCPP_OPTION_A) && defined(__INTEL_COMPILER)
 ! OPTION A - works with Intel only
             if (Model%me==0) write(0,*) 'CCPP DEBUG: calling samfshalcnv_run through option A'
-            call samfshalcnv_mp_samfshalcnv_run (im, ix, levs, dtp, ntk, nsamftrac, del, &
+            call samfshalcnv_mp_samfshalcnv_run (im, ix, levs, con_cliq,       &
+                              con_cp, con_cvap, con_eps, con_epsm1, con_fvirt, &
+                              con_grav,con_hvap, con_rd,con_rv, con_t0c,       &
+                              dtp, ntk, nsamftrac, del,                        &
                               Statein%prsl, Statein%pgr, Statein%phil, clw,    &
                               Stateout%gq0(:,:,1), Stateout%gt0,               &
                               Stateout%gu0, Stateout%gv0,                      &
@@ -4336,6 +4344,7 @@ module module_physics_driver
             !Interstitial(nt)%im = im             ! intent(in) - set in Interstitial(nt)%create()
             !Interstitial(nt)%ix = ix             ! intent(in) - set in Interstitial(nt)%create()
             !Model%levs                           ! intent(in)
+            !physical constants                   ! intent(in) - physical constant in physcons.f90
             !Model%dtp                            ! intent(in)
             Interstitial(nt)%ntk = ntk            ! intent(in)
             Interstitial(nt)%nsamftrac = nsamftrac! intent(in)
