@@ -674,7 +674,7 @@ module GFS_diagnostics
 !
 !--- accumulated diagnostics ---
     do num = 1,NFXR
-      write (xtra,'(I2.2)') num 
+      write (xtra,'(I2.2)') num
       idx = idx + 1
       ExtDiag(idx)%axes = 2
       ExtDiag(idx)%name = 'fluxr_'//trim(xtra)
@@ -690,7 +690,7 @@ module GFS_diagnostics
 !--- the next two appear to be appear to be coupling fields in gloopr
 !--- each has four elements
 !rab    do num = 1,4
-!rab      write (xtra,'(I1)') num 
+!rab      write (xtra,'(I1)') num
 !rab      idx = idx + 1
 !rab      ExtDiag(idx)%axes = 2
 !rab      ExtDiag(idx)%name = 'dswcmp_'//trim(xtra)
@@ -703,7 +703,7 @@ module GFS_diagnostics
 !rab    enddo
 !rab
 !rab    do num = 1,4
-!rab      write (xtra,'(I1)') num 
+!rab      write (xtra,'(I1)') num
 !rab      idx = idx + 1
 !rab      ExtDiag(idx)%axes = 2
 !rab      ExtDiag(idx)%name = 'uswcmp_'//trim(xtra)
@@ -1808,46 +1808,67 @@ module GFS_diagnostics
 !    if(mpp_pe()==mpp_root_pe())print *,'in gfdl_diag_register,af shum_wts,idx=',idx
 
 !--- three-dimensional variables that need to be handled special when writing 
-!rab    do num = 1,6
-!rab      write (xtra,'(I1)') num 
-!rab      idx = idx + 1
-!rab      ExtDiag(idx)%axes = 3
-!rab      ExtDiag(idx)%name = 'dt3dt_'//trim(xtra)
-!rab      ExtDiag(idx)%desc = 'temperature change due to physics '//trim(xtra)//''
-!rab      ExtDiag(idx)%unit = 'XXX'
-!rab      ExtDiag(idx)%mod_name = 'gfs_phys'
-!rab    enddo
-!rab
-!rab    do num = 1,5+Mdl_parms%pl_coeff
-!rab      write (xtra,'(I1)') num 
-!rab      idx = idx + 1
-!rab      ExtDiag(idx)%axes = 3
-!rab      ExtDiag(idx)%name = 'dq3dt_'//trim(xtra)
-!rab      ExtDiag(idx)%desc = 'moisture change due to physics '//trim(xtra)//''
-!rab      ExtDiag(idx)%unit = 'XXX'
-!rab      ExtDiag(idx)%mod_name = 'gfs_phys'
-!rab    enddo
-!rab
-!rab    do num = 1,4
-!rab      write (xtra,'(I1)') num 
-!rab      idx = idx + 1
-!rab      ExtDiag(idx)%axes = 3
-!rab      ExtDiag(idx)%name = 'du3dt_'//trim(xtra)
-!rab      ExtDiag(idx)%desc = 'u momentum change due to physics '//trim(xtra)//''
-!rab      ExtDiag(idx)%unit = 'XXX'
-!rab      ExtDiag(idx)%mod_name = 'gfs_phys'
-!rab    enddo
-!rab
-!rab    do num = 1,4
-!rab      write (xtra,'(I1)') num 
-!rab      idx = idx + 1
-!rab      ExtDiag(idx)%axes = 3
-!rab      ExtDiag(idx)%name = 'dv3dt_'//trim(xtra)
-!rab      ExtDiag(idx)%desc = 'v momentum change due to physics '//trim(xtra)//''
-!rab      ExtDiag(idx)%unit = 'XXX'
-!rab      ExtDiag(idx)%mod_name = 'gfs_phys'
-!rab    enddo
-!rab
+    diag3d_output: if (Model%ldiag3d) then
+
+       do num = 1,size(IntDiag(1)%dt3dt,3)
+         write (xtra,'(I0)') num
+         idx = idx + 1
+         ExtDiag(idx)%axes = 3
+         ExtDiag(idx)%name = 'dt3dt_'//trim(xtra)
+         ! ... put some diagnostics here about field names registered?
+         ExtDiag(idx)%desc = 'temperature change due to physics '//trim(xtra)//''
+         ExtDiag(idx)%unit = 'K/s'
+         ExtDiag(idx)%mod_name = 'gfs_phys'
+         allocate (ExtDiag(idx)%data(nblks))
+         do nb = 1,nblks
+           ExtDiag(idx)%data(nb)%var3 => IntDiag(nb)%dt3dt(:,:,num)
+         enddo
+       enddo
+
+       do num = 1,size(IntDiag(1)%dq3dt,3)
+         write (xtra,'(I0)') num
+         idx = idx + 1
+         ExtDiag(idx)%axes = 3
+         ExtDiag(idx)%name = 'dq3dt_'//trim(xtra)
+         ExtDiag(idx)%desc = 'moisture change due to physics '//trim(xtra)//''
+         ExtDiag(idx)%unit = 'kg/kg/s'
+         ExtDiag(idx)%mod_name = 'gfs_phys'
+         allocate (ExtDiag(idx)%data(nblks))
+         do nb = 1,nblks
+           ExtDiag(idx)%data(nb)%var3 => IntDiag(nb)%dq3dt(:,:,num)
+         enddo
+       enddo
+
+       do num = 1,size(IntDiag(1)%du3dt,3)
+         write (xtra,'(I0)') num
+         idx = idx + 1
+         ExtDiag(idx)%axes = 3
+         ExtDiag(idx)%name = 'du3dt_'//trim(xtra)
+         ExtDiag(idx)%desc = 'u momentum change due to physics '//trim(xtra)//''
+         ExtDiag(idx)%unit = 'm/s**2'
+         ExtDiag(idx)%mod_name = 'gfs_phys'
+         allocate (ExtDiag(idx)%data(nblks))
+         do nb = 1,nblks
+           ExtDiag(idx)%data(nb)%var3 => IntDiag(nb)%du3dt(:,:,num)
+         enddo
+       enddo
+
+       do num = 1,size(IntDiag(1)%dv3dt,3)
+         write (xtra,'(I0)') num
+         idx = idx + 1
+         ExtDiag(idx)%axes = 3
+         ExtDiag(idx)%name = 'dv3dt_'//trim(xtra)
+         ExtDiag(idx)%desc = 'v momentum change due to physics '//trim(xtra)//''
+         ExtDiag(idx)%unit = 'm/s**2'
+         ExtDiag(idx)%mod_name = 'gfs_phys'
+         allocate (ExtDiag(idx)%data(nblks))
+         do nb = 1,nblks
+           ExtDiag(idx)%data(nb)%var3 => IntDiag(nb)%dv3dt(:,:,num)
+         enddo
+       enddo
+
+    end if diag3d_output
+
 !rab    idx = idx + 1
 !rab    ExtDiag(idx)%axes = 3
 !rab    !Requires lgocart = .T.
@@ -2217,7 +2238,7 @@ module GFS_diagnostics
     enddo
 
     do num = 1,4
-      write (xtra,'(i1)') num 
+      write (xtra,'(i1)') num
       idx = idx + 1
       ExtDiag(idx)%axes = 2
       ExtDiag(idx)%name = 'slc_'//trim(xtra)
