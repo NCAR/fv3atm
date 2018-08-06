@@ -945,8 +945,8 @@ module module_physics_driver
 #endif
 
       do i=1,im
-        sigmaf(i) = max( Sfcprop%vfrac(i),0.01 )
 #ifndef CCPP
+        sigmaf(i) = max( Sfcprop%vfrac(i),0.01 )
         islmsk(i) = nint(Sfcprop%slmsk(i))
 
         if (islmsk(i) == 1) then
@@ -954,7 +954,6 @@ module module_physics_driver
         else
           frland(i) = 0.
         endif
-#endif
 
         if (islmsk(i) == 2) then
           if (Model%isot == 1) then
@@ -973,6 +972,7 @@ module module_physics_driver
           vegtype(i)  = int( Sfcprop%vtype(i)+0.5 )
           slopetyp(i) = int( Sfcprop%slope(i)+0.5 )    !! clu: slope -> slopetyp
         endif
+#endif
 !  --- ...  xw: transfer ice thickness & concentration from global to local variables
         zice(i) = Sfcprop%hice(i)
         cice(i) = Sfcprop%fice(i)
@@ -986,8 +986,8 @@ module module_physics_driver
         work1(i)   = max(0.0, min(1.0,work1(i)))
         work2(i)   = 1.0 - work1(i)
         Diag%psurf(i) = Statein%pgr(i)
-#endif
         work3(i)   = Statein%prsik(i,1) / Statein%prslk(i,1)
+#endif
 !GFDL   tem1       = con_rerth * (con_pi+con_pi)*coslat(i)/nlons(i)
 !GFDL   tem2       = con_rerth * con_pi / latr
 !GFDL   garea(i)   = tem1 * tem2
@@ -1189,7 +1189,55 @@ module module_physics_driver
 
 !  --- ...  define the downward lw flux absorbed by ground
 
+#ifdef CCPP
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_surface_generic_pre through option B'
+      ! Copy local variables from driver to appropriate interstitial variables
+      !Interstitial(nt)%im = im               ! intent(in) - set in Interstitial(nt)%create()
+      !Model%levs                             ! intent(in)
+      !Sfcprop%vfrac                          ! intent(in)
+      Interstitial(nt)%islmsk = islmsk        ! intent(in)
+      !Model%isot                             ! intent(in)
+      !Model%ivegsrc                          ! intent(in)
+      !Sfcprop%stype                          ! intent(in)
+      !Sfcprop%vtype                          ! intent(in)
+      !Sfcprop%slope                          ! intent(in)
+      !Statein%prsik(:,1)                     ! intent(in)
+      !Statein%prslk(:,1)                     ! intent(in)
+      !Radtend%semis                          ! intent(in)
+      !Diag%dlwsfci                           ! intent(in)
+      !Sfcprop%tsfc                           ! intent(in)
+      !Statein%phil                           ! intent(in)
+      !con_g                                  ! intent(in) - physical constant in physcons.f90
+      Interstitial(nt)%sigmaf = sigmaf        ! intent(inout)
+      Interstitial(nt)%soiltype = soiltyp     ! intent(inout)
+      Interstitial(nt)%vegtype = vegtype      ! intent(inout)
+      Interstitial(nt)%slopetype = slopetyp   ! intent(inout)
+      Interstitial(nt)%work3 = work3          ! intent(inout)
+      Interstitial(nt)%gabsbdlw = gabsbdlw    ! intent(inout)
+      Interstitial(nt)%tsurf = tsurf          ! intent(inout)
+      !Diag%zlvl                              ! intent(inout)
+      !cdata_block(nb,nt)%errmsg = errmsg  ! intent(out)
+      !cdata_block(nb,nt)%errflg = errflg  ! intent(out)
+      call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_surface_generic_pre", ierr=ierr)
+      ! Copy intent(inout) and intent(out) interstitial variables to local variables in driver
+      sigmaf = Interstitial(nt)%sigmaf
+      soiltyp = Interstitial(nt)%soiltype
+      vegtype = Interstitial(nt)%vegtype
+      slopetyp = Interstitial(nt)%slopetype
+      work3 = Interstitial(nt)%work3
+      gabsbdlw = Interstitial(nt)%gabsbdlw
+      tsurf = Interstitial(nt)%tsurf
+      errmsg     = trim(cdata_block(nb,nt)%errmsg)
+      errflg     = cdata_block(nb,nt)%errflg
+      if (errflg/=0) then
+          write(0,*) 'Error in call to GFS_surface_generic_pre_run: ' // trim(errmsg)
+          stop
+      end if
+#endif
+
+#ifndef CCPP
       gabsbdlw(:) = Radtend%semis(:) * adjsfcdlw(:)
+#endif
 
       if (Model%lssav) then      !  --- ...  accumulate/save output variables
 
@@ -1302,7 +1350,9 @@ module module_physics_driver
 !  --- ...  lu: initialize flag_guess, flag_iter, tsurf
 
       do i=1,im
+#ifndef CCPP
         tsurf(i)        = Sfcprop%tsfc(i)
+#endif
         flag_guess(i)   = .false.
         flag_iter(i)    = .true.
         drain(i)        = 0.0
@@ -1316,7 +1366,9 @@ module module_physics_driver
         sbsno(i)        = 0.0
         snowc(i)        = 0.0
         snohf(i)        = 0.0
+#ifndef CCPP
         Diag%zlvl(i)    = Statein%phil(i,1) * onebg
+#endif
         Diag%smcwlt2(i) = 0.0
         Diag%smcref2(i) = 0.0
       enddo
