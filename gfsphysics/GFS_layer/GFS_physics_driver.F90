@@ -54,7 +54,9 @@ module module_physics_driver
   real(kind=kind_phys), parameter :: hsub    = con_hvap+con_hfus
   real(kind=kind_phys), parameter :: czmin   = 0.0001      ! cos(89.994)
   real(kind=kind_phys), parameter :: one     = 1.0d0, onebg = one/con_g
+#ifndef CCPP
   real(kind=kind_phys), parameter :: albdf   = 0.06
+#endif
   real(kind=kind_phys), parameter :: tf=258.16, tcr=273.16, tcrf=1.0/(tcr-tf)
   real(kind=kind_phys), parameter :: con_p001= 0.001d0
   real(kind=kind_phys), parameter :: con_d00 = 0.0d0
@@ -1977,21 +1979,22 @@ module module_physics_driver
       end if
 #endif
 
+#ifndef CCPP
       do i=1,im
         Diag%epi(i)     = ep1d(i)
-#ifndef CCPP # not required for CCPP, either set via associate or in dcyc2t3_post
+!DH* not required for CCPP, either set via associate or in dcyc2t3_post
         Diag%dlwsfci(i) = adjsfcdlw(i)
         Diag%ulwsfci(i) = adjsfculw(i)
         Diag%uswsfci(i) = adjsfcdsw(i) - adjsfcnsw(i)
         Diag%dswsfci(i) = adjsfcdsw(i)
-#endif
+!*DH
         Diag%gfluxi(i)  = gflx(i)
         Diag%t1(i)      = Statein%tgrs(i,1)
         Diag%q1(i)      = Statein%qgrs(i,1,1)
         Diag%u1(i)      = Statein%ugrs(i,1)
         Diag%v1(i)      = Statein%vgrs(i,1)
       enddo
-
+#endif
 !  --- ...  update near surface fields
 
       call sfc_diag (im, Statein%pgr, Statein%ugrs, Statein%vgrs,     &
@@ -2001,7 +2004,104 @@ module module_physics_driver
                      Sfcprop%ffmm, Sfcprop%ffhh, fm10, fh2)
 
       Tbd%phy_f2d(:,Model%num_p2d) = 0.0
-
+#ifdef CCPP
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_surface_generic_post through option B'
+      ! Copy local variables from driver to appropriate interstitial variables
+      !Interstitial(nt)%im = im               ! intent(in) - set in Interstitial(nt)%create()
+      !Model%cplflx                           ! intent(in)
+      !Model%lssav                            ! intent(in)
+      Interstitial(nt)%islmsk = islmsk        ! intent(in)
+      !Model%dtf                              ! intent(in)
+      Interstitial(nt)%ep1d = ep1d            ! intent(in)
+      Interstitial(nt)%gflx = gflx            ! intent(in)
+      !Statein%tgrs(:,1)                      ! intent(in)
+      !Statein%qgrs(:,1)                      ! intent(in)
+      !Statein%ugrs(:,1)                      ! intent(in)
+      !Statein%vgrs(:,1)                      ! intent(in)
+      !Diag%dlwsfci                           ! intent(in) - associated with adjsfcdlw
+      !Diag%dswsfci                           ! intent(in) - associated with adjsfcdsw
+      Interstitial(nt)%adjnirbmd = adjnirbmd  ! intent(in)
+      Interstitial(nt)%adjnirdfd = adjnirdfd  ! intent(in)
+      Interstitial(nt)%adjvisbmd = adjvisbmd  ! intent(in)
+      Interstitial(nt)%adjvisdfd = adjvisdfd  ! intent(in)
+      !Diag%ulwsfci                           ! intent(in) - associated with adjsfculw
+      !Sfcprop%t2m                            ! intent(in)
+      !Sfcprop%q2m                            ! intent(in)
+      !Sfcprop%u10m                           ! intent(in)
+      !Sfcprop%v10m                           ! intent(in)
+      !Sfcprop%tsfc                           ! intent(in)
+      !Statein%pgr                            ! intent(in)
+      Interstitial(nt)%xcosz = xcosz          ! intent(in)
+      Interstitial(nt)%evbs = evbs            ! intent(in)
+      Interstitial(nt)%evcw = evcw            ! intent(in)
+      Interstitial(nt)%trans = trans          ! intent(in)
+      Interstitial(nt)%snowc = snowc          ! intent(in)
+      Interstitial(nt)%snohf = snohf          ! intent(in)
+      !con_eps                                ! intent(in) - physical constant in physcons
+      !con_epsm1                              ! intent(in) - physical constant in physcons
+      !Diag%epi                               ! intent(inout)
+      !Diag%gfluxi                            ! intent(inout)
+      !Diag%t1                                ! intent(inout)
+      !Diag%q1                                ! intent(inout)
+      !Diag%u1                                ! intent(inout)
+      !Diag%v1                                ! intent(inout)
+      !Coupling%dlwsfci_cpl                   ! intent(inout)
+      !Coupling%dswsfci_cpl                   ! intent(inout)
+      !Coupling%dlwsfc_cpl                    ! intent(inout)
+      !Coupling%dswsfc_cpl                    ! intent(inout)
+      !Coupling%dnirbmi_cpl                   ! intent(inout)
+      !Coupling%dnirdfi_cpl                   ! intent(inout)
+      !Coupling%dvisbmi_cpl                   ! intent(inout)
+      !Coupling%dvisdfi_cpl                   ! intent(inout)
+      !Coupling%dnirbm_cpl                    ! intent(inout)
+      !Coupling%dnirdf_cpl                    ! intent(inout)
+      !Coupling%dvisbm_cpl                    ! intent(inout)
+      !Coupling%dvisdf_cpl                    ! intent(inout)
+      !Coupling%nlwsfci_cpl                   ! intent(inout)
+      !Coupling%nlwsfc_cpl                    ! intent(inout)
+      !Coupling%t2mi_cpl                      ! intent(inout)
+      !Coupling%q2mi_cpl                      ! intent(inout)
+      !Coupling%u10mi_cpl                     ! intent(inout)
+      !Coupling%v10mi_cpl                     ! intent(inout)
+      !Coupling%tsfci_cpl                     ! intent(inout)
+      !Coupling%psurfi_cpl                    ! intent(inout)
+      !Coupling%nnirbmi_cpl                   ! intent(inout)
+      !Coupling%nnirdfi_cpl                   ! intent(inout)
+      !Coupling%nvisbmi_cpl                   ! intent(inout)
+      !Coupling%nvisdfi_cpl                   ! intent(inout)
+      !Coupling%swsfci_cpl                    ! intent(inout)
+      !Coupling%nswsfc_cpl                    ! intent(inout)
+      !Coupling%nnirbm_cpl                    ! intent(inout)
+      !Coupling%nnirdf_cpl                    ! intent(inout)
+      !Coupling%nvisbm_cpl                    ! intent(inout)
+      !Coupling%nvisdf_cpl                    ! intent(inout)
+      !Diag%gflux                             ! intent(inout)
+      !Diag%evbsa                             ! intent(inout)
+      !Diag%evcwa                             ! intent(inout)
+      !Diag%transa                            ! intent(inout)
+      !Diag%sbsnoa                            ! intent(inout)
+      !Diag%snowca                            ! intent(inout)
+      !Diag%snohfa                            ! intent(inout)
+      !Diag%ep                                ! intent(inout)
+      !Diag%tmpmin                            ! intent(inout)
+      !Diag%tmpmax                            ! intent(inout)
+      !Diag%spfhmin                           ! intent(inout)
+      !Diag%spfhmax                           ! intent(inout)
+      !Diag%wind10mmax                        ! intent(inout)
+      !Diag%u10mmax                           ! intent(inout)
+      !Diag%v10mmax                           ! intent(inout)
+      !Diag%dpt2m                             ! intent(inout)
+      !cdata_block(nb,nt)%errmsg = errmsg     ! intent(out)
+      !cdata_block(nb,nt)%errflg = errflg     ! intent(out)
+      call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_surface_generic_post", ierr=ierr)
+      ! Copy intent(inout) and intent(out) interstitial variables to local variables in driver
+      errmsg     = trim(cdata_block(nb,nt)%errmsg)
+      errflg     = cdata_block(nb,nt)%errflg
+      if (errflg/=0) then
+          write(0,*) 'Error in call to GFS_surface_generic_post_run: ' // trim(errmsg)
+          stop
+      end if
+#else
       if (Model%cplflx) then
         do i=1,im
           Coupling%dlwsfci_cpl (i) = adjsfcdlw(i)
@@ -2093,7 +2193,7 @@ module module_physics_driver
         enddo
 
       endif
-
+#endif
 !!!!!!!!!!!!!!!!!Commented by Moorthi on July 18, 2012 !!!!!!!!!!!!!!!!!!!
 !     do i=1,im
 !  --- ...  compute coefficient of evaporation in evapc
