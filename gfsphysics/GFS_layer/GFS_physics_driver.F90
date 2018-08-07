@@ -562,12 +562,12 @@ module module_physics_driver
 !--- GFDL modification for FV3
       real(kind=kind_phys), dimension(size(Grid%xlon,1),Model%levs+1) ::&
            del_gz
-#ifndef CCPP
+!zhang #ifndef CCPP
       real(kind=kind_phys), allocatable, dimension(:,:,:) ::            &
            delp, dz, uin, vin, pt, qv1, ql1, qr1, qg1, qa1, qn1, qi1,   &
            qs1, pt_dt, qa_dt, udt, vdt, w, qv_dt, ql_dt, qr_dt, qi_dt,  &
            qs_dt, qg_dt
-#endif
+!zhang #endif
 !
       real(kind=kind_phys), dimension(size(Grid%xlon,1),Model%levs,Model%ntrac) :: &
            dqdt
@@ -683,11 +683,11 @@ module module_physics_driver
 
       imp_physics = Model%imp_physics
 
-#ifdef CCPP
-      nncl = Interstitial(nt)%nncl
-      nvdiff = Interstitial(nt)%nvdiff
-      mg3_as_mg2 = Interstitial(nt)%mg3_as_mg2
-#else
+!zhang #ifdef CCPP
+!zhang      nncl = Interstitial(nt)%nncl
+!zhang      nvdiff = Interstitial(nt)%nvdiff
+!zhang      mg3_as_mg2 = Interstitial(nt)%mg3_as_mg2
+!zhang #else
       nncl = ncld
 
       if (imp_physics == 8) then
@@ -718,7 +718,7 @@ module module_physics_driver
           endif
         endif
       endif
-#endif
+!zhang #endif
 
 !-------------------------------------------------------------------------------------------
 !     lprnt   = .false.
@@ -859,7 +859,7 @@ module module_physics_driver
         allocate (qlcn(1,1),    qicn(1,1),     w_upi(1,1),    cf_upi(1,1),  &
                   CNV_MFD(1,1), CNV_PRC3(1,1), CNV_DQLDT(1,1),              &
                   clcn(1,1),    cnv_fice(1,1), cnv_ndrop(1,1), cnv_nice(1,1))
-#ifndef CCPP
+!zhang #ifndef CCPP
         if (imp_physics == 11) then       ! GFDL MP
           allocate (delp(im,1,levs),  dz(im,1,levs),    uin(im,1,levs),                    &
                     vin(im,1,levs),   pt(im,1,levs),    qv1(im,1,levs),   ql1(im,1,levs),  &
@@ -869,7 +869,7 @@ module module_physics_driver
                     ql_dt(im,1,levs), qr_dt(im,1,levs), qi_dt(im,1,levs), qs_dt(im,1,levs),&
                     qg_dt(im,1,levs))
         endif
-#endif
+!zhang #endif
       endif
 
 #ifdef GFS_HYDRO
@@ -1554,7 +1554,7 @@ module module_physics_driver
                 write(0,*) 'Error in call to sfc_nst_mp_sfc_nst_post_run: ' // trim(errmsg)
                 stop
             end if
-#endif   # End of OPTION B
+#endif  
 #else
             if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of sfc_nst'
             do i=1,im
@@ -1611,7 +1611,7 @@ module module_physics_driver
 !         if (lprnt) print *,' tseaz2=',Sfcprop%tsfc(ipr),' tref=',tref(ipr),   &
 !    &    ' dt_cool=',dt_cool(ipr),' dt_warm=',dt_warm(ipr),' kdt=',kdt
 
-#endif      ! end of ifdef CCPP for sfc_nst
+#endif  
 
          else
 
@@ -1926,7 +1926,7 @@ module module_physics_driver
 
       do i=1,im
         Diag%epi(i)     = ep1d(i)
-#ifndef CCPP # not required for CCPP, either set via associate or in dcyc2t3_post
+#ifndef CCPP 
         Diag%dlwsfci(i) = adjsfcdlw(i)
         Diag%ulwsfci(i) = adjsfculw(i)
         Diag%uswsfci(i) = adjsfcdsw(i) - adjsfcnsw(i)
@@ -3278,7 +3278,7 @@ module module_physics_driver
         endif
       endif      ! ntcw > 0
 !
-      if (imp_physics == 99 .or. imp_physics == 98) then   ! zhao-carr microphysics
+      if (imp_physics == 99 .or. imp_physics == 98 ) then   ! zhao-carr microphysics
         do i=1,im
           psautco_l(i) = Model%psautco(1)*work1(i) + Model%psautco(2)*work2(i)
           prautco_l(i) = Model%prautco(1)*work1(i) + Model%prautco(2)*work2(i)
@@ -3313,7 +3313,35 @@ module module_physics_driver
         enddo
 #endif
       elseif (imp_physics == 11) then
-        clw(1:im,:,1) = Stateout%gq0(1:im,:,ntcw)
+#ifdef CCPP
+! OPTION B BEGIN
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_gfdlmp_pre_run through option B'
+      ! Copy local variables from driver to appropriate interstitial variables
+      !Interstitial(nt)%im = im             ! intent(in) - set in
+      !Interstitial(nt)%create
+      !Interstitial(nt)%ix = ix             ! intent(in) - set in
+      !Interstitial(nt)%create
+      !Model%levs
+      !Stateout%gq0(:,:,ntcw)
+      Interstitial(nt)%clw(:,:,1) = clw(:,:,1)   ! intent(out)
+      call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_gfdlmp_pre", ierr=ierr)
+      ! Copy back intent(inout) interstitial variables to local variables in driver
+      clw(:,:,1)   = Interstitial(nt)%clw(:,:,1)
+      errmsg = trim(cdata_block(nb,nt)%errmsg)
+      errflg = cdata_block(nb,nt)%errflg
+! OPTION B END
+      if (errflg/=0) then
+          write(0,*) 'Error in call to GFS_gfdlmp_pre_mp_GFS_gfdlmp_pre_run: ' // trim(errmsg)
+          stop
+      end if
+#else
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of GFS_gfdlmp_pre_run'
+      do k=1,levs
+       do i=1,im
+        clw(i,k,1) = Stateout%gq0(i,k,ntcw)
+       enddo 
+      enddo
+#endif
       elseif (imp_physics == 8) then
         do k=1,levs
           do i=1,im
@@ -5818,6 +5846,34 @@ module module_physics_driver
         enddo
       enddo
 
+!#ifdef CCPP
+!! OPTION B BEGIN
+!      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_MP_generic_post_run through option B'
+      ! Copy local variables from driver to appropriate interstitial variables
+!      Interstitial(nt)%im = im             ! intent(in) - set in
+!      Interstitial(nt)%ix = ix             ! intent(in)
+      !Model%levs                          ! intent(in)
+!      Interstitial(nt)%del = del           ! intent(in)
+      !Model%ntcw                          ! intent(in)
+      !Model%ncld                          ! intent(in)
+!      Interstitial(nt)%nncl = Model%ncld   ! intent(in)
+      !Interstitial(nt)%nncl = nncl
+      !Stateout%gq0(:,:,ntcw) = cwm
+      !Stateout%gq0(:,:,1) = q
+      !Diag%pwat = pwat                  ! intent(out)
+!      call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_MP_generic_post", ierr=ierr)
+      ! Copy back intent(inout) interstitial variables to local variables in driver
+      !pwat = Diag%pwat
+!      errmsg = trim(cdata_block(nb,nt)%errmsg)
+!      errflg = cdata_block(nb,nt)%errflg
+!! OPTION B END
+!      if (errflg/=0) then
+!          write(0,*) 'Error in call to GFS_MP_generic_post_run_mp_GFS_MP_generic_post_run: ' //trim(errmsg)
+!          stop
+!      end if
+!zhang #else
+!zhang      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of GFS_MP_generic_post_run'
+
 !  --- ...  calculate column precipitable water "pwat"
       Diag%pwat(:) = 0.0
       do k = 1, levs
@@ -5840,6 +5896,8 @@ module module_physics_driver
       do i=1,im
         Diag%pwat(i) = Diag%pwat(i) * onebg
       enddo
+
+!zhang #endif
 
 !     tem = dtf * 0.03456 / 86400.0
 !       write(1000+me,*)' pwat=',pwat(i),'i=',i,',
@@ -5907,13 +5965,13 @@ module module_physics_driver
 
       deallocate (qlcn, qicn, w_upi, cf_upi, CNV_MFD, CNV_PRC3, &
                   CNV_DQLDT, clcn, cnv_fice, cnv_ndrop, cnv_nice)
-#ifndef CCPP
+!zhang #ifndef CCPP
       if (imp_physics == 11) then
         deallocate (delp,  dz,    uin,   vin,   pt,    qv1,   ql1, qr1,        &
                     qg1,   qa1,   qn1,   qi1,   qs1,   pt_dt, qa_dt, udt, vdt, &
                     w,     qv_dt, ql_dt, qr_dt, qi_dt, qs_dt, qg_dt)
       endif
-#endif
+!zhang #endif
 
 #ifdef CCPP
       ! End associate construct to replace local variables with CCPP variables
