@@ -2025,6 +2025,10 @@ module module_physics_driver
       Interstitial(nt)%adjvisbmd = adjvisbmd  ! intent(in)
       Interstitial(nt)%adjvisdfd = adjvisdfd  ! intent(in)
       !Diag%ulwsfci                           ! intent(in) - associated with adjsfculw
+      Interstitial(nt)%adjnirbmu = adjnirbmu  ! intent(in)
+      Interstitial(nt)%adjnirdfu = adjnirdfu  ! intent(in)
+      Interstitial(nt)%adjvisbmu = adjvisbmu  ! intent(in)
+      Interstitial(nt)%adjvisdfu = adjvisdfu  ! intent(in)
       !Sfcprop%t2m                            ! intent(in)
       !Sfcprop%q2m                            ! intent(in)
       !Sfcprop%u10m                           ! intent(in)
@@ -2035,6 +2039,7 @@ module module_physics_driver
       Interstitial(nt)%evbs = evbs            ! intent(in)
       Interstitial(nt)%evcw = evcw            ! intent(in)
       Interstitial(nt)%trans = trans          ! intent(in)
+      Interstitial(nt)%sbsno = sbsno          ! intent(in)
       Interstitial(nt)%snowc = snowc          ! intent(in)
       Interstitial(nt)%snohf = snohf          ! intent(in)
       !con_eps                                ! intent(in) - physical constant in physcons
