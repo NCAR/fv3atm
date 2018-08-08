@@ -1,7 +1,8 @@
 ! Enable this to test direct calls of CCPP-compliant schemes
 ! (i.e. w/o using CCPP infrastructure); works only with the
 ! Intel compiler, for others option B will be used regardless
-!#define CCPP_OPTION_A
+#define CCPP_OPTION_A
+#define __INTEL_COMPILER
 
 module module_physics_driver
 
@@ -590,6 +591,8 @@ module module_physics_driver
 !     real(kind=kind_phys), allocatable, dimension(:) ::  nwfa2d
       real(kind=kind_phys), parameter :: liqm = 4./3.*con_pi*1.e-12,    &
                               icem = 4./3.*con_pi*3.2768*1.e-14*890.
+      !--- hli for GF convective scheme
+      real(kind=kind_phys) :: dtdyn
 #ifdef CCPP
       integer :: nb
       integer :: nt
@@ -708,6 +711,13 @@ module module_physics_driver
 !     lprnt = .false.
 !     if (lprnt) write(0,*)' cloudsdriverdriver=',Tbd%phy_f3d(ipr,:,1)*100,' kdt=',kdt
 !-------------------------------------------------------------------------------------------
+!
+      if (Model%imfdeepcnv == 3) then
+        do i= 1, im
+          print*,'hli conv_act',Sfcprop%conv_act(i)
+          Tbd%cactiv(i)=nint(Sfcprop%conv_act(i))
+        enddo
+      endif
 !
       skip_macro = .false.
 
@@ -2920,6 +2930,32 @@ module module_physics_driver
                              Model%pgcon_deep,  Model%asolfac_deep)
 !           if (lprnt) print *,' rain1=',rain1(ipr)
 #endif
+          elseif (Model%imfdeepcnv == 3) then ! hli mod 07/20/2018
+#ifdef CCPP
+#if defined(CCPP_OPTION_A) && defined(__INTEL_COMPILER)
+! OPTION A - works with Intel only
+            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling gf_driver_run through option A'
+            print*,'hli GF run'
+            call cu_gf_driver_pre_mp_cu_gf_driver_pre_run(Model, Statein, Grid, Tbd, errmsg, errflg)
+
+            call cu_gf_driver_mp_cu_gf_driver_run                              &
+                      (tottracer,ntrac,garea,im,ix,levs,dtp,Tbd%cactiv,        &
+                       Tbd%forcet,Tbd%forceq,Statein%phil,rain1,Stateout%gq0,  &
+                       Stateout%gt0,cld1d,Stateout%gu0,Stateout%gv0,           &
+                       Statein%tgrs,Statein%vvl,Statein%qgrs,Statein%prsl,     &
+                       Statein%pgr,kbot,ktop,kcnv,Sfcprop%slmsk,hflx,evap,clw,Diag%hpbl, &
+                       ud_mf,dd_mf,dt_mf,cnvw,cnvc,errmsg, errflg)
+!                      ud_mf,dd_mf,dt_mf,sdiaga,sdiagb,cnvw,cnvc,Model%imfshalcnv)
+
+#else
+! OPTION B - works with all compilers
+            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling gf_driver_run through option B'
+#endif
+
+#else
+!
+#endif
+
           elseif (Model%imfdeepcnv == 0) then         ! random cloud top
             call sascnv (im, ix, levs, Model%jcap, dtp, del,                     &
                          Statein%prsl, Statein%pgr, Statein%phil, clw(:,:,1:2),  &
@@ -4530,7 +4566,22 @@ module module_physics_driver
 
         endif  ! end of if(Model%imp_physics)
       endif    ! end if_ncld
+!
+#ifdef CCPP
+#if defined(CCPP_OPTION_A) && defined(__INTEL_COMPILER)
+! OPTION A - works with Intel only
+            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling gf_driver_post_run through option A'
+            call cu_gf_driver_post_mp_cu_gf_driver_post_run                &
+                      (Model, Stateout, Grid, Tbd, errmsg, errflg)
+#else
+! OPTION B - works with all compilers
+            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling gf_driver_post through option B'
+#endif
 
+#else
+!
+#endif
+!
 !     if (lprnt) write(0,*)' rain1 after ls=',rain1(ipr)
 !
       if (Model%cscnv .and. Model%do_aw) then
@@ -4815,6 +4866,18 @@ module module_physics_driver
 !         write(0,*) ' endgq0=',Stateout%gq0(ipr,:,1),' kdt=',kdt
 !         write(0,*) ' endgw0=',gq0(ipr,:,3),' kdt=',kdt,' lat=',lat
 !       endif
+! hli modify for GF 04/05/2018
+      if (Model%imfdeepcnv == 3) then
+        do i = 1, im
+          if (Tbd%cactiv(i).gt.0) then
+            Sfcprop%conv_act(i) = Sfcprop%conv_act(i)+1.0
+          else
+            Sfcprop%conv_act(i)=0.0
+          endif
+          !print*,'hli conv_act',Sfcprop%conv_act(i)
+        enddo
+      endif
+! hli
 
       if (Model%do_sppt) then
 !--- radiation heating rate

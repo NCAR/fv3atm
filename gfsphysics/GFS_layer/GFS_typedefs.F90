@@ -336,6 +336,7 @@ module GFS_typedefs
 !! | IPD_Data(nb)%Sfcprop%uustar      | surface_friction_velocity                                              | boundary layer parameter                               | m s-1         |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%oro         | orography                                                              | orography                                              | m             |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%oro_uf      | orography_unfiltered                                                   | unfiltered orography                                   | m             |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%conv_act     | gf_memory_contor                                                      | gf_memory_contor                                       | none          |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%hice        | sea_ice_thickness                                                      | sea ice thickness                                      | m             |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%weasd       | water_equivalent_accumulated_snow_depth                                | water equiv of acc snow depth over land and sea ice    | mm            |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%canopy      | canopy_water_amount                                                    | canopy water amount                                    | kg m-2        |    1 | real    | kind_phys | none   | F        |
@@ -414,6 +415,7 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: oro_uf (:)   => null()  !< unfiltered orography
 
 !-- In/Out
+    real (kind=kind_phys), pointer :: conv_act(:)  => null()  !< convective activity conter hli 09/2017
     real (kind=kind_phys), pointer :: hice   (:)   => null()  !< sea ice thickness
     real (kind=kind_phys), pointer :: weasd  (:)   => null()  !< water equiv of accumulated snow depth (kg/m**2)
                                                               !< over land and sea ice
@@ -1309,6 +1311,7 @@ module GFS_typedefs
 !! \section arg_table_GFS_tbd_type
 !! | local_name                                      | standard_name                                                                                  | long_name                                               | units         | rank | type    |    kind   | intent | optional |
 !! |-------------------------------------------------|------------------------------------------------------------------------------------------------|---------------------------------------------------------|---------------|------|---------|-----------|--------|----------|
+!! | IPD_Data(nb)%Tbd%cactiv                         | conv_activity_counter                                                                          | convective activity memory                              | none          |    1 | integer |           | none   | F        |
 !! | IPD_Data(nb)%Tbd%icsdsw                         | seed_random_numbers_sw                                                                         | random seeds for sub-column cloud generators sw         | none          |    1 | integer |           | none   | F        |
 !! | IPD_Data(nb)%Tbd%icsdlw                         | seed_random_numbers_lw                                                                         | random seeds for sub-column cloud generators lw         | none          |    1 | integer |           | none   | F        |
 !! | IPD_Data(nb)%Tbd%ozpl                           | ozone_forcing                                                                                  | ozone forcing data                                      | various       |    3 | real    | kind_phys | none   | F        |
@@ -1337,10 +1340,13 @@ module GFS_typedefs
 !! | IPD_Data(nb)%Tbd%htlw0                          | tendency_of_air_temperature_due_to_longwave_heating_assuming_clear_sky_on_radiation_time_step  | clear sky heating rate due to longwave radiation        | K s-1         |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Tbd%htswc                          | tendency_of_air_temperature_due_to_shortwave_heating_on_radiation_time_step                    | total sky heating rate due to shortwave radiation       | K s-1         |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Tbd%htsw0                          | tendency_of_air_temperature_due_to_shortwave_heating_assuming_clear_sky_on_radiation_time_step | clear sky heating rates due to shortwave radiation      | K s-1         |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Tbd%forcet                         |  temperature_tendency_due_to_dynamics                                                          | temperature tendency due to dynamics only               | K s-1         |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Tbd%forceq                         |  moisture_tendency_due_to_dynamics                                                             | moisture tendency due to dynamics only                  | kg kg-1 s-1   |    2 | real    | kind_phys | none   | F        |
 !!
 #endif
   type GFS_tbd_type
 
+    integer,               pointer :: cactiv   (:)     => null()  !< (Grell-Freitas) convective activity memory contour
 !--- radiation random seeds
     integer,               pointer :: icsdsw   (:)     => null()  !< (rad. only) auxiliary cloud control arrays passed to main
     integer,               pointer :: icsdlw   (:)     => null()  !< (rad. only) radiations. if isubcsw/isubclw (input to init)
@@ -1379,6 +1385,10 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: htlw0(:,:)       => null()  !<
     real (kind=kind_phys), pointer :: htswc(:,:)       => null()  !<
     real (kind=kind_phys), pointer :: htsw0(:,:)       => null()  !<
+
+    !--- dynamical forcing variables for Grell-Freitas convection
+    real (kind=kind_phys), pointer :: forcet (:,:)     => null()  !<
+    real (kind=kind_phys), pointer :: forceq (:,:)     => null()  !<
 #endif
 
     contains
@@ -2256,6 +2266,7 @@ module GFS_typedefs
     Sfcprop%oro_uf  = clear_val
 
 !--- In/Out
+    allocate (Sfcprop%conv_act(IM)) ! hli
     allocate (Sfcprop%hice   (IM))
     allocate (Sfcprop%weasd  (IM))
     allocate (Sfcprop%sncovr (IM))
@@ -2269,6 +2280,7 @@ module GFS_typedefs
     allocate (Sfcprop%smc    (IM,Model%lsoil))
     allocate (Sfcprop%stc    (IM,Model%lsoil))
 
+    Sfcprop%conv_act   = zero ! hli
     Sfcprop%hice   = clear_val
     Sfcprop%weasd  = clear_val
     Sfcprop%sncovr = clear_val
@@ -3352,6 +3364,8 @@ module GFS_typedefs
                print *,' July 2010 version of SAS conv scheme used'
             elseif(Model%imfdeepcnv == 2) then
                print *,' scale & aerosol-aware mass-flux deep conv scheme'
+            elseif(Model%imfdeepcnv == 3) then
+               print *,'Grell-Freitas scale & aerosol-aware mass-flux deep conv scheme'
             endif
           endif
         else
@@ -3377,6 +3391,8 @@ module GFS_typedefs
           print *,' July 2010 version of mass-flux shallow conv scheme used'
         elseif (Model%imfshalcnv == 2) then
           print *,' scale- & aerosol-aware mass-flux shallow conv scheme (2017)'
+        elseif (Model%imfshalcnv == 3) then
+          print *,'Grell-Freitas scale- & aerosol-aware mass-flux shallow conv scheme (2013)'
         else
           print *,' unknown mass-flux scheme in use - defaulting to no shallow convection'
           Model%imfshalcnv = -1
@@ -3497,6 +3513,11 @@ module GFS_typedefs
       stop
     endif
 
+    if (Model%imfdeepcnv == 3) then ! hli mod 04/05/2018
+      Model%num_p3d = Model%num_p3d + 2
+      !print*,'hli Model%num_p3d', Model%num_p3d
+    endif
+
     Model%uni_cld = .false.
 !   if (Model%shoc_cld .or. Model%ncld == 2 .or. Model%ntclamt > 0) then
     if ((Model%shoc_cld) .or. (Model%imp_physics == 10)) then
@@ -3535,7 +3556,8 @@ module GFS_typedefs
 !--- set up parameters for Xu & Randell's cloudiness computation (Radiation)
 
     Model%lmfshal  = (Model%shal_cnv .and. (Model%imfshalcnv > 0))
-    Model%lmfdeep2 = (Model%imfdeepcnv == 2)
+   !Model%lmfdeep2 = (Model%imfdeepcnv == 2)
+    Model%lmfdeep2 = (Model%imfdeepcnv == 2 .or. Model%imfdeepcnv == 3) ! hli 04/05/2018
 !--- END CODE FROM GLOOPR
 
 !--- BEGIN CODE FROM GLOOPB
@@ -3898,6 +3920,8 @@ module GFS_typedefs
     type(GFS_control_type), intent(in) :: Model
 
 !--- In
+    allocate (Tbd%cactiv (IM))
+    Tbd%cactiv  = 0
 !--- sub-grid cloud radiation
     if ( Model%isubc_lw == 2 .or. Model%isubc_sw == 2 ) then
       allocate (Tbd%icsdsw (IM))
@@ -3958,6 +3982,11 @@ module GFS_typedefs
     Tbd%htlw0 = clear_val
     Tbd%htswc = clear_val
     Tbd%htsw0 = clear_val
+
+    allocate(Tbd%forcet(IM, Model%levs))
+    allocate(Tbd%forceq(IM, Model%levs))
+    Tbd%forcet = clear_val
+    Tbd%forceq = clear_val
 #endif
 
   end subroutine tbd_create
