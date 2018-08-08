@@ -1,13 +1,11 @@
 module GFS_typedefs
 
-#ifdef CCPP
-       ! Default MPI communicator, overwrite if necessary (atmos_model.F90 -> atmos_model_init)
-       use mpi,                      only: MPI_COMM_WORLD
-#endif
        use machine,                  only: kind_phys, kind_evod
 #ifdef CCPP
        use physcons,                 only: con_cp, con_fvirt, con_g, &
-                                           con_hvap, con_pi, con_rd, con_rv
+                                           con_hvap, con_pi, con_rd, con_rv, &
+                                           con_t0c, con_cvap, con_cliq, con_eps, &
+                                           con_epsm1
        use module_radsw_parameters,  only: topfsw_type, sfcfsw_type, cmpfsw_type, NBDSW
        use module_radlw_parameters,  only: topflw_type, sfcflw_type, NBDLW
        use ozne_def,                 only: levozp, oz_coeff, oz_pres
@@ -39,36 +37,41 @@ module GFS_typedefs
 
 #if 0
 !> \section arg_table_GFS_typedefs
-!! | local_name                      | standard_name                                          | long_name                                               | units         | rank | type                  |    kind   | intent | optional |
-!! |---------------------------------|--------------------------------------------------------|---------------------------------------------------------|---------------|------|-----------------------|-----------|--------|----------|
-!! | IPD_Control                     | FV3-GFS_Control_type                                   | derived type GFS_control_type in FV3                    | DDT           |    0 | GFS_control_type      |           | none   | F        |
-!! | IPD_Data(nb)                    | FV3-GFS_Data_type                                      | derived type GFS_data_type in FV3                       | DDT           |    0 | GFS_data_type         |           | none   | F        |
-!! | IPD_Data(nb)%Cldprop            | FV3-GFS_Cldprop_type                                   | derived type GFS_cldprop_type in FV3                    | DDT           |    0 | GFS_cldprop_type      |           | none   | F        |
-!! | IPD_Data(nb)%Coupling           | FV3-GFS_Coupling_type                                  | derived type GFS_coupling_type in FV3                   | DDT           |    0 | GFS_coupling_type     |           | none   | F        |
-!! | IPD_Data(nb)%Intdiag            | FV3-GFS_Diag_type                                      | derived type GFS_diag_type in FV3                       | DDT           |    0 | GFS_diag_type         |           | none   | F        |
-!! | IPD_Data(nb)%Grid               | FV3-GFS_Grid_type                                      | derived type GFS_grid_type in FV3                       | DDT           |    0 | GFS_grid_type         |           | none   | F        |
-!! | IPD_Data(nb)%Radtend            | FV3-GFS_Radtend_type                                   | derived type GFS_radtend_type in FV3                    | DDT           |    0 | GFS_radtend_type      |           | none   | F        |
-!! | IPD_Data(nb)%Sfcprop            | FV3-GFS_Sfcprop_type                                   | derived type GFS_sfcprop_type in FV3                    | DDT           |    0 | GFS_sfcprop_type      |           | none   | F        |
-!! | IPD_Data(nb)%Statein            | FV3-GFS_Statein_type                                   | derived type GFS_statein_type in FV3                    | DDT           |    0 | GFS_statein_type      |           | none   | F        |
-!! | IPD_Data(nb)%Stateout           | FV3-GFS_Stateout_type                                  | derived type GFS_stateout_type in FV3                   | DDT           |    0 | GFS_stateout_type     |           | none   | F        |
-!! | IPD_Data(nb)%Tbd                | FV3-GFS_Tbd_type                                       | derived type GFS_tbd_type in FV3                        | DDT           |    0 | GFS_tbd_type          |           | none   | F        |
-!! | IPD_Interstitial(nt)            | FV3-GFS_Interstitial_type                              | derived type GFS_interstitial_type in FV3               | DDT           |    0 | GFS_interstitial_type |           | none   | F        |
-!! | IPD_Data(:)                     | FV3-GFS_Data_type_all_blocks                           | derived type GFS_data_type in FV3                       | DDT           |    1 | GFS_data_type         |           | none   | F        |
-!! | IPD_Data(:)%Statein             | FV3-GFS_Statein_type_all_blocks                        | derived type GFS_statein_type in FV3                    | DDT           |    1 | GFS_statein_type      |           | none   | F        |
-!! | IPD_Data(:)%Grid                | FV3-GFS_Grid_type_all_blocks                           | derived type GFS_grid_type in FV3                       | DDT           |    1 | GFS_grid_type         |           | none   | F        |
-!! | IPD_Data(:)%Tbd                 | FV3-GFS_Tbd_type_all_blocks                            | derived type GFS_tbd_type in FV3                        | DDT           |    1 | GFS_tbd_type          |           | none   | F        |
-!! | IPD_Data(:)%Sfcprop             | FV3-GFS_Sfcprop_type_all_blocks                        | derived type GFS_sfcprop_type in FV3                    | DDT           |    1 | GFS_sfcprop_type      |           | none   | F        |
-!! | IPD_Data(:)%Cldprop             | FV3-GFS_Cldprop_type_all_blocks                        | derived type GFS_cldprop_type in FV3                    | DDT           |    1 | GFS_cldprop_type      |           | none   | F        |
-!! | IPD_Data(:)%Coupling            | FV3-GFS_Coupling_type_all_blocks                       | derived type GFS_coupling_type in FV3                   | DDT           |    1 | GFS_coupling_type     |           | none   | F        |
-!! | IPD_Data(:)%Intdiag             | FV3-GFS_Diag_type_all_blocks                           | derived type GFS_diag_type in FV3                       | DDT           |    1 | GFS_diag_type         |           | none   | F        |
-!! | LTP                             | extra_top_layer                                        | extra top layer for radiation                           | none          |    0 | integer               |           | none   | F        |
-!! | con_cp                          | specific_heat_of_dry_air_at_constant_pressure          | specific heat of dry air at constant pressure           | J kg-1 K-1    |    0 | real                  | kind_phys | none   | F        |
-!! | con_fvirt                       | ratio_of_vapor_to_dry_air_gas_constants_minus_one      | rv/rd - 1 (rv = ideal gas constant for water vapor)     | none          |    0 | real                  | kind_phys | none   | F        |
-!! | con_g                           | gravitational_acceleration                             | gravitational acceleration                              | m s-2         |    0 | real                  | kind_phys | none   | F        |
-!! | con_hvap                        | latent_heat_of_vaporization_of_water_at_0C             | latent heat of evaporation/sublimation                  | J kg-1        |    0 | real                  | kind_phys | none   | F        |
-!! | con_pi                          | pi                                                     | ratio of a circle's circumference to its diameter       | radians       |    0 | real                  | kind_phys | none   | F        |
-!! | con_rd                          | gas_constant_dry_air                                   | ideal gas constant for dry air                          | J kg-1 K-1    |    0 | real                  | kind_phys | none   | F        |
-!! | con_rv                          | gas_constant_water_vapor                               | ideal gas constant for water vapor                      | J kg-1 K-1    |    0 | real                  | kind_phys | none   | F        |
+!! | local_name                      | standard_name                                            | long_name                                               | units         | rank | type                  |    kind   | intent | optional |
+!! |---------------------------------|----------------------------------------------------------|---------------------------------------------------------|---------------|------|-----------------------|-----------|--------|----------|
+!! | IPD_Control                     | FV3-GFS_Control_type                                     | derived type GFS_control_type in FV3                    | DDT           |    0 | GFS_control_type      |           | none   | F        |
+!! | IPD_Data(nb)                    | FV3-GFS_Data_type                                        | derived type GFS_data_type in FV3                       | DDT           |    0 | GFS_data_type         |           | none   | F        |
+!! | IPD_Data(nb)%Cldprop            | FV3-GFS_Cldprop_type                                     | derived type GFS_cldprop_type in FV3                    | DDT           |    0 | GFS_cldprop_type      |           | none   | F        |
+!! | IPD_Data(nb)%Coupling           | FV3-GFS_Coupling_type                                    | derived type GFS_coupling_type in FV3                   | DDT           |    0 | GFS_coupling_type     |           | none   | F        |
+!! | IPD_Data(nb)%Intdiag            | FV3-GFS_Diag_type                                        | derived type GFS_diag_type in FV3                       | DDT           |    0 | GFS_diag_type         |           | none   | F        |
+!! | IPD_Data(nb)%Grid               | FV3-GFS_Grid_type                                        | derived type GFS_grid_type in FV3                       | DDT           |    0 | GFS_grid_type         |           | none   | F        |
+!! | IPD_Data(nb)%Radtend            | FV3-GFS_Radtend_type                                     | derived type GFS_radtend_type in FV3                    | DDT           |    0 | GFS_radtend_type      |           | none   | F        |
+!! | IPD_Data(nb)%Sfcprop            | FV3-GFS_Sfcprop_type                                     | derived type GFS_sfcprop_type in FV3                    | DDT           |    0 | GFS_sfcprop_type      |           | none   | F        |
+!! | IPD_Data(nb)%Statein            | FV3-GFS_Statein_type                                     | derived type GFS_statein_type in FV3                    | DDT           |    0 | GFS_statein_type      |           | none   | F        |
+!! | IPD_Data(nb)%Stateout           | FV3-GFS_Stateout_type                                    | derived type GFS_stateout_type in FV3                   | DDT           |    0 | GFS_stateout_type     |           | none   | F        |
+!! | IPD_Data(nb)%Tbd                | FV3-GFS_Tbd_type                                         | derived type GFS_tbd_type in FV3                        | DDT           |    0 | GFS_tbd_type          |           | none   | F        |
+!! | IPD_Interstitial(nt)            | FV3-GFS_Interstitial_type                                | derived type GFS_interstitial_type in FV3               | DDT           |    0 | GFS_interstitial_type |           | none   | F        |
+!! | IPD_Data(:)                     | FV3-GFS_Data_type_all_blocks                             | derived type GFS_data_type in FV3                       | DDT           |    1 | GFS_data_type         |           | none   | F        |
+!! | IPD_Data(:)%Statein             | FV3-GFS_Statein_type_all_blocks                          | derived type GFS_statein_type in FV3                    | DDT           |    1 | GFS_statein_type      |           | none   | F        |
+!! | IPD_Data(:)%Grid                | FV3-GFS_Grid_type_all_blocks                             | derived type GFS_grid_type in FV3                       | DDT           |    1 | GFS_grid_type         |           | none   | F        |
+!! | IPD_Data(:)%Tbd                 | FV3-GFS_Tbd_type_all_blocks                              | derived type GFS_tbd_type in FV3                        | DDT           |    1 | GFS_tbd_type          |           | none   | F        |
+!! | IPD_Data(:)%Sfcprop             | FV3-GFS_Sfcprop_type_all_blocks                          | derived type GFS_sfcprop_type in FV3                    | DDT           |    1 | GFS_sfcprop_type      |           | none   | F        |
+!! | IPD_Data(:)%Cldprop             | FV3-GFS_Cldprop_type_all_blocks                          | derived type GFS_cldprop_type in FV3                    | DDT           |    1 | GFS_cldprop_type      |           | none   | F        |
+!! | IPD_Data(:)%Coupling            | FV3-GFS_Coupling_type_all_blocks                         | derived type GFS_coupling_type in FV3                   | DDT           |    1 | GFS_coupling_type     |           | none   | F        |
+!! | IPD_Data(:)%Intdiag             | FV3-GFS_Diag_type_all_blocks                             | derived type GFS_diag_type in FV3                       | DDT           |    1 | GFS_diag_type         |           | none   | F        |
+!! | LTP                             | extra_top_layer                                          | extra top layer for radiation                           | none          |    0 | integer               |           | none   | F        |
+!! | con_cliq                        | specific_heat_of_liquid_water_at_constant_pressure       | specific heat of liquid water at constant pressure      | J kg-1 K-1    |    0 | real                  | kind_phys | none   | F        |
+!! | con_cp                          | specific_heat_of_dry_air_at_constant_pressure            | specific heat of dry air at constant pressure           | J kg-1 K-1    |    0 | real                  | kind_phys | none   | F        |
+!! | con_cvap                        | specific_heat_of_water_vapor_at_constant_pressure        | specific heat of water vapor at constant pressure       | J kg-1 K-1    |    0 | real                  | kind_phys | none   | F        |
+!! | con_eps                         | ratio_of_dry_air_to_water_vapor_gas_constants            | rd/rv                                                   | none          |    0 | real                  | kind_phys | none   | F        |
+!! | con_epsm1                       | ratio_of_dry_air_to_water_vapor_gas_constants_minus_one  | (rd/rv) - 1                                             | none          |    0 | real                  | kind_phys | none   | F        |
+!! | con_fvirt                       | ratio_of_vapor_to_dry_air_gas_constants_minus_one        | (rv/rd) - 1 (rv = ideal gas constant for water vapor)   | none          |    0 | real                  | kind_phys | none   | F        |
+!! | con_g                           | gravitational_acceleration                               | gravitational acceleration                              | m s-2         |    0 | real                  | kind_phys | none   | F        |
+!! | con_hvap                        | latent_heat_of_vaporization_of_water_at_0C               | latent heat of evaporation/sublimation                  | J kg-1        |    0 | real                  | kind_phys | none   | F        |
+!! | con_pi                          | pi                                                       | ratio of a circle's circumference to its diameter       | radians       |    0 | real                  | kind_phys | none   | F        |
+!! | con_rd                          | gas_constant_dry_air                                     | ideal gas constant for dry air                          | J kg-1 K-1    |    0 | real                  | kind_phys | none   | F        |
+!! | con_rv                          | gas_constant_water_vapor                                 | ideal gas constant for water vapor                      | J kg-1 K-1    |    0 | real                  | kind_phys | none   | F        |
+!! | con_t0c                         | temperature_at_zero_celsius                              | temperature at 0 degrees Celsius                        | K             |    0 | real                  | kind_phys | none   | F        |
 !!
 #endif
 
@@ -690,6 +693,7 @@ module GFS_typedefs
 !! | IPD_Control%me                       | mpi_rank                                                                      | current MPI-rank                                        | index         |    0 | integer   |           | none   | F        |
 !! | IPD_Control%master                   | mpi_root                                                                      | master MPI-rank                                         | index         |    0 | integer   |           | none   | F        |
 !! | IPD_Control%communicator             | mpi_comm                                                                      | MPI communicator                                        | index         |    0 | integer   |           | none   | F        |
+!! | IPD_Control%ntasks                   | mpi_size                                                                      | number of MPI tasks in communicator                     | count         |    0 | integer   |           | none   | F        |
 !! | IPD_Control%nlunit                   | iounit_namelist                                                               | fortran unit number for file opens                      | none          |    0 | integer   |           | none   | F        |
 !! | IPD_Control%fn_nml                   | namelist_filename                                                             | namelist filename                                       | none          |    0 | character | len=64    | none   | F        |
 !! | IPD_Control%input_nml_file           | namelist_filename_for_internal_file_reads                                     | namelist filename for internal file reads               | none          |    1 | character | len=256   | none   | F        |
@@ -708,6 +712,8 @@ module GFS_typedefs
 !! | IPD_Control%nx                       |                                                                               | number of points in i-dir for this MPI rank             | count         |    0 | integer   |           | none   | F        |
 !! | IPD_Control%ny                       |                                                                               | number of points in j-dir for this MPI rank             | count         |    0 | integer   |           | none   | F        |
 !! | IPD_Control%levs                     | vertical_dimension                                                            | number of vertical levels                               | count         |    0 | integer   |           | none   | F        |
+!! | IPD_Control%ak                       |                                                                               | a parameter for sigma pressure level calculations       | Pa            |    1 | real      | kind_phys | none   | F        |
+!! | IPD_Control%bk                       |                                                                               | b parameter for sigma pressure level calculations       | none          |    1 | real      | kind_phys | none   | F        |
 !! | IPD_Control%cnx                      |                                                                               | number of points in i-dir for this cubed-sphere face    | count         |    0 | integer   |           | none   | F        |
 !! | IPD_Control%cny                      |                                                                               | number of points in j-dir for this cubed-sphere face    | count         |    0 | integer   |           | none   | F        |
 !! | IPD_Control%lonr                     | number_of_equatorial_longitude_points                                         | number of global points in x-dir (i) along the equator  | count         |    0 | integer   |           | none   | F        |
@@ -933,6 +939,7 @@ module GFS_typedefs
     integer              :: master          !< MPI rank of master atmosphere processor
 #ifdef CCPP
     integer              :: communicator    !< MPI communicator
+    integer              :: ntasks          !< MPI size in communicator
 #endif
     integer              :: nlunit          !< unit for namelist
     character(len=64)    :: fn_nml          !< namelist filename for surface data cycling
@@ -957,6 +964,11 @@ module GFS_typedefs
     integer              :: nx              !< number of points in the i-dir for this MPI-domain
     integer              :: ny              !< number of points in the j-dir for this MPI-domain
     integer              :: levs            !< number of vertical levels
+#ifdef CCPP
+    !--- ak/bk for pressure level calculations
+    real(kind=kind_phys), pointer :: ak(:)  !< from surface (k=1) to TOA (k=levs)
+    real(kind=kind_phys), pointer :: bk(:)  !< from surface (k=1) to TOA (k=levs)
+#endif
     integer              :: cnx             !< number of points in the i-dir for this cubed-sphere face
     integer              :: cny             !< number of points in the j-dir for this cubed-sphere face
     integer              :: lonr            !< number of global points in x-dir (i) along the equator
@@ -2702,7 +2714,8 @@ module GFS_typedefs
                                  cnx, cny, gnx, gny, dt_dycore,     &
                                  dt_phys, idat, jdat, tracer_names, &
 #ifdef CCPP
-                                 input_nml_file, blksz)
+                                 input_nml_file, ak, bk, blksz,     &
+                                 communicator, ntasks)
 #else
                                  input_nml_file)
 #endif
@@ -2739,7 +2752,11 @@ module GFS_typedefs
     character(len=32),      intent(in) :: tracer_names(:)
     character(len=256),     intent(in), pointer :: input_nml_file(:)
 #ifdef CCPP
+    real(kind=kind_phys), dimension(:), intent(in) :: ak
+    real(kind=kind_phys), dimension(:), intent(in) :: bk
     integer,                intent(in) :: blksz(:)
+    integer,                intent(in) :: communicator
+    integer,                intent(in) :: ntasks
 #endif
     !--- local variables
     integer :: n
@@ -2750,6 +2767,9 @@ module GFS_typedefs
     real(kind=kind_phys) :: rinc(5)
     real(kind=kind_evod) :: wrk(1)
     real(kind=kind_phys), parameter :: con_hr = 3600.
+#ifdef CCPP
+    real(kind=kind_phys), parameter   :: p_ref = 101325.0d0
+#endif
 
 !--- BEGIN NAMELIST VARIABLES
     real(kind=kind_phys) :: fhzero         = 0.0             !< seconds between clearing of diagnostic buckets
@@ -3031,6 +3051,9 @@ module GFS_typedefs
                                random_clds, shal_cnv, imfshalcnv, imfdeepcnv, do_deep, jcap,&
                                cs_parm, flgmin, cgwf, ccwf, cdmbgwd, sup, ctei_rm, crtrh,   &
                                dlqf, rbcr, shoc_parm,                                       &
+#ifdef CCPP
+                               do_sppt, do_shum, do_skeb, do_sfcperts,                      &
+#endif
                           !--- Rayleigh friction
                                prslrd0, ral_ts,                                             &
                           !--- mass flux deep convection
@@ -3061,7 +3084,6 @@ module GFS_typedefs
 !--- convective clouds
     integer :: ncnvcld3d = 0       !< number of convective 3d clouds fields
 
-
 !--- read in the namelist
     !--- read in the namelist
 #ifdef INTERNAL_FILE_NML
@@ -3090,8 +3112,8 @@ module GFS_typedefs
     Model%me               = me
     Model%master           = master
 #ifdef CCPP
-    ! Default MPI communicator, overwrite if necessary (atmos_model.F90 -> atmos_model_init)
-    Model%communicator     = MPI_COMM_WORLD
+    Model%communicator     = communicator
+    Model%ntasks           = ntasks
 #endif
     Model%nlunit           = nlunit
     Model%fn_nml           = fn_nml
@@ -3114,6 +3136,12 @@ module GFS_typedefs
     Model%nx               = nx
     Model%ny               = ny
     Model%levs             = levs
+#ifdef CCPP
+    allocate(Model%ak(1:size(ak)))
+    allocate(Model%bk(1:size(bk)))
+    Model%ak               = ak
+    Model%bk               = bk
+#endif
     Model%cnx              = cnx
     Model%cny              = cny
     Model%lonr             = gnx         ! number longitudinal points
@@ -3306,6 +3334,19 @@ module GFS_typedefs
     Model%moninq_fac       = moninq_fac
 
     !--- stochastic physics options
+    ! DH* 20180730
+    ! For the standard/non-CCPP build, do_sppt, do_shum, do_skeb and do_sfcperts
+    ! are set to false here and updated later as part of init_stochastic_physics,
+    ! depending on values of other namelist parameters. Since these values are used
+    ! as conditionals for allocating components of Coupling and other DDTs, the call
+    ! to init_stochastic_physics is placed between creating the "Model" DDT and the
+    ! other DDTs.
+    ! This is confusing and also does not work with CCPP, because the  CCPP physics init
+    ! can happen only after ALL DDTs are created and added to the CCPP data structure
+    ! (cdata). Hence, for CCPP do_sppt, do_shum, do_skeb and do_sfcperts are additional
+    ! namelist variables in group physics that are parsed here and then compared in
+    ! stochastic_physics_init (the CCPP version of init_stochastic_physics) to the
+    ! stochastic physics namelist parameters to ensure consistency.
     Model%do_sppt          = do_sppt
     Model%use_zmtnblck     = use_zmtnblck
     Model%do_shum          = do_shum
@@ -3318,6 +3359,7 @@ module GFS_typedefs
     Model%pertlai          = pertlai
     Model%pertalb          = pertalb
     Model%pertvegf         = pertvegf
+    ! *DH 20180730
 
 ! IAU flags
 !--- iau parameters
@@ -3376,8 +3418,11 @@ module GFS_typedefs
 #ifdef CCPP
     Model%sec              = 0
     allocate(Model%si(Model%levr+1))
-    ! This will be updated in GFS_driver -> GFS_initialize
-    Model%si               = clear_val
+    !--- Define sigma level for radiation initialization 
+    !--- The formula converting hybrid sigma pressure coefficients to sigma coefficients follows Eckermann (2009, MWR)
+    !--- ps is replaced with p0. The value of p0 uses that in http://www.emc.ncep.noaa.gov/officenotes/newernotes/on461.pdf
+    !--- ak/bk have been flipped from their original FV3 orientation and are defined sfc -> toa
+    Model%si = (ak + bk * p_ref - ak(Model%levr+1)) / (p_ref - ak(Model%levr+1))
 #endif
 
 !--- stored in wam_f107_kp module

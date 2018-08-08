@@ -94,7 +94,7 @@ use IPD_typedefs,       only: IPD_init_type, IPD_control_type, &
 use CCPP_data,          only: ccpp_suite
 use IPD_driver,         only: IPD_initialize, IPD_step, IPD_finalize
 use IPD_CCPP_driver,    only: IPD_CCPP_step
-use physics_abstraction_layer, only: time_vary_step, physics_step1
+use physics_abstraction_layer, only: physics_step1
 #else
 use IPD_driver,         only: IPD_initialize, IPD_step
 use physics_abstraction_layer, only: time_vary_step, radiation_step1, physics_step1, physics_step2
@@ -256,10 +256,11 @@ subroutine update_atmos_radiation_physics (Atmos)
 
 !--- execute the IPD atmospheric setup step
       call mpp_clock_begin(setupClock)
-      Func1d => time_vary_step
 #ifdef CCPP
-      call IPD_step (IPD_Control, IPD_Data(:), IPD_Diag, IPD_Restart, IPD_Interstitial, IPD_func1d=Func1d)
+      call IPD_CCPP_step (step="time_vary", nblks=Atm_block%nblks, ierr=ierr)
+      if (ierr/=0)  call mpp_error(FATAL, 'Call to IPD-CCPP time_vary step failed')
 #else
+      Func1d => time_vary_step
       call IPD_step (IPD_Control, IPD_Data(:), IPD_Diag, IPD_Restart, IPD_func1d=Func1d)
 #endif
 !--- if coupled, assign coupled fields
@@ -374,6 +375,7 @@ subroutine atmos_model_init (Atmos, Time_init, Time, Time_step)
   use omp_lib
 #endif
   use fv_mp_mod, only: commglobal
+  use mpp_mod, only: mpp_npes
 #endif
 
   type (atmos_data_type), intent(inout) :: Atmos
@@ -525,23 +527,22 @@ subroutine atmos_model_init (Atmos, Time_init, Time, Time_step)
 #endif
 
 #ifdef CCPP
-   call IPD_initialize (IPD_Control, IPD_Data, IPD_Diag, IPD_Restart, IPD_Interstitial, Init_parm)
+   call IPD_initialize (IPD_Control, IPD_Data, IPD_Diag, IPD_Restart, &
+                        IPD_Interstitial, commglobal, mpp_npes(), Init_parm)
 #else
    call IPD_initialize (IPD_Control, IPD_Data, IPD_Diag, IPD_Restart, Init_parm)
 #endif
 
 #ifdef CCPP
-   ! Update the MPI communicator in IPD_Control that gets passed to CCPP physics
-   IPD_Control%communicator = commglobal
    ! Initialize the CCPP framework
    call IPD_CCPP_step (step="init", IPD_Control=IPD_Control, IPD_Data=IPD_Data, &
                                     IPD_Diag=IPD_Diag, IPD_Restart=IPD_Restart, &
                                     IPD_Interstitial=IPD_Interstitial,          &
                                     nblks=Atm_block%nblks, ierr=ierr)
    if (ierr/=0)  call mpp_error(FATAL, 'Call to IPD-CCPP init step failed')
-   ! DH* combine init and physics init again?
-   ! doing the init here will require logic in thompson aerosol init if no aerosol
-   ! profiles are specified (because temperatures etc. are not yet set)
+   ! Doing the init here will require logic in thompson aerosol init if no aerosol
+   ! profiles are specified and internal profiles are calculated, because these
+   ! require temperature/geopotential etc which are not yet set.
    call IPD_CCPP_step (step="physics_init", nblks=Atm_block%nblks, ierr=ierr)
    if (ierr/=0)  call mpp_error(FATAL, 'Call to IPD-CCPP physics_init step failed')
 #endif
