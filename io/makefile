@@ -18,7 +18,7 @@ $(info $$ESMF_INC is [${ESMF_INC}])
 
 LIBRARY  = libfv3io.a
 
-FFLAGS   += -I../fms -I../gfsphysics -I../ipd
+FFLAGS   += -I../fms -I../gfsphysics -I../ipd -I../namphysics
 
 SRCS_f   =
 
@@ -67,8 +67,7 @@ module_wrt_grid_comp.o: module_wrt_grid_comp.F90
 clean:
 	@echo "Cleaning io ... "
 	@echo
-	$(RM) -f $(LIBRARY) *__genmod.f90 *.o */*.o *.mod *.lst *.i depend
-
+	$(RM) -f $(LIBRARY) *__genmod.f90 *.o *.mod *.i90 *.lst *.i depend
 
 MKDEPENDS = ../mkDepends.pl
 include ../conf/make.rules

@@ -1896,12 +1896,12 @@ module module_physics_driver
                Sfcprop%snowd, qss, snowmt, gflx, Diag%cmm, Diag%chh, evap, &
                hflx)
 
-         if (Model%cplflx) then
-           do i=1,im
-             if (flag_cice(i)) then
-                islmsk(i) = nint(Sfcprop%slmsk(i))
-             endif
-           enddo
+        if (Model%cplflx .or. Model%cplchm) then
+          do i=1,im
+            if (flag_cice(i)) then
+               islmsk(i) = nint(Sfcprop%slmsk(i))
+            endif
+          enddo
 
            call sfc_cice                                                   &
 !  ---  inputs:
@@ -2765,6 +2765,15 @@ module module_physics_driver
                   dtsfc1(i) = dtsfc_cice(i)
           endif
         enddo
+      endif
+
+      if (Model%cplchm) then
+        do i = 1, im
+          tem1 = max(Diag%q1(i), 1.e-8)
+          tem  = Statein%prsl(i,1) / (con_rd*Diag%t1(i)*(1.0+con_fvirt*tem1))
+          Coupling%ushfsfci(i) = -con_cp * tem * hflx(i) ! upward sensible heat flux
+        enddo
+        Coupling%dkt     (:,:) = dkt (:,:)
       endif
 
 !     if (lprnt) then
@@ -5642,10 +5651,23 @@ module module_physics_driver
 
           tem = dtp * con_p001 / con_day
           do i = 1, im
-            rain0(i,1) = max(con_d00, rain0(i,1))
-            snow0(i,1) = max(con_d00, snow0(i,1))
-            ice0(i,1)  = max(con_d00, ice0(i,1))
-            graupel0(i,1)  = max(con_d00, graupel0(i,1))
+!            rain0(i,1) = max(con_d00, rain0(i,1))
+!            snow0(i,1) = max(con_d00, snow0(i,1))
+!            ice0(i,1)  = max(con_d00, ice0(i,1))
+!            graupel0(i,1)  = max(con_d00, graupel0(i,1))
+            if(rain0(i,1)*tem < rainmin) then
+              rain0(i,1) = 0.0
+            endif
+            if(ice0(i,1)*tem < rainmin) then
+              ice0(i,1) = 0.0
+            endif
+            if(snow0(i,1)*tem < rainmin) then
+              snow0(i,1) = 0.0
+            endif
+            if(graupel0(i,1)*tem < rainmin) then
+              graupel0(i,1) = 0.0
+            endif
+
             rain1(i)        = (rain0(i,1)+snow0(i,1)+ice0(i,1)+graupel0(i,1)) * tem
             Diag%ice(i)     = ice0    (i,1) * tem
             Diag%snow(i)    = snow0   (i,1) * tem
@@ -5891,7 +5913,8 @@ module module_physics_driver
             crain = 0.0
             csnow = Diag%rainc(i)
           endif
-          if ((snow0(i,1)+ice0(i,1)+graupel0(i,1)+csnow) > (rain0(i,1)+crain)) then
+!         if ((snow0(i,1)+ice0(i,1)+graupel0(i,1)+csnow) > (rain0(i,1)+crain)) then
+          if ((snow0(i,1)+ice0(i,1)+graupel0(i,1)+csnow) > 0.0) then
             Sfcprop%srflag(i) = 1.                   ! clu: set srflag to 'snow' (i.e. 1)
           endif
         enddo
@@ -5918,6 +5941,12 @@ module module_physics_driver
       endif
 #endif
 
+      if ((Model%cplchm).and.(.not.Model%cplflx)) then
+        do i = 1, im
+             Coupling%rain_cpl(i) = Coupling%rain_cpl(i) + Diag%rain(i)
+             Coupling%rainc_cpl(i) = Coupling%rainc_cpl(i) + Diag%rainc(i)
+        enddo
+      endif
 !  --- ...  end coupling insertion
 
 !!! update surface diagnosis fields at the end of phys package
