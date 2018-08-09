@@ -558,9 +558,17 @@ module module_physics_driver
       real(kind=kind_phys), dimension(size(Grid%xlon,1),Model%lsoil) :: &
           smsoil, stsoil, slsoil
 
+#ifdef CCPP
+      real(kind=kind_phys), dimension(size(Grid%xlon,1),Model%levs) ::  &
+          del, rhc, dtdt, dudt, dvdt, gwdcu, gwdcv, dtdtc, rainp,       &
+          ud_mf, dd_mf, dt_mf, prnum, sigmatot, sigmafrac
+      real(kind=kind_phys), dimension(size(Grid%xlon,1),Model%levs-1) ::&
+          dkt
+#else
       real(kind=kind_phys), dimension(size(Grid%xlon,1),Model%levs) ::  &
           del, rhc, dtdt, dudt, dvdt, gwdcu, gwdcv, dtdtc, rainp,       &
           ud_mf, dd_mf, dt_mf, prnum, dkt, sigmatot, sigmafrac
+#endif
 
 !--- GFDL modification for FV3
       real(kind=kind_phys), dimension(size(Grid%xlon,1),Model%levs+1) ::&
@@ -2362,7 +2370,7 @@ module module_physics_driver
               !Diag%hpbl                            ! intent(out)
               Interstitial(nt)%gamt = gamt          ! intent(inout)
               Interstitial(nt)%gamq = gamq          ! intent(inout)
-              Interstitial(nt)%dkt = dkt(:,1:Model%levs-1) ! intent(out)
+              Interstitial(nt)%dkt  = dkt           ! intent(out)
               Interstitial(nt)%kinver = kinver      ! intent(in)
               !Model%xkzm_m                         ! intent(in)
               !Model%xkzm_h                         ! intent(in)
@@ -2385,7 +2393,7 @@ module module_physics_driver
               dqsfc1 = Interstitial(nt)%dqsfc1
               gamt   = Interstitial(nt)%gamt
               gamq   = Interstitial(nt)%gamq
-              dkt(:,1:Model%levs-1) = Interstitial(nt)%dkt
+              dkt    = Interstitial(nt)%dkt
               errmsg = trim(cdata_block(nb,nt)%errmsg)
               errflg = cdata_block(nb,nt)%errflg
 #endif
@@ -2620,7 +2628,7 @@ module module_physics_driver
             !Diag%hpbl                            ! intent(out)
             Interstitial(nt)%gamt = gamt          ! intent(inout)
             Interstitial(nt)%gamq = gamq          ! intent(inout)
-            Interstitial(nt)%dkt = dkt(:,1:Model%levs-1) ! intent(out)
+            Interstitial(nt)%dkt  = dkt           ! intent(out)
             Interstitial(nt)%kinver = kinver      ! intent(in)
             !Model%xkzm_m                         ! intent(in)
             !Model%xkzm_h                         ! intent(in)
@@ -2644,7 +2652,7 @@ module module_physics_driver
             dqsfc1 = Interstitial(nt)%dqsfc1
             gamt   = Interstitial(nt)%gamt
             gamq   = Interstitial(nt)%gamq
-            dkt(:,1:Model%levs-1) = Interstitial(nt)%dkt
+            dkt    = Interstitial(nt)%dkt
             errmsg = trim(cdata_block(nb,nt)%errmsg)
             errflg = cdata_block(nb,nt)%errflg
 #endif
@@ -2773,7 +2781,12 @@ module module_physics_driver
           tem  = Statein%prsl(i,1) / (con_rd*Diag%t1(i)*(1.0+con_fvirt*tem1))
           Coupling%ushfsfci(i) = -con_cp * tem * hflx(i) ! upward sensible heat flux
         enddo
+#ifdef CCPP
+        ! DH* 20180809 - adjusted dimensions of dkt from (:,1:Model%levs) to (:,1:Model%levs-1)
+        Coupling%dkt     (:,1:Model%levs-1) = dkt (:,:)
+#else
         Coupling%dkt     (:,:) = dkt (:,:)
+#endif
       endif
 
 !     if (lprnt) then
@@ -5939,7 +5952,6 @@ module module_physics_driver
           endif
         enddo
       endif
-#endif
 
       if ((Model%cplchm).and.(.not.Model%cplflx)) then
         do i = 1, im
@@ -5947,6 +5959,7 @@ module module_physics_driver
              Coupling%rainc_cpl(i) = Coupling%rainc_cpl(i) + Diag%rainc(i)
         enddo
       endif
+#endif
 !  --- ...  end coupling insertion
 
 !!! update surface diagnosis fields at the end of phys package
