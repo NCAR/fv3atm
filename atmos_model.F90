@@ -86,7 +86,7 @@ use IPD_typedefs,       only: IPD_init_type, IPD_control_type, &
                               IPD_restart_type, IPD_kind_phys, &
                               IPD_func0d_proc, IPD_func1d_proc
 #ifdef CCPP
-                              IPD_interstitial_type
+use IPD_typedefs,       only: IPD_interstitial_type
 #endif
 
 #ifdef CCPP
