@@ -19,7 +19,7 @@ module CCPP_typedefs
 !! | local_name                                         | standard_name                                                 | long_name                                                                           | units   | rank | type        |    kind   | intent | optional |
 !! |----------------------------------------------------|---------------------------------------------------------------|-------------------------------------------------------------------------------------|---------|------|-------------|-----------|--------|----------|
 !! | CCPP_shared(nt)%hydrostatic                        | flag_for_hydrostatic_solver                                   | flag for use the hydrostatic or nonhydrostatic solver                               | flag    |    0 | logical     |           | none   | F        |
-!! | CCPP_shared(nt)%nthreads                           | omp_threads                                                   | number of OpenMP threads available for fast physics schemes                         | count   |    0 | integer     |           | none   | F        |
+!! | CCPP_shared(nt)%nthreads                           | omp_threads                                                   | number of OpenMP threads available for physics schemes                              | count   |    0 | integer     |           | none   | F        |
 !! | CCPP_shared(nt)%phys_hydrostatic                   | flag_for_hydrostatic_heating_from_physics                     | flag for use of hydrostatic heating in physics                                      | flag    |    0 | logical     |           | none   | F        |
 !!
 #endif

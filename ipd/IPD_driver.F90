@@ -15,8 +15,8 @@ module IPD_driver
 #endif
 
 #ifdef CCPP
-  use physics_abstraction_layer,  only: initialize,        time_vary_step,      &
-                                        physics_step1,     diagnostic_populate, &
+  use physics_abstraction_layer,  only: initialize,        physics_step1,    &
+                                        diagnostic_populate,                 &
                                         restart_populate,  finalize
 #else
   use physics_abstraction_layer,  only: initialize,        time_vary_step,   &
@@ -57,7 +57,8 @@ module IPD_driver
 !  IPD Initialize 
 !----------------
 #ifdef CCPP
-  subroutine IPD_initialize (IPD_Control, IPD_Data, IPD_Diag, IPD_Restart, IPD_Interstitial, IPD_init_parm)
+  subroutine IPD_initialize (IPD_Control, IPD_Data, IPD_Diag, IPD_Restart, &
+                             IPD_Interstitial, communicator, ntasks, IPD_init_parm)
 #else
   subroutine IPD_initialize (IPD_Control, IPD_Data, IPD_Diag, IPD_Restart, IPD_init_parm)
 #endif
@@ -67,6 +68,8 @@ module IPD_driver
     type(IPD_restart_type), intent(inout) :: IPD_Restart
 #ifdef CCPP
     type(IPD_interstitial_type), intent(inout) :: IPD_Interstitial(:)
+    integer, intent(in)                   :: communicator
+    integer, intent(in)                   :: ntasks
 #endif
     type(IPD_init_type),    intent(in)    :: IPD_init_parm
 
@@ -75,7 +78,8 @@ module IPD_driver
                      IPD_Data(:)%Sfcprop, IPD_Data(:)%Coupling, IPD_Data(:)%Grid, &
                      IPD_Data(:)%Tbd, IPD_Data(:)%Cldprop, IPD_Data(:)%Radtend,   &
 #ifdef CCPP
-                     IPD_Data(:)%Intdiag, IPD_Interstitial(:), IPD_init_parm)
+                     IPD_Data(:)%Intdiag, IPD_Interstitial(:), communicator,      &
+                     ntasks, IPD_init_parm)
 #else
                      IPD_Data(:)%Intdiag, IPD_init_parm)
 #endif

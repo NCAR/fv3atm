@@ -6,7 +6,7 @@ module stochy_patterngenerator
  use spectral_layout, only: len_trie_ls, len_trio_ls, ls_dim, ls_max_node
 ! use mersenne_twister_stochy, only: random_setseed,random_gauss,random_stat
  use mersenne_twister, only: random_setseed,random_gauss,random_stat
- use fv_mp_mod 
+ use fv_mp_mod
  implicit none
  private
 
@@ -36,7 +36,7 @@ module stochy_patterngenerator
 
  subroutine patterngenerator_init(lscale, delt, tscale, stdev, iseed, rpattern,&
                                   nlon, nlat, jcap, ls_node, npatterns,&
-                                  nlevs,varspect_opt)
+                                  nlevs, varspect_opt)
    real(kind_dbl_prec), intent(in),dimension(npatterns) :: lscale,tscale,stdev
    real, intent(in) :: delt
    integer, intent(in) :: nlon,nlat,jcap,npatterns,varspect_opt
