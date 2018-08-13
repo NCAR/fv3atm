@@ -1956,6 +1956,7 @@ module GFS_typedefs
 !! | IPD_Interstitial(nt)%sfcalb(:,4)                   | surface_albedo_due_to_UV_and_VIS_diffused                                                      | surface albedo due to UV+VIS diffused beam                                          | frac          |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%sigma                         | slope_of_subgrid_orography                                                                     | slope of subgrid orography                                                          | none          |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%sigmaf                        | vegetation_area_fraction                                                                       | areal fractional cover of green vegetation                                          | frac          |    1 | real        | kind_phys | none   | F        |
+!! | IPD_Interstitial(nt)%sigmafrac                     | let_grant_decide                                                                               |                                                                                     | frac          |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%sigmatot                      | convective_updraft_area_fraction                                                               | convective updraft area fraction                                                    | frac          |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%skip_macro                    | flag_skip_macro                                                                                | flag to skip cloud macrophysics in Morrison scheme                                  | flag          |    1 | logical     |           | none   | F        |
 !! | IPD_Interstitial(nt)%slopetype                     | surface_slope_classification                                                                   | class of sfc slope                                                                  | index         |    1 | integer     |           | none   | F        |
@@ -2154,6 +2155,7 @@ module GFS_typedefs
     real (kind=kind_phys), pointer      :: sfcalb(:,:)      => null()  !<
     real (kind=kind_phys), pointer      :: sigma(:)         => null()  !<
     real (kind=kind_phys), pointer      :: sigmaf(:)        => null()  !<
+    real (kind=kind_phys), pointer      :: sigmafrac(:,:)   => null()  !<
     real (kind=kind_phys), pointer      :: sigmatot(:,:)    => null()  !<
     logical                             :: skip_macro                  !<
     integer, pointer                    :: slopetype(:)     => null()  !<
@@ -4614,6 +4616,7 @@ module GFS_typedefs
     allocate (Interstitial%sfcalb     (IM,NF_ALBD))
     allocate (Interstitial%sigma      (IM))
     allocate (Interstitial%sigmaf     (IM))
+    allocate (Interstitial%sigmafrac  (IM,Model%levs))
     allocate (Interstitial%sigmatot   (IM,Model%levs))
     allocate (Interstitial%slopetype  (IM))
     allocate (Interstitial%snowc      (IM))
@@ -4915,6 +4918,7 @@ module GFS_typedefs
     Interstitial%sbsno        = clear_val
     Interstitial%sigma        = clear_val
     Interstitial%sigmaf       = clear_val
+    Interstitial%sigmafrac    = clear_val
     Interstitial%sigmatot     = clear_val
     Interstitial%slopetype    = 0
     Interstitial%snowc        = clear_val
@@ -5111,6 +5115,7 @@ module GFS_typedefs
     write (0,*) 'sum(Interstitial%sfcalb      ) = ', sum(Interstitial%sfcalb      )
     write (0,*) 'sum(Interstitial%sigma       ) = ', sum(Interstitial%sigma       )
     write (0,*) 'sum(Interstitial%sigmaf      ) = ', sum(Interstitial%sigmaf      )
+    write (0,*) 'sum(Interstitial%sigmafrac   ) = ', sum(Interstitial%sigmafrac   )
     write (0,*) 'sum(Interstitial%sigmatot    ) = ', sum(Interstitial%sigmatot    )
     write (0,*) 'sum(Interstitial%slopetype   ) = ', sum(Interstitial%slopetype   )
     write (0,*) 'sum(Interstitial%snowc       ) = ', sum(Interstitial%snowc       )
