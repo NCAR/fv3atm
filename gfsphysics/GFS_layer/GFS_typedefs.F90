@@ -1920,7 +1920,7 @@ module GFS_typedefs
 !! | IPD_Interstitial(nt)%oa4                           | asymmetry_of_subgrid_orography                                                                 | asymmetry of subgrid orography                                                      | none          |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%oc                            | convexity_of_subgrid_orography                                                                 | convexity of subgrid orography                                                      | none          |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%olyr                          | ozone_concentration_at_layer_for_radiation                                                     | ozone concentration layer                                                           | kg kg-1       |    2 | real        | kind_phys | none   | F        |
-!! | IPD_Intersitital(nt)%otspt                         | flag_convective_tracer_transport                                                               | flag to enable tracer transport by updrafts/downdrafts[(:,1)] or subsidence [(:,2)] | flag          |    2 | logical     |           | none   | F        |
+!! | IPD_Interstitial(nt)%otspt                         | flag_convective_tracer_transport                                                               | flag to enable tracer transport by updrafts/downdrafts[(:,1)] or subsidence [(:,2)] | flag          |    2 | logical     |           | none   | F        |
 !! | IPD_Interstitial(nt)%oz_coeff                      | number_of_coefficients_in_ozone_forcing_data                                                   | number of coefficients in ozone forcing data                                        | index         |    0 | integer     |           | none   | F        |
 !! | IPD_Interstitial(nt)%oz_pres                       | natural_log_of_ozone_forcing_data_pressure_levels                                              | natural log of ozone forcing data pressure levels                                   | log(Pa)       |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%plvl                          | air_pressure_at_interface_for_radiation_in_hPa                                                 | air pressure at vertical interface for radiation calculation                        | hPa           |    2 | real        | kind_phys | none   | F        |
@@ -1930,7 +1930,7 @@ module GFS_typedefs
 !! | IPD_Interstitial(nt)%qlyr                          | water_vapor_specific_humidity_at_layer_for_radiation                                           | specific humidity layer                                                             | kg kg-1       |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%qss                           | surface_specific_humidity                                                                      | surface air saturation specific humidity                                            | kg kg-1       |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%raddt                         | time_step_for_radiation                                                                        | radiation time step                                                                 | s             |    0 | real        | kind_phys | none   | F        |
-!! | IPD_Interstitial(nt)rain1                          | convective_precipitation_flux_at_surface                                                       | convective precipitation flux at surface (including snowfall)                       | kg m-2 s-1    |    1 | real        | kind_phys | none   | F        |
+!! | IPD_Interstitial(nt)%rain1                         | convective_precipitation_flux_at_surface                                                       | convective precipitation flux at surface (including snowfall)                       | kg m-2 s-1    |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%raincd                        | lwe_thickness_of_deep_convective_precipitation_amount                                          | deep convective rainfall amount on physics timestep                                 | m             |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%raincs                        | lwe_thickness_of_shallow_convective_precipitation_amount                                       | shallow convective rainfall amount on physics timestep                              | m             |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%rainmcadj                     | lwe_thickness_of_moist_convective_adj_precipitation_amount                                     | adjusted moist convective rainfall amount on physics timestep                       | m             |    1 | real        | kind_phys | none   | F        |
@@ -4582,7 +4582,6 @@ module GFS_typedefs
     allocate (Interstitial%oc         (IM))
     allocate (Interstitial%olyr       (IM,Model%levr+LTP))
     allocate (Interstitial%oz_pres    (levozp))
-    allocate (Interstitial%phy_fctd   (IM,Model%nctp))
     allocate (Interstitial%plvl       (IM,Model%levr+1+LTP))
     allocate (Interstitial%plyr       (IM,Model%levr+LTP))
     allocate (Interstitial%qicn       (IM,Model%levs))
@@ -4886,7 +4885,6 @@ module GFS_typedefs
     Interstitial%ktop         = 0
     Interstitial%oa4          = clear_val
     Interstitial%oc           = clear_val
-    Interstitial%phy_fctd     = clear_val
     Interstitial%qicn         = clear_val
     Interstitial%qlcn         = clear_val
     Interstitial%qss          = clear_val
@@ -4970,7 +4968,6 @@ module GFS_typedefs
     write (0,*) 'Interstitial%lm           = ', Interstitial%lm
     write (0,*) 'Interstitial%lmk          = ', Interstitial%lmk
     write (0,*) 'Interstitial%lmp          = ', Interstitial%lmp
-    write (0,*) 'Interstitial%nctp         = ', Interstitial%nctp
     write (0,*) 'Interstitial%nsamftrac    = ', Interstitial%nsamftrac
     write (0,*) 'Interstitial%nvdiff       = ', Interstitial%nvdiff
     write (0,*) 'Interstitial%oz_coeff     = ', Interstitial%oz_coeff
@@ -5072,7 +5069,6 @@ module GFS_typedefs
     write (0,*) 'sum(Interstitial%oa4         ) = ', sum(Interstitial%oa4         )
     write (0,*) 'sum(Interstitial%oc          ) = ', sum(Interstitial%oc          )
     write (0,*) 'sum(Interstitial%olyr        ) = ', sum(Interstitial%olyr        )
-    write (0,*) 'sum(Interstitial%phy_fctd    ) = ', sum(Interstitial%phy_fctd    )
     write (0,*) 'sum(Interstitial%plvl        ) = ', sum(Interstitial%plvl        )
     write (0,*) 'sum(Interstitial%plyr        ) = ', sum(Interstitial%plyr        )
     write (0,*) 'sum(Interstitial%qicn        ) = ', sum(Interstitial%qicn        )
