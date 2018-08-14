@@ -193,8 +193,15 @@ module GFS_driver
                      Init_parm%input_nml_file)
 #endif
 
+! For CCPP,  these are called automatically in GFS_phys_time_vary_init as part of CCPP physics init.
+! The reason why these are in GFS_phys_time_vary_init and not in ozphys/h2ophys is that the ozone
+! and h2o interpolation of the data read here is done in GFS_phys_time_vary_run, i.e. all work
+! related to the ozone/h2o input data is in GFS_phys_time_vary, while ozphys/h2ophys are applying
+! ozone/h2o forcing to the model state.
+#ifndef CCPP
     call read_o3data  (Model%ntoz, Model%me, Model%master)
     call read_h2odata (Model%h2o_phys, Model%me, Model%master)
+#endif
 
 ! For CCPP,  stochastic_physics_init is called automatically as part of CCPP physics init
 #ifndef CCPP
@@ -251,6 +258,8 @@ module GFS_driver
     call run_stochastic_physics_sfc(nblks,Model,Grid,Coupling)
 #endif
 
+! For CCPP,  these are called automatically in GFS_phys_time_vary_init as part of CCPP physics init
+#ifndef CCPP
     !--- read in and initialize ozone and water
     if (Model%ntoz > 0) then
       do nb = 1, nblks
@@ -265,10 +274,15 @@ module GFS_driver
                          Grid(nb)%jindx2_h, Grid(nb)%ddy_h)
       enddo
     endif
+#endif
 
+! DH* Even though this gets called through CCPP in GFS_time_vary_pre_init, we also
+! need to do this here as long as there are non-CCPP compliant physics in FV3/gfsphysics
+! that get called in hybrid mode. Worth retesting to remove funcphys.f from the CCPP-build
+! of FV3 from time to time, as more physics will be moved over.
     !--- Call gfuncphys (funcphys.f) to compute all physics function tables.
     call gfuncphys ()
-
+! *DH
 !   call gsmconst (Model%dtp, Model%me, .TRUE.) ! This is for Ferrier microphysics - notused - moorthi
 
 #ifdef CCPP
@@ -367,8 +381,13 @@ module GFS_driver
     !--- initialize ras
     if (Model%ras) call ras_init (Model%levs, Model%me)
 
+! DH* Even though this gets called through CCPP in lsm_noah_init, we also
+! need to do this here as long as FV3GFS_io.F90 is calculating Sfcprop%sncovr
+! when reading restart files (which, by all means, it shouldn't - this should
+! be moved to physics!).
     !--- initialize soil vegetation
     call set_soilveg(Model%me, Model%isot, Model%ivegsrc, Model%nlunit)
+! *DH
 
     !--- lsidea initialization
     if (Model%lsidea) then
