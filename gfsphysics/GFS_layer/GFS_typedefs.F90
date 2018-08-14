@@ -333,6 +333,7 @@ module GFS_typedefs
 !! | local_name                       | standard_name                                                          | long_name                                              | units         | rank | type    |    kind   | intent | optional |
 !! |----------------------------------|------------------------------------------------------------------------|--------------------------------------------------------|---------------|------|---------|-----------|--------|----------|
 !! | IPD_Data(nb)%Sfcprop%slmsk       | sea_land_ice_mask_real                                                 | landmask: sea/land/ice=0/1/2                           | flag          |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%lakemsk     | lake_mask_real                                                         | lake mask: non-lake/lake=0/1                           | flag          |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%tsfc        | surface_skin_temperature                                               | surface skin temperature                               | K             |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%tisfc       | sea_ice_temperature                                                    | sea uce surface skin temperature                       | K             |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%snowd       | surface_snow_thickness_water_equivalent                                | water equivalent snow depth over land                  | mm            |    1 | real    | kind_phys | none   | F        |
@@ -404,6 +405,7 @@ module GFS_typedefs
 
 !--- In (radiation and physics)
     real (kind=kind_phys), pointer :: slmsk  (:)   => null()  !< sea/land mask array (sea:0,land:1,sea-ice:2)
+    real (kind=kind_phys), pointer :: lakemsk(:)   => null()  !< lake mask array (lake:1, non-lake:0)
     real (kind=kind_phys), pointer :: tsfc   (:)   => null()  !< surface temperature in k
                                                               !< [tsea in gbphys.f]
     real (kind=kind_phys), pointer :: tisfc  (:)   => null()  !< surface temperature over ice fraction
@@ -2326,6 +2328,7 @@ module GFS_typedefs
 
     !--- physics and radiation
     allocate (Sfcprop%slmsk  (IM))
+    allocate (Sfcprop%lakemsk(IM))
     allocate (Sfcprop%tsfc   (IM))
     allocate (Sfcprop%tisfc  (IM))
     allocate (Sfcprop%snowd  (IM))
@@ -2335,6 +2338,7 @@ module GFS_typedefs
     allocate (Sfcprop%hprime (IM,Model%nmtvr))
 
     Sfcprop%slmsk   = clear_val
+    Sfcprop%lakemsk = clear_val
     Sfcprop%tsfc    = clear_val
     Sfcprop%tisfc   = clear_val
     Sfcprop%snowd   = clear_val
