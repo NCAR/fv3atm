@@ -34,10 +34,19 @@ else
     CCPP_SRCS_F90 =
     PHYSICS_SRCS_f = \
 	   ./physics/cnvc90.f                                                        \
+	   ./physics/h2o_def.f                                                       \
+	   ./physics/h2ophys.f                                                       \
+	   ./physics/ozne_def.f                                                      \
+	   ./physics/ozphys.f                                                        \
+	   ./physics/ozphys_2015.f                                                   \
 	   ./physics/samfdeepcnv.f                                                   \
-	   ./physics/samfshalcnv.f
+	   ./physics/samfshalcnv.f                                                   \
+	   ./physics/sfc_drv.f                                                       \
+	   ./physics/sflx.f
     PHYSICS_SRCS_f90 = \
-	   ./physics/calpreciptype.f90
+	   ./physics/calpreciptype.f90                                               \
+	   ./physics/h2ointerp.f90                                                   \
+	   ./physics/ozinterp.f90
     PHYSICS_SRCS_F90 = \
 	   ./physics/gfdl_cloud_microphys.F90
     RADIATION_SRCS_f = \
@@ -69,10 +78,8 @@ SRCS_f   =  \
 	   ./physics/gscondp.f                                                       \
 	   ./physics/gwdc.f                                                          \
 	   ./physics/gwdps.f                                                         \
-	   ./physics/h2o_def.f                                                       \
 	   ./physics/h2oc.f                                                          \
 	   ./physics/h2ohdc.f                                                        \
-	   ./physics/h2ophys.f                                                       \
 	   ./physics/ideaca.f                                                        \
 	   ./physics/idea_co2.f                                                      \
 	   ./physics/idea_composition.f                                              \
@@ -101,9 +108,6 @@ SRCS_f   =  \
 	   ./physics/mstadbtn2.f                                                     \
 	   ./physics/mstcnv.f                                                        \
 	   ./physics/namelist_soilveg.f                                              \
-	   ./physics/ozne_def.f                                                      \
-	   ./physics/ozphys.f                                                        \
-	   ./physics/ozphys_2015.f                                                   \
 	   ./physics/physparam.f                                                     \
 	   ./physics/precpd.f                                                        \
 	   ./physics/precpd_shoc.f                                                   \
@@ -124,12 +128,10 @@ SRCS_f   =  \
 	   ./physics/sfc_cice.f                                                      \
 	   ./physics/sfc_diag.f                                                      \
 	   ./physics/sfc_diff.f                                                      \
-	   ./physics/sfc_drv.f                                                       \
 	   ./physics/sfc_land.f                                                      \
 	   ./physics/sfc_nst.f                                                       \
 	   ./physics/sfc_ocean.f                                                     \
 	   ./physics/sfc_sice.f                                                      \
-	   ./physics/sflx.f                                                          \
 	   ./physics/shalcnv.f                                                       \
 	   ./physics/shalcv.f                                                        \
 	   ./physics/shalcv_1lyr.f                                                   \
@@ -144,13 +146,10 @@ SRCS_f90 = \
 	   ./physics/funcphys.f90                                                    \
 	   ./physics/gcm_shoc.f90                                                    \
 	   ./physics/get_prs_fv3.f90                                                 \
-	   ./physics/h2ointerp.f90                                                   \
 	   ./physics/m_micro_driver.f90                                              \
 	   ./physics/module_nst_model.f90                                            \
 	   ./physics/module_nst_parameters.f90                                       \
 	   ./physics/module_nst_water_prop.f90                                       \
-	   ./physics/ozinterp.f90                                                    \
-	   ./physics/physcons.f90                                                    \
 	   ./physics/wam_f107_kp_mod.f90
 
 SRCS_F = \
@@ -172,6 +171,7 @@ SRCS_F90 = \
 	   ./physics/module_mp_radar.F90                                             \
 	   ./physics/module_mp_thompson_gfs.F90                                      \
 	   ./physics/module_mp_wsm6_fv3.F90                                          \
+	   ./physics/physcons.F90                                                    \
 	   ./physics/surface_perturbation.F90                                        \
 	   $(CCPP_SRCS_F90)                                                          \
 	   ./GFS_layer/GFS_abstraction_layer.F90                                     \
@@ -221,8 +221,13 @@ endif
 ./GFS_layer/GFS_diagnostics.o : ./GFS_layer/GFS_diagnostics.F90
 	$(FC) $(FFLAGS) $(OTHER_FFLAGS) -O0 -c $< -o $@
 
-# Do preprocessing of the GFS physics driver in two steps to
-# be able to look at the actual .f90 file that iss compiled
+# Do preprocessing of the GFS driver and GFS physics driver in two
+# steps to be able to look at the actual .f90 file that is compiled
+ifneq (,$(findstring CCPP,$(CPPDEFS)))
+./GFS_layer/GFS_driver.o: ./GFS_layer/GFS_driver.F90
+	$(CPP) $(CPPDEFS) $(CPPFLAGS) $< > $*.tmp.f90
+	$(FC) $(FFLAGS) $(OTHER_FFLAGS) -c $*.tmp.f90 -o $@
+endif
 ifneq (,$(findstring CCPP,$(CPPDEFS)))
 ./GFS_layer/GFS_physics_driver.o: ./GFS_layer/GFS_physics_driver.F90
 	$(CPP) $(CPPDEFS) $(CPPFLAGS) $< > $*.tmp.f90
