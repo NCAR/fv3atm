@@ -682,6 +682,13 @@ module FV3GFS_io_mod
       enddo
     enddo
 
+#ifdef CCPP
+    ! DH*
+    ! Calculating sncovr does NOT belong into an I/O routine!
+    ! TODO: move to physics and remove namelist_soilveg/set_soilveg
+    ! from non-CCPP physics for CCPP build.
+    ! *DH
+#endif
     !--- if sncovr does not exist in the restart, need to create it
     if (nint(sfc_var2(1,1,32)) == -9999) then
       if (Model%me == Model%master ) call mpp_error(NOTE, 'gfs_driver::surface_props_input - computing sncovr') 
