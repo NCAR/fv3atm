@@ -17,7 +17,7 @@ endif
 
 LIBRARY  = libstochastic_physics.a
 
-FFLAGS   += -I./include -I./mpp/include -I../gfsphysics/ -I../atmos_cubed_sphere -I../fms/ 
+FFLAGS   += -I./include -I./mpp/include -I../gfsphysics/ -I../atmos_cubed_sphere -I../fms/  -I../namphysics
 
 SRCS_F   =
 
@@ -75,7 +75,7 @@ $(LIBRARY): $(OBJS)
 clean:
 	@echo "Cleaning stochastic_physics ... "
 	@echo
-	$(RM) -f $(LIBRARY) *__genmod.f90 *.o */*.o *.mod *.lst *.i depend
+	$(RM) -f $(LIBRARY) *__genmod.f90 *.o */*.o *.mod *.i90 *.lst *.i depend
 
 MKDEPENDS = ../mkDepends.pl
 include ../conf/make.rules
