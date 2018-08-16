@@ -682,6 +682,13 @@ module FV3GFS_io_mod
       enddo
     enddo
 
+#ifdef CCPP
+    ! DH*
+    ! Calculating sncovr does NOT belong into an I/O routine!
+    ! TODO: move to physics and remove namelist_soilveg/set_soilveg
+    ! from non-CCPP physics for CCPP build.
+    ! *DH
+#endif
     !--- if sncovr does not exist in the restart, need to create it
     if (nint(sfc_var2(1,1,32)) == -9999) then
       if (Model%me == Model%master ) call mpp_error(NOTE, 'gfs_driver::surface_props_input - computing sncovr') 
@@ -1274,7 +1281,7 @@ module FV3GFS_io_mod
 !    calls:  send_data
 !-------------------------------------------------------------------------      
   subroutine fv3gfs_diag_output(time, diag, atm_block, nx, ny, levs, ntcw, ntoz, &
-                              dt, time_int, time_intfull)
+                              dt, time_int, time_intfull, time_radsw, time_radlw)
 !--- subroutine interface variable definitions
     type(time_type),           intent(in) :: time
     type(IPD_diag_type),       intent(in) :: diag(:)
@@ -1283,6 +1290,8 @@ module FV3GFS_io_mod
     real(kind=kind_phys),      intent(in) :: dt
     real(kind=kind_phys),      intent(in) :: time_int
     real(kind=kind_phys),      intent(in) :: time_intfull
+    real(kind=kind_phys),      intent(in) :: time_radsw
+    real(kind=kind_phys),      intent(in) :: time_radlw
 !--- local variables
     integer :: i, j, k, idx, nblks, nb, ix, ii, jj
     integer :: is_in, js_in, isc, jsc
@@ -1292,12 +1301,15 @@ module FV3GFS_io_mod
     real(kind=kind_phys), dimension(nx,ny)      :: var2
     real(kind=kind_phys), dimension(nx,ny,levs) :: var3
     real(kind=kind_phys) :: rdt, rtime_int, rtime_intfull, lcnvfac
+    real(kind=kind_phys) :: rtime_radsw, rtime_radlw
     logical :: used
 
      nblks = atm_block%nblks
-     rdt = 1.0d0/dt
-     rtime_int = 1.0d0/time_int
+     rdt           = 1.0d0/dt
+     rtime_int     = 1.0d0/time_int
      rtime_intfull = 1.0d0/time_intfull
+     rtime_radsw   = 1.0d0/time_radsw
+     rtime_radlw   = 1.0d0/time_radlw
 
      isc = atm_block%isc
      jsc = atm_block%jsc
@@ -1309,9 +1321,18 @@ module FV3GFS_io_mod
        if (diag(idx)%id > 0) then
          lcnvfac = diag(idx)%cnvfac
          if (diag(idx)%time_avg) then
-           if ( diag(idx)%full_time_avg ) then
+           if ( trim(diag(idx)%time_avg_kind) == 'full' ) then
              lcnvfac = lcnvfac*rtime_intfull
 !             if(mpp_pe()==mpp_root_pe())print *,'in,fv3gfs_io. full time avg, field=',trim(Diag(idx)%name),' time=',time_intfull
+           else if ( trim(diag(idx)%time_avg_kind) == 'rad_lw' ) then
+             lcnvfac = lcnvfac*min(rtime_radlw,rtime_int)
+!             if(mpp_pe()==mpp_root_pe())print *,'in,fv3gfs_io. rad longwave avg, field=',trim(Diag(idx)%name),' time=',time_radlw
+           else if ( trim(diag(idx)%time_avg_kind) == 'rad_sw' ) then
+             lcnvfac = lcnvfac*min(rtime_radsw,rtime_int)
+!             if(mpp_pe()==mpp_root_pe())print *,'in,fv3gfs_io. rad shortwave avg, field=',trim(Diag(idx)%name),' time=',time_radsw
+           else if ( trim(diag(idx)%time_avg_kind) == 'rad_swlw_min' ) then
+             lcnvfac = lcnvfac*min(max(rtime_radsw,rtime_radlw),rtime_int)
+!             if(mpp_pe()==mpp_root_pe())print *,'in,fv3gfs_io. rad swlw min avg, field=',trim(Diag(idx)%name),' time=',time_radlw,time_radsw,time_int
            else
              lcnvfac = lcnvfac*rtime_int
            endif
