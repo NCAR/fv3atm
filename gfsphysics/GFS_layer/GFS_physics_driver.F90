@@ -6157,45 +6157,73 @@ module module_physics_driver
       enddo
 
 #ifdef CCPP
-     if (imp_physics == 98 .or. imp_physics == 99) then
-      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_zhao_carr_pwat_run through option B'
-      ! Copy local variables from driver to appropriate interstitial variables
-      !Interstitial(nt)%im = im             ! intent(in) - set in Interstitial(nt)%create
-      !Interstitial(nt)%ix = ix             ! intent(in) - set in Interstitial(nt)%create
-      Interstitial(nt)%del = del            ! intent(in)
-      !Interstitial(nt)%nncl                ! intent(in) - set in Interstitial(nt)%create
-      ! DH* the list of input arguments is not complete (but those that
-      ! are missing are already in CCPP, e.g. Model%xyz, Diag%xyz etc.)
-      call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_zhao_carr_pwat", ierr=ierr)
-      ! Copy back intent(inout) interstitial variables to local variables in driver
-      errmsg = trim(cdata_block(nb,nt)%errmsg)
-      errflg = cdata_block(nb,nt)%errflg
+      if (imp_physics == 98 .or. imp_physics == 99) then
+
+        if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_zhao_carr_pwat_run through option B'
+        ! Copy local variables from driver to appropriate interstitial variables
+        !Interstitial(nt)%im = im             ! intent(in) - set in Interstitial(nt)%create
+        !Interstitial(nt)%ix = ix             ! intent(in) - set in Interstitial(nt)%create
+        Interstitial(nt)%del = del            ! intent(in)
+        !Interstitial(nt)%nncl                ! intent(in) - set in Interstitial(nt)%create
+        ! DH* the list of input arguments is not complete (but those that
+        ! are missing are already in CCPP, e.g. Model%xyz, Diag%xyz etc.)
+        call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_zhao_carr_pwat", ierr=ierr)
+        ! Copy back intent(inout) interstitial variables to local variables in driver
+        errmsg = trim(cdata_block(nb,nt)%errmsg)
+        errflg = cdata_block(nb,nt)%errflg
 ! OPTION B END
-      if (errflg/=0) then
+        if (errflg/=0) then
           write(0,*) 'Error in call to GFS_zhao_carr_pwat_run_mp_GFS_zhao_carr_pwat_run: ' //trim(errmsg)
           stop
-      end if
-    else if (imp_physics == 11) then
-     
-      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_gfdlmp_pwat_run through option B'
-      ! Copy local variables from driver to appropriate interstitial variables
-      !Interstitial(nt)%im = im             ! intent(in) - set in Interstitial(nt)%create
-      !Interstitial(nt)%ix = ix             ! intent(in) - set in Interstitial(nt)%create
-      Interstitial(nt)%del = del            ! intent(in)
-      !Interstitial(nt)%nncl                ! intent(in) - set in Interstitial(nt)%create
-      ! DH* the list of input arguments is not complete (but those that
-      ! are missing are already in CCPP, e.g. Model%xyz, Diag%xyz etc.)
-      call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_gfdlmp_pwat", ierr=ierr)
-      ! Copy back intent(inout) interstitial variables to local variables in driver
-      errmsg = trim(cdata_block(nb,nt)%errmsg)
-      errflg = cdata_block(nb,nt)%errflg
+        end if
+
+      else if (imp_physics == 11) then
+
+        if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_gfdlmp_pwat_run through option B'
+        ! Copy local variables from driver to appropriate interstitial variables
+        !Interstitial(nt)%im = im             ! intent(in) - set in Interstitial(nt)%create
+        !Interstitial(nt)%ix = ix             ! intent(in) - set in Interstitial(nt)%create
+        Interstitial(nt)%del = del            ! intent(in)
+        !Interstitial(nt)%nncl                ! intent(in) - set in Interstitial(nt)%create
+        ! DH* the list of input arguments is not complete (but those that
+        ! are missing are already in CCPP, e.g. Model%xyz, Diag%xyz etc.)
+        call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_gfdlmp_pwat", ierr=ierr)
+        ! Copy back intent(inout) interstitial variables to local variables in driver
+        errmsg = trim(cdata_block(nb,nt)%errmsg)
+        errflg = cdata_block(nb,nt)%errflg
 ! OPTION B END
-      if (errflg/=0) then
+        if (errflg/=0) then
           write(0,*) 'Error in call to GFS_gfdlmp_pwat_run_mp_GFS_gfdlmp_pwat_run: ' //trim(errmsg)
           stop
-      end if
+        end if
 
-    endif
+      else 
+
+        if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of GFS_MP_pwat_run for imp_physics=', imp_physics
+!  --- ...  calculate column precipitable water "pwat"
+        Diag%pwat(:) = 0.0
+        do k = 1, levs
+          do i=1,im
+            work1(i) = 0.0
+          enddo
+          if (ncld > 0) then
+            do ic = ntcw, ntcw+nncl-1
+              do i=1,im
+                work1(i) = work1(i) + Stateout%gq0(i,k,ic)
+              enddo
+            enddo
+          endif
+          do i=1,im
+            Diag%pwat(i) = Diag%pwat(i) + del(i,k)*(Stateout%gq0(i,k,1)+work1(i))
+          enddo
+!       if (lprnt .and. i == ipr) write(0,*)' gq0=',
+!      &gq0(i,k,1),' qgrs=',qgrs(i,k,1),' work2=',work2(i),' k=',k
+        enddo
+        do i=1,im
+          Diag%pwat(i) = Diag%pwat(i) * onebg
+        enddo
+
+      endif
 
 #else
       if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of GFS_MP_pwat_run'
