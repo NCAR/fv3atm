@@ -183,6 +183,16 @@ module IPD_CCPP_driver
       ! reading/writing data from disk, allocating fields, etc.
       CCPP_shared(:)%nthreads = nthrds
 
+      ! DH* TODO - I believe that they way this works in FV3, physics init can only
+      ! affect block- and thread-independent data - hence, it would be sufficient to
+      ! run physics_init once over cdata_domain?!? Update notes accordingly if true. *DH
+      ! If physics init affect block data, then changes must be made to parsing the
+      ! SDF (cannot use pointers to point to the central SDF, because a scheme will
+      ! be considered as initialized because of its CCPP-internal attribute after a
+      ! first call to it), and the is_initialized logic inside the scheme (independent)
+      ! of CCPP must be removed for those schemes that need to be initialized multiple
+      ! times once per block.
+
       ! Since physics init can only affect block- (and not thread-) dependent data
       ! structures, it is sufficient to run this over all blocks for one thread only
       nt = 1
