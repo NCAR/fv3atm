@@ -34,17 +34,25 @@ else
     CCPP_SRCS_F90 =
     PHYSICS_SRCS_f = \
 	   ./physics/cnvc90.f                                                        \
+	   ./physics/gscond.f                                                        \
 	   ./physics/h2o_def.f                                                       \
 	   ./physics/h2ophys.f                                                       \
 	   ./physics/ozne_def.f                                                      \
 	   ./physics/ozphys.f                                                        \
 	   ./physics/ozphys_2015.f                                                   \
+	   ./physics/precpd.f                                                        \
+	   ./physics/rayleigh_damp.f                                                 \
+	   ./physics/rayleigh_damp_mesopause.f                                       \
 	   ./physics/samfdeepcnv.f                                                   \
 	   ./physics/samfshalcnv.f                                                   \
+	   ./physics/sfc_diag.f                                                      \
+	   ./physics/sfc_diff.f                                                      \
 	   ./physics/sfc_drv.f                                                       \
+	   ./physics/sfc_sice.f                                                      \
 	   ./physics/sflx.f
     PHYSICS_SRCS_f90 = \
 	   ./physics/calpreciptype.f90                                               \
+	   ./physics/get_prs_fv3.f90                                                 \
 	   ./physics/h2ointerp.f90                                                   \
 	   ./physics/ozinterp.f90
     PHYSICS_SRCS_F90 = \
@@ -74,7 +82,6 @@ SRCS_f   =  \
 	   ./physics/get_prs.f                                                       \
 	   ./physics/gfs_phy_tracer_config.f                                         \
 	   ./physics/gocart_tracer_config_stub.f                                     \
-	   ./physics/gscond.f                                                        \
 	   ./physics/gscondp.f                                                       \
 	   ./physics/gwdc.f                                                          \
 	   ./physics/gwdps.f                                                         \
@@ -109,7 +116,6 @@ SRCS_f   =  \
 	   ./physics/mstcnv.f                                                        \
 	   ./physics/namelist_soilveg.f                                              \
 	   ./physics/physparam.f                                                     \
-	   ./physics/precpd.f                                                        \
 	   ./physics/precpd_shoc.f                                                   \
 	   ./physics/precpdp.f                                                       \
 	   ./physics/precpd_shoc.f                                                   \
@@ -119,19 +125,14 @@ SRCS_f   =  \
 	   ./physics/radsw_param.f                                                   \
 	   $(RADIATION_SRCS_f)                                                       \
 	   ./physics/rascnvv2.f                                                      \
-	   ./physics/rayleigh_damp.f                                                 \
-	   ./physics/rayleigh_damp_mesopause.f                                       \
 	   ./physics/sascnv.f                                                        \
 	   ./physics/sascnvn.f                                                       \
 	   ./physics/satmedmfvdif.f                                                  \
 	   ./physics/set_soilveg.f                                                   \
 	   ./physics/sfc_cice.f                                                      \
-	   ./physics/sfc_diag.f                                                      \
-	   ./physics/sfc_diff.f                                                      \
 	   ./physics/sfc_land.f                                                      \
 	   ./physics/sfc_nst.f                                                       \
 	   ./physics/sfc_ocean.f                                                     \
-	   ./physics/sfc_sice.f                                                      \
 	   ./physics/shalcnv.f                                                       \
 	   ./physics/shalcv.f                                                        \
 	   ./physics/shalcv_1lyr.f                                                   \
@@ -145,7 +146,6 @@ SRCS_f90 = \
 	   ./physics/cs_conv.f90                                                     \
 	   ./physics/funcphys.f90                                                    \
 	   ./physics/gcm_shoc.f90                                                    \
-	   ./physics/get_prs_fv3.f90                                                 \
 	   ./physics/m_micro_driver.f90                                              \
 	   ./physics/module_nst_model.f90                                            \
 	   ./physics/module_nst_parameters.f90                                       \
