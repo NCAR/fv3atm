@@ -54,7 +54,9 @@ module module_physics_driver
   real(kind=kind_phys), parameter :: qmin    = 1.0e-10
   real(kind=kind_phys), parameter :: qsmall  = 1.0e-20
   real(kind=kind_phys), parameter :: rainmin = 1.0e-13
+#ifndef CCPP
   real(kind=kind_phys), parameter :: p850    = 85000.0
+#endif
   real(kind=kind_phys), parameter :: epsq    = 1.e-20
   real(kind=kind_phys), parameter :: hsub    = con_hvap+con_hfus
   real(kind=kind_phys), parameter :: czmin   = 0.0001      ! cos(89.994)
@@ -5902,65 +5904,76 @@ module module_physics_driver
 
 #ifdef CCPP
       ! OPTION B - works with all compilers
-      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_calpreciptype_run through option B'
-      !Model%kdt                                   ! intent(in)
-      !Model%nrcm                                  ! intent(in)
-      !Interstitial(nt)%im                         ! intent(in) - set in Interstitial(nt)%create
-      !Interstitial(nt)%ix                         ! intent(in) - set in Interstitial(nt)%create
-      !Model%levs                                  ! intent(in)
-      !Interstitial(nt)%levi                       ! intent(in) - set in Interstitial(nt)%create
-      !Tbd%rann                                    ! intent(in)
-      !Model%cal_pre                               ! intent(in)
-      !Model%lssav                                 ! intent(in)
-      !Model%ldiag3d                               ! intent(in)
-      !Stateout%gt0                                ! intent(in)
-      !Stateout%gq0(:,:,1)                         ! intent(in)
-      !Statein%prsl                                ! intent(in)
-      !Statein%prsi                                ! intent(in)
-      !Diag%rainc                                  ! intent(in)
-      Interstitial(nt)%frain = frain               ! intent(in)
-      Interstitial(nt)%rainst = rain1              ! intent(in)
-      !Statein%phii                                ! intent(in)
-      !Sfcprop%tsfc                                ! intent(in)
-      !Diag%rain                                   ! intent(out)
-      !Diag%ice                                    ! intent(in)
-      !Diag%snow                                   ! intent(in)
-      !Diag%graupel                                ! intent(in)
-      !Diag%tdomr                                  ! intent(inout)
-      !Diag%tdomzr                                 ! intent(inout)
-      !Diag%tdomip                                 ! intent(inout)
-      !Diag%tdoms                                  ! intent(inout)
-      !Sfcprop%srflag                              ! intent(out)
-      !Sfcprop%tprcp                               ! intent(out)
-      !Model%imp_physics                           ! intent(in)
-      !Model%imp_physics_gfdl                      ! intent(in)
-      !Diag%totprcp                                ! intent(inout)
-      !Diag%totice                                 ! intent(inout)
-      !Diag%totsnw                                 ! intent(inout)
-      !Diag%totgrp                                 ! intent(inout)
-      !Diag%totprcpb                               ! intent(inout)
-      !Diag%toticeb                                ! intent(inout)
-      !Diag%totsnwb                                ! intent(inout)
-      !Diag%totgrpb                                ! intent(inout)
-      !Diag%dt3dt(:,:,6)                           ! intent(inout)
-      !Diag%dq3dt(:,:,4)                           ! intent(inout)
-      Interstitial(nt)%dtdt = dtdt                 ! intent(in)
-      Interstitial(nt)%dqdt(:,:,1) = dqdt(:,:,1)   ! intent(in)
-      !Interstitial(nt)%rain0                      ! intent(in) - no need to set, coming straight from gfdl_cloud_microphys_run
-      !Interstitial(nt)%ice0                       ! intent(in) - no need to set, coming straight from gfdl_cloud_microphys_run
-      !Interstitial(nt)%snow0                      ! intent(in) - no need to set, coming straight from gfdl_cloud_microphys_run
-      !Interstitial(nt)%graupel0                   ! intent(in) - no need to set, coming straight from gfdl_cloud_microphys_run
-      !Model%cplflx                                ! intent(in)
-      !Coupling%rain_cpl                           ! intent(inout)
-      !Coupling%snow_cpl                           ! intent(inout)
-      !cdata_block(nb,nt)%errmsg = errmsg          ! intent(out)
-      !cdata_block(nb,nt)%errflg = errflg          ! intent(out)
-      call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_calpreciptype", ierr=ierr)
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_MP_generic_post_run through option B'
+      !Interstitial(nt)%im = im                   ! intent(in) - set in Interstitial(nt)%create()
+      !Interstitial(nt)%ix = im                   ! intent(in) - set in Interstitial(nt)%create()
+      !Model%levs                                 ! intent(in)
+      !Model%kdt                                  ! intent(in)
+      !Model%nrcm                                 ! intent(in)
+      !Model%ncld                                 ! intent(in)
+      !Model%nncl                                 ! intent(in)
+      !Model%ntcw                                 ! intent(in)
+      !Model%ntrac                                ! intent(in)
+      !Model%imp_physics                          ! intent(in)
+      !Model%imp_physics_gfdl                     ! intent(in)
+      !Model%cal_pre                              ! intent(in)
+      !Model%lssav                                ! intent(in)
+      !Model%ldiag3d                              ! intent(in)
+      !Model%cplflx                               ! intent(in)
+      !Model%cplchm                               ! intent(in)
+      !con_g                                      ! intent(in) - in physcons
+      !Model%dtf                                  ! intent(in)
+      Interstitial(nt)%frain = frain              ! intent(in)
+      !Diag%rainc                                 ! intent(in)
+      Interstitial(nt)%rainst = rain1             ! intent(in)
+      !Tbd%rann                                   ! intent(in)
+      !Grid%xlat                                  ! intent(in)
+      !Grid%xlon                                  ! intent(in)
+      !Stateout%gt0                               ! intent(in)
+      !Stateout%gq0                               ! intent(in)
+      !Stateout%gq0(:,:,1)                        ! intent(in)
+      !Statein%prsl                               ! intent(in)
+      !Statein%prsi                               ! intent(in)
+      !Statein%phii                               ! intent(in)
+      !Sfcprop%tsfc                               ! intent(in)
+      !Diag%ice                                   ! intent(in)
+      !Diag%snow                                  ! intent(in)
+      !Diag%graupel                               ! intent(in)
+      Interstitial(nt)%save_t = dtdt              ! intent(in)
+      Interstitial(nt)%save_qv = dqdt             ! intent(in)
+      Interstitial(nt)%ice0 = ice0                ! intent(in)
+      Interstitial(nt)%snow0 = snow0              ! intent(in)
+      Interstitial(nt)%graupel0 = graupel0        ! intent(in)
+      Interstitial(nt)%del = del                  ! intent(in)
+      !Diag%rain                                  ! intent(inout)
+      !Diag%tdomr                                 ! intent(inout)
+      !Diag%tdomzr                                ! intent(inout)
+      !Diag%tdomip                                ! intent(inout)
+      !Diag%tdoms                                 ! intent(inout)
+      !Sfcprop%tprcp                              ! intent(inout)
+      !Sfcprop%srflag                             ! intent(inout)
+      !Diag%totprcp                               ! intent(inout)
+      !Diag%totice                                ! intent(inout)
+      !Diag%totsnw                                ! intent(inout)
+      !Diag%totgrp                                ! intent(inout)
+      !Diag%totprcpb                              ! intent(inout)
+      !Diag%toticeb                               ! intent(inout)
+      !Diag%totsnwb                               ! intent(inout)
+      !Diag%totgrpb                               ! intent(inout)
+      !Diag%dt3dt(:,:,6)                          ! intent(inout)
+      !Diag%dq3dt(:,:,4)                          ! intent(inout)
+      !Coupling%rain_cpl                          ! intent(inout)
+      !Coupling%rainc_cpl                         ! intent(inout)
+      !Coupling%snow_cpl                          ! intent(inout)
+      !Diag%pwat                                  ! intent(inout)
+      !cdata_block(nb,nt)%errmsg = errmsg         ! intent(out)
+      !cdata_block(nb,nt)%errflg = errflg         ! intent(out)
+      call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_MP_generic_post", ierr=ierr)
       ! Copy back intent(inout) interstitial variables to local variables
       errmsg = trim(cdata_block(nb,nt)%errmsg)
       errflg = cdata_block(nb,nt)%errflg
       if (errflg/=0) then
-          write(0,*) 'Error in call to GFS_calpreciptype_run: ' // trim(errmsg)
+          write(0,*) 'Error in call to GFS_MP_generic_post_run: ' // trim(errmsg)
           stop
       end if
 #else
@@ -6089,6 +6102,29 @@ module module_physics_driver
              Coupling%rainc_cpl(i) = Coupling%rainc_cpl(i) + Diag%rainc(i)
         enddo
       endif
+
+!  --- ...  calculate column precipitable water "pwat"
+      Diag%pwat(:) = 0.0
+      do k = 1, levs
+        do i=1,im
+          work1(i) = 0.0
+        enddo
+        if (ncld > 0) then
+          do ic = ntcw, ntcw+nncl-1
+            do i=1,im
+              work1(i) = work1(i) + Stateout%gq0(i,k,ic)
+            enddo
+          enddo
+        endif
+        do i=1,im
+          Diag%pwat(i) = Diag%pwat(i) + del(i,k)*(Stateout%gq0(i,k,1)+work1(i))
+        enddo
+!     if (lprnt .and. i == ipr) write(0,*)' gq0=',
+!    &gq0(i,k,1),' qgrs=',qgrs(i,k,1),' work2=',work2(i),' k=',k
+      enddo
+      do i=1,im
+        Diag%pwat(i) = Diag%pwat(i) * onebg
+      enddo
 #endif
 !  --- ...  end coupling insertion
 
@@ -6155,101 +6191,6 @@ module module_physics_driver
           Sfcprop%slc(i,k) = slsoil(i,k)
         enddo
       enddo
-
-#ifdef CCPP
-      if (imp_physics == 98 .or. imp_physics == 99) then
-
-        if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_zhao_carr_pwat_run through option B'
-        ! Copy local variables from driver to appropriate interstitial variables
-        !Interstitial(nt)%im = im             ! intent(in) - set in Interstitial(nt)%create
-        !Interstitial(nt)%ix = ix             ! intent(in) - set in Interstitial(nt)%create
-        Interstitial(nt)%del = del            ! intent(in)
-        !Interstitial(nt)%nncl                ! intent(in) - set in Interstitial(nt)%create
-        ! DH* the list of input arguments is not complete (but those that
-        ! are missing are already in CCPP, e.g. Model%xyz, Diag%xyz etc.)
-        call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_zhao_carr_pwat", ierr=ierr)
-        ! Copy back intent(inout) interstitial variables to local variables in driver
-        errmsg = trim(cdata_block(nb,nt)%errmsg)
-        errflg = cdata_block(nb,nt)%errflg
-! OPTION B END
-        if (errflg/=0) then
-          write(0,*) 'Error in call to GFS_zhao_carr_pwat_run_mp_GFS_zhao_carr_pwat_run: ' //trim(errmsg)
-          stop
-        end if
-
-      else if (imp_physics == 11) then
-
-        if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_gfdlmp_pwat_run through option B'
-        ! Copy local variables from driver to appropriate interstitial variables
-        !Interstitial(nt)%im = im             ! intent(in) - set in Interstitial(nt)%create
-        !Interstitial(nt)%ix = ix             ! intent(in) - set in Interstitial(nt)%create
-        Interstitial(nt)%del = del            ! intent(in)
-        !Interstitial(nt)%nncl                ! intent(in) - set in Interstitial(nt)%create
-        ! DH* the list of input arguments is not complete (but those that
-        ! are missing are already in CCPP, e.g. Model%xyz, Diag%xyz etc.)
-        call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_gfdlmp_pwat", ierr=ierr)
-        ! Copy back intent(inout) interstitial variables to local variables in driver
-        errmsg = trim(cdata_block(nb,nt)%errmsg)
-        errflg = cdata_block(nb,nt)%errflg
-! OPTION B END
-        if (errflg/=0) then
-          write(0,*) 'Error in call to GFS_gfdlmp_pwat_run_mp_GFS_gfdlmp_pwat_run: ' //trim(errmsg)
-          stop
-        end if
-
-      else 
-
-        if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of GFS_MP_pwat_run for imp_physics=', imp_physics
-!  --- ...  calculate column precipitable water "pwat"
-        Diag%pwat(:) = 0.0
-        do k = 1, levs
-          do i=1,im
-            work1(i) = 0.0
-          enddo
-          if (ncld > 0) then
-            do ic = ntcw, ntcw+nncl-1
-              do i=1,im
-                work1(i) = work1(i) + Stateout%gq0(i,k,ic)
-              enddo
-            enddo
-          endif
-          do i=1,im
-            Diag%pwat(i) = Diag%pwat(i) + del(i,k)*(Stateout%gq0(i,k,1)+work1(i))
-          enddo
-!       if (lprnt .and. i == ipr) write(0,*)' gq0=',
-!      &gq0(i,k,1),' qgrs=',qgrs(i,k,1),' work2=',work2(i),' k=',k
-        enddo
-        do i=1,im
-          Diag%pwat(i) = Diag%pwat(i) * onebg
-        enddo
-
-      endif
-
-#else
-      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of GFS_MP_pwat_run'
-!  --- ...  calculate column precipitable water "pwat"
-      Diag%pwat(:) = 0.0
-      do k = 1, levs
-        do i=1,im
-          work1(i) = 0.0
-        enddo
-        if (ncld > 0) then
-          do ic = ntcw, ntcw+nncl-1
-            do i=1,im
-              work1(i) = work1(i) + Stateout%gq0(i,k,ic)
-            enddo
-          enddo
-        endif
-        do i=1,im
-          Diag%pwat(i) = Diag%pwat(i) + del(i,k)*(Stateout%gq0(i,k,1)+work1(i))
-        enddo
-!     if (lprnt .and. i == ipr) write(0,*)' gq0=',
-!    &gq0(i,k,1),' qgrs=',qgrs(i,k,1),' work2=',work2(i),' k=',k
-      enddo
-      do i=1,im
-        Diag%pwat(i) = Diag%pwat(i) * onebg
-      enddo
-#endif
 
 !     tem = dtf * 0.03456 / 86400.0
 !       write(1000+me,*)' pwat=',pwat(i),'i=',i,',
