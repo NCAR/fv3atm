@@ -5940,10 +5940,12 @@ module module_physics_driver
       !Diag%snow                                  ! intent(in)
       !Diag%graupel                               ! intent(in)
       Interstitial(nt)%save_t = dtdt              ! intent(in)
-      Interstitial(nt)%save_qv = dqdt             ! intent(in)
-      Interstitial(nt)%ice0 = ice0                ! intent(in)
-      Interstitial(nt)%snow0 = snow0              ! intent(in)
-      Interstitial(nt)%graupel0 = graupel0        ! intent(in)
+      Interstitial(nt)%save_qv = dqdt(:,:,1)      ! intent(in)
+      if (imp_physics == 11) then
+        Interstitial(nt)%ice0 = ice0(:,1)           ! intent(in)
+        Interstitial(nt)%snow0 = snow0(:,1)         ! intent(in)
+        Interstitial(nt)%graupel0 = graupel0(:,1)   ! intent(in)
+      end if
       Interstitial(nt)%del = del                  ! intent(in)
       !Diag%rain                                  ! intent(inout)
       !Diag%tdomr                                 ! intent(inout)
