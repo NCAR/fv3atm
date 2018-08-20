@@ -5244,8 +5244,14 @@ module module_physics_driver
       !Model%imp_physics_thompson                 ! intent(in)
       !Model%imp_physics_zhao_carr                ! intent(in)
       !Model%imp_physics_zhao_carr_pdf            ! intent(in)
-      Interstitial(nt)%save_qc = liq0             ! intent(in)
-      Interstitial(nt)%save_qi = ice00            ! intent(in)
+      if (Model%imp_physics == Model%imp_physics_thompson) then
+        if (Model%ltaerosol) then
+          Interstitial(nt)%save_qc = liq0             ! intent(in)
+          Interstitial(nt)%save_qi = ice00            ! intent(in)
+        else
+          Interstitial(nt)%save_qi = ice00            ! intent(in)
+        end if
+      end if
       !con_pi                                     ! intent(in) - from physcons
       !Stateout%gq0                               ! intent(inout)
       Interstitial(nt)%clw = clw                  ! intent(inout)
