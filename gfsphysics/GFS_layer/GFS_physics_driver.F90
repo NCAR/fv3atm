@@ -2188,7 +2188,7 @@ module module_physics_driver
 #endif
 
       ! DH* where do we put this line?
-      ! Model%num_p2d == 3 for Zhao_carr, otherwise 1 
+      ! Model%num_p2d == 3 for Zhao_carr, otherwise 1
       ! phy_f2d is only used by gscond and precpd below: Tbd%phy_f2d(:,1) and Tbd%phy_f2d(:,2) - not Tbd%phy_f2d(:,3)
       ! AND by Tbd%phy_f2d(1,Model%num_p2d) is used by rascnv in line 4124, where it gets overwritten (intent(out))
       ! does not resetting here make any difference in the output files? can we add this to a suite interstitial later?
@@ -5218,6 +5218,50 @@ module module_physics_driver
 !         write(0,*) ' aftshgq0=',gq0(ipr,:,1)
 !       endif
 !
+#ifdef CCPP
+! OPTION B - works with all compilers
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_suite_interstitial_4_run through option B'
+      ! Copy local variables from driver to appropriate interstitial variables
+      !Interstitial(nt)%im = im                   ! intent(in) - set in Interstitial(nt)%create()
+      !Model%levs                                 ! intent(in)
+      !Model%ltaerosol                            ! intent(in)
+      Interstitial(nt)%tracers_total = tottracer  ! intent(in)
+      !Model%ntrac                                ! intent(in)
+      !Model%ntcw                                 ! intent(in)
+      !Model%ntiw                                 ! intent(in)
+      !Model%ntclamt                              ! intent(in)
+      !Model%ntrw                                 ! intent(in)
+      !Model%ntsw                                 ! intent(in)
+      !Model%ntrnc                                ! intent(in)
+      !Model%ntsnc                                ! intent(in)
+      !Model%ntgl                                 ! intent(in)
+      !Model%ntgnc                                ! intent(in)
+      !Model%ntlnc                                ! intent(in)
+      !Model%ntinc                                ! intent(in)
+      Interstitial(nt)%nn = nn                    ! intent(in)
+      !Model%imp_physics                          ! intent(in)
+      !Model%imp_physics_gfdl                     ! intent(in)
+      !Model%imp_physics_thompson                 ! intent(in)
+      !Model%imp_physics_zhao_carr                ! intent(in)
+      !Model%imp_physics_zhao_carr_pdf            ! intent(in)
+      Interstitial(nt)%save_qc = liq0             ! intent(in)
+      Interstitial(nt)%save_qi = ice00            ! intent(in)
+      !con_pi                                     ! intent(in) - from physcons
+      !Stateout%gq0                               ! intent(inout)
+      Interstitial(nt)%clw = clw                  ! intent(inout)
+      cdata_block(nb,nt)%errmsg   = errmsg        ! intent(out)
+      cdata_block(nb,nt)%errflg   = errflg        ! intent(out)
+      call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_suite_interstitial_4", ierr=ierr)
+      ! Copy back intent(inout) interstitial variables to local variables in driver
+      clw = Interstitial(nt)%clw
+      errmsg = trim(cdata_block(nb,nt)%errmsg)
+      errflg = cdata_block(nb,nt)%errflg
+      if (errflg/=0) then
+          write(0,*) 'Error in call to GFS_suite_interstitial_4_run: ' // trim(errmsg)
+          stop
+      end if
+#else
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of GFS_suite_interstitial_4'
 !------------------------------------------------------------------------------
 !  --- update the tracers due to deep & shallow cumulus convective transport
 !           (except for suspended water and ice)
@@ -5243,16 +5287,9 @@ module module_physics_driver
       if (ntcw > 0) then
 
 !  for microphysics
-#ifdef CCPP
-        if (imp_physics == 99 ) then
-
-        elseif (imp_physics == 98 .or. imp_physics == 11) then
-           Stateout%gq0(1:im,:,ntcw) = clw(1:im,:,1) + clw(1:im,:,2)
-#else
         if (imp_physics == 99 .or. imp_physics == 98    &
                                .or. imp_physics == 11) then
            Stateout%gq0(1:im,:,ntcw) = clw(1:im,:,1) + clw(1:im,:,2)
-#endif
         elseif (ntiw > 0) then
           do k=1,levs
             do i=1,im
@@ -5293,6 +5330,7 @@ module module_physics_driver
           enddo
         enddo
       endif   ! end if_ntcw
+#endif
 
 !  Legacy routine which determines convectve clouds - should be removed at some point
 
