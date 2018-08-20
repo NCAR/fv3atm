@@ -622,8 +622,10 @@ module module_physics_driver
       real(kind=kind_phys), allocatable, dimension(:,:)   ::            &
             ice00, liq0
 !     real(kind=kind_phys), allocatable, dimension(:) ::  nwfa2d
+#ifndef CCPP
       real(kind=kind_phys), parameter :: liqm = 4./3.*con_pi*1.e-12,    &
                               icem = 4./3.*con_pi*3.2768*1.e-14*890.
+#endif
 #ifdef CCPP
       integer :: nb
       integer :: nt
@@ -6197,7 +6199,7 @@ module module_physics_driver
           stop
         end if
 
-      else 
+      else
 
         if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of GFS_MP_pwat_run for imp_physics=', imp_physics
 !  --- ...  calculate column precipitable water "pwat"

@@ -32,7 +32,7 @@ module GFS_typedefs
       integer, parameter :: NF_VGAS = 10
       ! from module_radiation_surface
       integer, parameter :: NF_ALBD = 4
-      
+
       ! These will be set later in IPD_Control%initialize,
       ! since they depend on the runtime config (e.g. Model%ntoz, Model%h2o_phys)
       private :: levozp, oz_coeff, levh2o, h2o_coeff
@@ -775,12 +775,15 @@ module GFS_typedefs
 !! | IPD_Control%imp_physics_gfdl         | flag_for_gfdl_microphysics_scheme                                             | choice of GFDL microphysics scheme                      | flag          |    0 | integer   |           | none   | F        |
 !! | IPD_Control%imp_physics_thompson     | flag_for_thompson_microphysics_scheme                                         | choice of Thompson microphysics scheme                  | flag          |    0 | integer   |           | none   | F        |
 !! | IPD_Control%imp_physics_wsm6         | flag_for_wsm6_microphysics_scheme                                             | choice of WSM6 microphysics scheme                      | flag          |    0 | integer   |           | none   | F        |
+!! | IPD_Control%imp_physics_zhao_carr    | flag_for_zhao_carr_microphysics_scheme                                        | choice of Zhao-Carr microphysics scheme                 | flag          |    0 | integer   |           | none   | F        |
+!! | IPD_Control%imp_physics_zhao_carr_pdf| flag_for_zhao_carr_pdf_microphysics_scheme                                    | choice of Zhao-Carr microphysics scheme with PDF clouds | flag          |    0 | integer   |           | none   | F        |
+!! | IPD_Control%imp_physics_mg           | flag_for_morrison_gettelman_microphysics_scheme                               | choice of Morrison-Gettelman rmicrophysics scheme       | flag          |    0 | integer   |           | none   | F        |
 !! | IPD_Control%psautco                  | coefficient_from_cloud_ice_to_snow                                            | auto conversion coeff from ice to snow                  | none          |    1 | real      | kind_phys | none   | F        |
 !! | IPD_Control%prautco                  | coefficient_from_cloud_water_to_rain                                          | auto conversion coeff from cloud to rain                | none          |    1 | real      | kind_phys | none   | F        |
 !! | IPD_Control%evpco                    | coefficient_for_evaporation_of_rainfall                                       | coeff for evaporation of largescale rain                | none          |    0 | real      | kind_phys | none   | F        |
 !! | IPD_Control%wminco                   | cloud_condensed_water_conversion_threshold                                    | water and ice minimum threshold for Zhao                | none          |    1 | real      | kind_phys | none   | F        |
 !! | IPD_Control%fprcp                    |                                                                               | no prognostic rain and snow (MG)                        |               |    0 | integer   |           | none   | F        |
-!! | IPD_Control%mg_dcs                   |                                                                               | Morrison-Gettleman microphysics parameters              |               |    0 | real      | kind_phys | none   | F        |
+!! | IPD_Control%mg_dcs                   |                                                                               | Morrison-Gettelman microphysics parameters              |               |    0 | real      | kind_phys | none   | F        |
 !! | IPD_Control%mg_qcvar                 |                                                                               |                                                         |               |    0 | real      | kind_phys | none   | F        |
 !! | IPD_Control%mg_ts_auto_ice           |                                                                               | ice auto conversion time scale                          |               |    0 | real      | kind_phys | none   | F        |
 !! | IPD_Control%mg_ncnst                 |                                                                               | constant droplet num concentration (m-3)                |               |    0 | real      | kind_phys | none   | F        |
@@ -898,16 +901,16 @@ module GFS_typedefs
 !! | IPD_Control%ntrac                    | number_of_tracers                                                             | number of tracers                                       | count         |    0 | integer   |           | none   | F        |
 !! | IPD_Control%ntoz                     | index_for_ozone                                                               | tracer index for ozone mixing ratio                     | index         |    0 | integer   |           | none   | F        |
 !! | IPD_Control%ntcw                     | index_for_liquid_cloud_condensate                                             | tracer index for cloud condensate (or liquid water)     | index         |    0 | integer   |           | none   | F        |
-!! | IPD_Control%ntiw                     |                                                                               | tracer index for  ice water                             |               |    0 | integer   |           | none   | F        |
-!! | IPD_Control%ntrw                     |                                                                               | tracer index for rain water                             |               |    0 | integer   |           | none   | F        |
-!! | IPD_Control%ntsw                     |                                                                               | tracer index for snow water                             |               |    0 | integer   |           | none   | F        |
-!! | IPD_Control%ntgl                     |                                                                               | tracer index for graupel                                |               |    0 | integer   |           | none   | F        |
-!! | IPD_Control%ntclamt                  |                                                                               | tracer index for cloud amount integer                   |               |    0 | integer   |           | none   | F        |
-!! | IPD_Control%ntlnc                    |                                                                               | tracer index for liquid number concentration            |               |    0 | integer   |           | none   | F        |
-!! | IPD_Control%ntinc                    |                                                                               | tracer index for ice    number concentration            |               |    0 | integer   |           | none   | F        |
-!! | IPD_Control%ntrnc                    |                                                                               | tracer index for rain   number concentration            |               |    0 | integer   |           | none   | F        |
-!! | IPD_Control%ntsnc                    |                                                                               | tracer index for snow   number concentration            |               |    0 | integer   |           | none   | F        |
-!! | IPD_Control%ntgnc                    |                                                                               | tracer index for graupel number concentration           |               |    0 | integer   |           | none   | F        |
+!! | IPD_Control%ntiw                     | index_for_ice_cloud_condensate                                                | tracer index for  ice water                             | index         |    0 | integer   |           | none   | F        |
+!! | IPD_Control%ntrw                     | index_for_rain_water                                                          | tracer index for rain water                             | index         |    0 | integer   |           | none   | F        |
+!! | IPD_Control%ntsw                     | index_for_snow_water                                                          | tracer index for snow water                             | index         |    0 | integer   |           | none   | F        |
+!! | IPD_Control%ntgl                     | index_for_graupel                                                             | tracer index for graupel                                | index         |    0 | integer   |           | none   | F        |
+!! | IPD_Control%ntclamt                  | index_for_cloud_amount                                                        | tracer index for cloud amount integer                   | index         |    0 | integer   |           | none   | F        |
+!! | IPD_Control%ntlnc                    | index_for_liquid_cloud_number_concentration                                   | tracer index for liquid number concentration            | index         |    0 | integer   |           | none   | F        |
+!! | IPD_Control%ntinc                    | index_for_ice_cloud_number_concentration                                      | tracer index for ice    number concentration            | index         |    0 | integer   |           | none   | F        |
+!! | IPD_Control%ntrnc                    | index_for_rain_number_concentration                                           | tracer index for rain   number concentration            | index         |    0 | integer   |           | none   | F        |
+!! | IPD_Control%ntsnc                    | index_for_snow_number_concentration                                           | tracer index for snow   number concentration            | index         |    0 | integer   |           | none   | F        |
+!! | IPD_Control%ntgnc                    | index_for_graupel_number_concentration                                        | tracer index for graupel number concentration           | index         |    0 | integer   |           | none   | F        |
 !! | IPD_Control%ntke                     |                                                                               | tracer index for kinetic energy                         |               |    0 | integer   |           | none   | F        |
 !! | IPD_Control%nto                      |                                                                               | tracer index for oxygen ion                             |               |    0 | integer   |           | none   | F        |
 !! | IPD_Control%nto2                     |                                                                               | tracer index for oxygen                                 |               |    0 | integer   |           | none   | F        |
@@ -1062,6 +1065,9 @@ module GFS_typedefs
     integer              :: imp_physics_gfdl = 11     !< choice of GFDL     microphysics scheme
     integer              :: imp_physics_thompson = 8  !< choice of Thompson microphysics scheme
     integer              :: imp_physics_wsm6 = 6      !< choice of WSMG     microphysics scheme
+    integer              :: imp_physics_zhao_carr = 99  !< choice of Zhao-Carr microphysics scheme
+    integer              :: imp_physics_zhao_carr_pdf = 98  !< choice of Zhao-Carr microphysics scheme with PDF clouds
+    integer              :: imp_physics_mg = 10       !< choice of Morrison-Gettelman microphysics scheme
     !--- Z-C microphysical parameters
     real(kind=kind_phys) :: psautco(2)         !< [in] auto conversion coeff from ice to snow
     real(kind=kind_phys) :: prautco(2)         !< [in] auto conversion coeff from cloud to rain
@@ -1070,7 +1076,7 @@ module GFS_typedefs
 
     !--- M-G microphysical parameters
     integer              :: fprcp              !< no prognostic rain and snow (MG)
-    real(kind=kind_phys) :: mg_dcs             !< Morrison-Gettleman microphysics parameters
+    real(kind=kind_phys) :: mg_dcs             !< Morrison-Gettelman microphysics parameters
     real(kind=kind_phys) :: mg_qcvar
     real(kind=kind_phys) :: mg_ts_auto_ice     !< ice auto conversion time scale
 
@@ -1928,11 +1934,11 @@ module GFS_typedefs
 !! | IPD_Interstitial(nt)%lmk                           | adjusted_vertical_layer_dimension_for_radiation                                                | adjusted number of vertical layers for radiation                                    | count         |    0 | integer     |           | none   | F        |
 !! | IPD_Interstitial(nt)%lmp                           | adjusted_vertical_level_dimension_for_radiation                                                | adjusted number of vertical levels for radiation                                    | count         |    0 | integer     |           | none   | F        |
 !! | IPD_Interstitial(nt)%mbota                         | model_layer_number_at_cloud_base                                                               | vertical indices for low, middle and high cloud bases                               | index         |    2 | integer     |           | none   | F        |
-!! | IPD_Interstitial(nt)%mg3_as_mg2                    | flag_mg3_as_mg2                                                                                | flag for controlling prep for Morrison-Gettleman microphysics                       | flag          |    0 | logical     |           | none   | F        |
+!! | IPD_Interstitial(nt)%mg3_as_mg2                    | flag_mg3_as_mg2                                                                                | flag for controlling prep for Morrison-Gettelman microphysics                       | flag          |    0 | logical     |           | none   | F        |
 !! | IPD_Interstitial(nt)%mtopa                         | model_layer_number_at_cloud_top                                                                | vertical indices for low, middle and high cloud tops                                | index         |    2 | integer     |           | none   | F        |
 !! | IPD_Interstitial(nt)%ncstrac                       | number_of_tracers_for_CS                                                                       | number of convectively transported tracers in Chikira-Sugiyama deep conv. scheme    | count         |    0 | integer     |           | none   | F        |
 !! | IPD_Interstitial(nt)%nday                          | daytime_points_dimension                                                                       | daytime points dimension                                                            | count         |    0 | integer     |           | none   | F        |
-!! | IPD_Interstitial(nt)%nn                            | number_of_tracers_for_allocating_cloud_work_function                                           | number of tracers for allocating cloud work function                                | count         |    0 | integer     |           | none   | F        |
+!! | IPD_Interstitial(nt)%nn                            | number_of_tracers_for_convective_transport                                                     | number of tracers for convective transport                                          | count         |    0 | integer     |           | none   | F        |
 !! | IPD_Interstitial(nt)%nncl                          | number_of_tracers_for_cloud_condensate                                                         | number of tracers for cloud condensate                                              | count         |    0 | integer     |           | none   | F        |
 !! | IPD_Interstitial(nt)%nsamftrac                     | number_of_tracers_for_samf                                                                     | number of tracers for scale-aware mass flux schemes                                 | count         |    0 | integer     |           | none   | F        |
 !! | IPD_Interstitial(nt)%ntk                           | index_of_TKE_convective_transport_tracer                                                       | index of TKE in the convectively transported tracer array                           | index         |    0 | integer     |           | none   | F        |
@@ -1959,7 +1965,8 @@ module GFS_typedefs
 !! | IPD_Interstitial(nt)%rhcpbl                        | critical_relative_humidity_at_PBL_top                                                          | critical relative humidity at the PBL top                                           | frac          |    0 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%rhctop                        | critical_relative_humidity_at_top_of_atmosphere                                                | critical relative humidity at the top of atmosphere                                 | frac          |    0 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%runoff                        | surface_runoff_flux                                                                            | surface runoff flux                                                                 | g m-2 s-1     |    1 | real        | kind_phys | none   | F        |
-!! | IPD_Interstitial(nt)%save_qcw                      | cloud_condensed_water_mixing_ratio_save                                                        | moist cloud condensed water mixing ratio before entering a physics scheme           | kg kg-1       |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Interstitial(nt)%save_qc                       | cloud_liquid_water_mixing_ratio_save                                                           | cloud liquid water mixing ratio before entering a physics scheme                    | kg kg-1       |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Interstitial(nt)%save_qi                       | cloud_ice_water_mixing_ratio_save                                                              | cloud ice water mixing ratio before entering a physics scheme                       | kg kg-1       |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%save_qv                       | water_vapor_specific_humidity_save                                                             | water vapor specific humidity before entering a physics scheme                      | kg kg-1       |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%save_t                        | air_temperature_save                                                                           | air temperature before entering a physics scheme                                    | K             |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%save_u                        | x_wind_save                                                                                    | x-wind before entering a physics scheme                                             | m s-1         |    2 | real        | kind_phys | none   | F        |
@@ -2144,7 +2151,8 @@ module GFS_typedefs
     real (kind=kind_phys)               :: rhctop                      !<
     real (kind=kind_phys), pointer      :: rhofr(:)         => null()  !<
     real (kind=kind_phys), pointer      :: runoff(:)        => null()  !<
-    real (kind=kind_phys), pointer      :: save_qcw(:,:)    => null()  !<
+    real (kind=kind_phys), pointer      :: save_qc(:,:)     => null()  !<
+    real (kind=kind_phys), pointer      :: save_qi(:,:)     => null()  !<
     real (kind=kind_phys), pointer      :: save_qv(:,:)     => null()  !<
     real (kind=kind_phys), pointer      :: save_t(:,:)      => null()  !<
     real (kind=kind_phys), pointer      :: save_u(:,:)      => null()  !<
@@ -2859,7 +2867,7 @@ module GFS_typedefs
 
 !--- M-G microphysical parameters
     integer              :: fprcp          =  0                 !< no prognostic rain and snow (MG)
-    real(kind=kind_phys) :: mg_dcs         = 350.0              !< Morrison-Gettleman microphysics parameters
+    real(kind=kind_phys) :: mg_dcs         = 350.0              !< Morrison-Gettelman microphysics parameters
     real(kind=kind_phys) :: mg_qcvar       = 2.0
     real(kind=kind_phys) :: mg_ts_auto_ice = 3600.0             !< ice auto conversion time scale
     real(kind=kind_phys) :: mg_ncnst       = 100.e6             !< constant droplet num concentration (m-3)
@@ -3240,7 +3248,7 @@ module GFS_typedefs
     Model%prautco          = prautco
     Model%evpco            = evpco
     Model%wminco           = wminco
-!--- Morroson-Gettleman MP parameters
+!--- Morroson-Gettelman MP parameters
     Model%fprcp            = fprcp
     Model%mg_dcs           = mg_dcs
     Model%mg_qcvar         = mg_qcvar
@@ -3641,7 +3649,7 @@ module GFS_typedefs
     endif
 
 !--- set up cloud schemes and tracer elements
-    if (Model%imp_physics == 99) then
+    if (Model%imp_physics == Model%imp_physics_zhao_carr) then
       Model%npdf3d  = 0
       Model%num_p3d = 4
       Model%num_p2d = 3
@@ -3649,7 +3657,7 @@ module GFS_typedefs
       Model%ncnd    = 1                   ! ncnd is the number of cloud condensate types
       if (Model%me == Model%master) print *,' Using Zhao/Carr/Sundqvist Microphysics'
 
-    elseif (Model%imp_physics == 98) then !Zhao Microphysics with PDF cloud
+    elseif (Model%imp_physics == Model%imp_physics_zhao_carr_pdf) then !Zhao Microphysics with PDF cloud
       Model%npdf3d  = 3
       Model%num_p3d = 4
       Model%num_p2d = 3
@@ -3687,7 +3695,7 @@ module GFS_typedefs
                                           ' microphysics',' ltaerosol = ',Model%ltaerosol, &
                                           ' lradar =',Model%lradar,Model%num_p3d,Model%num_p2d
 
-    else if (Model%imp_physics == 10) then        ! Morrison-Gettelman Microphysics
+    else if (Model%imp_physics == Model%imp_physics_mg) then        ! Morrison-Gettelman Microphysics
       Model%npdf3d  = 0
       Model%num_p3d = 5
       Model%num_p2d = 1
@@ -3730,7 +3738,7 @@ module GFS_typedefs
 
     Model%uni_cld = .false.
 !   if (Model%shoc_cld .or. Model%ncld == 2 .or. Model%ntclamt > 0) then
-    if ((Model%shoc_cld) .or. (Model%imp_physics == 10)) then
+    if ((Model%shoc_cld) .or. (Model%imp_physics == Model%imp_physics_mg)) then
       Model%uni_cld = .true.
     endif
 
@@ -3881,7 +3889,7 @@ module GFS_typedefs
       print *, ' imp_physics       : ', Model%imp_physics
       print *, ' '
 
-      if (Model%imp_physics == 99 .or. Model%imp_physics == 98) then
+      if (Model%imp_physics == Model%imp_physics_zhao_carr .or. Model%imp_physics == Model%imp_physics_zhao_carr_pdf) then
         print *, ' Z-C microphysical parameters'
         print *, ' psautco           : ', Model%psautco
         print *, ' prautco           : ', Model%prautco
@@ -3895,7 +3903,7 @@ module GFS_typedefs
         print *, ' lradar            : ', Model%lradar
         print *, ' '
       endif
-      if (Model%imp_physics == 10) then
+      if (Model%imp_physics == Model%imp_physics_mg) then
         print *, ' M-G microphysical parameters'
         print *, ' fprcp             : ', Model%fprcp
         print *, ' mg_dcs            : ', Model%mg_dcs
@@ -4650,7 +4658,10 @@ module GFS_typedefs
     allocate (Interstitial%rb         (IM))
     allocate (Interstitial%rhc        (IM,Model%levs))
     allocate (Interstitial%runoff     (IM))
-    allocate (Interstitial%save_qcw   (IM,Model%levs))
+    !if (Model%imp_physics == Model%imp_physics_thompson) then
+      allocate (Interstitial%save_qc    (IM,Model%levs))
+      allocate (Interstitial%save_qi    (IM,Model%levs))
+    !end if
     allocate (Interstitial%save_qv    (IM,Model%levs))
     allocate (Interstitial%save_t     (IM,Model%levs))
     allocate (Interstitial%save_u     (IM,Model%levs))
@@ -4749,7 +4760,7 @@ module GFS_typedefs
       Interstitial%nvdiff = Model%ntrac - 1
     endif
 
-    if (Model%imp_physics == 10) then
+    if (Model%imp_physics == Model%imp_physics_mg) then
       if (abs(Model%fprcp) == 1) then
         Interstitial%nncl = 4                          ! MG2 with rain and snow
         Interstitial%mg3_as_mg2 = .false.
@@ -4943,7 +4954,10 @@ module GFS_typedefs
     Interstitial%rhcpbl       = clear_val
     Interstitial%rhctop       = clear_val
     Interstitial%runoff       = clear_val
-    Interstitial%save_qcw     = clear_val
+    !if (Model%imp_physics == Model%imp_physics_thompson) then
+      Interstitial%save_qc      = clear_val
+      Interstitial%save_qi      = clear_val
+    !end if
     Interstitial%save_qv      = clear_val
     Interstitial%save_t       = clear_val
     Interstitial%save_u       = clear_val
@@ -5117,7 +5131,10 @@ module GFS_typedefs
     write (0,*) 'Interstitial%rhcpbl            = ', Interstitial%rhcpbl
     write (0,*) 'Interstitial%rhctop            = ', Interstitial%rhctop
     write (0,*) 'sum(Interstitial%runoff      ) = ', sum(Interstitial%runoff      )
-    write (0,*) 'sum(Interstitial%save_qcw    ) = ', sum(Interstitial%save_qcw    )
+    !if (Model%imp_physics == Model%imp_physics_thompson) then
+      write (0,*) 'sum(Interstitial%save_qc   ) = ', sum(Interstitial%save_qc     )
+      write (0,*) 'sum(Interstitial%save_qi   ) = ', sum(Interstitial%save_qi     )
+    !end if
     write (0,*) 'sum(Interstitial%save_qv     ) = ', sum(Interstitial%save_qv     )
     write (0,*) 'sum(Interstitial%save_t      ) = ', sum(Interstitial%save_t      )
     write (0,*) 'sum(Interstitial%save_u      ) = ', sum(Interstitial%save_u      )
