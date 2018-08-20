@@ -121,9 +121,9 @@ module IPD_CCPP_driver
         !    is already initialized, use its suite to avoid reading the
         !    SDF multiple times.
         if (ccpp_initialized(cdata_tile)) then
-          call ccpp_init(trim(ccpp_suite), cdata, ierr, cdata_target=cdata_tile)
+          call ccpp_init(trim(ccpp_suite), cdata, ierr=ierr, cdata_target=cdata_tile)
         else
-          call ccpp_init(trim(ccpp_suite), cdata, ierr)
+          call ccpp_init(trim(ccpp_suite), cdata, ierr=ierr)
         end if
         if (ierr/=0) then
           write(0,*) 'An error occurred in ccpp_init'
@@ -155,9 +155,9 @@ module IPD_CCPP_driver
             !    to avoid reading the SDF multiple times. If cdata_tile is initialized, use
             !    this version (since cdata_domain is just a copy), otherwise use cdata_domain
             if (ccpp_initialized(cdata_tile)) then
-              call ccpp_init(trim(ccpp_suite), cdata, ierr, cdata_target=cdata_tile)
+              call ccpp_init(trim(ccpp_suite), cdata, ierr=ierr, cdata_target=cdata_tile)
             else
-              call ccpp_init(trim(ccpp_suite), cdata, ierr, cdata_target=cdata_domain)
+              call ccpp_init(trim(ccpp_suite), cdata, ierr=ierr, cdata_target=cdata_domain)
             end if
             if (ierr/=0) then
               write(0,'(2(a,i4))') "An error occurred in ccpp_init for block ", nb, " and thread ", nt
@@ -284,7 +284,7 @@ module IPD_CCPP_driver
             return
           end if
           !--- Finalize CCPP framework for blocks/threads
-          call ccpp_finalize(cdata_block(nb,nt), ierr)
+          call ccpp_finalize(cdata_block(nb,nt), ierr=ierr)
           if (ierr/=0) then
             write(0,'(a,i4,a,i4)') "An error occurred in ccpp_finalize for block ", nb, " and thread ", nt
             return
@@ -296,7 +296,7 @@ module IPD_CCPP_driver
       deallocate(cdata_block)
 
       !--- Finalize CCPP framework for domain
-      call ccpp_finalize(cdata_domain, ierr)
+      call ccpp_finalize(cdata_domain, ierr=ierr)
       if (ierr/=0) then
          write(0,'(a)') "An error occurred in ccpp_finalize"
          return
