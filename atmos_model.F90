@@ -385,6 +385,8 @@ subroutine atmos_model_init (Atmos, Time_init, Time, Time_step)
 #endif
   use fv_mp_mod, only: commglobal
   use mpp_mod, only: mpp_npes
+#elif MEMCHECK
+  use fv_mp_mod, only: commglobal
 #endif
 
   type (atmos_data_type), intent(inout) :: Atmos
@@ -540,6 +542,8 @@ subroutine atmos_model_init (Atmos, Time_init, Time, Time_step)
 #ifdef CCPP
    call IPD_initialize (IPD_Control, IPD_Data, IPD_Diag, IPD_Restart, &
                         IPD_Interstitial, commglobal, mpp_npes(), Init_parm)
+#elif MEMCHECK
+   call IPD_initialize (IPD_Control, IPD_Data, IPD_Diag, IPD_Restart, commglobal, Init_parm)
 #else
    call IPD_initialize (IPD_Control, IPD_Data, IPD_Diag, IPD_Restart, Init_parm)
 #endif

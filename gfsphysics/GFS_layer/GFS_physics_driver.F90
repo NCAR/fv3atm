@@ -46,6 +46,10 @@ module module_physics_driver
 #endif
 #endif
 
+#ifdef MEMCHECK
+  use memcheck_mod,          only: memcheck_run
+#endif
+
   implicit none
 
 
@@ -583,8 +587,10 @@ module module_physics_driver
       real(kind=kind_phys), dimension(size(Grid%xlon,1),4) ::           &
            oa4, clx
 
+#ifndef CCPP
       real(kind=kind_phys), dimension(size(Grid%xlon,1),Model%lsoil) :: &
           smsoil, stsoil, slsoil
+#endif
 
 #ifdef CCPP
       real(kind=kind_phys), dimension(size(Grid%xlon,1),Model%levs) ::  &
@@ -1107,6 +1113,7 @@ module module_physics_driver
         enddo
       endif
 
+#ifndef CCPP
 !  --- ...  transfer soil moisture and temperature from global to local variables
       do k=1,lsoil
         do i=1,im
@@ -1116,7 +1123,6 @@ module module_physics_driver
         enddo
       enddo
 
-#ifndef CCPP
       do k=1,levs
         do i=1,im
           dudt(i,k)  = 0.
@@ -1784,13 +1790,6 @@ module module_physics_driver
 #if defined(CCPP_OPTION_A) && defined(__INTEL_COMPILER)
 ! OPTION A - works with Intel only
          if (Model%me==0) write(0,*) 'CCPP DEBUG: calling lsm_noah_run through option A'
-         do k=1,lsoil
-           do i=1,im
-             Sfcprop%smc(i,k) = smsoil(i,k)
-             Sfcprop%stc(i,k) = stsoil(i,k)
-             Sfcprop%slc(i,k) = slsoil(i,k)
-           enddo
-         enddo
          call lsm_noah_mp_lsm_noah_run(                                &
             im, Model%lsoil, Statein%pgr, Statein%ugrs, Statein%vgrs,  &
             Statein%tgrs, Statein%qgrs, soiltyp, vegtype, sigmaf,      &
@@ -1809,23 +1808,9 @@ module module_physics_driver
             Sfcprop%sncovr, qss, gflx, drain, evap, hflx, ep1d, runof, &
             Diag%cmm, Diag%chh, evbs, evcw, sbsno, snowc, Diag%soilm,  &
             snohf, Diag%smcwlt2, Diag%smcref2, Diag%wet1, errmsg, errflg )
-         do k=1,lsoil
-           do i=1,im
-             smsoil(i,k) = Sfcprop%smc(i,k)
-             stsoil(i,k) = Sfcprop%stc(i,k)
-             slsoil(i,k) = Sfcprop%slc(i,k)          !! clu: slc -> slsoil
-           enddo
-         enddo
 #else
          if (Model%me==0) write(0,*) 'CCPP DEBUG: calling lsm_noah_run through option B'
          ! Copy local variables from driver to appropriate interstitial variables
-         do k=1,lsoil
-           do i=1,im
-             Sfcprop%smc(i,k) = smsoil(i,k)
-             Sfcprop%stc(i,k) = stsoil(i,k)
-             Sfcprop%slc(i,k) = slsoil(i,k)
-           enddo
-         enddo
          !Interstitial(nt)%im = im              ! intent(in) - set in Interstitial(nt)%create()
          !Model%lsoil                           ! intent(in)
          !Statein%pgr                           ! intent(in)
@@ -1914,14 +1899,6 @@ module module_physics_driver
          snohf  = Interstitial(nt)%snohf
          errmsg = trim(cdata_block(nb,nt)%errmsg)
          errflg = cdata_block(nb,nt)%errflg
-
-         do k=1,lsoil
-           do i=1,im
-             smsoil(i,k) = Sfcprop%smc(i,k)
-             stsoil(i,k) = Sfcprop%stc(i,k)
-             slsoil(i,k) = Sfcprop%slc(i,k)          !! clu: slc -> slsoil
-           enddo
-         enddo
 #endif
          if (errflg/=0) then
              write(0,*) 'Error in call to lsm_noah_run: ' // trim(errmsg)
@@ -2000,7 +1977,7 @@ module module_physics_driver
          !Sfcprop%weasd                         ! intent(inout)
          !Sfcprop%tsfc                          ! intent(inout)
          !Sfcprop%tprcp                         ! intent(inout)
-         Sfcprop%stc = stsoil                   ! intent(inout)
+         !Sfcprop%stc                           ! intent(inout)
          Interstitial(nt)%ep1d = ep1d           ! intent(inout)
          !Sfcprop%snowd                         ! intent(inout)
          Interstitial(nt)%qss = qss             ! intent(inout)
@@ -2014,7 +1991,6 @@ module module_physics_driver
          !cdata_block(nb,nt)%errflg = errflg    ! intent(out)
          call ccpp_physics_run(cdata_block(nb,nt), scheme_name="sfc_sice", ierr=ierr)
          ! Copy back intent(inout) interstitial variables to local variables in driver
-         stsoil = Sfcprop%stc
          ep1d   = Interstitial(nt)%ep1d
          qss    = Interstitial(nt)%qss
          snowmt = Interstitial(nt)%snowmt
@@ -3152,6 +3128,13 @@ module module_physics_driver
 
       endif   ! end if_lssav
 #endif
+#ifdef CCPP
+      if (Model%me==Model%master) write(0,*) 'CCPP DEBUG: calling CCPP compliant version of memcheck in physics between GFS_PBL_generic_post and gwdps_pre'
+      call ccpp_physics_run(cdata_block(nb,nt), scheme_name="memcheck", ierr=ierr)
+#elif MEMCHECK
+      if (Model%me==Model%master) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of memcheck in physics between GFS_PBL_generic_post and gwdps_pre'
+      call memcheck_run(Model%communicator, Model%master)
+#endif
 !-------------------------------------------------------lssav if loop ----------
 !
 !            Orographic gravity wave drag parameterization
@@ -3162,7 +3145,6 @@ module module_physics_driver
       ! Copy local variables from driver to appropriate interstitial variables
       !Interstitial(nt)%im       = im         ! intent(in) - set in Interstitial(nt)%create()
       !Model%nmtvr               = nmtvr      ! intent(in)
-      !Interstitial(nt)%hprime1  =  hprime    ! intent(out)
       Interstitial(nt)%hprime1  = Sfcprop%hprime(:,1)
       Interstitial(nt)%oc       = oc          ! intent(out)
       Interstitial(nt)%oa4      = oa4         ! intent(out)
@@ -6492,6 +6474,7 @@ module module_physics_driver
       enddo
 #endif
 
+#ifndef CCPP
 !!  --- ...  return updated smsoil and stsoil to global arrays
       do k=1,lsoil
         do i=1,im
@@ -6500,7 +6483,8 @@ module module_physics_driver
           Sfcprop%slc(i,k) = slsoil(i,k)
         enddo
       enddo
-      
+#endif
+
 !     tem = dtf * 0.03456 / 86400.0
 !       write(1000+me,*)' pwat=',pwat(i),'i=',i,',
 !    &' rain=',rain(i)*1000.0,' dqsfc1=',dqsfc1(i)*tem,' kdt=',kdt
