@@ -1346,6 +1346,7 @@ module GFS_typedefs
 !! |--------------------------------------|-----------------------------------------------------------------|-------------------------------------|---------------|------|----------|-----------|--------|----------|
 !! | IPD_Data(nb)%Grid%area               | cell_area                                                       | area of the grid cell               | m2            |    1 | real     | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Grid%dx                 | cell_size                                                       | relative dx for the grid cell       | m             |    1 | real     | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Grid%xlat               | latitude                                                        | latitude                            | radians       |    1 | real     | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Grid%xlon               | longitude                                                       | longitude                           | radians       |    1 | real     | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Grid%coslat             | cosine_of_latitude                                              | cosine of latitude                  | none          |    1 | real     | kind_phys | in     | F        |
 !! | IPD_Data(nb)%Grid%sinlat             | sine_of_latitude                                                | sine of latitude                    | none          |    1 | real     | kind_phys | in     | F        |
