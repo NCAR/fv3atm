@@ -639,8 +639,10 @@ module module_physics_driver
       real(kind=kind_phys), allocatable, dimension(:,:) ::              &
              qlcn, qicn, w_upi, cf_upi, CNV_MFD, CNV_PRC3, CNV_DQLDT,   &
              CLCN, CNV_FICE, CNV_NDROP, CNV_NICE
+#ifndef CCPP
        real(kind=kind_phys),parameter :: slope_mg = 0.02, slope_upmg = 0.02,  &
                           turnrhcrit = 0.900, turnrhcrit_upper = 0.150
+#endif
 !
       !--- for 2 M Thmpson MP
       real(kind=kind_phys), allocatable, dimension(:,:,:) ::            &
@@ -2186,7 +2188,7 @@ module module_physics_driver
 #endif
 
       ! DH* where do we put this line?
-      ! Model%num_p2d == 3 for Zhao_carr, otherwise 1 
+      ! Model%num_p2d == 3 for Zhao_carr, otherwise 1
       ! phy_f2d is only used by gscond and precpd below: Tbd%phy_f2d(:,1) and Tbd%phy_f2d(:,2) - not Tbd%phy_f2d(:,3)
       ! AND by Tbd%phy_f2d(1,Model%num_p2d) is used by rascnv in line 4124, where it gets overwritten (intent(out))
       ! does not resetting here make any difference in the output files? can we add this to a suite interstitial later?
@@ -6503,7 +6505,7 @@ module module_physics_driver
           stop
         end if
 
-      else 
+      else
 
         if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of GFS_MP_pwat_run for imp_physics=', imp_physics
 !  --- ...  calculate column precipitable water "pwat"

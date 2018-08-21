@@ -32,7 +32,7 @@ module GFS_typedefs
       integer, parameter :: NF_VGAS = 10
       ! from module_radiation_surface
       integer, parameter :: NF_ALBD = 4
-      
+
       ! These will be set later in IPD_Control%initialize,
       ! since they depend on the runtime config (e.g. Model%ntoz, Model%h2o_phys)
       private :: levozp, oz_coeff, levh2o, h2o_coeff
@@ -819,12 +819,13 @@ module GFS_typedefs
 !! | IPD_Control%use_ufo                  |                                                                               | flag for gcycle surface option                          |               |    0 | logical   |           | none   | F        |
 !! | IPD_Control%ras                      |                                                                               | flag for ras convection scheme                          |               |    0 | logical   |           | none   | F        |
 !! | IPD_Control%flipv                    |                                                                               | flag for vertical direction flip (ras)                  |               |    0 | logical   |           | none   | F        |
-!! | IPD_Control%trans_trac               |                                                                               | flag for convective transport of tracers                |               |    0 | logical   |           | none   | F        |
+!! | IPD_Control%trans_trac               | flag_for_convective_transport_of_tracers                                      | flag for convective transport of tracers                | flag          |    0 | logical   |           | none   | F        |
 !! | IPD_Control%old_monin                |                                                                               | flag for diff monin schemes                             |               |    0 | logical   |           | none   | F        |
 !! | IPD_Control%cnvgwd                   | flag_convective_gravity_wave_drag                                             | flag for conv gravity wave drag                         | flag          |    0 | logical   |           | none   | F        |
 !! | IPD_Control%mstrat                   |                                                                               | flag for moorthi approach for stratus                   |               |    0 | logical   |           | none   | F        |
 !! | IPD_Control%moist_adj                |                                                                               | flag for moist convective adjustment                    |               |    0 | logical   |           | none   | F        |
-!! | IPD_Control%cscnv                    |                                                                               | flag for Chikira-Sugiyama convection                    |               |    0 | logical   |           | none   | F        |
+!! | IPD_Control%cscnv                    | flag_for_Chikira_Sugiyama_deep_convection                                     | flag for Chikira-Sugiyama convection                    | flag          |    0 | logical   |           | none   | F        |
+!! | IPD_Control%satmedmf                 | flag_for_scale_aware_TKE_moist_EDMF_PBL                                       | flag for scale-aware TKE moist EDMF PBL scheme          | flag          |    0 | logical   |           | none   | F        |
 !! | IPD_Control%cal_pre                  | flag_for_precipitation_type_algorithm                                         | flag controls precip type algorithm                     | flag          |    0 | logical   |           | none   | F        |
 !! | IPD_Control%do_aw                    |                                                                               | AW scale-aware option in cs convection                  |               |    0 | logical   |           | none   | F        |
 !! | IPD_Control%do_awdd                  |                                                                               | AW scale-aware option in cs convection                  |               |    0 | logical   |           | none   | F        |
@@ -843,8 +844,8 @@ module GFS_typedefs
 !! | IPD_Control%random_clds              |                                                                               | flag controls whether clouds are random                 |               |    0 | logical   |           | none   | F        |
 !! | IPD_Control%shal_cnv                 |                                                                               | flag for calling shallow convection                     |               |    0 | logical   |           | none   | F        |
 !! | IPD_Control%do_deep                  |                                                                               | whether to do deep convection                           |               |    0 | logical   |           | none   | F        |
-!! | IPD_Control%imfshalcnv               |                                                                               | flag for mass-flux shallow convection scheme            |               |    0 | integer   |           | none   | F        |
-!! | IPD_Control%imfdeepcnv               |                                                                               | flag for mass-flux deep convection scheme               |               |    0 | integer   |           | none   | F        |
+!! | IPD_Control%imfshalcnv               | flag_for_mass_flux_shallow_convection_scheme                                  | flag for mass-flux shallow convection scheme            | flag          |    0 | integer   |           | none   | F        |
+!! | IPD_Control%imfdeepcnv               | flag_for_mass_flux_deep_convection_scheme                                     | flag for mass-flux deep convection scheme               | flag          |    0 | integer   |           | none   | F        |
 !! | IPD_Control%nmtvr                    | number_of_statistical_measures_of_subgrid_orography                           | number of topographic variables in GWD                  | count         |    0 | integer   |           | none   | F        |
 !! | IPD_Control%jcap                     |                                                                               | number of spectral wave trancation                      |               |    0 | integer   |           | none   | F        |
 !! | IPD_Control%cs_parm                  |                                                                               | tunable parameters for Chikira-Sugiyama convection      |               |    1 | real      | kind_phys | none   | F        |
@@ -4905,11 +4906,11 @@ module GFS_typedefs
     Interstitial%hprime1      = clear_val
     Interstitial%islmsk       = 0
     Interstitial%iter         = 0
-    Interstitial%kbot         = 0
+    Interstitial%kbot         = Model%levs
     Interstitial%kcnv         = 0
     Interstitial%kinver       = Model%levs
     Interstitial%kpbl         = 0
-    Interstitial%ktop         = 0
+    Interstitial%ktop         = 1
     Interstitial%oa4          = clear_val
     Interstitial%oc           = clear_val
     Interstitial%qss          = clear_val
