@@ -4872,6 +4872,7 @@ module GFS_typedefs
     Interstitial%cld1d        = clear_val
     Interstitial%cldf         = clear_val
     Interstitial%clw          = clear_val
+    Interstitial%clw(:,:,2)   = -999.9
     Interstitial%clx          = clear_val
     Interstitial%cnvc         = clear_val
     Interstitial%cnvw         = clear_val
