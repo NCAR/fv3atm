@@ -3132,12 +3132,14 @@ module module_physics_driver
 
       endif   ! end if_lssav
 #endif
+#ifdef MEMCHECK
 #ifdef CCPP
       if (Model%me==Model%master) write(0,*) 'CCPP DEBUG: calling CCPP compliant version of memcheck in physics between GFS_PBL_generic_post and gwdps_pre'
       call ccpp_physics_run(cdata_block(nb,nt), scheme_name="memcheck", ierr=ierr)
-#elif MEMCHECK
+#else
       if (Model%me==Model%master) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of memcheck in physics between GFS_PBL_generic_post and gwdps_pre'
       call memcheck_run(Model%communicator, Model%master)
+#endif
 #endif
 !-------------------------------------------------------lssav if loop ----------
 !
