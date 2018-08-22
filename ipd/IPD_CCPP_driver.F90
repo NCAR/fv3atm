@@ -244,7 +244,11 @@ module IPD_CCPP_driver
       end if
 
 !$OMP parallel do num_threads (nthrds) &
+#ifdef MEMCHECK
+!$OMP          schedule (static,nblks),&
+#else
 !$OMP          schedule (dynamic,1),   &
+#endif
 !$OMP          default (shared)        &
 !$OMP          private (nb,nt,ierr2)   &
 !$OMP          reduction (+:ierr)
