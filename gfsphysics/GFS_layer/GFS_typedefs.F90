@@ -966,6 +966,8 @@ module GFS_typedefs
 #ifdef CCPP
     integer              :: communicator    !< MPI communicator
     integer              :: ntasks          !< MPI size in communicator
+#elif MEMCHECK
+    integer              :: communicator    !< MPI communicator
 #endif
     integer              :: nlunit          !< unit for namelist
     character(len=64)    :: fn_nml          !< namelist filename for surface data cycling
@@ -2738,6 +2740,8 @@ module GFS_typedefs
 #ifdef CCPP
                                  input_nml_file, ak, bk, blksz,     &
                                  communicator, ntasks)
+#elif MEMCHECK
+                                 input_nml_file, communicator)
 #else
                                  input_nml_file)
 #endif
@@ -2783,6 +2787,8 @@ module GFS_typedefs
     integer,                intent(in) :: blksz(:)
     integer,                intent(in) :: communicator
     integer,                intent(in) :: ntasks
+#elif MEMCHECK
+    integer,                intent(in) :: communicator
 #endif
     !--- local variables
     integer :: n
@@ -3141,6 +3147,8 @@ module GFS_typedefs
 #ifdef CCPP
     Model%communicator     = communicator
     Model%ntasks           = ntasks
+#elif MEMCHECK
+    Model%communicator     = communicator
 #endif
     Model%nlunit           = nlunit
     Model%fn_nml           = fn_nml
@@ -3807,6 +3815,8 @@ module GFS_typedefs
       print *, ' me                : ', Model%me
       print *, ' master            : ', Model%master
 #ifdef CCPP
+      print *, ' communicator      : ', Model%communicator
+#elif MEMCHECK
       print *, ' communicator      : ', Model%communicator
 #endif
       print *, ' nlunit            : ', Model%nlunit

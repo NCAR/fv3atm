@@ -125,6 +125,9 @@ module fv_dynamics_mod
    use fv_mp_mod,           only: is_master
    use fv_mp_mod,           only: group_halo_update_type
    use fv_mp_mod,           only: start_group_halo_update, complete_group_halo_update
+#if MEMCHECK
+   use fv_mp_mod,           only: commglobal
+#endif
    use fv_timing_mod,       only: timing_on, timing_off
    use diag_manager_mod,    only: send_data
    use fv_diagnostics_mod,  only: fv_time, prt_mxm, range_check, prt_minmax
@@ -176,6 +179,9 @@ contains
     use ccpp_api,  only: ccpp_initialized, ccpp_physics_run
     use CCPP_data, only: cdata => cdata_tile, &
                          CCPP_interstitial
+#endif
+#ifdef MEMCHECK
+    use memcheck_mod, only: memcheck_run
 #endif
 
     real, intent(IN) :: bdt  !< Large time-step
@@ -770,6 +776,10 @@ contains
 #endif
   enddo    ! n_map loop
                                                   call timing_off('FV_DYN_LOOP')
+#ifdef MEMCHECK
+  if (mpp_pe()==mpp_root_pe()) write(0,*) 'CCPP DEBUG: calling memcheck in dynamics after FV_DYN_LOOP'
+  call memcheck_run(commglobal, mpp_root_pe())
+#endif
   if ( idiag%id_mdt > 0 .and. (.not.do_adiabatic_init) ) then
 ! Output temperature tendency due to inline moist physics:
 #if defined(CCPP) && defined(__GFORTRAN__)
