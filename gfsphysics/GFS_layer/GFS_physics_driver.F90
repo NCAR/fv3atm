@@ -5462,6 +5462,37 @@ module module_physics_driver
         endif
       endif               !       moist convective adjustment over
 !
+#ifdef CCPP
+! OPTION B - works with all compilers
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_MP_generic_pre through option B'
+      ! Copy local variables from driver to appropriate interstitial variables
+      !Interstitial(nt)%im = im                   ! intent(in) - set in Interstitial(nt)%create()
+      !Model%levs                                 ! intent(in)
+      !Model%ldiag3d                              ! intent(in)
+      !Model%do_aw                                ! intent(in)
+      !Model%ntcw                                 ! intent(in)
+      Interstitial(nt)%nncl = nncl                ! intent(in)
+      !Model%ntrac                                ! intent(in)
+      !Stateout%gt0                               ! intent(in)
+      !Stateout%gq0(:,:,1)                        ! intent(in)
+      !Stateout%gq0                               ! intent(in)
+      !Interstitial%save_t                        ! intent(inout) - overwritten within
+      !Interstitial%save_qv                       ! intent(inout) - overwritten within
+      !Interstitial%save_q                        ! intent(inout) - overwritten within
+      !cdata_block(nb,nt)%errmsg = errmsg         ! intent(out)
+      !cdata_block(nb,nt)%errflg = errflg         ! intent(out)
+      call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_MP_generic_pre", ierr=ierr)
+      ! Copy back intent(inout) interstitial variables to local variables in driver
+      dtdt = Interstitial(nt)%save_t
+      dqdt = Interstitial(nt)%save_q
+      dqdt(:,:,1) = Interstitial(nt)%save_qv
+      errmsg = trim(cdata_block(nb,nt)%errmsg)
+      errflg = cdata_block(nb,nt)%errflg
+      if (errflg/=0) then
+          write(0,*) 'Error in call to GFS_suite_interstitial_4_run: ' // trim(errmsg)
+          stop
+      end if
+#else
       if (Model%ldiag3d .or. Model%do_aw) then
         do k=1,levs
           do i=1,im
@@ -5473,8 +5504,11 @@ module module_physics_driver
           dqdt(1:im,:,n) = Stateout%gq0(1:im,:,n)
         enddo
       endif
+#endif
 
 ! dqdt_v : instaneous moisture tendency (kg/kg/sec)
+#ifndef CCPP
+      !GF* the following code is executed in GFS_suite_interstitial_4 (relevant for shallow and deep convection)
       if (Model%lgocart) then
         do k=1,levs
           do i=1,im
@@ -5482,6 +5516,8 @@ module module_physics_driver
           enddo
         enddo
       endif
+      !*GF
+#endif
 !
 !     grid-scale condensation/precipitations and microphysics parameterization
 !     ------------------------------------------------------------------------
