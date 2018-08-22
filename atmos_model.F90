@@ -295,7 +295,11 @@ subroutine update_atmos_radiation_physics (Atmos)
 #else
       Func0d => radiation_step1
 !$OMP parallel do default (none)       &
+#ifdef MEMCHECK
+!$OMP            schedule (static,Atm_block%nblks), &
+#else
 !$OMP            schedule (dynamic,1), &
+#endif
 !$OMP            shared   (Atm_block, IPD_Control, IPD_Data, IPD_Diag, IPD_Restart, Func0d) &
 !$OMP            private  (nb)
       do nb = 1,Atm_block%nblks
@@ -316,7 +320,11 @@ subroutine update_atmos_radiation_physics (Atmos)
       call mpp_clock_begin(physClock)
       Func0d => physics_step1
 !$OMP parallel do default (none) &
+#ifdef MEMCHECK
+!$OMP            schedule (static,Atm_block%nblks), &
+#else
 !$OMP            schedule (dynamic,1), &
+#endif
 #ifdef CCPP
 !$OMP            shared   (Atm_block, IPD_Control, IPD_Data, IPD_Diag, IPD_Restart, IPD_Interstitial, Func0d) &
 #else
@@ -348,7 +356,11 @@ subroutine update_atmos_radiation_physics (Atmos)
 #else
       Func0d => physics_step2
 !$OMP parallel do default (none) &
+#ifdef MEMCHECK
+!$OMP            schedule (static,Atm_block%nblks), &
+#else
 !$OMP            schedule (dynamic,1), &
+#endif
 !$OMP            shared   (Atm_block, IPD_Control, IPD_Data, IPD_Diag, IPD_Restart, Func0d) &
 !$OMP            private  (nb)
       do nb = 1,Atm_block%nblks
