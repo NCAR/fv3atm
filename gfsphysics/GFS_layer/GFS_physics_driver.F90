@@ -3557,7 +3557,7 @@ module module_physics_driver
       Interstitial(nt)%save_u   = dudt            ! intent(inout)
       Interstitial(nt)%save_v   = dvdt            ! intent(inout)
       Interstitial(nt)%save_t   = dtdt            ! intent(inout)
-      Interstitial(nt)%save_qv  = dqdt(:,:,1)     ! intent(inout)
+      Interstitial(nt)%save_q(:,:,1)  = dqdt(:,:,1) ! intent(inout)
       !cdata_block(nb,nt)%errmsg = errmsg         ! intent(out)
       !cdata_block(nb,nt)%errflg = errflg         ! intent(out)
       call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_DCNV_generic_pre", ierr=ierr)
@@ -3565,7 +3565,7 @@ module module_physics_driver
       dudt = Interstitial(nt)%save_u
       dvdt = Interstitial(nt)%save_v
       dtdt = Interstitial(nt)%save_t
-      dqdt(:,:,1) = Interstitial(nt)%save_qv
+      dqdt(:,:,1) = Interstitial(nt)%save_q(:,:,1)
       errmsg = trim(cdata_block(nb,nt)%errmsg)
       errflg = cdata_block(nb,nt)%errflg
 #endif
@@ -3669,8 +3669,8 @@ module module_physics_driver
       Interstitial(nt)%kpbl   = kpbl              ! intent(in)
       !Interstitial(nt)%clw    = clw              ! intent(inout) - clw is only initialized in GFS_typedefs/interstitial_phys_reset at this point in the code (don't overwrite with uninitialized data from local variable)
       !Interstitial(nt)%rhc    = rhc              ! intent(inout) - rhc is only initialized in GFS_typedefs/interstitial_phys_reset at this point in the code (don't overwrite with uninitialized data from local variable)
-      !Interstitial(nt)%save_qc = liq0            ! intent(inout) - liq0 is only initialized in GFS_typedefs/interstitial_phys_reset at this point in the code (don't overwrite with uninitialized data from local variable)
-      !Interstitial(nt)%save_qi = ice00           ! intent(inout) - ice00 is only initialized in GFS_typedefs/interstitial_phys_reset at this point in the code (don't overwrite with uninitialized data from local variable)
+      !Interstitial(nt)%save_q(:,:,Model%ntcw) = liq0  ! intent(inout) - liq0 is only initialized in GFS_typedefs/interstitial_phys_reset at this point in the code (don't overwrite with uninitialized data from local variable)
+      !Interstitial(nt)%save_q(:,:,Model%ntiw) = ice00 ! intent(inout) - ice00 is only initialized in GFS_typedefs/interstitial_phys_reset at this point in the code (don't overwrite with uninitialized data from local variable)
       !cdata_block(nb,nt)%errmsg = errmsg     ! intent(out)
       !cdata_block(nb,nt)%errflg = errflg     ! intent(out)
       call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_suite_interstitial_3", ierr=ierr)
@@ -3695,10 +3695,10 @@ module module_physics_driver
       rhc = Interstitial(nt)%rhc
       if (Model%imp_physics == Model%imp_physics_thompson) then
         if (Model%ltaerosol) then
-          liq0 = Interstitial(nt)%save_qc
-          ice00 = Interstitial(nt)%save_qi
+          liq0 = Interstitial(nt)%save_q(:,:,Model%ntcw)
+          ice00 = Interstitial(nt)%save_q(:,:,Model%ntiw)
         else
-          ice00 = Interstitial(nt)%save_qi
+          ice00 = Interstitial(nt)%save_q(:,:,Model%ntiw)
         end if
       end if
       errmsg = trim(cdata_block(nb,nt)%errmsg)
@@ -4338,7 +4338,7 @@ module module_physics_driver
       Interstitial(nt)%save_u = dudt              ! intent(in)
       Interstitial(nt)%save_v = dvdt              ! intent(in)
       Interstitial(nt)%save_t = dtdt              ! intent(in)
-      Interstitial(nt)%save_qv = dqdt(:,:,1)      ! intent(in)
+      Interstitial(nt)%save_q(:,:,1) = dqdt(:,:,1) ! intent(in)
       !Stateout%gu0                               ! intent(in)
       !Stateout%gv0                               ! intent(in)
       !Stateout%gt0                               ! intent(in)
@@ -4756,13 +4756,13 @@ module module_physics_driver
       !Stateout%gt0                               ! intent(in)
       !Stateout%gq0(:,:,1)                        ! intent(in)
       Interstitial(nt)%save_t = dtdt              ! intent(inout)
-      Interstitial(nt)%save_qv = dqdt(:,:,1)      ! intent(inout)
+      Interstitial(nt)%save_q(:,:,1) = dqdt(:,:,1) ! intent(inout)
       cdata_block(nb,nt)%errmsg   = errmsg        ! intent(out)
       cdata_block(nb,nt)%errflg   = errflg        ! intent(out)
       call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_SCNV_generic_pre", ierr=ierr)
       ! Copy back intent(inout) interstitial variables to local variables in driver
       dtdt = Interstitial(nt)%save_t
-      dqdt(:,:,1) = Interstitial(nt)%save_qv
+      dqdt(:,:,1) = Interstitial(nt)%save_q(:,:,1)
       errmsg = trim(cdata_block(nb,nt)%errmsg)
       errflg = cdata_block(nb,nt)%errflg
 #endif
@@ -5069,7 +5069,7 @@ module module_physics_driver
       !Stateout%gt0                               ! intent(in)
       !Stateout%gq0(:,:,1)                        ! intent(in)
       Interstitial(nt)%save_t = dtdt              ! intent(in)
-      Interstitial(nt)%save_qv = dqdt(:,:,1)      ! intent(in)
+      Interstitial(nt)%save_q(:,:,1) = dqdt(:,:,1) ! intent(in)
       !Coupling%dqdti                             ! intent(inout)
       !Diag%dt3dt(:,:,5)                          ! intent(inout)
       !Diag%dq3dt(:,:,3)                          ! intent(inout)
@@ -5259,10 +5259,10 @@ module module_physics_driver
       !Model%imp_physics_zhao_carr_pdf            ! intent(in)
       if (Model%imp_physics == Model%imp_physics_thompson) then
         if (Model%ltaerosol) then
-          Interstitial(nt)%save_qc = liq0             ! intent(in)
-          Interstitial(nt)%save_qi = ice00            ! intent(in)
+          Interstitial(nt)%save_q(:,:,Model%ntcw) = liq0 ! intent(in)
+          Interstitial(nt)%save_q(:,:,Model%ntiw) = ice00            ! intent(in)
         else
-          Interstitial(nt)%save_qi = ice00            ! intent(in)
+          Interstitial(nt)%save_q(:,:,Model%ntiw) = ice00            ! intent(in)
         end if
       end if
       !con_pi                                     ! intent(in) - from physcons
@@ -5446,6 +5446,37 @@ module module_physics_driver
         endif
       endif               !       moist convective adjustment over
 !
+#ifdef CCPP
+! OPTION B - works with all compilers
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_MP_generic_pre through option B'
+      ! Copy local variables from driver to appropriate interstitial variables
+      !Interstitial(nt)%im = im                   ! intent(in) - set in Interstitial(nt)%create()
+      !Model%levs                                 ! intent(in)
+      !Model%ldiag3d                              ! intent(in)
+      !Model%do_aw                                ! intent(in)
+      !Model%ntcw                                 ! intent(in)
+      Interstitial(nt)%nncl = nncl                ! intent(in)
+      !Model%ntrac                                ! intent(in)
+      !Stateout%gt0                               ! intent(in)
+      !Stateout%gq0(:,:,1)                        ! intent(in)
+      !Stateout%gq0                               ! intent(in)
+      !Interstitial%save_t                        ! intent(inout) - overwritten within
+      !Interstitial%save_q(:,:,1)                 ! intent(inout) - overwritten within
+      !Interstitial%save_q                        ! intent(inout) - overwritten within
+      !cdata_block(nb,nt)%errmsg = errmsg         ! intent(out)
+      !cdata_block(nb,nt)%errflg = errflg         ! intent(out)
+      call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_MP_generic_pre", ierr=ierr)
+      ! Copy back intent(inout) interstitial variables to local variables in driver
+      dtdt = Interstitial(nt)%save_t
+      dqdt = Interstitial(nt)%save_q
+      dqdt(:,:,1) = Interstitial(nt)%save_q(:,:,1)
+      errmsg = trim(cdata_block(nb,nt)%errmsg)
+      errflg = cdata_block(nb,nt)%errflg
+      if (errflg/=0) then
+          write(0,*) 'Error in call to GFS_suite_interstitial_4_run: ' // trim(errmsg)
+          stop
+      end if
+#else
       if (Model%ldiag3d .or. Model%do_aw) then
         do k=1,levs
           do i=1,im
@@ -5457,8 +5488,11 @@ module module_physics_driver
           dqdt(1:im,:,n) = Stateout%gq0(1:im,:,n)
         enddo
       endif
+#endif
 
 ! dqdt_v : instaneous moisture tendency (kg/kg/sec)
+#ifndef CCPP
+      !GF* the following code is executed in GFS_suite_interstitial_4 (relevant for shallow and deep convection)
       if (Model%lgocart) then
         do k=1,levs
           do i=1,im
@@ -5466,6 +5500,8 @@ module module_physics_driver
           enddo
         enddo
       endif
+      !*GF
+#endif
 !
 !     grid-scale condensation/precipitations and microphysics parameterization
 !     ------------------------------------------------------------------------
@@ -6204,7 +6240,7 @@ module module_physics_driver
       !Diag%snow                                  ! intent(in)
       !Diag%graupel                               ! intent(in)
       Interstitial(nt)%save_t = dtdt              ! intent(in)
-      Interstitial(nt)%save_qv = dqdt(:,:,1)      ! intent(in)
+      Interstitial(nt)%save_q(:,:,1) = dqdt(:,:,1) ! intent(in)
       !if (imp_physics == 11) then
       !  Interstitial(nt)%icemp = ice0(:,1)           ! intent(in) ice0 is not allocated if CCPP is being used - coming straight from gfdl_cloud_microphys_run
       !  Interstitial(nt)%snowmp = snow0(:,1)         ! intent(in) snow0 is not allocated if CCPP is being used - coming straight from gfdl_cloud_microphys_run

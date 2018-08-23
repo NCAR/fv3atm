@@ -579,7 +579,7 @@ module GFS_typedefs
 !! | IPD_Data(nb)%Coupling%nsfcpert       | number_of_surface_perturbations                                                                | number of surface perturbations                        |               |    0 | integer |           | none   | F        |
 !! | IPD_Data(nb)%Coupling%vcu_wts        |                                                                                                |                                                        |               |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Coupling%vcv_wts        |                                                                                                |                                                        |               |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Coupling%dqdti          | instantaneous_water_vapor_specific_humidity_tendency_due_to_convection_on_dynamics_timestep    | instantaneous total moisture tendency                  | kg kg-1 s-1   |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Coupling%dqdti          | instantaneous_water_vapor_specific_humidity_tendency_due_to_convection                         | instantaneous moisture tendency due to convection      | kg kg-1 s-1   |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Coupling%cnvqci         | instantaneous_deep_convective_cloud_condensate_mixing_ratio_on_dynamics_time_step              | instantaneous total convective condensate mixing ratio | kg kg-1       |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Coupling%upd_mfi        | instantaneous_atmosphere_updraft_convective_mass_flux_on_dynamics_timestep                     | (updraft mass flux) * delt                             | kg m-2        |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Coupling%dwn_mfi        | instantaneous_atmosphere_downdraft_convective_mass_flux_on_dynamics_timestep                   | (downdraft mass flux) * delt                           | kg m-2        |    2 | real    | kind_phys | none   | F        |
@@ -830,7 +830,7 @@ module GFS_typedefs
 !! | IPD_Control%cscnv                    | flag_for_Chikira_Sugiyama_deep_convection                                     | flag for Chikira-Sugiyama convection                    | flag          |    0 | logical   |           | none   | F        |
 !! | IPD_Control%satmedmf                 | flag_for_scale_aware_TKE_moist_EDMF_PBL                                       | flag for scale-aware TKE moist EDMF PBL scheme          | flag          |    0 | logical   |           | none   | F        |
 !! | IPD_Control%cal_pre                  | flag_for_precipitation_type_algorithm                                         | flag controls precip type algorithm                     | flag          |    0 | logical   |           | none   | F        |
-!! | IPD_Control%do_aw                    |                                                                               | AW scale-aware option in cs convection                  |               |    0 | logical   |           | none   | F        |
+!! | IPD_Control%do_aw                    | flag_for_Arakawa_Wu_adjustment                                                | flag for Arakawa Wu scale-aware adjustment              | flag          |    0 | logical   |           | none   | F        |
 !! | IPD_Control%do_awdd                  |                                                                               | AW scale-aware option in cs convection                  |               |    0 | logical   |           | none   | F        |
 !! | IPD_Control%flx_form                 |                                                                               | AW scale-aware option in cs convection                  |               |    0 | logical   |           | none   | F        |
 !! | IPD_Control%do_shoc                  | flag_for_shoc                                                                 | flag for SHOC                                           | flag          |    0 | logical   |           | none   | F        |
@@ -1973,9 +1973,10 @@ module GFS_typedefs
 !! | IPD_Interstitial(nt)%rhcpbl                        | critical_relative_humidity_at_PBL_top                                                          | critical relative humidity at the PBL top                                           | frac          |    0 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%rhctop                        | critical_relative_humidity_at_top_of_atmosphere                                                | critical relative humidity at the top of atmosphere                                 | frac          |    0 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%runoff                        | surface_runoff_flux                                                                            | surface runoff flux                                                                 | g m-2 s-1     |    1 | real        | kind_phys | none   | F        |
-!! | IPD_Interstitial(nt)%save_qc                       | cloud_liquid_water_mixing_ratio_save                                                           | cloud liquid water mixing ratio before entering a physics scheme                    | kg kg-1       |    2 | real        | kind_phys | none   | F        |
-!! | IPD_Interstitial(nt)%save_qi                       | cloud_ice_water_mixing_ratio_save                                                              | cloud ice water mixing ratio before entering a physics scheme                       | kg kg-1       |    2 | real        | kind_phys | none   | F        |
-!! | IPD_Interstitial(nt)%save_qv                       | water_vapor_specific_humidity_save                                                             | water vapor specific humidity before entering a physics scheme                      | kg kg-1       |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Interstitial(nt)%save_q(:,:,IPD_Control%ntcw)  | cloud_liquid_water_mixing_ratio_save                                                           | cloud liquid water mixing ratio before entering a physics scheme                    | kg kg-1       |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Interstitial(nt)%save_q(:,:,IPD_Control%ntiw)  | cloud_ice_water_mixing_ratio_save                                                              | cloud ice water mixing ratio before entering a physics scheme                       | kg kg-1       |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Interstitial(nt)%save_q(:,:,1)                 | water_vapor_specific_humidity_save                                                             | water vapor specific humidity before entering a physics scheme                      | kg kg-1       |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Interstitial(nt)%save_q                        | tracer_concentration_save                                                                      | tracer concentration before entering a physics scheme                               | kg kg-1       |    3 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%save_t                        | air_temperature_save                                                                           | air temperature before entering a physics scheme                                    | K             |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%save_u                        | x_wind_save                                                                                    | x-wind before entering a physics scheme                                             | m s-1         |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%save_v                        | y_wind_save                                                                                    | y-wind before entering a physics scheme                                             | m s-1         |    2 | real        | kind_phys | none   | F        |
@@ -2151,9 +2152,7 @@ module GFS_typedefs
     real (kind=kind_phys)               :: rhctop                      !<
     real (kind=kind_phys), pointer      :: rhofr(:)         => null()  !<
     real (kind=kind_phys), pointer      :: runoff(:)        => null()  !<
-    real (kind=kind_phys), pointer      :: save_qc(:,:)     => null()  !<
-    real (kind=kind_phys), pointer      :: save_qi(:,:)     => null()  !<
-    real (kind=kind_phys), pointer      :: save_qv(:,:)     => null()  !<
+    real (kind=kind_phys), pointer      :: save_q(:,:,:)    => null()  !<
     real (kind=kind_phys), pointer      :: save_t(:,:)      => null()  !<
     real (kind=kind_phys), pointer      :: save_u(:,:)      => null()  !<
     real (kind=kind_phys), pointer      :: save_v(:,:)      => null()  !<
@@ -4654,11 +4653,7 @@ module GFS_typedefs
     allocate (Interstitial%rb         (IM))
     allocate (Interstitial%rhc        (IM,Model%levs))
     allocate (Interstitial%runoff     (IM))
-    !if (Model%imp_physics == Model%imp_physics_thompson) then
-      allocate (Interstitial%save_qc    (IM,Model%levs))
-      allocate (Interstitial%save_qi    (IM,Model%levs))
-    !end if
-    allocate (Interstitial%save_qv    (IM,Model%levs))
+    allocate (Interstitial%save_q     (IM,Model%levs,Model%ntrac))
     allocate (Interstitial%save_t     (IM,Model%levs))
     allocate (Interstitial%save_u     (IM,Model%levs))
     allocate (Interstitial%save_v     (IM,Model%levs))
@@ -4946,11 +4941,7 @@ module GFS_typedefs
     Interstitial%rhcpbl       = clear_val
     Interstitial%rhctop       = clear_val
     Interstitial%runoff       = clear_val
-    !if (Model%imp_physics == Model%imp_physics_thompson) then
-      Interstitial%save_qc      = clear_val
-      Interstitial%save_qi      = clear_val
-    !end if
-    Interstitial%save_qv      = clear_val
+    Interstitial%save_q       = clear_val
     Interstitial%save_t       = clear_val
     Interstitial%save_u       = clear_val
     Interstitial%save_v       = clear_val
@@ -5118,11 +5109,7 @@ module GFS_typedefs
     write (0,*) 'Interstitial%rhcpbl            = ', Interstitial%rhcpbl
     write (0,*) 'Interstitial%rhctop            = ', Interstitial%rhctop
     write (0,*) 'sum(Interstitial%runoff      ) = ', sum(Interstitial%runoff      )
-    !if (Model%imp_physics == Model%imp_physics_thompson) then
-      write (0,*) 'sum(Interstitial%save_qc   ) = ', sum(Interstitial%save_qc     )
-      write (0,*) 'sum(Interstitial%save_qi   ) = ', sum(Interstitial%save_qi     )
-    !end if
-    write (0,*) 'sum(Interstitial%save_qv     ) = ', sum(Interstitial%save_qv     )
+    write (0,*) 'sum(Interstitial%save_q      ) = ', sum(Interstitial%save_q      )
     write (0,*) 'sum(Interstitial%save_t      ) = ', sum(Interstitial%save_t      )
     write (0,*) 'sum(Interstitial%save_u      ) = ', sum(Interstitial%save_u      )
     write (0,*) 'sum(Interstitial%save_v      ) = ', sum(Interstitial%save_v      )
