@@ -3843,6 +3843,12 @@ module module_physics_driver
             Interstitial(nt)%clw       = clw                      ! intent(inout)
             !Model%dtp                                            ! intent(in)
             !Model%dtf                                            ! intent(in)
+
+!! JLS NOTE:  The convective mass fluxes (dt_mf, dd_mf and ud_mf) passed in and out of cs_conv have not been multiplied by
+!!            the timestep (kg/m2/sec) as they are in all other convective schemes.  EMC is aware of this problem, 
+!!            and in the future will be fixing this discrepancy.  In the meantime, CCPP will use the same mass flux standard_name
+!!            and long_name as the other convective schemes, where the units are in kg/m2. (Aug 2018)
+
             Interstitial(nt)%ud_mf     = ud_mf                    ! intent(inout)
             Interstitial(nt)%dd_mf     = dd_mf                    ! intent(inout)
             Interstitial(nt)%dt_mf     = dt_mf                    ! intent(inout)
@@ -3892,6 +3898,13 @@ module module_physics_driver
                 write(0,*) 'Error in call to cs_conv_mp_cs_conv_run: ' // trim(errmsg)
                 stop
             end if
+
+!! JLS NOTE:  The variable rain1 output from cs_conv_run (called prec inside the subroutine) is a precipitation flux (kg/m2/sec),
+!!            not meters LWE like the other schemes.  In cs_conv_post_run, it is converted to m.  In GFS_typedefs, I added rain1 
+!!            as a flux.  This probably wasn't a good idea, since in GFS_physics_driver the units of rain1 used by other schemes is m.
+!!            It would be nice to change the name of the variable output from cs_conv_run to something that actually has flux
+!!            units, or just convert it to m in cs_conv_run and be done with it, or pass in flux to cs_conv_post_run and
+!!            output rain1 in m.
 
             if (Model%me==0) write(0,*) 'CCPP DEBUG: calling cs_conv_post_run through option B'
             ! Copy local variables from driver to appropriate interstitial variables
