@@ -121,9 +121,9 @@ module IPD_CCPP_driver
         !    is already initialized, use its suite to avoid reading the
         !    SDF multiple times.
         if (ccpp_initialized(cdata_tile)) then
-          call ccpp_init(trim(ccpp_suite), cdata, ierr, cdata_target=cdata_tile)
+          call ccpp_init(trim(ccpp_suite), cdata, ierr=ierr, cdata_target=cdata_tile)
         else
-          call ccpp_init(trim(ccpp_suite), cdata, ierr)
+          call ccpp_init(trim(ccpp_suite), cdata, ierr=ierr)
         end if
         if (ierr/=0) then
           write(0,*) 'An error occurred in ccpp_init'
@@ -155,9 +155,9 @@ module IPD_CCPP_driver
             !    to avoid reading the SDF multiple times. If cdata_tile is initialized, use
             !    this version (since cdata_domain is just a copy), otherwise use cdata_domain
             if (ccpp_initialized(cdata_tile)) then
-              call ccpp_init(trim(ccpp_suite), cdata, ierr, cdata_target=cdata_tile)
+              call ccpp_init(trim(ccpp_suite), cdata, ierr=ierr, cdata_target=cdata_tile)
             else
-              call ccpp_init(trim(ccpp_suite), cdata, ierr, cdata_target=cdata_domain)
+              call ccpp_init(trim(ccpp_suite), cdata, ierr=ierr, cdata_target=cdata_domain)
             end if
             if (ierr/=0) then
               write(0,'(2(a,i4))') "An error occurred in ccpp_init for block ", nb, " and thread ", nt
@@ -182,6 +182,16 @@ module IPD_CCPP_driver
       ! inside the initialization, because physics initialization code does a lot of
       ! reading/writing data from disk, allocating fields, etc.
       CCPP_shared(:)%nthreads = nthrds
+
+      ! DH* TODO - I believe that they way this works in FV3, physics init can only
+      ! affect block- and thread-independent data - hence, it would be sufficient to
+      ! run physics_init once over cdata_domain?!? Update notes accordingly if true. *DH
+      ! If physics init affect block data, then changes must be made to parsing the
+      ! SDF (cannot use pointers to point to the central SDF, because a scheme will
+      ! be considered as initialized because of its CCPP-internal attribute after a
+      ! first call to it), and the is_initialized logic inside the scheme (independent)
+      ! of CCPP must be removed for those schemes that need to be initialized multiple
+      ! times once per block.
 
       ! Since physics init can only affect block- (and not thread-) dependent data
       ! structures, it is sufficient to run this over all blocks for one thread only
@@ -234,7 +244,11 @@ module IPD_CCPP_driver
       end if
 
 !$OMP parallel do num_threads (nthrds) &
+#ifdef MEMCHECK
+!$OMP          schedule (static,nblks),&
+#else
 !$OMP          schedule (dynamic,1),   &
+#endif
 !$OMP          default (shared)        &
 !$OMP          private (nb,nt,ierr2)   &
 !$OMP          reduction (+:ierr)
@@ -274,7 +288,7 @@ module IPD_CCPP_driver
             return
           end if
           !--- Finalize CCPP framework for blocks/threads
-          call ccpp_finalize(cdata_block(nb,nt), ierr)
+          call ccpp_finalize(cdata_block(nb,nt), ierr=ierr)
           if (ierr/=0) then
             write(0,'(a,i4,a,i4)') "An error occurred in ccpp_finalize for block ", nb, " and thread ", nt
             return
@@ -286,7 +300,7 @@ module IPD_CCPP_driver
       deallocate(cdata_block)
 
       !--- Finalize CCPP framework for domain
-      call ccpp_finalize(cdata_domain, ierr)
+      call ccpp_finalize(cdata_domain, ierr=ierr)
       if (ierr/=0) then
          write(0,'(a)') "An error occurred in ccpp_finalize"
          return
