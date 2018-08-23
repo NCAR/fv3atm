@@ -1911,12 +1911,14 @@ module GFS_typedefs
 !! | IPD_Interstitial(nt)%gasvmr(:,:,9)                 | volume_mixing_ratio_ccl4                                                                       | volume mixing ratio ccl4                                                            | kg kg-1       |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%gasvmr(:,:,10)                | volume_mixing_ratio_cfc113                                                                     | volume mixing ratio cfc113                                                          | kg kg-1       |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%gflx                          | upward_heat_flux_in_soil                                                                       | soil heat flux                                                                      | W m-2         |    1 | real        | kind_phys | none   | F        |
+!! | IPD_Interstitial(nt)%graupelmp                     | lwe_thickness_of_graupel_amount                                                                | explicit graupel fall on physics timestep                                           | m             |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%gwdcu                         | tendency_of_x_wind_due_to_convective_gravity_wave_drag                                         | zonal wind tendency due to convective gravity wave drag                             | m s-2         |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%gwdcv                         | tendency_of_y_wind_due_to_convective_gravity_wave_drag                                         | meridional wind tendency due to convective gravity wave drag                        | m s-2         |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%h2o_coeff                     | number_of_coefficients_in_h2o_forcing_data                                                     | number of coefficients in h2o forcing data                                          | index         |    0 | integer     |           | none   | F        |
 !! | IPD_Interstitial(nt)%h2o_pres                      | natural_log_of_h2o_forcing_data_pressure_levels                                                | natural log of h2o forcing data pressure levels                                     | log(Pa)       |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%hflx                          | kinematic_surface_upward_sensible_heat_flux                                                    | kinematic surface upward sensible heat flux                                         | K m s-1       |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%hprime1                       | standard_deviation_of_subgrid_orography                                                        | standard deviation of subgrid orography                                             | m             |    1 | real        | kind_phys | none   | F        |
+!! | IPD_Interstitial(nt)%icemp                         | lwe_thickness_of_ice_amount                                                                    | explicit ice fall on physics timestep                                               | m             |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%idxday                        | daytime_points                                                                                 | daytime points                                                                      | index         |    1 | integer     |           | none   | F        |
 !! | IPD_Interstitial(nt)%im                            | horizontal_loop_extent                                                                         | horizontal loop extent                                                              | count         |    0 | integer     |           | none   | F        |
 !! | IPD_Interstitial(nt)%ipr                           | horizontal_index_of_printed_column                                                             | horizontal index of printed column                                                  | index         |    0 | integer     |           | none   | F        |
@@ -1957,13 +1959,14 @@ module GFS_typedefs
 !! | IPD_Interstitial(nt)%plvl                          | air_pressure_at_interface_for_radiation_in_hPa                                                 | air pressure at vertical interface for radiation calculation                        | hPa           |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%plyr                          | air_pressure_at_layer_for_radiation_in_hPa                                                     | air pressure at vertical layer for radiation calculation                            | hPa           |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%qlyr                          | water_vapor_specific_humidity_at_layer_for_radiation                                           | specific humidity layer                                                             | kg kg-1       |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Interstitial(nt)%prcpmp                        | lwe_thickness_of_explicit_precipitation_amount                                                 | explicit precipitation (rain, ice, snow, graupel, ...) on physics timestep          | m             |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%qss                           | surface_specific_humidity                                                                      | surface air saturation specific humidity                                            | kg kg-1       |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%raddt                         | time_step_for_radiation                                                                        | radiation time step                                                                 | s             |    0 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%raincd                        | lwe_thickness_of_deep_convective_precipitation_amount                                          | deep convective rainfall amount on physics timestep                                 | m             |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%raincs                        | lwe_thickness_of_shallow_convective_precipitation_amount                                       | shallow convective rainfall amount on physics timestep                              | m             |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%rainmcadj                     | lwe_thickness_of_moist_convective_adj_precipitation_amount                                     | adjusted moist convective rainfall amount on physics timestep                       | m             |    1 | real        | kind_phys | none   | F        |
+!! | IPD_Interstitial(nt)%rainmp                        | lwe_thickness_of_explicit_rain_amount                                                          | explicit rain on physics timestep                                                   | m             |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%rainp                         | tendency_of_rain_water_mixing_ratio_due_to_microphysics                                        | tendency of rain water mixing ratio due to microphysics                             | kg kg-1 s-1   |    2 | real        | kind_phys | none   | F        |
-!! | IPD_Interstitial(nt)%rainst                        | lwe_thickness_of_stratiform_precipitation_amount                                               | stratiform rainfall amount on physics timestep                                      | m             |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%rb                            | bulk_richardson_number_at_lowest_model_level                                                   | bulk Richardson number at the surface                                               | none          |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%rhc                           | critical_relative_humidity                                                                     | critical relative humidity                                                          | frac          |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%rhcbot                        | critical_relative_humidity_at_surface                                                          | critical relative humidity at the surface                                           | frac          |    0 | real        | kind_phys | none   | F        |
@@ -1989,6 +1992,7 @@ module GFS_typedefs
 !! | IPD_Interstitial(nt)%slopetype                     | surface_slope_classification                                                                   | surface slope type at each grid cell                                                | index         |    1 | integer     |           | none   | F        |
 !! | IPD_Interstitial(nt)%snowc                         | surface_snow_area_fraction                                                                     | surface snow area fraction                                                          | frac          |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%snohf                         | snow_freezing_rain_upward_latent_heat_flux                                                     | latent heat flux due to snow and frz rain                                           | W m-2         |    1 | real        | kind_phys | none   | F        |
+!! | IPD_Interstitial(nt)%snowmp                        | lwe_thickness_of_snow_amount                                                                   | explicit snow fall on physics timestep                                              | m             |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%snowmt                        | surface_snow_melt                                                                              | snow melt during timestep                                                           | m             |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%soiltype                      | soil_type_classification                                                                       | soil type at each grid cell                                                         | index         |    1 | integer     |           | none   | F        |
 !! | IPD_Interstitial(nt)%stress                        | surface_wind_stress                                                                            | surface wind stress                                                                 | m2 s-2        |    1 | real        | kind_phys | none   | F        |
@@ -2016,12 +2020,7 @@ module GFS_typedefs
 !! | IPD_Interstitial(nt)%xmu                           | zenith_angle_temporal_adjustment_factor_for_shortwave_fluxes                                   | zenith angle temporal adjustment factor for shortwave                               | none          |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%z01d                          | perturbation_of_momentum_roughness_length                                                      | perturbation of momentum roughness length                                           | frac          |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%zt1d                          | perturbation_of_heat_to_momentum_roughness_length_ratio                                        | perturbation of heat to momentum roughness length ratio                             | frac          |    1 | real        | kind_phys | none   | F        |
-!! | IPD_Interstitial(nt)%rain0                         | lwe_thickness_of_stratiform_precipitation_amount_per_day                                       | stratiform rain over 24h period                                                     | mm            |    1 | real        | kind_phys | none   | F        |
-!! | IPD_Interstitial(nt)%ice0                          | lwe_thickness_of_ice_amount_per_day                                                            | ice fall over 24h period                                                            | mm            |    1 | real        | kind_phys | none   | F        |
-!! | IPD_Interstitial(nt)%snow0                         | lwe_thickness_of_snow_amount_per_day                                                           | snow fall over 24h period                                                           | mm            |    1 | real        | kind_phys | none   | F        |
-!! | IPD_Interstitial(nt)%graupel0                      | lwe_thickness_of_graupel_amount_per_day                                                        | graupel fall over 24h period                                                        | mm            |    1 | real        | kind_phys | none   | F        |
 !!
-! DH* sort in list rain0 ...
 #endif
   type GFS_interstitial_type
 
@@ -2089,14 +2088,14 @@ module GFS_typedefs
     real (kind=kind_phys), pointer      :: gamt(:)          => null()  !<
     real (kind=kind_phys), pointer      :: gasvmr(:,:,:)    => null()  !<
     real (kind=kind_phys), pointer      :: gflx(:)          => null()  !<
-    real (kind=kind_phys), pointer      :: graupel0(:)      => null()  !<
+    real (kind=kind_phys), pointer      :: graupelmp(:)     => null()  !<
     real (kind=kind_phys), pointer      :: gwdcu(:,:)       => null()  !<
     real (kind=kind_phys), pointer      :: gwdcv(:,:)       => null()  !<
     integer                             :: h2o_coeff                   !<
     real (kind=kind_phys), pointer      :: h2o_pres(:)      => null()  !<
     real (kind=kind_phys), pointer      :: hflx(:)          => null()  !<
     real (kind=kind_phys), pointer      :: hprime1(:)       => null()  !<
-    real (kind=kind_phys), pointer      :: ice0(:)          => null()  !<
+    real (kind=kind_phys), pointer      :: icemp(:)         => null()  !<
     integer,               pointer      :: idxday(:)        => null()  !<
     integer                             :: im                          !<
     integer                             :: ipr                         !<
@@ -2136,15 +2135,15 @@ module GFS_typedefs
     real (kind=kind_phys), pointer      :: oz_pres(:)       => null()  !<
     real (kind=kind_phys), pointer      :: plvl(:,:)        => null()  !<
     real (kind=kind_phys), pointer      :: plyr(:,:)        => null()  !<
+    real (kind=kind_phys), pointer      :: prcpmp(:)        => null()  !<
     real (kind=kind_phys), pointer      :: qlyr(:,:)        => null()  !<
     real (kind=kind_phys), pointer      :: qss(:)           => null()  !<
     real (kind=kind_phys)               :: raddt                       !<
-    real (kind=kind_phys), pointer      :: rain0(:)         => null()  !<
+    real (kind=kind_phys), pointer      :: rainmp(:)        => null()  !<
     real (kind=kind_phys), pointer      :: raincd(:)        => null()  !<
     real (kind=kind_phys), pointer      :: raincs(:)        => null()  !<
     real (kind=kind_phys), pointer      :: rainmcadj(:)     => null()  !<
     real (kind=kind_phys), pointer      :: rainp(:,:)       => null()  !<
-    real (kind=kind_phys), pointer      :: rainst(:)        => null()  !<
     real (kind=kind_phys), pointer      :: rb(:)            => null()  !<
     real (kind=kind_phys), pointer      :: rhc(:,:)         => null()  !<
     real (kind=kind_phys)               :: rhcbot                      !<
@@ -2165,9 +2164,9 @@ module GFS_typedefs
     real (kind=kind_phys), pointer      :: sigmaf(:)        => null()  !<
     logical                             :: skip_macro                  !<
     integer, pointer                    :: slopetype(:)     => null()  !<
-    real (kind=kind_phys), pointer      :: snow0(:)         => null()  !<
     real (kind=kind_phys), pointer      :: snowc(:)         => null()  !<
     real (kind=kind_phys), pointer      :: snohf(:)         => null()  !<
+    real (kind=kind_phys), pointer      :: snowmp(:)        => null()  !<
     real (kind=kind_phys), pointer      :: snowmt(:)        => null()  !<
     integer, pointer                    :: soiltype(:)      => null()  !<
     real (kind=kind_phys), pointer      :: stress(:)        => null()  !<
@@ -4646,20 +4645,12 @@ module GFS_typedefs
     allocate (Interstitial%plvl       (IM,Model%levr+1+LTP))
     allocate (Interstitial%plyr       (IM,Model%levr+LTP))
     allocate (Interstitial%qlyr       (IM,Model%levr+LTP))
+    allocate (Interstitial%prcpmp     (IM))
     allocate (Interstitial%qss        (IM))
-    ! DH* sort in list
-    if (Model%imp_physics == Model%imp_physics_gfdl) then
-       allocate (Interstitial%rain0      (IM))
-       allocate (Interstitial%ice0       (IM))
-       allocate (Interstitial%snow0      (IM))
-       allocate (Interstitial%graupel0   (IM))
-    end if
-    ! *DH
     allocate (Interstitial%raincd     (IM))
     allocate (Interstitial%raincs     (IM))
     allocate (Interstitial%rainmcadj  (IM))
     allocate (Interstitial%rainp      (IM,Model%levs))
-    allocate (Interstitial%rainst     (IM))
     allocate (Interstitial%rb         (IM))
     allocate (Interstitial%rhc        (IM,Model%levs))
     allocate (Interstitial%runoff     (IM))
@@ -4703,6 +4694,13 @@ module GFS_typedefs
     allocate (Interstitial%xmu        (IM))
     allocate (Interstitial%z01d       (IM))
     allocate (Interstitial%zt1d       (IM))
+    ! Allocate arrays that are conditional on physics choices
+    if (Model%imp_physics == Model%imp_physics_gfdl) then
+       allocate (Interstitial%graupelmp  (IM))
+       allocate (Interstitial%icemp      (IM))
+       allocate (Interstitial%rainmp     (IM))
+       allocate (Interstitial%snowmp     (IM))
+    end if
     ! Set components that do not change
     Interstitial%h2o_coeff    = h2o_coeff
     Interstitial%im           = IM
@@ -4936,20 +4934,12 @@ module GFS_typedefs
     Interstitial%ktop         = 1
     Interstitial%oa4          = clear_val
     Interstitial%oc           = clear_val
+    Interstitial%prcpmp       = clear_val
     Interstitial%qss          = clear_val
     Interstitial%raincd       = clear_val
     Interstitial%raincs       = clear_val
     Interstitial%rainmcadj    = clear_val
     Interstitial%rainp        = clear_val
-    Interstitial%rainst       = clear_val
-    ! DH* sort in list
-    if (Model%imp_physics == Model%imp_physics_gfdl) then
-       Interstitial%rain0    = clear_val
-       Interstitial%ice0     = clear_val
-       Interstitial%snow0    = clear_val
-       Interstitial%graupel0 = clear_val
-    end if
-    ! *DH
     Interstitial%rb           = clear_val
     Interstitial%rhc          = clear_val
     Interstitial%rhcbot       = clear_val
@@ -4990,6 +4980,13 @@ module GFS_typedefs
     Interstitial%xmu          = clear_val
     Interstitial%z01d         = clear_val
     Interstitial%zt1d         = clear_val
+    ! Reset fields that are conditional on physics choices
+    if (Model%imp_physics == Model%imp_physics_gfdl) then
+       Interstitial%graupelmp = clear_val
+       Interstitial%icemp     = clear_val
+       Interstitial%rainmp    = clear_val
+       Interstitial%snowmp    = clear_val
+    end if
     !
   end subroutine interstitial_phys_reset
 
@@ -5107,6 +5104,7 @@ module GFS_typedefs
     write (0,*) 'sum(Interstitial%olyr        ) = ', sum(Interstitial%olyr        )
     write (0,*) 'sum(Interstitial%plvl        ) = ', sum(Interstitial%plvl        )
     write (0,*) 'sum(Interstitial%plyr        ) = ', sum(Interstitial%plyr        )
+    write (0,*) 'sum(Interstitial%prcpmp      ) = ', sum(Interstitial%prcpmp      )
     write (0,*) 'sum(Interstitial%qlyr        ) = ', sum(Interstitial%qlyr        )
     write (0,*) 'sum(Interstitial%qss         ) = ', sum(Interstitial%qss         )
     write (0,*) 'Interstitial%raddt             = ', Interstitial%raddt
@@ -5114,15 +5112,6 @@ module GFS_typedefs
     write (0,*) 'sum(Interstitial%raincs      ) = ', sum(Interstitial%raincs      )
     write (0,*) 'sum(Interstitial%rainmcadj   ) = ', sum(Interstitial%rainmcadj   )
     write (0,*) 'sum(Interstitial%rainp       ) = ', sum(Interstitial%rainp       )
-    write (0,*) 'sum(Interstitial%rainst      ) = ', sum(Interstitial%rainst      )
-    ! DH* sort in list
-    if (Model%imp_physics == Model%imp_physics_gfdl) then
-       write (0,*) 'sum(Interstitial%rain0    ) = ', sum(Interstitial%rain0       )
-       write (0,*) 'sum(Interstitial%ice0     ) = ', sum(Interstitial%ice0        )
-       write (0,*) 'sum(Interstitial%snow0    ) = ', sum(Interstitial%snow0       )
-       write (0,*) 'sum(Interstitial%graupel0 ) = ', sum(Interstitial%graupel0    )
-    end if
-    ! *DH
     write (0,*) 'sum(Interstitial%rb          ) = ', sum(Interstitial%rb          )
     write (0,*) 'sum(Interstitial%rhc         ) = ', sum(Interstitial%rhc         )
     write (0,*) 'Interstitial%rhcbot            = ', Interstitial%rhcbot
@@ -5174,6 +5163,14 @@ module GFS_typedefs
     write (0,*) 'sum(Interstitial%xmu         ) = ', sum(Interstitial%xmu         )
     write (0,*) 'sum(Interstitial%z01d        ) = ', sum(Interstitial%z01d        )
     write (0,*) 'sum(Interstitial%zt1d        ) = ', sum(Interstitial%zt1d        )
+    ! Print arrays that are conditional on physics choices
+    if (Model%imp_physics == Model%imp_physics_gfdl) then
+       write (0,*) 'Interstitial_print: values specific to GFDL microphysics'
+       write (0,*) 'sum(Interstitial%graupelmp) = ', sum(Interstitial%graupelmp   )
+       write (0,*) 'sum(Interstitial%icemp    ) = ', sum(Interstitial%icemp       )
+       write (0,*) 'sum(Interstitial%rainmp   ) = ', sum(Interstitial%rainmp      )
+       write (0,*) 'sum(Interstitial%snowmp   ) = ', sum(Interstitial%snowmp      )
+    end if
     write (0,*) 'Interstitial_print: end'
     !
   end subroutine interstitial_print
