@@ -235,7 +235,7 @@ module IPD_CCPP_driver
       CCPP_shared%nthreads = 1
 
     ! Radiation and stochastic physics
-   else if (trim(step)=="radiation" .or. trim(step)=="stochastics") then
+   else if (trim(step)=="radiation" .or. trim(step)=="physics" .or. trim(step)=="stochastics") then
 
       if (.not.present(nblks)) then
         write(0,*) 'Optional argument nblks required for IPD-CCPP ' // trim(step) // ' step'
