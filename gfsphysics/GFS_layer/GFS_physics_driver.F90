@@ -36,7 +36,9 @@ module module_physics_driver
   use module_mp_thompson,    only: mp_gt_driver
   use module_mp_wsm6,        only: wsm6
   use funcphys,              only: ftdp
+#ifndef CCPP
   use surface_perturbation,  only: cdfnor
+#endif
 
 #ifdef CCPP
   use ccpp_api,              only: ccpp_physics_run
@@ -629,8 +631,8 @@ module module_physics_driver
 #else
       real (kind=kind_phys), dimension(size(Grid%xlon,1)) :: &
          z01d, zt1d, bexp1d, xlai1d, alb1d, vegf1d
-#endif
       real(kind=kind_phys) :: cdfz
+#endif
 !--- ALLOCATABLE ELEMENTS
       !--- in clw, the first two varaibles are cloud water and ice.
       !--- from third to ntrac are convective transportable tracers,
@@ -721,9 +723,15 @@ module module_physics_driver
 !===> ...  begin here
 
       me      = Model%me
+#ifdef CCPP
+      ix      = Interstitial(nt)%ix
+      im      = Interstitial(nt)%im
+      ipr     = Interstitial(nt)%ipr
+#else
       ix      = size(Grid%xlon,1)
       im      = size(Grid%xlon,1)
       ipr     = min(im,10)
+#endif
       levs    = Model%levs
       lsoil   = Model%lsoil
       ntrac   = Model%ntrac
@@ -836,6 +844,7 @@ module module_physics_driver
         allocate (cnvc(ix,levs), cnvw(ix,levs))
       endif
 !
+#ifndef CCPP
 !  ---  set initial quantities for stochastic physics deltas
       if (Model%do_sppt) then
         Tbd%dtdtr     = 0.0
@@ -885,6 +894,7 @@ module module_physics_driver
           enddo
         endif
       endif
+#endif
 !
       if (Model%do_shoc) then
         allocate (qrn(im,levs),  qsnw(im,levs), ncpl(im,levs), ncpi(im,levs))
@@ -1307,27 +1317,51 @@ module module_physics_driver
       !Sfcprop%tsfc                           ! intent(in)
       !Statein%phil                           ! intent(in)
       !con_g                                  ! intent(in) - physical constant in physcons.F90
-      Interstitial(nt)%sigmaf = sigmaf        ! intent(inout)
-      Interstitial(nt)%soiltype = soiltyp     ! intent(inout)
-      Interstitial(nt)%vegtype = vegtype      ! intent(inout)
+      Interstitial(nt)%sigmaf    = sigmaf     ! intent(inout)
+      Interstitial(nt)%soiltype  = soiltyp    ! intent(inout)
+      Interstitial(nt)%vegtype   = vegtype    ! intent(inout)
       Interstitial(nt)%slopetype = slopetyp   ! intent(inout)
-      Interstitial(nt)%work3 = work3          ! intent(inout)
-      Interstitial(nt)%gabsbdlw = gabsbdlw    ! intent(inout)
-      Interstitial(nt)%tsurf = tsurf          ! intent(inout)
+      Interstitial(nt)%work3     = work3      ! intent(inout)
+      Interstitial(nt)%gabsbdlw  = gabsbdlw   ! intent(inout)
+      Interstitial(nt)%tsurf     = tsurf      ! intent(inout)
       !Diag%zlvl                              ! intent(inout)
-      !cdata_block(nb,nt)%errmsg = errmsg  ! intent(out)
-      !cdata_block(nb,nt)%errflg = errflg  ! intent(out)
+      !Model%do_sppt                          ! intent(in)
+      !Tbd%dtdtr                              ! intent(out)
+      !Tbd%drain_cpl                          ! intent(out)
+      !Tbd%dsnow_cpl                          ! intent(out)
+      !Tbd%rain_cpl                           ! intent(in)
+      !Tbd%snow_cpl                           ! intent(in)
+      !Model%do_sfcperts                      ! intent(in)
+      !Model%nsfcpert                         ! intent(in)
+      !Coupling%sfc_wts                       ! intent(in)
+      !Model%pertz0                           ! intent(in)
+      !Model%pertzt                           ! intent(in)
+      !Model%pertshc                          ! intent(in)
+      !Model%pertlai                          ! intent(in)
+      !Model%pertvegf                         ! intent(in)
+      !Interstitial(nt)%z01d                  ! intent(out) - overwritten within
+      !Interstitial(nt)%zt1d                  ! intent(out) - overwritten within
+      !Interstitial(nt)%bexp1d                ! intent(out) - overwritten within
+      !Interstitial(nt)%xlai1d                ! intent(out) - overwritten within
+      !Interstitial(nt)%vegf1d                ! intent(out) - overwritten within
+      !cdata_block(nb,nt)%errmsg = errmsg     ! intent(out)
+      !cdata_block(nb,nt)%errflg = errflg     ! intent(out)
       call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_surface_generic_pre", ierr=ierr)
       ! Copy intent(inout) and intent(out) interstitial variables to local variables in driver
-      sigmaf = Interstitial(nt)%sigmaf
-      soiltyp = Interstitial(nt)%soiltype
-      vegtype = Interstitial(nt)%vegtype
+      sigmaf   = Interstitial(nt)%sigmaf
+      soiltyp  = Interstitial(nt)%soiltype
+      vegtype  = Interstitial(nt)%vegtype
       slopetyp = Interstitial(nt)%slopetype
-      work3 = Interstitial(nt)%work3
+      work3    = Interstitial(nt)%work3
       gabsbdlw = Interstitial(nt)%gabsbdlw
-      tsurf = Interstitial(nt)%tsurf
-      errmsg     = trim(cdata_block(nb,nt)%errmsg)
-      errflg     = cdata_block(nb,nt)%errflg
+      tsurf    = Interstitial(nt)%tsurf
+      z01d     = Interstitial(nt)%z01d
+      zt1d     = Interstitial(nt)%zt1d
+      bexp1d   = Interstitial(nt)%bexp1d
+      xlai1d   = Interstitial(nt)%xlai1d
+      vegf1d   = Interstitial(nt)%vegf1d
+      errmsg   = trim(cdata_block(nb,nt)%errmsg)
+      errflg   = cdata_block(nb,nt)%errflg
       if (errflg/=0) then
           write(0,*) 'Error in call to GFS_surface_generic_pre_run: ' // trim(errmsg)
           stop
@@ -2110,12 +2144,10 @@ module module_physics_driver
 #ifndef CCPP
       do i=1,im
         Diag%epi(i)     = ep1d(i)
-!DH* not required for CCPP, either set via associate or in dcyc2t3_post
         Diag%dlwsfci(i) = adjsfcdlw(i)
         Diag%ulwsfci(i) = adjsfculw(i)
         Diag%uswsfci(i) = adjsfcdsw(i) - adjsfcnsw(i)
         Diag%dswsfci(i) = adjsfcdsw(i)
-!*DH
         Diag%gfluxi(i)  = gflx(i)
         Diag%t1(i)      = Statein%tgrs(i,1)
         Diag%q1(i)      = Statein%qgrs(i,1,1)
@@ -2167,13 +2199,9 @@ module module_physics_driver
                      Sfcprop%ffmm, Sfcprop%ffhh, fm10, fh2)
 #endif
 
-      ! DH* where do we put this line?
-      ! Model%num_p2d == 3 for Zhao_carr, otherwise 1
-      ! phy_f2d is only used by gscond and precpd below: Tbd%phy_f2d(:,1) and Tbd%phy_f2d(:,2) - not Tbd%phy_f2d(:,3)
-      ! AND by Tbd%phy_f2d(1,Model%num_p2d) is used by rascnv in line 4124, where it gets overwritten (intent(out))
-      ! does not resetting here make any difference in the output files? can we add this to a suite interstitial later?
+#ifndef CCPP
       Tbd%phy_f2d(:,Model%num_p2d) = 0.0
-      ! *DH
+#endif
 
 #ifdef CCPP
       if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_surface_generic_post through option B'
@@ -2949,7 +2977,7 @@ module module_physics_driver
           Coupling%ushfsfci(i) = -con_cp * tem * hflx(i) ! upward sensible heat flux
         enddo
 #ifdef CCPP
-        ! DH* 20180809 - adjusted dimensions of dkt from (:,1:Model%levs) to (:,1:Model%levs-1)
+        ! Interstitial(nt)%dkt has dimensions (1:im,1:Model%levs-1) as required by physics schemes
         Coupling%dkt     (:,1:Model%levs-1) = dkt (:,:)
 #else
         Coupling%dkt     (:,:) = dkt (:,:)
@@ -3857,31 +3885,16 @@ module module_physics_driver
       endif   ! end if_ntcw
 #endif
 
-#ifdef CCPP
-      !GF* this code will be moved to GFS_MP_generic_pre (it is not put in GFS_suite_interstitial_3)
-      if (imp_physics == 99 .or. imp_physics == 98) then   ! zhao-carr microphysics
-        do i=1,im
-          psautco_l(i) = Model%psautco(1)*work1(i) + Model%psautco(2)*work2(i)
-          prautco_l(i) = Model%prautco(1)*work1(i) + Model%prautco(2)*work2(i)
-        enddo
-      else       ! if_ntcw
-        do i=1,im
-          psautco_l(i) = Model%psautco(1)*work1(i) + Model%psautco(2)*work2(i)
-          prautco_l(i) = Model%prautco(1)*work1(i) + Model%prautco(2)*work2(i)
-        enddo
-      endif   ! end if_ntcw
-      !*GF
-#endif
 !
 !        Call SHOC if do_shoc is true and shocaftcnv is false
 !
       if (Model%do_shoc .and. .not. Model%shocaftcnv) then
-! DH*
 #ifdef CCPP
+! DH*
         write(0,*) "DH WARNING: inside Model%do_shoc .and. .not. Model%shocaftcnv - need to fix ncpl/ncpli?"
         write(0,*) "DH WARNING: do we need Thompson with/without aerosol here as well?"
-#endif
 ! *DH
+#endif
         if (imp_physics == 10) then
           skip_macro = Model%do_shoc
           do k=1,levs
@@ -3979,12 +3992,12 @@ module module_physics_driver
 !    &,              dqdt(1,1,1), dqdt(1,1,2), dqdt(1,1,3)
 !    &,              gq0(1,1,1),clw(1,1,2),clw(1,1,1),'shoc      ')
 
-! DH*
 #ifdef CCPP
+! DH*
           write(0,*) "DH WARNING: shouldn't this test for imp_physics==10?"
           write(0,*) "DH WARNING: do we need Thompson with/without aerosol here as well?"
-#endif
 ! *DH
+#endif
           if (ntlnc > 0 .and. ntinc > 0 .and. ncld >= 2) then
             do k=1,levs
               do i=1,im
@@ -5123,11 +5136,11 @@ module module_physics_driver
 !       endif
 
       elseif (Model%shocaftcnv) then ! if do_shoc is true and shocaftcnv is true call shoc
-! DH*
 #ifdef CCPP
+! DH*
         write(0,*) "DH WARNING: inside Model%shocaftcnv, do we need to do this for Thompson, too?"
-#endif
 ! *DH
+#endif
         if (imp_physics == 10) then
           skip_macro = Model%do_shoc
           do k=1,levs
@@ -5197,12 +5210,12 @@ module module_physics_driver
                    lprnt, ipr, ncpl, ncpi)
 !       enddo
 
-! DH*
 #ifdef CCPP
+! DH*
         write(0,*) "DH WARNING: shouldn't this be testing for imp_physics=10?"
         write(0,*) "DH WARNING: do we need to do this for Thompson, too?"
-#endif
 ! *DH
+#endif
         if (ntlnc > 0 .and. ntinc > 0 .and. ncld >= 2) then
           do k=1,levs
             do i=1,im
@@ -5670,7 +5683,7 @@ module module_physics_driver
                Tbd%phy_f3d(:,:,1),Tbd%phy_f3d(:,:,2),Tbd%phy_f3d(:,:,3),me,Statein%phii)
           endif
 #else
-! DH* 20180629 temporarily remove Thompson scheme for making ccpp-physics public (until Greg has reviewed our port)
+! DH* 20180629 temporarily remove Thompson scheme for making ccpp-physics public (until Greg has approved our port)
 #if 1
           write(0,*) 'ERROR: HRRR Thompson MP currently not available in CCPP'
           call sleep(5)
@@ -6430,6 +6443,23 @@ module module_physics_driver
 #endif
 !  --- ...  end coupling insertion
 
+#ifdef CCPP
+      ! DH* moved up from end of subroutine to merge with MP_generic_post
+      if (Model%do_sppt) then
+!--- radiation heating rate
+        Tbd%dtdtr(1:im,:) = Tbd%dtdtr(1:im,:) + dtdtc(1:im,:)*dtf
+        do i = 1, im
+          if (t850(i) > 273.16) then
+!--- change in change in rain precip
+             Tbd%drain_cpl(i) = Diag%rain(i) - Tbd%drain_cpl(i)
+          else
+!--- change in change in snow precip
+             Tbd%dsnow_cpl(i) = Diag%rain(i) - Tbd%dsnow_cpl(i)
+          endif
+        enddo
+      endif
+#endif
+
 !!! update surface diagnosis fields at the end of phys package
 !!! this change allows gocart to use filtered wind fields
 !!!
@@ -6574,6 +6604,7 @@ module module_physics_driver
 !         write(0,*) ' endgw0=',gq0(ipr,:,3),' kdt=',kdt,' lat=',lat
 !       endif
 
+#ifndef CCPP
       if (Model%do_sppt) then
 !--- radiation heating rate
         Tbd%dtdtr(1:im,:) = Tbd%dtdtr(1:im,:) + dtdtc(1:im,:)*dtf
@@ -6587,6 +6618,7 @@ module module_physics_driver
           endif
         enddo
       endif
+#endif
 
       deallocate (clw)
       if (allocated(cnvc))  deallocate(cnvc)
