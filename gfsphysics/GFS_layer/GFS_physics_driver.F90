@@ -709,6 +709,19 @@ module module_physics_driver
           stop
       end if
       if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_suite_stateout_reset through option B'
+      !Interstitial(nt)%im = im              ! intent(in) - set in Interstitial(nt)%create()
+      !Model%levs                            ! intent(in)
+      !Model%ntrac                           ! intent(in)
+      !Statein%tgrs                          ! intent(in)
+      !Statein%ugrs                          ! intent(in)
+      !Statein%vgrs                          ! intent(in)
+      !Statein%qgrs                          ! intent(in)
+      !Stateout%gt0                          ! intent(out)
+      !Stateout%gu0                          ! intent(out)
+      !Stateout%gv0                          ! intent(out)
+      !Stateout%gq0                          ! intent(out)
+      !cdata_block(nb,nt)%errmsg = errmsg    ! intent(out)
+      !cdata_block(nb,nt)%errflg = errflg    ! intent(out)
       call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_suite_stateout_reset", ierr=ierr)
       ! Copy intent(inout) and intent(out) interstitial variables to local variables in driver
       errmsg = trim(cdata_block(nb,nt)%errmsg)
@@ -3010,7 +3023,7 @@ module module_physics_driver
         Diag%dq3dt(:,:,5), errmsg, errflg)
 #else
       ! OPTION B - works with all compilers
-      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling hedmf_run through option B'
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_PBL_generic_post through option B'
       ! Copy local variables from driver to appropriate interstitial variables
       !Interstitial(nt)%im = im                           ! intent(in) - set in Interstitial(nt)%create()
       !Model%levs                                         ! intent(in)
@@ -3402,6 +3415,35 @@ module module_physics_driver
 !       write(0,*)' dtdt=',(dtdt(ipr,k),k=1,10)
 !     endif
 
+#ifdef CCPP
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_suite_stateout_update through option B'
+      !Interstitial(nt)%im = im              ! intent(in) - set in Interstitial(nt)%create()
+      !Model%levs                            ! intent(in)
+      !Model%ntrac                           ! intent(in)
+      !Model%dtp                             ! intent(in)
+      !Statein%tgrs                          ! intent(in)
+      !Statein%ugrs                          ! intent(in)
+      !Statein%vgrs                          ! intent(in)
+      !Statein%qgrs                          ! intent(in)
+      Interstitial(nt)%dudt = dudt           ! intent(in)
+      Interstitial(nt)%dvdt = dvdt           ! intent(in)
+      Interstitial(nt)%dtdt = dtdt           ! intent(in)
+      Interstitial(nt)%dqdt = dqdt           ! intent(in)
+      !Stateout%gt0                          ! intent(out)
+      !Stateout%gu0                          ! intent(out)
+      !Stateout%gv0                          ! intent(out)
+      !Stateout%gq0                          ! intent(out)
+      !cdata_block(nb,nt)%errmsg = errmsg    ! intent(out)
+      !cdata_block(nb,nt)%errflg = errflg    ! intent(out)
+      call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_suite_stateout_update", ierr=ierr)
+      ! Copy back intent(inout) interstitial variables to local variables in driver
+      errmsg = trim(cdata_block(nb,nt)%errmsg)
+      errflg = cdata_block(nb,nt)%errflg
+      if (errflg/=0) then
+        write(0,*) 'Error in call to GFS_suite_stateout_update: ' // trim(errmsg)
+        stop
+      end if
+#else
       do k=1,levs
         do i=1,im
           Stateout%gt0(i,k)  = Statein%tgrs(i,k) + dtdt(i,k) * dtp
@@ -3410,6 +3452,7 @@ module module_physics_driver
         enddo
       enddo
       Stateout%gq0(1:im,:,:) = Statein%qgrs(1:im,:,:) + dqdt(1:im,:,:) * dtp
+#endif
 
       if (Model%lsidea) then            ! idea convective adjustment
         call ideaca_up(Statein%prsi,Stateout%gt0,ix,im,levs+1)
