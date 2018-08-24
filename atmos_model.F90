@@ -93,7 +93,9 @@ use IPD_typedefs,       only: IPD_interstitial_type
 use CCPP_data,          only: ccpp_suite
 use IPD_driver,         only: IPD_initialize, IPD_step, IPD_finalize
 use IPD_CCPP_driver,    only: IPD_CCPP_step
+#ifdef HYBRID
 use physics_abstraction_layer, only: physics_step1
+#endif
 #else
 use IPD_driver,         only: IPD_initialize, IPD_step
 use physics_abstraction_layer, only: time_vary_step, radiation_step1, physics_step1, physics_step2
@@ -318,6 +320,10 @@ subroutine update_atmos_radiation_physics (Atmos)
 !--- execute the IPD atmospheric physics step1 subcomponent (main physics driver)
 
       call mpp_clock_begin(physClock)
+#if defined(CCPP) && !defined(HYBRID)
+      call IPD_CCPP_step (step="physics", nblks=Atm_block%nblks, ierr=ierr)
+      if (ierr/=0)  call mpp_error(FATAL, 'Call to IPD-CCPP physics step failed')
+#else
       Func0d => physics_step1
 !$OMP parallel do default (none) &
 #ifdef MEMCHECK
@@ -338,6 +344,7 @@ subroutine update_atmos_radiation_physics (Atmos)
         call IPD_step (IPD_Control, IPD_Data(nb:nb), IPD_Diag, IPD_Restart, IPD_func0d=Func0d)
 #endif
       enddo
+#endif
       call mpp_clock_end(physClock)
 
       if (chksum_debug) then

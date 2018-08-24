@@ -26,7 +26,9 @@ module physics_abstraction_layer
 
 #ifdef CCPP
   use GFS_driver,      only: initialize       =>  GFS_initialize,       &
+#ifdef HYBRID
                              physics_step1    =>  GFS_physics_driver,   &
+#endif
                              finalize         =>  GFS_finalize
 #else
   use GFS_driver,      only: initialize       =>  GFS_initialize,       &
