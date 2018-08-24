@@ -6281,6 +6281,11 @@ module module_physics_driver
       !Coupling%rainc_cpl                         ! intent(inout)
       !Coupling%snow_cpl                          ! intent(inout)
       !Diag%pwat                                  ! intent(inout)
+      !Model%do_sppt                              ! intent(in)
+      !Tbd%dtdtr                                  ! intent(inout)
+      Interstitial(nt)%dtdtc = dtdtc              ! intent(in)
+      !Tbd%drain_cpl                              ! intent(inout)
+      !Tbd%dsnow_cpl                              ! intent(inout)
       !cdata_block(nb,nt)%errmsg = errmsg         ! intent(out)
       !cdata_block(nb,nt)%errflg = errflg         ! intent(out)
       call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_MP_generic_post", ierr=ierr)
@@ -6442,23 +6447,6 @@ module module_physics_driver
       enddo
 #endif
 !  --- ...  end coupling insertion
-
-#ifdef CCPP
-      ! DH* moved up from end of subroutine to merge with MP_generic_post
-      if (Model%do_sppt) then
-!--- radiation heating rate
-        Tbd%dtdtr(1:im,:) = Tbd%dtdtr(1:im,:) + dtdtc(1:im,:)*dtf
-        do i = 1, im
-          if (t850(i) > 273.16) then
-!--- change in change in rain precip
-             Tbd%drain_cpl(i) = Diag%rain(i) - Tbd%drain_cpl(i)
-          else
-!--- change in change in snow precip
-             Tbd%dsnow_cpl(i) = Diag%rain(i) - Tbd%dsnow_cpl(i)
-          endif
-        enddo
-      endif
-#endif
 
 !!! update surface diagnosis fields at the end of phys package
 !!! this change allows gocart to use filtered wind fields
