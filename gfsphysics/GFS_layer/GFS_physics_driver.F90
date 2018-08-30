@@ -1,8 +1,3 @@
-! Enable this to test direct calls of CCPP-compliant schemes
-! (i.e. w/o using CCPP infrastructure); works only with the
-! Intel compiler, for others option B will be used regardless
-!#define CCPP_OPTION_A
-
 module module_physics_driver
 
   use machine,               only: kind_phys
@@ -36,7 +31,9 @@ module module_physics_driver
   use module_mp_thompson,    only: mp_gt_driver
   use module_mp_wsm6,        only: wsm6
   use funcphys,              only: ftdp
+#ifndef CCPP
   use surface_perturbation,  only: cdfnor
+#endif
 
 #ifdef CCPP
   use ccpp_api,              only: ccpp_physics_run
@@ -63,7 +60,9 @@ module module_physics_driver
 #endif
   real(kind=kind_phys), parameter :: epsq    = 1.e-20
   real(kind=kind_phys), parameter :: hsub    = con_hvap+con_hfus
+#ifndef CCPP
   real(kind=kind_phys), parameter :: czmin   = 0.0001      ! cos(89.994)
+#endif
   real(kind=kind_phys), parameter :: one     = 1.0d0, onebg = one/con_g
 #ifndef CCPP
   real(kind=kind_phys), parameter :: albdf   = 0.06
@@ -629,8 +628,8 @@ module module_physics_driver
 #else
       real (kind=kind_phys), dimension(size(Grid%xlon,1)) :: &
          z01d, zt1d, bexp1d, xlai1d, alb1d, vegf1d
-#endif
       real(kind=kind_phys) :: cdfz
+#endif
 !--- ALLOCATABLE ELEMENTS
       !--- in clw, the first two varaibles are cloud water and ice.
       !--- from third to ntrac are convective transportable tracers,
@@ -679,6 +678,15 @@ module module_physics_driver
 #else
       nt = 1
 #endif
+
+      ! Initialize local variables (mainly for debugging purposes, because the
+      ! corresponding variables Interstitial(nt)%... are reset to zero every time);
+      ! these variables are only modified over parts of the entire domain (related
+      ! to land surface mask etc.)
+      snowmt = 0.
+      gamq   = 0.
+      gamt   = 0.
+
       ! Associate construct to replace local variables with CCPP variables wrapping the entire driver routine
       associate_ccpp_vars: associate(adjsfcdsw => Diag%dswsfci,               &
                                      adjsfcnsw => Diag%nswsfci,               &
@@ -707,6 +715,19 @@ module module_physics_driver
           stop
       end if
       if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_suite_stateout_reset through option B'
+      !Interstitial(nt)%im = im              ! intent(in) - set in Interstitial(nt)%create()
+      !Model%levs                            ! intent(in)
+      !Model%ntrac                           ! intent(in)
+      !Statein%tgrs                          ! intent(in)
+      !Statein%ugrs                          ! intent(in)
+      !Statein%vgrs                          ! intent(in)
+      !Statein%qgrs                          ! intent(in)
+      !Stateout%gt0                          ! intent(out)
+      !Stateout%gu0                          ! intent(out)
+      !Stateout%gv0                          ! intent(out)
+      !Stateout%gq0                          ! intent(out)
+      !cdata_block(nb,nt)%errmsg = errmsg    ! intent(out)
+      !cdata_block(nb,nt)%errflg = errflg    ! intent(out)
       call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_suite_stateout_reset", ierr=ierr)
       ! Copy intent(inout) and intent(out) interstitial variables to local variables in driver
       errmsg = trim(cdata_block(nb,nt)%errmsg)
@@ -721,9 +742,15 @@ module module_physics_driver
 !===> ...  begin here
 
       me      = Model%me
+#ifdef CCPP
+      ix      = Interstitial(nt)%ix
+      im      = Interstitial(nt)%im
+      ipr     = Interstitial(nt)%ipr
+#else
       ix      = size(Grid%xlon,1)
       im      = size(Grid%xlon,1)
       ipr     = min(im,10)
+#endif
       levs    = Model%levs
       lsoil   = Model%lsoil
       ntrac   = Model%ntrac
@@ -836,6 +863,7 @@ module module_physics_driver
         allocate (cnvc(ix,levs), cnvw(ix,levs))
       endif
 !
+#ifndef CCPP
 !  ---  set initial quantities for stochastic physics deltas
       if (Model%do_sppt) then
         Tbd%dtdtr     = 0.0
@@ -885,6 +913,7 @@ module module_physics_driver
           enddo
         endif
       endif
+#endif
 !
       if (Model%do_shoc) then
         allocate (qrn(im,levs),  qsnw(im,levs), ncpl(im,levs), ncpi(im,levs))
@@ -953,7 +982,7 @@ module module_physics_driver
 #else
 !GFDL   Adjust the geopotential height hydrostatically in a way consistent with FV3 discretization
 #ifdef CCPP
-      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling get_prs_fv3_run through option B'
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling get_prs_fv3 through option B'
       ! Copy local variables from driver to appropriate interstitial variables
       !Interstitial(nt)%ix                    ! intent(in) - set in Interstitial(nt)%create()
       !Model%levs                             ! intent(in)
@@ -973,7 +1002,7 @@ module module_physics_driver
       errmsg = trim(cdata_block(nb,nt)%errmsg)
       errflg = cdata_block(nb,nt)%errflg
       if (errflg/=0) then
-        write(0,*) 'Error in call to get_prs_fv3_run: ' // trim(errmsg)
+        write(0,*) 'Error in call to get_prs_fv3: ' // trim(errmsg)
         stop
       end if
 #else
@@ -985,7 +1014,7 @@ module module_physics_driver
 !
 
 #ifdef CCPP
-      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_suite_interstitial_1_run through option B'
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_suite_interstitial_1 through option B'
       ! Copy local variables from driver to appropriate interstitial variables
       !Model                              ! intent(in)
       !Grid                               ! intent(in)
@@ -1026,7 +1055,7 @@ module module_physics_driver
       errmsg = trim(cdata_block(nb,nt)%errmsg)
       errflg = cdata_block(nb,nt)%errflg
       if (errflg/=0) then
-          write(0,*) 'Error in call to GFS_suite_interstitial_1_run: ' // trim(errmsg)
+          write(0,*) 'Error in call to GFS_suite_interstitial_1: ' // trim(errmsg)
           stop
       end if
 #endif
@@ -1171,7 +1200,7 @@ module module_physics_driver
 
       else
 #ifdef CCPP
-            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling dcyc2t3_run through option B'
+            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling dcyc2t3 through option B'
             ! Copy local variables from driver to appropriate interstitial variables
             !Model%solhr                            ! intent(in)
             !Model%slag                             ! intent(in)
@@ -1238,7 +1267,7 @@ module module_physics_driver
             errmsg    = trim(cdata_block(nb,nt)%errmsg)
             errflg    = cdata_block(nb,nt)%errflg
             if (errflg/=0) then
-                write(0,*) 'Error in call to dcyc2t3_run: ' // trim(errmsg)
+                write(0,*) 'Error in call to dcyc2t3: ' // trim(errmsg)
                 stop
             end if
 #else
@@ -1307,29 +1336,53 @@ module module_physics_driver
       !Sfcprop%tsfc                           ! intent(in)
       !Statein%phil                           ! intent(in)
       !con_g                                  ! intent(in) - physical constant in physcons.F90
-      Interstitial(nt)%sigmaf = sigmaf        ! intent(inout)
-      Interstitial(nt)%soiltype = soiltyp     ! intent(inout)
-      Interstitial(nt)%vegtype = vegtype      ! intent(inout)
+      Interstitial(nt)%sigmaf    = sigmaf     ! intent(inout)
+      Interstitial(nt)%soiltype  = soiltyp    ! intent(inout)
+      Interstitial(nt)%vegtype   = vegtype    ! intent(inout)
       Interstitial(nt)%slopetype = slopetyp   ! intent(inout)
-      Interstitial(nt)%work3 = work3          ! intent(inout)
-      Interstitial(nt)%gabsbdlw = gabsbdlw    ! intent(inout)
-      Interstitial(nt)%tsurf = tsurf          ! intent(inout)
+      Interstitial(nt)%work3     = work3      ! intent(inout)
+      Interstitial(nt)%gabsbdlw  = gabsbdlw   ! intent(inout)
+      Interstitial(nt)%tsurf     = tsurf      ! intent(inout)
       !Diag%zlvl                              ! intent(inout)
-      !cdata_block(nb,nt)%errmsg = errmsg  ! intent(out)
-      !cdata_block(nb,nt)%errflg = errflg  ! intent(out)
+      !Model%do_sppt                          ! intent(in)
+      !Tbd%dtdtr                              ! intent(out)
+      !Tbd%drain_cpl                          ! intent(out)
+      !Tbd%dsnow_cpl                          ! intent(out)
+      !Tbd%rain_cpl                           ! intent(in)
+      !Tbd%snow_cpl                           ! intent(in)
+      !Model%do_sfcperts                      ! intent(in)
+      !Model%nsfcpert                         ! intent(in)
+      !Coupling%sfc_wts                       ! intent(in)
+      !Model%pertz0                           ! intent(in)
+      !Model%pertzt                           ! intent(in)
+      !Model%pertshc                          ! intent(in)
+      !Model%pertlai                          ! intent(in)
+      !Model%pertvegf                         ! intent(in)
+      !Interstitial(nt)%z01d                  ! intent(out) - overwritten within
+      !Interstitial(nt)%zt1d                  ! intent(out) - overwritten within
+      !Interstitial(nt)%bexp1d                ! intent(out) - overwritten within
+      !Interstitial(nt)%xlai1d                ! intent(out) - overwritten within
+      !Interstitial(nt)%vegf1d                ! intent(out) - overwritten within
+      !cdata_block(nb,nt)%errmsg = errmsg     ! intent(out)
+      !cdata_block(nb,nt)%errflg = errflg     ! intent(out)
       call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_surface_generic_pre", ierr=ierr)
       ! Copy intent(inout) and intent(out) interstitial variables to local variables in driver
-      sigmaf = Interstitial(nt)%sigmaf
-      soiltyp = Interstitial(nt)%soiltype
-      vegtype = Interstitial(nt)%vegtype
+      sigmaf   = Interstitial(nt)%sigmaf
+      soiltyp  = Interstitial(nt)%soiltype
+      vegtype  = Interstitial(nt)%vegtype
       slopetyp = Interstitial(nt)%slopetype
-      work3 = Interstitial(nt)%work3
+      work3    = Interstitial(nt)%work3
       gabsbdlw = Interstitial(nt)%gabsbdlw
-      tsurf = Interstitial(nt)%tsurf
-      errmsg     = trim(cdata_block(nb,nt)%errmsg)
-      errflg     = cdata_block(nb,nt)%errflg
+      tsurf    = Interstitial(nt)%tsurf
+      z01d     = Interstitial(nt)%z01d
+      zt1d     = Interstitial(nt)%zt1d
+      bexp1d   = Interstitial(nt)%bexp1d
+      xlai1d   = Interstitial(nt)%xlai1d
+      vegf1d   = Interstitial(nt)%vegf1d
+      errmsg   = trim(cdata_block(nb,nt)%errmsg)
+      errflg   = cdata_block(nb,nt)%errflg
       if (errflg/=0) then
-          write(0,*) 'Error in call to GFS_surface_generic_pre_run: ' // trim(errmsg)
+          write(0,*) 'Error in call to GFS_surface_generic_pre: ' // trim(errmsg)
           stop
       end if
 #endif
@@ -1338,6 +1391,30 @@ module module_physics_driver
       gabsbdlw(:) = Radtend%semis(:) * adjsfcdlw(:)
 #endif
 
+#ifdef CCPP
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_suite_interstitial_2 through option B'
+      ! Copy local variables from driver to appropriate interstitial variables
+      !Model                                  ! intent(in)
+      !Grid                                   ! intent(in)
+      !Statein                                ! intent(in)
+      !Radtend                                ! intent(in)
+      Interstitial(nt)%xcosz = xcosz          ! intent(in)
+      !Diag%dswsfci                           ! intent(in) - associated with adjsfcdsw
+      !Diag%dlwsfci                           ! intent(in) - associated with adjsfcdlw
+      !Diag%ulwsfci                           ! intent(in) - associated with adjsfculw
+      Interstitial(nt)%xmu = xmu              ! intent(in)
+      !Diag                                   ! intent(inout)
+      !cdata_block(nb,nt)%errmsg = errmsg     ! intent(out)
+      !cdata_block(nb,nt)%errflg = errflg     ! intent(out)
+      call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_suite_interstitial_2", ierr=ierr)
+      ! Copy intent(inout) and intent(out) interstitial variables to local variables in driver
+      errmsg   = trim(cdata_block(nb,nt)%errmsg)
+      errflg   = cdata_block(nb,nt)%errflg
+      if (errflg/=0) then
+          write(0,*) 'Error in call to GFS_suite_interstitial_2: ' // trim(errmsg)
+          stop
+      end if
+#else
       if (Model%lssav) then      !  --- ...  accumulate/save output variables
 
 !  --- ...  sunshine duration time is defined as the length of time (in mdl output
@@ -1388,6 +1465,7 @@ module module_physics_driver
           endif
         endif
       endif    ! end if_lssav_block
+#endif
 
       do i=1,im
         kcnv(i)   = 0
@@ -1480,22 +1558,7 @@ module module_physics_driver
 !
 !     if (lprnt) write(0,*)' tsfc=',Sfcprop%tsfc(ipr),' tsurf=',tsurf(ipr),iter
 #ifdef CCPP
-#if defined(CCPP_OPTION_A) && defined(__INTEL_COMPILER)
-! OPTION A - works with Intel only
-         if (Model%me==0) write(0,*) 'CCPP DEBUG: calling sfc_ex_coef_run through option A'
-         call sfc_ex_coef_mp_sfc_ex_coef_run(                        &
-                  im, Statein%pgr, Statein%ugrs, Statein%vgrs,       &
-                  Statein%tgrs, Statein%qgrs, Diag%zlvl,             &
-                  Sfcprop%snowd, Sfcprop%tsfc,  Sfcprop%zorl, cd,    &
-                  cdq, rb, Statein%prsl(1,1), work3, islmsk, stress, &
-                  Sfcprop%ffmm,  Sfcprop%ffhh, Sfcprop%uustar,       &
-                  wind,  Tbd%phy_f2d(1,Model%num_p2d), fm10, fh2,    &
-                  sigmaf, vegtype, Sfcprop%shdmax, Model%ivegsrc,    &
-                  z01d, zt1d,                                        &  ! mg, sfc-perts
-                  tsurf, flag_iter, Model%redrag, errmsg, errflg)
-#else
-! OPTION B - works with all compilers
-         if (Model%me==0) write(0,*) 'CCPP DEBUG: calling sfc_ex_coef_run through option B'
+         if (Model%me==0) write(0,*) 'CCPP DEBUG: calling sfc_ex_coef through option B'
          ! Copy local variables from driver to appropriate interstitial variables
          !Interstitial(nt)%im = im              ! intent(in) - set in Interstitial(nt)%create()
          !Statein%pgr                           ! intent(in)
@@ -1543,9 +1606,8 @@ module module_physics_driver
          fh2    = Interstitial(nt)%fh2
          errmsg = trim(cdata_block(nb,nt)%errmsg)
          errflg = cdata_block(nb,nt)%errflg
-#endif
          if (errflg/=0) then
-             write(0,*) 'Error in call to sfc_ex_coef_run: ' // trim(errmsg)
+             write(0,*) 'Error in call to sfc_ex_coef: ' // trim(errmsg)
              stop
          end if
 #else
@@ -1581,7 +1643,7 @@ module module_physics_driver
          errmsg     = trim(cdata_block(nb,nt)%errmsg)
          errflg     = cdata_block(nb,nt)%errflg
          if (errflg/=0) then
-             write(0,*) 'Error in call to GFS_surface_loop_control_part1_run: ' // trim(errmsg)
+             write(0,*) 'Error in call to GFS_surface_loop_control_part1: ' // trim(errmsg)
              stop
          end if
 #else
@@ -1596,41 +1658,7 @@ module module_physics_driver
          if (Model%nstf_name(1) > 0) then
 
 #ifdef CCPP
-#if defined(CCPP_OPTION_A) && defined(__INTEL_COMPILER)
-! OPTION A - works with Intel only
-            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling sfc_nst through option A'
-            call sfc_nst_pre_mp_sfc_nst_pre_run(im, islmsk, Sfcprop%oro, Sfcprop%oro_uf,   &
-                                            Sfcprop%tsfc, tsurf, tseal, errmsg, errflg)
-
-            call sfc_nst_mp_sfc_nst_run(im, Model%lsoil, Statein%pgr, Statein%ugrs,        &
-                                        Statein%vgrs, Statein%tgrs, Statein%qgrs,          &
-                                        Sfcprop%tref, cd, cdq, Statein%prsl(1,1), work3,   &
-                                        islmsk, Grid%xlon, Grid%sinlat, stress,            &
-                                        Radtend%semis, gabsbdlw, adjsfcnsw, Sfcprop%tprcp, &
-                                        dtf, kdt, Model%solhr, xcosz,                      &
-                                        Tbd%phy_f2d(1,Model%num_p2d), flag_iter,           &
-                                        flag_guess, Model%nstf_name(1), Model%nstf_name(4),&
-                                        Model%nstf_name(5), lprnt, ipr,                    &
-!  --- Input/output
-                                        tseal, tsurf, Sfcprop%xt, Sfcprop%xs, Sfcprop%xu,  &
-                                        Sfcprop%xv, Sfcprop%xz, Sfcprop%zm, Sfcprop%xtts,  &
-                                        Sfcprop%xzts, Sfcprop%dt_cool, Sfcprop%z_c,        &
-                                        Sfcprop%c_0, Sfcprop%c_d, Sfcprop%w_0, Sfcprop%w_d,&
-                                        Sfcprop%d_conv, Sfcprop%ifd, Sfcprop%qrain,        &
-!  ---  outputs:
-                                        qss, gflx, Diag%cmm, Diag%chh, evap, hflx, ep1d,   &
-                                        errmsg, errflg)
-
-            call sfc_nst_post_mp_sfc_nst_post_run(im, islmsk, Sfcprop%oro, Sfcprop%oro_uf, &
-                                             Model%nstf_name(1), Model%nstf_name(4),       &
-                                             Model%nstf_name(5), Sfcprop%xt, Sfcprop%xz,   &
-                                             Sfcprop%dt_cool, Sfcprop%z_c, Sfcprop%slmsk,  &
-                                             Sfcprop%tref, Grid%xlon, tsurf, dtzm,         &
-                                             Sfcprop%tsfc, errmsg, errflg)
-
-#else
-! OPTION B - works with all compilers
-            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling sfc_nst_pre_run through option B'
+            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling sfc_nst_pre through option B'
             ! Copy local variables from driver to appropriate interstitial variables
             !Interstitial(nt)%im = im                ! intent(in) - set in Interstitial(nt)%create()
             Interstitial(nt)%islmsk = islmsk         ! intent(in)
@@ -1648,8 +1676,8 @@ module module_physics_driver
                 write(0,*) 'Error in call to sfc_nst_pre_mp_sfc_nst_pre_run: ' // trim(errmsg)
                 stop
             end if
-
-            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling sfc_nst_run through option B'
+            !
+            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling sfc_nst through option B'
             ! Copy local variables from driver to appropriate interstitial variables
             !Interstitial(nt)%im = im                ! intent(in) - set in Interstitial(nt)%create()
             Interstitial(nt)%islmsk = islmsk         ! intent(in)
@@ -1684,11 +1712,11 @@ module module_physics_driver
             errmsg = trim(cdata_block(nb,nt)%errmsg)
             errflg = cdata_block(nb,nt)%errflg
             if (errflg/=0) then
-                write(0,*) 'Error in call to sfc_nst_run: ' // trim(errmsg)
+                write(0,*) 'Error in call to sfc_nst: ' // trim(errmsg)
                 stop
             end if
-
-            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling sfc_nst_post_run through option B'
+            !
+            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling sfc_nst_post through option B'
             ! Copy local variables from driver to appropriate interstitial variables
             !Interstitial(nt)%im = im                ! intent(in) - set in Interstitial(nt)%create()
             Interstitial(nt)%islmsk = islmsk         ! intent(in)
@@ -1793,29 +1821,7 @@ module module_physics_driver
 !     if (lprnt) write(0,*)' tsead=',tsea(ipr),' tsurf=',tsurf(ipr),iter &
 !    &,' pgr=',pgr(ipr),' sfcemis=',sfcemis(ipr)
 #ifdef CCPP
-#if defined(CCPP_OPTION_A) && defined(__INTEL_COMPILER)
-! OPTION A - works with Intel only
-         if (Model%me==0) write(0,*) 'CCPP DEBUG: calling lsm_noah_run through option A'
-         call lsm_noah_mp_lsm_noah_run(                                &
-            im, Model%lsoil, Statein%pgr, Statein%ugrs, Statein%vgrs,  &
-            Statein%tgrs, Statein%qgrs, soiltyp, vegtype, sigmaf,      &
-            Radtend%semis, gabsbdlw, adjsfcdsw, adjsfcnsw, Model%dtf,  &
-            Sfcprop%tg3, cd, cdq, Statein%prsl(1,1), work3, Diag%zlvl, &
-            islmsk, Tbd%phy_f2d(1,Model%num_p2d), slopetyp,            &
-            Sfcprop%shdmin, Sfcprop%shdmax, Sfcprop%snoalb,            &
-            Radtend%sfalb, flag_iter, flag_guess, Model%isot,          &
-            Model%ivegsrc,                                             &
-            bexp1d, xlai1d, vegf1d, Model%pertvegf,                    &
-!!  ---  in/outs:
-            Sfcprop%weasd, Sfcprop%snowd, Sfcprop%tsfc, Sfcprop%tprcp, &
-            Sfcprop%srflag, Sfcprop%smc, Sfcprop%stc, Sfcprop%slc,     &
-            Sfcprop%canopy, trans, tsurf, Sfcprop%zorl,                &
-!!  ---  outputs:
-            Sfcprop%sncovr, qss, gflx, drain, evap, hflx, ep1d, runof, &
-            Diag%cmm, Diag%chh, evbs, evcw, sbsno, snowc, Diag%soilm,  &
-            snohf, Diag%smcwlt2, Diag%smcref2, Diag%wet1, errmsg, errflg )
-#else
-         if (Model%me==0) write(0,*) 'CCPP DEBUG: calling lsm_noah_run through option B'
+         if (Model%me==0) write(0,*) 'CCPP DEBUG: calling lsm_noah through option B'
          ! Copy local variables from driver to appropriate interstitial variables
          !Interstitial(nt)%im = im              ! intent(in) - set in Interstitial(nt)%create()
          !Model%lsoil                           ! intent(in)
@@ -1905,9 +1911,8 @@ module module_physics_driver
          snohf  = Interstitial(nt)%snohf
          errmsg = trim(cdata_block(nb,nt)%errmsg)
          errflg = cdata_block(nb,nt)%errflg
-#endif
          if (errflg/=0) then
-             write(0,*) 'Error in call to lsm_noah_run: ' // trim(errmsg)
+             write(0,*) 'Error in call to lsm_noah: ' // trim(errmsg)
              stop
          end if
 #else
@@ -2063,7 +2068,7 @@ module module_physics_driver
          errmsg     = trim(cdata_block(nb,nt)%errmsg)
          errflg     = cdata_block(nb,nt)%errflg
          if (errflg/=0) then
-             write(0,*) 'Error in call to GFS_surface_loop_control_part2_run: ' // trim(errmsg)
+             write(0,*) 'Error in call to GFS_surface_loop_control_part2: ' // trim(errmsg)
              stop
          end if
 #else
@@ -2112,12 +2117,10 @@ module module_physics_driver
 #ifndef CCPP
       do i=1,im
         Diag%epi(i)     = ep1d(i)
-!DH* not required for CCPP, either set via associate or in dcyc2t3_post
         Diag%dlwsfci(i) = adjsfcdlw(i)
         Diag%ulwsfci(i) = adjsfculw(i)
         Diag%uswsfci(i) = adjsfcdsw(i) - adjsfcnsw(i)
         Diag%dswsfci(i) = adjsfcdsw(i)
-!*DH
         Diag%gfluxi(i)  = gflx(i)
         Diag%t1(i)      = Statein%tgrs(i,1)
         Diag%q1(i)      = Statein%qgrs(i,1,1)
@@ -2169,15 +2172,40 @@ module module_physics_driver
                      Sfcprop%ffmm, Sfcprop%ffhh, fm10, fh2)
 #endif
 
-      ! DH* where do we put this line?
-      ! Model%num_p2d == 3 for Zhao_carr, otherwise 1
-      ! phy_f2d is only used by gscond and precpd below: Tbd%phy_f2d(:,1) and Tbd%phy_f2d(:,2) - not Tbd%phy_f2d(:,3)
-      ! AND by Tbd%phy_f2d(1,Model%num_p2d) is used by rascnv in line 4124, where it gets overwritten (intent(out))
-      ! does not resetting here make any difference in the output files? can we add this to a suite interstitial later?
+#ifndef CCPP
       Tbd%phy_f2d(:,Model%num_p2d) = 0.0
-      ! *DH
+#endif
 
 #ifdef CCPP
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling sfc_diag_post through option B'
+      ! Copy local variables from driver to appropriate interstitial variables
+      !Interstitial(nt)%im = im               ! intent(in) - set in Interstitial(nt)%create()
+      !Model%lssav                            ! intent(in)
+      !con_eps                                ! intent(in) - physical constant in physcons
+      !con_epsm1                              ! intent(in) - physical constant in physcons
+      !Sfcprop%t2m                            ! intent(in)
+      !Sfcprop%q2m                            ! intent(in)
+      !Sfcprop%u10m                           ! intent(in)
+      !Sfcprop%v10m                           ! intent(in)
+      !Diag%tmpmin                            ! intent(inout)
+      !Diag%tmpmax                            ! intent(inout)
+      !Diag%spfhmin                           ! intent(inout)
+      !Diag%spfhmax                           ! intent(inout)
+      !Diag%wind10mmax                        ! intent(inout)
+      !Diag%u10mmax                           ! intent(inout)
+      !Diag%v10mmax                           ! intent(inout)
+      !Diag%dpt2m                             ! intent(inout)
+      !cdata_block(nb,nt)%errmsg = errmsg     ! intent(out)
+      !cdata_block(nb,nt)%errflg = errflg     ! intent(out)
+      call ccpp_physics_run(cdata_block(nb,nt), scheme_name="sfc_diag_post", ierr=ierr)
+      ! Copy intent(inout) and intent(out) interstitial variables to local variables in driver
+      errmsg     = trim(cdata_block(nb,nt)%errmsg)
+      errflg     = cdata_block(nb,nt)%errflg
+      if (errflg/=0) then
+          write(0,*) 'Error in call to sfc_diag_post: ' // trim(errmsg)
+          stop
+      end if
+      !
       if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_surface_generic_post through option B'
       ! Copy local variables from driver to appropriate interstitial variables
       !Interstitial(nt)%im = im               ! intent(in) - set in Interstitial(nt)%create()
@@ -2215,8 +2243,6 @@ module module_physics_driver
       Interstitial(nt)%sbsno = sbsno          ! intent(in)
       Interstitial(nt)%snowc = snowc          ! intent(in)
       Interstitial(nt)%snohf = snohf          ! intent(in)
-      !con_eps                                ! intent(in) - physical constant in physcons
-      !con_epsm1                              ! intent(in) - physical constant in physcons
       !Diag%epi                               ! intent(inout)
       !Diag%gfluxi                            ! intent(inout)
       !Diag%t1                                ! intent(inout)
@@ -2261,14 +2287,10 @@ module module_physics_driver
       !Diag%snowca                            ! intent(inout)
       !Diag%snohfa                            ! intent(inout)
       !Diag%ep                                ! intent(inout)
-      !Diag%tmpmin                            ! intent(inout)
-      !Diag%tmpmax                            ! intent(inout)
-      !Diag%spfhmin                           ! intent(inout)
-      !Diag%spfhmax                           ! intent(inout)
-      !Diag%wind10mmax                        ! intent(inout)
-      !Diag%u10mmax                           ! intent(inout)
-      !Diag%v10mmax                           ! intent(inout)
-      !Diag%dpt2m                             ! intent(inout)
+      !Diag%runoff                            ! intent(inout)
+      !Diag%srunoff                           ! intent(inout)
+      Interstitial(nt)%runoff = runof         ! intent(in)
+      Interstitial(nt)%drain  = drain         ! intent(in)
       !cdata_block(nb,nt)%errmsg = errmsg     ! intent(out)
       !cdata_block(nb,nt)%errflg = errflg     ! intent(out)
       call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_surface_generic_post", ierr=ierr)
@@ -2276,7 +2298,7 @@ module module_physics_driver
       errmsg     = trim(cdata_block(nb,nt)%errmsg)
       errflg     = cdata_block(nb,nt)%errflg
       if (errflg/=0) then
-          write(0,*) 'Error in call to GFS_surface_generic_post_run: ' // trim(errmsg)
+          write(0,*) 'Error in call to GFS_surface_generic_post: ' // trim(errmsg)
           stop
       end if
 #else
@@ -2431,34 +2453,7 @@ module module_physics_driver
                        kinver, Model%xkzm_m, Model%xkzm_h, Model%xkzm_s)
           elseif (Model%hybedmf) then
 #ifdef CCPP
-#if defined(CCPP_OPTION_A) && defined(__INTEL_COMPILER)
-! OPTION A - works with Intel only
-              if (Model%me==0) write(0,*) 'CCPP DEBUG: calling PBL_generic_pre_run through option A'
-              call GFS_PBL_generic_pre_mp_GFS_PBL_generic_pre_run (im, Model%levs, nvdiff, ntrac,             &
-                imp_physics, Model%imp_physics_gfdl, Model%imp_physics_thompson, Model%imp_physics_wsm6,      &
-                Model%ltaerosol, Statein%qgrs, Statein%qgrs(:,:,1), Statein%qgrs(:,:,ntcw),                   &
-                Statein%qgrs(:,:,ntiw), Statein%qgrs(:,:,ntoz), Statein%qgrs(:,:,ntlnc),                      &
-                Statein%qgrs(:,:,ntinc), Statein%qgrs(:,:,ntwa), Statein%qgrs(:,:,ntia),                      &
-                Statein%qgrs(:,:,ntrw), Statein%qgrs(:,:,ntsw), Statein%qgrs(:,:,ntgl),                       &
-                Interstitial(nt)%vdftra, errmsg, errflg)
-
-              if (Model%me==0) write(0,*) 'CCPP DEBUG: calling hedmf_run through option A'
-              call hedmf_mp_hedmf_run(                                                        &
-                 ix, im, levs, nvdiff, ntcw, dvdt, dudt, dtdt, Interstitial(nt)%dvdftra,      &
-                 Statein%ugrs, Statein%vgrs, Statein%tgrs, Interstitial(nt)%vdftra,           &
-                 Radtend%htrsw, Radtend%htrlw, xmu, Statein%prsik(1,1),                       &
-                 rb, Sfcprop%zorl, Diag%u10m, Diag%v10m, Sfcprop%ffmm,                        &
-                 Sfcprop%ffhh, Sfcprop%tsfc, hflx, evap, stress,                              &
-                 wind, kpbl, Statein%prsi, del, Statein%prsl,                                 &
-                 Statein%prslk, Statein%phii, Statein%phil, dtp,                              &
-                 Model%dspheat, dusfc1, dvsfc1, dtsfc1, dqsfc1, Diag%hpbl,                    &
-                 gamt, gamq, dkt, kinver, Model%xkzm_m, Model%xkzm_h,                         &
-                 Model%xkzm_s, lprnt, ipr,                                                    &
-                 Model%xkzminv, Model%moninq_fac, errmsg, errflg)
-
-#else
-!OPTION B - works with all compilers
-            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling PBL_generic_pre_run through option B'
+            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_PBL_generic_pre through option B'
             ! Copy local variables from driver to appropriate interstitial variables
               !Interstitial(nt)%im = im             ! intent(in) - set in Interstitial(nt)%create()
               !Model%levs                           ! intent(in)
@@ -2489,7 +2484,7 @@ module module_physics_driver
               errmsg = trim(cdata_block(nb,nt)%errmsg)
               errflg = cdata_block(nb,nt)%errflg
 
-              if (Model%me==0) write(0,*) 'CCPP DEBUG: calling hedmf_run through option B'
+              if (Model%me==0) write(0,*) 'CCPP DEBUG: calling hedmf through option B'
               ! Copy local variables from driver to appropriate interstitial variables
               !Interstitial(nt)%im = im             ! intent(in) - set in Interstitial(nt)%create()
               !Interstitial(nt)%ix = ix             ! intent(in) - set in Interstitial(nt)%create()
@@ -2561,9 +2556,8 @@ module module_physics_driver
               dkt    = Interstitial(nt)%dkt
               errmsg = trim(cdata_block(nb,nt)%errmsg)
               errflg = cdata_block(nb,nt)%errflg
-#endif
               if (errflg/=0) then
-                  write(0,*) 'Error in call to hedmf_run: ' // trim(errmsg)
+                  write(0,*) 'Error in call to hedmf: ' // trim(errmsg)
                   stop
               end if
 #else
@@ -2619,18 +2613,7 @@ module module_physics_driver
         allocate(vdftra(ix,levs,nvdiff), dvdftra(im,levs,nvdiff))
         dvdftra(:,:,:) = 0.0
 #ifdef CCPP
-#if defined(CCPP_OPTION_A) && defined(__INTEL_COMPILER)
-! OPTION A - works with Intel only
-        if (Model%me==0) write(0,*) 'CCPP DEBUG: calling PBL_generic_pre_run through option A'
-        call GFS_PBL_generic_pre_mp_GFS_PBL_generic_pre_run (im, Model%levs, nvdiff, ntrac,             &
-          imp_physics, Model%imp_physics_gfdl, Model%imp_physics_thompson, Model%imp_physics_wsm6,      &
-          Model%ltaerosol, Statein%qgrs, Statein%qgrs(:,:,1), Statein%qgrs(:,:,ntcw),                   &
-          Statein%qgrs(:,:,ntiw), Statein%qgrs(:,:,ntoz), Statein%qgrs(:,:,ntlnc),                      &
-          Statein%qgrs(:,:,ntinc), Statein%qgrs(:,:,ntwa), Statein%qgrs(:,:,ntia),                      &
-          Statein%qgrs(:,:,ntrw), Statein%qgrs(:,:,ntsw), Statein%qgrs(:,:,ntgl),                       &
-          Interstitial(nt)%vdftra, errmsg, errflg)
-#else
-        if (Model%me==0) write(0,*) 'CCPP DEBUG: calling PBL_generic_pre_run through option B'
+        if (Model%me==0) write(0,*) 'CCPP DEBUG: calling PBL_generic_pre through option B'
           ! Copy local variables from driver to appropriate interstitial variables
             !Interstitial(nt)%im = im             ! intent(in) - set in Interstitial(nt)%create()
             !Model%levs                           ! intent(in)
@@ -2658,10 +2641,13 @@ module module_physics_driver
             !cdata_block(nb,nt)%errflg = errflg   ! intent(out)
             call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_PBL_generic_pre", ierr=ierr)
             ! Copy back intent(inout) interstitial variables to local variables in driver
+            vdftra = Interstitial(nt)%vdftra
             errmsg = trim(cdata_block(nb,nt)%errmsg)
             errflg = cdata_block(nb,nt)%errflg
-            vdftra = Interstitial(nt)%vdftra
-#endif
+            if (errflg/=0) then
+                write(0,*) 'Error in call to GFS_PBL_generic_pre: ' // trim(errmsg)
+                stop
+            end if
 #else
 !
         if (imp_physics == 6) then
@@ -2730,24 +2716,7 @@ module module_physics_driver
         else
           if (Model%hybedmf) then
 #ifdef CCPP
-#if defined(CCPP_OPTION_A) && defined(__INTEL_COMPILER)
-            ! OPTION A - works with Intel only
-            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling hedmf_run through option A'
-            call hedmf_mp_hedmf_run(                                                        &
-               ix, im, levs, nvdiff, ntcw, dvdt, dudt, dtdt, Interstitial(nt)%dvdftra,      &
-               Statein%ugrs, Statein%vgrs, Statein%tgrs, Interstitial(nt)%vdftra,           &
-               Radtend%htrsw, Radtend%htrlw, xmu, Statein%prsik(1,1),                       &
-               rb, Sfcprop%zorl, Diag%u10m, Diag%v10m, Sfcprop%ffmm,                        &
-               Sfcprop%ffhh, Sfcprop%tsfc, hflx, evap, stress,                              &
-               wind, kpbl, Statein%prsi, del, Statein%prsl,                                 &
-               Statein%prslk, Statein%phii, Statein%phil, dtp,                              &
-               Model%dspheat, dusfc1, dvsfc1, dtsfc1, dqsfc1, Diag%hpbl,                    &
-               gamt, gamq, dkt, kinver, Model%xkzm_m, Model%xkzm_h,                         &
-               Model%xkzm_s, lprnt, ipr,                                                    &
-               Model%xkzminv, Model%moninq_fac, errmsg, errflg)
-#else
-            ! OPTION B - works with all compilers
-            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling hedmf_run through option B'
+            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling hedmf through option B'
             ! Copy local variables from driver to appropriate interstitial variables
             !Interstitial(nt)%im = im             ! intent(in) - set in Interstitial(nt)%create()
             !Interstitial(nt)%ix = ix             ! intent(in) - set in Interstitial(nt)%create()
@@ -2820,9 +2789,8 @@ module module_physics_driver
             dkt    = Interstitial(nt)%dkt
             errmsg = trim(cdata_block(nb,nt)%errmsg)
             errflg = cdata_block(nb,nt)%errflg
-#endif
             if (errflg/=0) then
-                write(0,*) 'Error in call to hedmf_run: ' // trim(errmsg)
+                write(0,*) 'Error in call to hedmf: ' // trim(errmsg)
                 stop
             end if
 #else
@@ -2951,7 +2919,7 @@ module module_physics_driver
           Coupling%ushfsfci(i) = -con_cp * tem * hflx(i) ! upward sensible heat flux
         enddo
 #ifdef CCPP
-        ! DH* 20180809 - adjusted dimensions of dkt from (:,1:Model%levs) to (:,1:Model%levs-1)
+        ! Interstitial(nt)%dkt has dimensions (1:im,1:Model%levs-1) as required by physics schemes
         Coupling%dkt     (:,1:Model%levs-1) = dkt (:,:)
 #else
         Coupling%dkt     (:,:) = dkt (:,:)
@@ -2969,22 +2937,7 @@ module module_physics_driver
 
 !  --- ...  coupling insertion
 #ifdef CCPP
-#if defined(CCPP_OPTION_A) && defined(__INTEL_COMPILER)
-      ! OPTION A - works with Intel only
-      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_PBL_generic_post_run through option A'
-      call GFS_PBL_generic_post_mp_GFS_PBL_generic_post_run (im, Model%levs, nvdiff, ntrac, ntoz, imp_physics,              &
-        Model%imp_physics_gfdl, Model%imp_physics_thompson, Model%imp_physics_wsm6, Model%ltaerosol, Model%cplflx,          &
-        Model%lssav, Model%ldiag3d, Model%lsidea, Model%hybedmf, Interstitial(nt)%dvdftra, dusfc1, dvsfc1, dtsfc1, dqsfc1,  &
-        dtf, dudt, dvdt, dtdt, Radtend%htrsw, Radtend%htrlw, xmu, dqdt, dqdt(:,:,1), dqdt(:,:,ntcw), dqdt(:,:,ntiw),        &
-        dqdt(:,:,ntoz), dqdt(:,:,ntlnc), dqdt(:,:,ntinc), dqdt(:,:,ntwa), dqdt(:,:,ntia), dqdt(:,:,ntrw),                   &
-        dqdt(:,:,ntsw), dqdt(:,:,ntgl), Coupling%dusfc_cpl, Coupling%dvsfc_cpl, Coupling%dtsfc_cpl,                         &
-        Coupling%dqsfc_cpl, Coupling%dusfci_cpl, Coupling%dvsfci_cpl, Coupling%dtsfci_cpl, Coupling%dqsfci_cpl,             &
-        Diag%dusfc, Diag%dvsfc, Diag%dtsfc, Diag%dqsfc, Diag%dusfci, Diag%dvsfci, Diag%dtsfci, Diag%dqsfci,                 &
-        Diag%dt3dt(:,:,3), Diag%du3dt(:,:,1), Diag%du3dt(:,:,2), Diag%dv3dt(:,:,1), Diag%dv3dt(:,:,2), Diag%dq3dt(:,:,1),   &
-        Diag%dq3dt(:,:,5), errmsg, errflg)
-#else
-      ! OPTION B - works with all compilers
-      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling hedmf_run through option B'
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_PBL_generic_post through option B'
       ! Copy local variables from driver to appropriate interstitial variables
       !Interstitial(nt)%im = im                           ! intent(in) - set in Interstitial(nt)%create()
       !Model%levs                                         ! intent(in)
@@ -3055,9 +3008,8 @@ module module_physics_driver
       dqdt = Interstitial(nt)%dqdt
       errmsg = trim(cdata_block(nb,nt)%errmsg)
       errflg = cdata_block(nb,nt)%errflg
-#endif
       if (errflg/=0) then
-          write(0,*) 'Error in call to GFS_PBL_generic_post_run: ' // trim(errmsg)
+          write(0,*) 'Error in call to GFS_PBL_generic_post: ' // trim(errmsg)
           stop
       end if
 #else
@@ -3232,7 +3184,7 @@ module module_physics_driver
 
 #ifdef CCPP
 ! OPTION B BEGIN
-      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling gwdps_run through option B'
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling gwdps through option B'
       ! Copy local variables from driver to appropriate interstitial variables
       !Interstitial(nt)%im     = im          ! intent(in) - set in Interstitial(nt)%create()
       !Interstitial(nt)%ix     = ix          ! intent(in) - set in Interstitial(nt)%create()
@@ -3272,7 +3224,7 @@ module module_physics_driver
       errflg = cdata_block(nb,nt)%errflg
 ! OPTION B END
       if (errflg/=0) then
-          write(0,*) 'Error in call to gwdps_run: ' // trim(errmsg)
+          write(0,*) 'Error in call to gwdps: ' // trim(errmsg)
           stop
       end if
 #else
@@ -3376,6 +3328,35 @@ module module_physics_driver
 !       write(0,*)' dtdt=',(dtdt(ipr,k),k=1,10)
 !     endif
 
+#ifdef CCPP
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_suite_stateout_update through option B'
+      !Interstitial(nt)%im = im              ! intent(in) - set in Interstitial(nt)%create()
+      !Model%levs                            ! intent(in)
+      !Model%ntrac                           ! intent(in)
+      !Model%dtp                             ! intent(in)
+      !Statein%tgrs                          ! intent(in)
+      !Statein%ugrs                          ! intent(in)
+      !Statein%vgrs                          ! intent(in)
+      !Statein%qgrs                          ! intent(in)
+      Interstitial(nt)%dudt = dudt           ! intent(in)
+      Interstitial(nt)%dvdt = dvdt           ! intent(in)
+      Interstitial(nt)%dtdt = dtdt           ! intent(in)
+      Interstitial(nt)%dqdt = dqdt           ! intent(in)
+      !Stateout%gt0                          ! intent(out)
+      !Stateout%gu0                          ! intent(out)
+      !Stateout%gv0                          ! intent(out)
+      !Stateout%gq0                          ! intent(out)
+      !cdata_block(nb,nt)%errmsg = errmsg    ! intent(out)
+      !cdata_block(nb,nt)%errflg = errflg    ! intent(out)
+      call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_suite_stateout_update", ierr=ierr)
+      ! Copy back intent(inout) interstitial variables to local variables in driver
+      errmsg = trim(cdata_block(nb,nt)%errmsg)
+      errflg = cdata_block(nb,nt)%errflg
+      if (errflg/=0) then
+        write(0,*) 'Error in call to GFS_suite_stateout_update: ' // trim(errmsg)
+        stop
+      end if
+#else
       do k=1,levs
         do i=1,im
           Stateout%gt0(i,k)  = Statein%tgrs(i,k) + dtdt(i,k) * dtp
@@ -3384,6 +3365,7 @@ module module_physics_driver
         enddo
       enddo
       Stateout%gq0(1:im,:,:) = Statein%qgrs(1:im,:,:) + dqdt(1:im,:,:) * dtp
+#endif
 
       if (Model%lsidea) then            ! idea convective adjustment
         call ideaca_up(Statein%prsi,Stateout%gt0,ix,im,levs+1)
@@ -3536,16 +3518,16 @@ module module_physics_driver
 !     if (lprnt) write(7000,*)' bef convection gv0=',gv0(ipr,:)
 
 #ifdef CCPP
-#if defined(CCPP_OPTION_A) && defined(__INTEL_COMPILER)
-! OPTION A - works with Intel only
-      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_DCNV_generic_pre_run through option A'
-      call GFS_DCNV_generic_pre_mp_GFS_DCNV_generic_pre_run(im, Model%levs, &
-        Model%ldiag3d, Model%cnvgwd, Model%lgocart, Stateout%gu0,           &
-        Stateout%gv0, Stateout%gt0, Stateout%gq0(:,:,1), dudt, dvdt,        &
-        dtdt, dqdt(:,:,1), errmsg, errflg)
-#else
-! OPTION B - works with all compilers
-      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_DCNV_generic_pre_run through option B'
+      ! From this point on, dtdt, dudt, dvdt and dqdt have a different meaning:
+      ! instead of holding tendencies, they are used as temporary storage for
+      ! previous values of t, q, u, v. Reset them to zero here to avoid misguiding
+      ! differences between hybrid CCPP and standalone CCPP runs.
+      dudt = 0.
+      dvdt = 0.
+      dtdt = 0.
+      dqdt = 0.
+
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_DCNV_generic_pre through option B'
       ! Copy local variables from driver to appropriate interstitial variables
       !Interstitial(nt)%im = im                   ! intent(in) - set in Interstitial(nt)%create()
       !Model%levs                                 ! intent(in)
@@ -3559,7 +3541,7 @@ module module_physics_driver
       Interstitial(nt)%save_u   = dudt            ! intent(inout)
       Interstitial(nt)%save_v   = dvdt            ! intent(inout)
       Interstitial(nt)%save_t   = dtdt            ! intent(inout)
-      Interstitial(nt)%save_q(:,:,1)  = dqdt(:,:,1) ! intent(inout)
+      Interstitial(nt)%save_q(:,:,1) = dqdt(:,:,1)! intent(inout)
       !cdata_block(nb,nt)%errmsg = errmsg         ! intent(out)
       !cdata_block(nb,nt)%errflg = errflg         ! intent(out)
       call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_DCNV_generic_pre", ierr=ierr)
@@ -3570,9 +3552,8 @@ module module_physics_driver
       dqdt(:,:,1) = Interstitial(nt)%save_q(:,:,1)
       errmsg = trim(cdata_block(nb,nt)%errmsg)
       errflg = cdata_block(nb,nt)%errflg
-#endif
       if (errflg/=0) then
-          write(0,*) 'Error in call to GFS_DCNV_generic_pre_run: ' // trim(errmsg)
+          write(0,*) 'Error in call to GFS_DCNV_generic_pre: ' // trim(errmsg)
           stop
       end if
 #else
@@ -3602,7 +3583,7 @@ module module_physics_driver
 #else
 !GFDL   Adjust the height hydrostatically in a way consistent with FV3 discretization
 #ifdef CCPP
-      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling get_phi_fv3_run through option B'
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling get_phi_fv3 through option B'
       ! Copy local variables from driver to appropriate interstitial variables
       !Interstitial(nt)%ix                    ! intent(in) - set in Interstitial(nt)%create()
       !Model%levs                             ! intent(in)
@@ -3620,7 +3601,7 @@ module module_physics_driver
       errmsg = trim(cdata_block(nb,nt)%errmsg)
       errflg = cdata_block(nb,nt)%errflg
       if (errflg/=0) then
-          write(0,*) 'Error in call to get_phi_fv3_run: ' // trim(errmsg)
+          write(0,*) 'Error in call to get_phi_fv3: ' // trim(errmsg)
           stop
       end if
 #else
@@ -3630,7 +3611,7 @@ module module_physics_driver
 #endif
 
 #ifdef CCPP
-      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_suite_interstitial_3_run through option B'
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_suite_interstitial_3 through option B'
       ! Copy local variables from driver to appropriate interstitial variables
       !Interstitial(nt)%im = im                   ! intent(in) - set in Interstitial(nt)%create()
       !Model%levs                                 ! intent(in)
@@ -3706,7 +3687,7 @@ module module_physics_driver
       errmsg = trim(cdata_block(nb,nt)%errmsg)
       errflg = cdata_block(nb,nt)%errflg
       if (errflg/=0) then
-          write(0,*) 'Error in call to GFS_suite_interstitial_3_run: ' // trim(errmsg)
+          write(0,*) 'Error in call to GFS_suite_interstitial_3: ' // trim(errmsg)
           stop
       end if
 #else
@@ -3859,31 +3840,16 @@ module module_physics_driver
       endif   ! end if_ntcw
 #endif
 
-#ifdef CCPP
-      !GF* this code will be moved to GFS_MP_generic_pre (it is not put in GFS_suite_interstitial_3)
-      if (imp_physics == 99 .or. imp_physics == 98) then   ! zhao-carr microphysics
-        do i=1,im
-          psautco_l(i) = Model%psautco(1)*work1(i) + Model%psautco(2)*work2(i)
-          prautco_l(i) = Model%prautco(1)*work1(i) + Model%prautco(2)*work2(i)
-        enddo
-      else       ! if_ntcw
-        do i=1,im
-          psautco_l(i) = Model%psautco(1)*work1(i) + Model%psautco(2)*work2(i)
-          prautco_l(i) = Model%prautco(1)*work1(i) + Model%prautco(2)*work2(i)
-        enddo
-      endif   ! end if_ntcw
-      !*GF
-#endif
 !
 !        Call SHOC if do_shoc is true and shocaftcnv is false
 !
       if (Model%do_shoc .and. .not. Model%shocaftcnv) then
-! DH*
 #ifdef CCPP
+! DH*
         write(0,*) "DH WARNING: inside Model%do_shoc .and. .not. Model%shocaftcnv - need to fix ncpl/ncpli?"
         write(0,*) "DH WARNING: do we need Thompson with/without aerosol here as well?"
-#endif
 ! *DH
+#endif
         if (imp_physics == 10) then
           skip_macro = Model%do_shoc
           do k=1,levs
@@ -3981,12 +3947,12 @@ module module_physics_driver
 !    &,              dqdt(1,1,1), dqdt(1,1,2), dqdt(1,1,3)
 !    &,              gq0(1,1,1),clw(1,1,2),clw(1,1,1),'shoc      ')
 
-! DH*
 #ifdef CCPP
+! DH*
           write(0,*) "DH WARNING: shouldn't this test for imp_physics==10?"
           write(0,*) "DH WARNING: do we need Thompson with/without aerosol here as well?"
-#endif
 ! *DH
+#endif
           if (ntlnc > 0 .and. ntinc > 0 .and. ncld >= 2) then
             do k=1,levs
               do i=1,im
@@ -4045,27 +4011,7 @@ module module_physics_driver
             endif
 #endif
 #ifdef CCPP
-#if defined(CCPP_OPTION_A) && defined(__INTEL_COMPILER)
-! OPTION A - works with Intel only
-            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling samfdeepcnv_run through option A'
-            call samfdeepcnv_mp_samfdeepcnv_run(                          &
-                      im, ix, levs, con_cliq, con_cp, con_cvap,           &
-                      con_eps,con_epsm1,con_fvirt,con_grav,con_hvap,      &
-                      con_rd,con_rv, con_t0c,                             &
-                      dtp, ntk, nsamftrac, del,                           &
-                      Statein%prsl, Statein%pgr, Statein%phil, clw,       &
-                      Stateout%gq0(:,:,1), Stateout%gt0,                  &
-                      Stateout%gu0, Stateout%gv0,                         &
-                      cld1d, rain1, kbot, ktop, kcnv, islmsk, garea,      &
-                      Statein%vvl, ncld, ud_mf, dd_mf, dt_mf, cnvw, cnvc, &
-                      Model%clam_deep,   Model%c0s_deep,                  &
-                      Model%c1_deep,  Model%betal_deep, Model%betas_deep, &
-                      Model%evfact_deep, Model%evfactl_deep,              &
-                      Model%pgcon_deep,  Model%asolfac_deep,              &
-                      errmsg, errflg)
-#else
-! OPTION B - works with all compilers
-            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling samfdeepcnv_run through option B'
+            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling samfdeepcnv through option B'
             ! Copy local variables from driver to appropriate interstitial variables
             !Interstitial(nt)%im = im             ! intent(in) - set in Interstitial(nt)%create()
             !Interstitial(nt)%ix = ix             ! intent(in) - set in Interstitial(nt)%create()
@@ -4123,9 +4069,8 @@ module module_physics_driver
             cnvc   = Interstitial(nt)%cnvc
             errmsg = trim(cdata_block(nb,nt)%errmsg)
             errflg = cdata_block(nb,nt)%errflg
-#endif
             if (errflg/=0) then
-                write(0,*) 'Error in call to samfdeepcnv_run: ' // trim(errmsg)
+                write(0,*) 'Error in call to samfdeepcnv: ' // trim(errmsg)
                 stop
             end if
 #else
@@ -4461,21 +4406,7 @@ module module_physics_driver
 !     endif
 !
 #ifdef CCPP
-#if defined(CCPP_OPTION_A) && defined(__INTEL_COMPILER)
-! OPTION A - works with Intel only
-      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_DCNV_generic_post_run through option A'
-      call GFS_DCNV_generic_post_mp_GFS_DCNV_generic_post_run(im, Model%levs, Model%lssav, Model%ldiag3d, &
-        Model%lgocart, frain, rain1, Model%dtf, cld1d, dudt, dvdt, dtdt, dqdt(:,:,1),                     &
-        Stateout%gu0, Stateout%gv0, Stateout%gt0, Stateout%gq0(:,:,1), ud_mf, dd_mf, dt_mf, con_g,        &
-        clw(:,:,1), clw(:,:,2), Model%npdf3d, Model%num_p3d, Model%ncnvcld3d,                             &
-        Diag%rainc, Diag%cldwrk, Diag%cnvprcp, Diag%cnvprcpb, Diag%dt3dt(:,:,4), Diag%dq3dt(:,:,2),       &
-        Diag%du3dt(:,:,3), Diag%dv3dt(:,:,3), Diag%upd_mf, Diag%dwn_mf, Diag%det_mf, Coupling%dqdti,      &
-        Coupling%cnvqci, Coupling%upd_mfi, Coupling%dwn_mfi, Coupling%det_mfi, cnvw, cnvc,                &
-        Tbd%phy_f3d(:,:,Model%ncnvw), Tbd%phy_f3d(:,:,Model%ncnvw+1), errmsg, errflg)
-
-#else
-! OPTION B - works with all compilers
-      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_DCNV_generic_post_run through option B'
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_DCNV_generic_post through option B'
       ! Copy local variables from driver to appropriate interstitial variables
       !Interstitial(nt)%im = im                   ! intent(in) - set in Interstitial(nt)%create()
       !Model%levs                                 ! intent(in)
@@ -4489,7 +4420,7 @@ module module_physics_driver
       Interstitial(nt)%save_u = dudt              ! intent(in)
       Interstitial(nt)%save_v = dvdt              ! intent(in)
       Interstitial(nt)%save_t = dtdt              ! intent(in)
-      Interstitial(nt)%save_q(:,:,1) = dqdt(:,:,1) ! intent(in)
+      Interstitial(nt)%save_q(:,:,1) = dqdt(:,:,1)! intent(in)
       !Stateout%gu0                               ! intent(in)
       !Stateout%gv0                               ! intent(in)
       !Stateout%gt0                               ! intent(in)
@@ -4531,9 +4462,8 @@ module module_physics_driver
       cnvc = Interstitial(nt)%cnvc
       errmsg = trim(cdata_block(nb,nt)%errmsg)
       errflg = cdata_block(nb,nt)%errflg
-#endif
       if (errflg/=0) then
-          write(0,*) 'Error in call to GFS_DCNV_generic_post_run: ' // trim(errmsg)
+          write(0,*) 'Error in call to GFS_DCNV_generic_post: ' // trim(errmsg)
           stop
       end if
 #else
@@ -4615,7 +4545,7 @@ module module_physics_driver
 
 #ifdef CCPP
 ! OPTION B BEGIN
-      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling gwdc_pre_run through option B'
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling gwdc_pre through option B'
       ! Copy local variables from driver to appropriate interstitial variables
       !Interstitial(nt)%im = im            ! intent(in) - set in Interstitial(nt)%create()
       Interstitial(nt)%work1 = work1       ! intent(in)
@@ -4638,11 +4568,11 @@ module module_physics_driver
       errflg = cdata_block(nb,nt)%errflg
 ! OPTION B END
       if (errflg/=0) then
-          write(0,*) 'Error in call to gwdc_pre_run: ' // trim(errmsg)
+          write(0,*) 'Error in call to gwdc_pre: ' // trim(errmsg)
           stop
       end if
 #else
-      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of gwdc_pre_run'
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of gwdc_pre'
 
         do i=1,im
           cumabs(i) = 0.0
@@ -4664,7 +4594,7 @@ module module_physics_driver
 ! DH* 20180817 - note: the above non-CCPP code modifies work3, which until then was defined
 ! as the ratio of the exner function between midlayer and interface at lowest model layer:
 !    work3(i) = Statein%prsik(i,1) / Statein%prslk(i,1)
-! This does not happen for the CCPP code, because gwdc_pre_run uses an internal array
+! This does not happen for the CCPP code, because gwdc_pre uses an internal array
 ! work3 (maybe not a good name, given that we have work1/2/3 in GFS_physics_driver and
 ! in the IPD_Interstitial DDT). Therefore, work3 is different from here on until the end
 ! of GFS_physics_driver. This is ok as long as Model%lgocart is set to .false. - if
@@ -4740,7 +4670,7 @@ module module_physics_driver
 
 #ifdef CCPP
 ! OPTION B BEGIN
-      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling gwdc_run through option B'
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling gwdc through option B'
       ! Copy local variables from driver to appropriate interstitial variables
       !Interstitial(nt)%im       = im            ! intent(in) - set in Interstitial(nt)%create()
       !Interstitial(nt)%ix       = ix            ! intent(in) - set in Interstitial(nt)%create()
@@ -4768,7 +4698,7 @@ module module_physics_driver
       errflg = cdata_block(nb,nt)%errflg
 ! OPTION B END
       if (errflg/=0) then
-          write(0,*) 'Error in call to gwdc_run: ' // trim(errmsg)
+          write(0,*) 'Error in call to gwdc: ' // trim(errmsg)
           stop
       end if
 #else
@@ -4824,7 +4754,7 @@ module module_physics_driver
       errflg = cdata_block(nb,nt)%errflg
 ! OPTION B END
       if (errflg/=0) then
-          write(0,*) 'Error in call to gwdc_post_run: ' // trim(errmsg)
+          write(0,*) 'Error in call to gwdc_post: ' // trim(errmsg)
           stop
       end if
 #else
@@ -4890,15 +4820,7 @@ module module_physics_driver
 !----------------Convective gravity wave drag parameterization over --------
 
 #ifdef CCPP
-#if defined(CCPP_OPTION_A) && defined(__INTEL_COMPILER)
-! OPTION A - works with Intel only
-      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_SCNV_generic_pre_run through option A'
-      call GFS_SCNV_generic_pre_mp_GFS_SCNV_generic_pre_run (im, levs, Model%ldiag3d, &
-        Model%lgocart, Stateout%gt0, Stateout%gq0(:,:,1), dtdt, dqdt(:,:,1), errmsg,  &
-        errflg)
-#else
-! OPTION B - works with all compilers
-      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_SCNV_generic_pre_run through option B'
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_SCNV_generic_pre through option B'
       ! Copy local variables from driver to appropriate interstitial variables
       !Interstitial(nt)%im = im                   ! intent(in) - set in Interstitial(nt)%create()
       !Model%levs                                 ! intent(in)
@@ -4907,7 +4829,7 @@ module module_physics_driver
       !Stateout%gt0                               ! intent(in)
       !Stateout%gq0(:,:,1)                        ! intent(in)
       Interstitial(nt)%save_t = dtdt              ! intent(inout)
-      Interstitial(nt)%save_q(:,:,1) = dqdt(:,:,1) ! intent(inout)
+      Interstitial(nt)%save_q(:,:,1) = dqdt(:,:,1)! intent(inout)
       cdata_block(nb,nt)%errmsg   = errmsg        ! intent(out)
       cdata_block(nb,nt)%errflg   = errflg        ! intent(out)
       call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_SCNV_generic_pre", ierr=ierr)
@@ -4916,9 +4838,8 @@ module module_physics_driver
       dqdt(:,:,1) = Interstitial(nt)%save_q(:,:,1)
       errmsg = trim(cdata_block(nb,nt)%errmsg)
       errflg = cdata_block(nb,nt)%errflg
-#endif
       if (errflg/=0) then
-          write(0,*) 'Error in call to GFS_SCNV_generic_pre_run: ' // trim(errmsg)
+          write(0,*) 'Error in call to GFS_SCNV_generic_pre: ' // trim(errmsg)
           stop
       end if
 #else
@@ -5012,25 +4933,7 @@ module module_physics_driver
             endif
 #endif
 #ifdef CCPP
-#if defined(CCPP_OPTION_A) && defined(__INTEL_COMPILER)
-! OPTION A - works with Intel only
-            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling samfshalcnv_run through option A'
-            call samfshalcnv_mp_samfshalcnv_run (im, ix, levs, con_cliq,       &
-                              con_cp, con_cvap, con_eps, con_epsm1, con_fvirt, &
-                              con_grav,con_hvap, con_rd,con_rv, con_t0c,       &
-                              dtp, ntk, nsamftrac, del,                        &
-                              Statein%prsl, Statein%pgr, Statein%phil, clw,    &
-                              Stateout%gq0(:,:,1), Stateout%gt0,               &
-                              Stateout%gu0, Stateout%gv0,                      &
-                              rain1, kbot, ktop, kcnv, islmsk, garea,          &
-                              Statein%vvl, ncld, Diag%hpbl, ud_mf,             &
-                              dt_mf, cnvw, cnvc,                               &
-                              Model%clam_shal,  Model%c0s_shal, Model%c1_shal, &
-                              Model%pgcon_shal, Model%asolfac_shal,            &
-                              errmsg, errflg)
-#else
-! OPTION B - works with all compilers
-            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling samfshalcnv_run through option B'
+            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling samfshalcnv through option B'
             ! Copy local variables from driver to appropriate interstitial variables
             !Interstitial(nt)%im = im             ! intent(in) - set in Interstitial(nt)%create()
             !Interstitial(nt)%ix = ix             ! intent(in) - set in Interstitial(nt)%create()
@@ -5081,9 +4984,8 @@ module module_physics_driver
             cnvc   = Interstitial(nt)%cnvc
             errmsg = trim(cdata_block(nb,nt)%errmsg)
             errflg = cdata_block(nb,nt)%errflg
-#endif
             if (errflg/=0) then
-                write(0,*) 'Error in call to samfshalcnv_run: ' // trim(errmsg)
+                write(0,*) 'Error in call to samfshalcnv: ' // trim(errmsg)
                 stop
             end if
 #else
@@ -5099,16 +5001,7 @@ module module_physics_driver
                               Model%pgcon_shal, Model%asolfac_shal)
 #endif
 #ifdef CCPP
-#if defined(CCPP_OPTION_A) && defined(__INTEL_COMPILER)
-! OPTION A - works with Intel only
-            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling samfshalcnv_post_run through option A'
-            call samfshalcnv_post_mp_samfshalcnv_post_run (im, levs, Model%lssav, Model%shcnvcw,    &
-              frain, rain1, Model%npdf3d, Model%num_p3d, Model%ncnvcld3d, cnvc, cnvw,               &
-              Diag%rainc, Diag%cnvprcp, Diag%cnvprcpb, Tbd%phy_f3d(:,:,Model%ncnvw),                &
-              Tbd%phy_f3d(:,:,Model%ncnvw+1), errmsg, errflg)
-#else
-! OPTION B - works with all compilers
-            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling samfshalcnv_post_run through option B'
+            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling samfshalcnv_post through option B'
             ! Copy local variables from driver to appropriate interstitial variables
             !Interstitial(nt)%im = im                   ! intent(in) - set in Interstitial(nt)%create()
             !Model%levs                                 ! intent(in)
@@ -5132,9 +5025,8 @@ module module_physics_driver
             ! Copy back intent(inout) interstitial variables to local variables in driver
             errmsg = trim(cdata_block(nb,nt)%errmsg)
             errflg = cdata_block(nb,nt)%errflg
-#endif
             if (errflg/=0) then
-                write(0,*) 'Error in call to samfshalcnv_post_run: ' // trim(errmsg)
+                write(0,*) 'Error in call to samfshalcnv_post: ' // trim(errmsg)
                 stop
             end if
 #else
@@ -5200,15 +5092,7 @@ module module_physics_driver
         endif     ! end if_shal_cnv
 
 #ifdef CCPP
-#if defined(CCPP_OPTION_A) && defined(__INTEL_COMPILER)
-! OPTION A - works with Intel only
-      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_SCNV_generic_post_run through option A'
-      call GFS_SCNV_generic_post_mp_GFS_SCNV_generic_post_run (im, levs, nn, Model%lssav, Model%ldiag3d, &
-        Model%lgocart, frain, Stateout%gt0, Stateout%gq0(:,:,1), dtdt, dqdt(:,:,1), Coupling%dqdti,  &
-        Diag%dt3dt(:,:,5), Diag%dq3dt(:,:,3), clw, errmsg, errflg)
-#else
-! OPTION B - works with all compilers
-      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_SCNV_generic_post_run through option B'
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_SCNV_generic_post through option B'
       ! Copy local variables from driver to appropriate interstitial variables
       !Interstitial(nt)%im = im                   ! intent(in) - set in Interstitial(nt)%create()
       !Model%levs                                 ! intent(in)
@@ -5220,7 +5104,7 @@ module module_physics_driver
       !Stateout%gt0                               ! intent(in)
       !Stateout%gq0(:,:,1)                        ! intent(in)
       Interstitial(nt)%save_t = dtdt              ! intent(in)
-      Interstitial(nt)%save_q(:,:,1) = dqdt(:,:,1) ! intent(in)
+      Interstitial(nt)%save_q(:,:,1) = dqdt(:,:,1)! intent(in)
       !Coupling%dqdti                             ! intent(inout)
       !Diag%dt3dt(:,:,5)                          ! intent(inout)
       !Diag%dq3dt(:,:,3)                          ! intent(inout)
@@ -5232,9 +5116,8 @@ module module_physics_driver
       clw = Interstitial(nt)%clw
       errmsg = trim(cdata_block(nb,nt)%errmsg)
       errflg = cdata_block(nb,nt)%errflg
-#endif
       if (errflg/=0) then
-          write(0,*) 'Error in call to GFS_SCNV_generic_post_run: ' // trim(errmsg)
+          write(0,*) 'Error in call to GFS_SCNV_generic_post: ' // trim(errmsg)
           stop
       end if
 #else
@@ -5274,11 +5157,11 @@ module module_physics_driver
 !       endif
 
       elseif (Model%shocaftcnv) then ! if do_shoc is true and shocaftcnv is true call shoc
-! DH*
 #ifdef CCPP
+! DH*
         write(0,*) "DH WARNING: inside Model%shocaftcnv, do we need to do this for Thompson, too?"
-#endif
 ! *DH
+#endif
         if (imp_physics == 10) then
           skip_macro = Model%do_shoc
           do k=1,levs
@@ -5348,12 +5231,12 @@ module module_physics_driver
                    lprnt, ipr, ncpl, ncpi)
 !       enddo
 
-! DH*
 #ifdef CCPP
+! DH*
         write(0,*) "DH WARNING: shouldn't this be testing for imp_physics=10?"
         write(0,*) "DH WARNING: do we need to do this for Thompson, too?"
-#endif
 ! *DH
+#endif
         if (ntlnc > 0 .and. ntinc > 0 .and. ncld >= 2) then
           do k=1,levs
             do i=1,im
@@ -5384,7 +5267,7 @@ module module_physics_driver
 !
 #ifdef CCPP
 ! OPTION B - works with all compilers
-      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_suite_interstitial_4_run through option B'
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_suite_interstitial_4 through option B'
       ! Copy local variables from driver to appropriate interstitial variables
       !Interstitial(nt)%im = im                   ! intent(in) - set in Interstitial(nt)%create()
       !Model%levs                                 ! intent(in)
@@ -5427,7 +5310,7 @@ module module_physics_driver
       errmsg = trim(cdata_block(nb,nt)%errmsg)
       errflg = cdata_block(nb,nt)%errflg
       if (errflg/=0) then
-          write(0,*) 'Error in call to GFS_suite_interstitial_4_run: ' // trim(errmsg)
+          write(0,*) 'Error in call to GFS_suite_interstitial_4: ' // trim(errmsg)
           stop
       end if
 #else
@@ -5505,15 +5388,7 @@ module module_physics_driver
 !  Legacy routine which determines convectve clouds - should be removed at some point
 
 #ifdef CCPP
-#if defined(CCPP_OPTION_A) && defined(__INTEL_COMPILER)
-! OPTION A - works with Intel only
-      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling cnvc90_run through option A'
-      call cnvc90_mp_cnvc90_run(Model%clstp, im, ix, Diag%rainc, kbot, ktop, levs, Statein%prsi,   &
-                                Tbd%acv, Tbd%acvb, Tbd%acvt, Cldprop%cv, Cldprop%cvb, Cldprop%cvt, &
-                                errmsg, errflg)
-#else
-! OPTION B - works with all compilers
-      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling cnvc90_run through option B'
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling cnvc90 through option B'
       ! Copy local variables from driver to appropriate interstitial variables
       !Interstitial(nt)%im = im            ! intent(in) - set in Interstitial(nt)%create()
       !Interstitial(nt)%ix = ix            ! intent(in) - set in Interstitial(nt)%create()
@@ -5534,9 +5409,8 @@ module module_physics_driver
       ! Copy intent(inout) and intent(out) interstitial variables to local variables in driver
       errmsg = trim(cdata_block(nb,nt)%errmsg)
       errflg = cdata_block(nb,nt)%errflg
-#endif
       if (errflg/=0) then
-          write(0,*) 'Error in call to cnvc90_run: ' // trim(errmsg)
+          write(0,*) 'Error in call to cnvc90: ' // trim(errmsg)
           stop
       end if
 #else
@@ -5609,22 +5483,19 @@ module module_physics_driver
       Interstitial(nt)%nncl = nncl                ! intent(in)
       !Model%ntrac                                ! intent(in)
       !Stateout%gt0                               ! intent(in)
-      !Stateout%gq0(:,:,1)                        ! intent(in)
       !Stateout%gq0                               ! intent(in)
-      !Interstitial%save_t                        ! intent(inout) - overwritten within
-      !Interstitial%save_q(:,:,1)                 ! intent(inout) - overwritten within
-      !Interstitial%save_q                        ! intent(inout) - overwritten within
+      Interstitial(nt)%save_t = dtdt              ! intent(inout)
+      Interstitial(nt)%save_q = dqdt              ! intent(inout)
       !cdata_block(nb,nt)%errmsg = errmsg         ! intent(out)
       !cdata_block(nb,nt)%errflg = errflg         ! intent(out)
       call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_MP_generic_pre", ierr=ierr)
       ! Copy back intent(inout) interstitial variables to local variables in driver
       dtdt = Interstitial(nt)%save_t
       dqdt = Interstitial(nt)%save_q
-      dqdt(:,:,1) = Interstitial(nt)%save_q(:,:,1)
       errmsg = trim(cdata_block(nb,nt)%errmsg)
       errflg = cdata_block(nb,nt)%errflg
       if (errflg/=0) then
-          write(0,*) 'Error in call to GFS_suite_interstitial_4_run: ' // trim(errmsg)
+          write(0,*) 'Error in call to GFS_MP_generic_pre: ' // trim(errmsg)
           stop
       end if
 #else
@@ -5682,7 +5553,7 @@ module module_physics_driver
                               Tbd%phy_f3d(1,1,ntot3d-2), lprnt, ipr)
           else
 #ifdef CCPP
-            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling zhaocarr_gscond_run through option B'
+            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling zhaocarr_gscond through option B'
             ! Copy local variables from driver to appropriate interstitial variables
             !Interstitial(nt)%im     = im                           ! intent(in) - set in Interstitial(nt)%create()
             !Interstitial(nt)%ix     = ix                           ! intent(in) - set in Interstitial(nt)%create()
@@ -5697,11 +5568,11 @@ module module_physics_driver
             errmsg = trim(cdata_block(nb,nt)%errmsg)
             errflg = cdata_block(nb,nt)%errflg
             if (errflg/=0) then
-              write(0,*) 'Error in call to zhaocarr_gscond_run: ' // trim(errmsg)
+              write(0,*) 'Error in call to zhaocarr_gscond: ' // trim(errmsg)
               stop
             end if
             !
-            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling zhaocarr_precpd_run through option B'
+            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling zhaocarr_precpd through option B'
             ! Copy local variables from driver to appropriate interstitial variables
             !Interstitial(nt)%im     = im                           ! intent(in   ) - set in Interstitial(nt)%create()
             !Interstitial(nt)%ix     = ix                           ! intent(in   ) - set in Interstitial(nt)%create()
@@ -5720,7 +5591,7 @@ module module_physics_driver
             !Model%prautco                                          ! intent(in   )
             !Model%evpco                                            ! intent(in   )
             !Model%wminco                                           ! intent(in   )
-            !Interstitial(nt)%work1                                 ! intent(in   ) - set in GFS_suite_interstitial_1_run
+            !Interstitial(nt)%work1                                 ! intent(in   ) - set in GFS_suite_interstitial_1
             !Model%lprnt                                            ! intent(in   )
             !Model%ipr                                              ! intent(in   )
             !cdata_block(nb,nt)%errmsg = errmsg                     ! intent(out  )
@@ -5732,7 +5603,7 @@ module module_physics_driver
             errmsg = trim(cdata_block(nb,nt)%errmsg)
             errflg = cdata_block(nb,nt)%errflg
             if (errflg/=0) then
-              write(0,*) 'Error in call to zhaocarr_precpd_run: ' // trim(errmsg)
+              write(0,*) 'Error in call to zhaocarr_precpd: ' // trim(errmsg)
               stop
             end if
 #else
@@ -5821,13 +5692,13 @@ module module_physics_driver
                Tbd%phy_f3d(:,:,1),Tbd%phy_f3d(:,:,2),Tbd%phy_f3d(:,:,3),me,Statein%phii)
           endif
 #else
-! DH* 20180629 temporarily remove Thompson scheme for making ccpp-physics public (until Greg has reviewed our port)
+! DH* 20180629 temporarily remove Thompson scheme for making ccpp-physics public (until Greg has approved our port)
 #if 1
           write(0,*) 'ERROR: HRRR Thompson MP currently not available in CCPP'
           call sleep(5)
           stop
 #else
-          if (Model%me==0) write(0,*) 'CCPP DEBUG: calling mp_thompson_hrrr_run through option B'
+          if (Model%me==0) write(0,*) 'CCPP DEBUG: calling mp_thompson_hrrr through option B'
           ! Copy local variables from driver to appropriate interstitial variables
           !Interstitial(nt)%im = im                             ! intent(in) - set in Interstitial(nt)%create()
           !Model%levs                                           ! intent(in)
@@ -5884,7 +5755,7 @@ module module_physics_driver
           errflg = cdata_block(nb,nt)%errflg
           !
           if (errflg/=0) then
-              write(0,*) 'Error in call to mp_thompson_hrrr_run: ' // trim(errmsg)
+              write(0,*) 'Error in call to mp_thompson_hrrr: ' // trim(errmsg)
               stop
           end if
 #endif
@@ -6149,14 +6020,14 @@ module module_physics_driver
                                             ! -------
 #ifdef CCPP
           ! OPTION B - works with all compilers
-          if (Model%me==0) write(0,*) 'CCPP DEBUG: calling gfdl_cloud_microphys_run through option B'
+          if (Model%me==0) write(0,*) 'CCPP DEBUG: calling gfdl_cloud_microphys through option B'
           ! Copy local variables from driver to appropriate interstitial variables
           !Model%levs                                  ! intent(in)
           !Interstitial(nt)%im                         ! intent(in) - set in Interstitial(nt)%create
           !con_g                                       ! intent(in) - physical constant in physcons.F90
           !con_fvirt                                   ! intent(in) - physical constant in physcons.F90
           !con_rd                                      ! intent(in) - physical constant in physcons.F90
-          !Interstitial(nt)%frland                     ! intent(in) - set in GFS_suite_interstitital_1_run
+          !Interstitial(nt)%frland                     ! intent(in) - set in GFS_suite_interstitital_1
           !Grid%area                                   ! intent(in)
           !Stateout%gq0(:,:,1      )                   ! intent(inout)
           !Stateout%gq0(:,:,ntcw   )                   ! intent(inout)
@@ -6191,7 +6062,7 @@ module module_physics_driver
           errflg = cdata_block(nb,nt)%errflg
           !
           if (errflg/=0) then
-              write(0,*) 'Error in call to gfdl_cloud_microphys_run: ' // trim(errmsg)
+              write(0,*) 'Error in call to gfdl_cloud_microphys: ' // trim(errmsg)
               stop
           end if
 #else
@@ -6355,7 +6226,7 @@ module module_physics_driver
 
 #ifdef CCPP
       ! OPTION B - works with all compilers
-      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_MP_generic_post_run through option B'
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_MP_generic_post through option B'
       !Interstitial(nt)%im = im                   ! intent(in) - set in Interstitial(nt)%create()
       !Interstitial(nt)%ix = im                   ! intent(in) - set in Interstitial(nt)%create()
       !Model%levs                                 ! intent(in)
@@ -6382,7 +6253,6 @@ module module_physics_driver
       !Grid%xlon                                  ! intent(in)
       !Stateout%gt0                               ! intent(in)
       !Stateout%gq0                               ! intent(in)
-      !Stateout%gq0(:,:,1)                        ! intent(in)
       !Statein%prsl                               ! intent(in)
       !Statein%prsi                               ! intent(in)
       !Statein%phii                               ! intent(in)
@@ -6391,11 +6261,11 @@ module module_physics_driver
       !Diag%snow                                  ! intent(in)
       !Diag%graupel                               ! intent(in)
       Interstitial(nt)%save_t = dtdt              ! intent(in)
-      Interstitial(nt)%save_q(:,:,1) = dqdt(:,:,1) ! intent(in)
+      Interstitial(nt)%save_q(:,:,1) = dqdt(:,:,1)! intent(in)
       !if (imp_physics == 11) then
-      !  Interstitial(nt)%icemp = ice0(:,1)           ! intent(in) ice0 is not allocated if CCPP is being used - coming straight from gfdl_cloud_microphys_run
-      !  Interstitial(nt)%snowmp = snow0(:,1)         ! intent(in) snow0 is not allocated if CCPP is being used - coming straight from gfdl_cloud_microphys_run
-      !  Interstitial(nt)%graupelmp = graupel0(:,1)   ! intent(in) graupel0 is not allocated if CCPP is being used - coming straight from gfdl_cloud_microphys_run
+      !  Interstitial(nt)%icemp = ice0(:,1)           ! intent(in) ice0 is not allocated if CCPP is being used - coming straight from gfdl_cloud_microphys
+      !  Interstitial(nt)%snowmp = snow0(:,1)         ! intent(in) snow0 is not allocated if CCPP is being used - coming straight from gfdl_cloud_microphys
+      !  Interstitial(nt)%graupelmp = graupel0(:,1)   ! intent(in) graupel0 is not allocated if CCPP is being used - coming straight from gfdl_cloud_microphys
       !end if
       Interstitial(nt)%del = del                  ! intent(in)
       !Diag%rain                                  ! intent(inout)
@@ -6419,6 +6289,11 @@ module module_physics_driver
       !Coupling%rainc_cpl                         ! intent(inout)
       !Coupling%snow_cpl                          ! intent(inout)
       !Diag%pwat                                  ! intent(inout)
+      !Model%do_sppt                              ! intent(in)
+      !Tbd%dtdtr                                  ! intent(inout)
+      Interstitial(nt)%dtdtc = dtdtc              ! intent(in)
+      !Tbd%drain_cpl                              ! intent(inout)
+      !Tbd%dsnow_cpl                              ! intent(inout)
       !cdata_block(nb,nt)%errmsg = errmsg         ! intent(out)
       !cdata_block(nb,nt)%errflg = errflg         ! intent(out)
       call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_MP_generic_post", ierr=ierr)
@@ -6426,7 +6301,7 @@ module module_physics_driver
       errmsg = trim(cdata_block(nb,nt)%errmsg)
       errflg = cdata_block(nb,nt)%errflg
       if (errflg/=0) then
-          write(0,*) 'Error in call to GFS_MP_generic_post_run: ' // trim(errmsg)
+          write(0,*) 'Error in call to GFS_MP_generic_post: ' // trim(errmsg)
           stop
       end if
 #else
@@ -6618,8 +6493,36 @@ module module_physics_driver
             write(0,*) 'Error in call to sfc_diag: ' // trim(errmsg)
             stop
         end if
+        if (Model%me==0) write(0,*) 'CCPP DEBUG: calling sfc_diag_post through option B'
+        ! Copy local variables from driver to appropriate interstitial variables
+        !Interstitial(nt)%im = im               ! intent(in) - set in Interstitial(nt)%create()
+        !Model%lssav                            ! intent(in)
+        !con_eps                                ! intent(in) - physical constant in physcons
+        !con_epsm1                              ! intent(in) - physical constant in physcons
+        !Sfcprop%t2m                            ! intent(in)
+        !Sfcprop%q2m                            ! intent(in)
+        !Sfcprop%u10m                           ! intent(in)
+        !Sfcprop%v10m                           ! intent(in)
+        !Diag%tmpmin                            ! intent(inout)
+        !Diag%tmpmax                            ! intent(inout)
+        !Diag%spfhmin                           ! intent(inout)
+        !Diag%spfhmax                           ! intent(inout)
+        !Diag%wind10mmax                        ! intent(inout)
+        !Diag%u10mmax                           ! intent(inout)
+        !Diag%v10mmax                           ! intent(inout)
+        !Diag%dpt2m                             ! intent(inout)
+        !cdata_block(nb,nt)%errmsg = errmsg     ! intent(out)
+        !cdata_block(nb,nt)%errflg = errflg     ! intent(out)
+        call ccpp_physics_run(cdata_block(nb,nt), scheme_name="sfc_diag_post", ierr=ierr)
+        ! Copy intent(inout) and intent(out) interstitial variables to local variables in driver
+        errmsg     = trim(cdata_block(nb,nt)%errmsg)
+        errflg     = cdata_block(nb,nt)%errflg
+        if (errflg/=0) then
+            write(0,*) 'Error in call to sfc_diag_post: ' // trim(errmsg)
+            stop
+        end if
 #else
-        ! DH* 20180817 - see my comment further up (around gwdc_pre_run) that
+!        ! DH* 20180817 - see my comment further up (around gwdc_pre) that
         ! work3 for the non-CCPP code is incorrect (CCPP code is correct) *DH
         if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of sfc_diag'
         call sfc_diag (im, Statein%pgr, Stateout%gu0, Stateout%gv0,     &
@@ -6627,7 +6530,6 @@ module module_physics_driver
                        Sfcprop%f10m, Diag%u10m, Diag%v10m, Sfcprop%t2m, &
                        Sfcprop%q2m, work3, evap, Sfcprop%ffmm,          &
                        Sfcprop%ffhh, fm10, fh2)
-#endif
 
         if (Model%lssav) then
           do i=1,im
@@ -6649,8 +6551,11 @@ module module_physics_driver
            Diag%dpt2m(i) = 243.5 / ( ( 17.67 / log(tem/611.2) ) - 1.) + 273.14
           enddo
         endif
+#endif
       endif
 
+#ifndef CCPP
+      ! CCPP: this code is now in GFS_surface_generic_post
 !  --- ...  total runoff is composed of drainage into water table and
 !           runoff at the surface and is accumulated in unit of meters
       if (Model%lssav) then
@@ -6660,6 +6565,7 @@ module module_physics_driver
           Diag%srunoff(i) = Diag%srunoff(i) + runof(i) * tem
         enddo
       endif
+#endif
 
 !  --- ...  xw: return updated ice thickness & concentration to global array
 #ifdef CCPP
@@ -6725,6 +6631,7 @@ module module_physics_driver
 !         write(0,*) ' endgw0=',gq0(ipr,:,3),' kdt=',kdt,' lat=',lat
 !       endif
 
+#ifndef CCPP
       if (Model%do_sppt) then
 !--- radiation heating rate
         Tbd%dtdtr(1:im,:) = Tbd%dtdtr(1:im,:) + dtdtc(1:im,:)*dtf
@@ -6738,6 +6645,7 @@ module module_physics_driver
           endif
         enddo
       endif
+#endif
 
       deallocate (clw)
       if (allocated(cnvc))  deallocate(cnvc)

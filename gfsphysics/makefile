@@ -27,7 +27,12 @@ ifneq (,$(findstring CCPP,$(CPPDEFS)))
 	   ./CCPP_layer/CCPP_data.F90
     PHYSICS_SRCS_f =
     PHYSICS_SRCS_f90 =
+ifneq (,$(findstring HYBRID,$(CPPDEFS)))
+    PHYSICS_SRCS_F90 = \
+	   ./GFS_layer/GFS_physics_driver.F90
+else
     PHYSICS_SRCS_F90 =
+endif
     RADIATION_SRCS_f =
     RADIATION_SRCS_F90 =
 else
@@ -56,7 +61,8 @@ else
 	   ./physics/h2ointerp.f90                                                   \
 	   ./physics/ozinterp.f90
     PHYSICS_SRCS_F90 = \
-	   ./physics/gfdl_cloud_microphys.F90
+	   ./physics/gfdl_cloud_microphys.F90                                        \
+	   ./GFS_layer/GFS_physics_driver.F90
     RADIATION_SRCS_f = \
 	   ./physics/radiation_aerosols.f                                            \
 	   ./physics/radiation_astronomy.f                                           \
@@ -177,7 +183,6 @@ SRCS_F90 = \
 	   ./GFS_layer/GFS_abstraction_layer.F90                                     \
 	   ./GFS_layer/GFS_diagnostics.F90                                           \
 	   ./GFS_layer/GFS_driver.F90                                                \
-	   ./GFS_layer/GFS_physics_driver.F90                                        \
 	   $(RADIATION_SRCS_F90)                                                     \
 	   ./GFS_layer/GFS_restart.F90                                               \
 	   ./GFS_layer/GFS_typedefs.F90
@@ -228,11 +233,11 @@ ifneq (,$(findstring CCPP,$(CPPDEFS)))
 	$(CPP) $(CPPDEFS) $(CPPFLAGS) $< > $*.tmp.f90
 	$(FC) $(FFLAGS) $(OTHER_FFLAGS) -c $*.tmp.f90 -o $@
 endif
-ifneq (,$(findstring CCPP,$(CPPDEFS)))
+#ifneq (,$(findstring CCPP,$(CPPDEFS)))
 ./GFS_layer/GFS_physics_driver.o: ./GFS_layer/GFS_physics_driver.F90
 	$(CPP) $(CPPDEFS) $(CPPFLAGS) $< > $*.tmp.f90
 	$(FC) $(FFLAGS) $(OTHER_FFLAGS) -c $*.tmp.f90 -o $@
-endif
+#endif
 
 
 .PHONY: clean

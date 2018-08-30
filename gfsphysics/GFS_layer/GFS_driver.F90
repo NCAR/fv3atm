@@ -9,10 +9,13 @@ module GFS_driver
                                       GFS_radtend_type, GFS_diag_type
 #ifdef CCPP
   use GFS_typedefs,             only: GFS_interstitial_type
+#ifdef HYBRID
+  use module_physics_driver,    only: GFS_physics_driver
+#endif
 #else
   use module_radiation_driver,  only: GFS_radiation_driver, radupdate
-#endif
   use module_physics_driver,    only: GFS_physics_driver
+#endif
   use module_radsw_parameters,  only: topfsw_type, sfcfsw_type
   use module_radlw_parameters,  only: topflw_type, sfcflw_type
   use funcphys,                 only: gfuncphys
@@ -99,7 +102,9 @@ module GFS_driver
   public  GFS_time_vary_step          !< perform operations needed prior radiation or physics
   public  GFS_radiation_driver        !< radiation_driver (was grrad)
 #endif
+#if !(defined CCPP) || defined(HYBRID)
   public  GFS_physics_driver          !< physics_driver (was gbphys)
+#endif
 #ifndef CCPP
   public  GFS_stochastic_driver       !< stochastic physics
 #endif
