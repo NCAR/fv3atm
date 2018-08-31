@@ -4386,7 +4386,12 @@ module GFS_typedefs
     allocate (Diag%shum_wts(IM,Model%levs))
 !--- 3D diagnostics
     allocate (Diag%zmtnblck(IM))
+#ifdef CCPP
+    ! need to allocate these arrays to avoid Fortran runtime errors when
+    ! trying to add slices of non-allocated fields to the CCPP data structure
+#else
     if (Model%ldiag3d) then
+#endif
       allocate (Diag%du3dt  (IM,Model%levs,4))
       allocate (Diag%dv3dt  (IM,Model%levs,4))
       allocate (Diag%dt3dt  (IM,Model%levs,6))
@@ -4396,7 +4401,9 @@ module GFS_typedefs
       allocate (Diag%dwn_mf (IM,Model%levs))
       allocate (Diag%det_mf (IM,Model%levs))
       allocate (Diag%cldcov (IM,Model%levs))
+#ifndef CCPP
     endif
+#endif
     !--- 3D diagnostics for Thompson MP
     if(Model%lradar) then
       allocate (Diag%refl_10cm(IM,Model%levs))
