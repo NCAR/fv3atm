@@ -144,12 +144,13 @@ module atmosphere_mod
 use block_control_mod,      only: block_control_type
 use constants_mod,          only: cp_air, rdgas, grav, rvgas, kappa, pstd_mks
 use time_manager_mod,       only: time_type, get_time, set_time, operator(+), &
-                                  operator(-)
+                                  operator(-), operator(/), time_type_to_real
 use fms_mod,                only: file_exist, open_namelist_file,    &
                                   close_file, error_mesg, FATAL,     &
                                   check_nml_error, stdlog,           &
                                   write_version_number,              &
                                   set_domain,   &
+                                  read_data,   &
                                   mpp_clock_id, mpp_clock_begin,     &
                                   mpp_clock_end, CLOCK_SUBCOMPONENT, &
                                   clock_flag_default, nullify_domain
@@ -185,6 +186,9 @@ use fv_mp_mod,          only: switch_current_Atm
 use fv_sg_mod,          only: fv_subgrid_z
 use fv_update_phys_mod, only: fv_update_phys
 use fv_nwp_nudge_mod,   only: fv_nwp_nudge_init, fv_nwp_nudge_end, do_adiabatic_init
+use fv_regional_mod,    only: start_regional_restart, read_new_bc_data
+use fv_regional_mod,    only: a_step, p_step
+use fv_regional_mod,    only: current_time_in_seconds
 
 use mpp_domains_mod, only:  mpp_get_data_domain, mpp_get_compute_domain
 
@@ -291,6 +295,9 @@ contains
    integer :: ierr
 #endif
 
+   current_time_in_seconds = time_type_to_real( Time - Time_init )
+   if (mpp_pe() == 0) write(*,"('atmosphere_init: current_time_seconds = ',f9.1)")current_time_in_seconds
+
    call timing_on('ATMOS_INIT')
    allocate(pelist(mpp_npes()))
    call mpp_get_current_pelist(pelist)
@@ -314,6 +321,11 @@ contains
    enddo
 
    Atm(mytile)%Time_init = Time_init
+
+   a_step=0
+   if(Atm(mytile)%flagstruct%warm_start)then
+     a_step=nint(current_time_in_seconds/dt_atmos)
+   endif
 
 !----- write version and namelist to log file -----
    call write_version_number ( 'fvGFS/ATMOSPHERE_MOD', version )
@@ -463,6 +475,14 @@ contains
    end if
 #endif
 
+!  --- initiate the start for a restarted regional forecast
+   if ( Atm(mytile)%gridstruct%regional .and. Atm(mytile)%flagstruct%warm_start ) then
+
+     call start_regional_restart(Atm(1),       &
+                                 isc, iec, jsc, jec, &
+                                 isd, ied, jsd, jed )
+   endif
+
    if ( Atm(mytile)%flagstruct%na_init>0 ) then
       call nullify_domain ( )
       if ( .not. Atm(mytile)%flagstruct%hydrostatic ) then
@@ -555,12 +575,27 @@ contains
    integer :: itrac, n, psc
    integer :: k, w_diff, nt_dyn
 
+   type(time_type) :: atmos_time
+   integer :: atmos_time_step
+
 !---- Call FV dynamics -----
 
    call mpp_clock_begin (id_dynam)
 
    n = mytile
+
+   a_step = a_step + 1
+!
+!*** If this is a regional run then read in the next boundary data when it is time.
+!
+   if(Atm(n)%flagstruct%regional)then
+
+     call read_new_bc_data(Atm(n), Time, Time_step_atmos, p_split, &
+                           isd, ied, jsd, jed )
+   endif
+
    do psc=1,abs(p_split)
+     p_step = psc
      call timing_on('fv_dynamics')
 !uc/vc only need be same on coarse grid? However BCs do need to be the same
      call fv_dynamics(npx, npy, npz, nq, Atm(n)%ng, dt_atmos/real(abs(p_split)),&
@@ -780,14 +815,16 @@ contains
 !! the "domain2d" variable associated with the coupling grid and the 
 !! decomposition for the current cubed-sphere tile.
 !>@detail Coupling is done using the mass/temperature grid with no halos.
- subroutine atmosphere_domain ( fv_domain, layout )
+ subroutine atmosphere_domain ( fv_domain, layout, regional )
    type(domain2d), intent(out) :: fv_domain
    integer, intent(out) :: layout(2)
+   logical, intent(out) :: regional
 !  returns the domain2d variable associated with the coupling grid
 !  note: coupling is done using the mass/temperature grid with no halos
 
    fv_domain = Atm(mytile)%domain_for_coupler
    layout(1:2) =  Atm(mytile)%layout(1:2)
+   regional = Atm(mytile)%flagstruct%regional
 
  end subroutine atmosphere_domain
 
@@ -1271,13 +1308,14 @@ contains
  end subroutine get_stock_pe
 
 
-!>@brief The subroutine 'atmospehre_state_update' is an API to apply tendencies
+!>@brief The subroutine 'atmosphere_state_update' is an API to apply tendencies
 !! and compute a consistent prognostic state.
- subroutine atmosphere_state_update (Time, IPD_Data, IAU_Data, Atm_block)
+ subroutine atmosphere_state_update (Time, IPD_Data, IAU_Data, Atm_block, flip_vc)
    type(time_type),              intent(in) :: Time
    type(IPD_data_type),          intent(in) :: IPD_Data(:)
    type(IAU_external_data_type), intent(in) :: IAU_Data
    type(block_control_type),     intent(in) :: Atm_block
+   logical,                      intent(in) :: flip_vc
    !--- local variables ---
    type(time_type) :: Time_prev, Time_next
    integer :: i, j, ix, k, k1, n, w_diff, nt_dyn, iq
@@ -1324,7 +1362,11 @@ contains
          !if (nb.EQ.1) print*,'in block_update',IAU_Data%in_interval,IAU_Data%temp_inc(isc,jsc,30)
          blen = Atm_block%blksz(nb)
          do k = 1, npz
-            k1 = npz+1-k !reverse the k direction 
+           if(flip_vc) then
+             k1 = npz+1-k !reverse the k direction 
+           else
+             k1 = k
+           endif
             do ix = 1, blen
                i = Atm_block%index(nb)%ii(ix)
                j = Atm_block%index(nb)%jj(ix)
@@ -1341,7 +1383,7 @@ contains
 !$OMP parallel do default (none) & 
 !$OMP              shared (rdt, n, nq, dnats, npz, ncnst, nwat, mytile, u_dt, v_dt, t_dt,&
 !$OMP                      Atm, IPD_Data, Atm_block, sphum, liq_wat, rainwat, ice_wat,   &
-!$OMP                      snowwat, graupel, nq_adv)   &
+!$OMP                      snowwat, graupel, nq_adv, flip_vc)   &
 !$OMP             private (nb, blen, i, j, k, k1, ix, q0, qwat, qt)
    do nb = 1,Atm_block%nblks
 
@@ -1351,7 +1393,11 @@ contains
      call fill_gfs(blen, npz, IPD_Data(nb)%Statein%prsi, IPD_Data(nb)%Stateout%gq0, 1.e-9_kind_phys)
 
      do k = 1, npz
-       k1 = npz+1-k !reverse the k direction 
+           if(flip_vc) then
+             k1 = npz+1-k !reverse the k direction 
+           else
+             k1 = k
+           endif
        do ix = 1, blen
          i = Atm_block%index(nb)%ii(ix)
          j = Atm_block%index(nb)%jj(ix)
@@ -1365,7 +1411,11 @@ contains
 ! GFS mixing ratios  = tracer_mass / (dry_mass + vapor_mass)
 ! FV3 total air mass = dry_mass + [water_vapor + condensate ]
 ! FV3 mixing ratios  = tracer_mass / (dry_mass+vapor_mass+cond_mass)
-         q0 = IPD_Data(nb)%Statein%prsi(ix,k) - IPD_Data(nb)%Statein%prsi(ix,k+1)
+         if(flip_vc) then
+           q0 = IPD_Data(nb)%Statein%prsi(ix,k) - IPD_Data(nb)%Statein%prsi(ix,k+1)
+         else
+           q0 = IPD_Data(nb)%Statein%prsi(ix,k+1) - IPD_Data(nb)%Statein%prsi(ix,k)
+         endif
          qwat(1:nq_adv) = q0*IPD_Data(nb)%Stateout%gq0(ix,k,1:nq_adv)
 ! **********************************************************************************************************
 ! Dry mass: the following way of updating delp is key to mass conservation with hybrid 32-64 bit computation
@@ -1385,7 +1435,11 @@ contains
      !--- See Note in statein...
      do iq = nq+1, ncnst
        do k = 1, npz
-         k1 = npz+1-k !reverse the k direction 
+           if(flip_vc) then
+             k1 = npz+1-k !reverse the k direction 
+           else
+             k1 = k
+           endif
          do ix = 1, blen
            i = Atm_block%index(nb)%ii(ix)
            j = Atm_block%index(nb)%jj(ix)
@@ -1733,9 +1787,10 @@ contains
 #define _DBL_(X) X
 #define _RL_(X) X
 #endif
- subroutine atmos_phys_driver_statein (IPD_Data, Atm_block)
+ subroutine atmos_phys_driver_statein (IPD_Data, Atm_block,flip_vc)
    type (IPD_data_type),      intent(inout) :: IPD_Data(:)
    type (block_control_type), intent(in)    :: Atm_block
+   logical,                   intent(in)    :: flip_vc
 !--------------------------------------
 ! Local GFS-phys consistent parameters:
 !--------------------------------------
@@ -1763,7 +1818,7 @@ contains
 !$OMP parallel do default (none) & 
 !$OMP             shared  (Atm_block, Atm, IPD_Data, npz, nq, ncnst, sphum, liq_wat, &
 !$OMP                      ice_wat, rainwat, snowwat, graupel, pk0inv, ptop,   &
-!$OMP                      pktop, zvir, mytile, dnats, nq_adv) &
+!$OMP                      pktop, zvir, mytile, dnats, nq_adv, flip_vc) &
 !$OMP             private (dm, nb, blen, i, j, ix, k1, rTv, qgrs_rad)
 
    do nb = 1,Atm_block%nblks
@@ -1773,7 +1828,11 @@ contains
      blen = Atm_block%blksz(nb)
 
      !-- level interface geopotential height (relative to the surface)
-     IPD_Data(nb)%Statein%phii(:,1) = 0.0_kind_phys
+     if(flip_vc) then
+       IPD_Data(nb)%Statein%phii(:,1) = 0.0_kind_phys
+     else
+       IPD_Data(nb)%Statein%phii(:,npz+1) = 0.0_kind_phys
+     endif
      IPD_Data(nb)%Statein%prsik(:,:) = 1.e25_kind_phys
 
      do k = 1, npz
@@ -1783,7 +1842,11 @@ contains
 
             !Indices for FV's vertical coordinate, for which 1 = top
             !here, k is the index for GFS's vertical coordinate, for which 1 = bottom
-         k1 = npz+1-k ! flipping the index
+         if(flip_vc) then
+           k1 = npz+1-k ! flipping the index
+         else
+           k1 = k
+         endif
          IPD_Data(nb)%Statein%tgrs(ix,k) = _DBL_(_RL_(Atm(mytile)%pt(i,j,k1)))
          IPD_Data(nb)%Statein%ugrs(ix,k) = _DBL_(_RL_(Atm(mytile)%ua(i,j,k1)))
          IPD_Data(nb)%Statein%vgrs(ix,k) = _DBL_(_RL_(Atm(mytile)%va(i,j,k1)))
@@ -1791,8 +1854,13 @@ contains
          IPD_Data(nb)%Statein%prsl(ix,k) = _DBL_(_RL_(Atm(mytile)%delp(i,j,k1)))   ! Total mass
          if (Atm(mytile)%flagstruct%do_skeb)IPD_Data(nb)%Statein%diss_est(ix,k) = _DBL_(_RL_(Atm(mytile)%diss_est(i,j,k1)))
 
-         if (.not.Atm(mytile)%flagstruct%hydrostatic .and. (.not.Atm(mytile)%flagstruct%use_hydro_pressure))  &
-           IPD_Data(nb)%Statein%phii(ix,k+1) = IPD_Data(nb)%Statein%phii(ix,k) - _DBL_(_RL_(Atm(mytile)%delz(i,j,k1)*grav))
+         if(flip_vc) then
+           if (.not.Atm(mytile)%flagstruct%hydrostatic .and. (.not.Atm(mytile)%flagstruct%use_hydro_pressure))  &
+             IPD_Data(nb)%Statein%phii(ix,k+1) = IPD_Data(nb)%Statein%phii(ix,k) - _DBL_(_RL_(Atm(mytile)%delz(i,j,k1)*grav))
+         else
+           if (.not.Atm(mytile)%flagstruct%hydrostatic .and. (.not.Atm(mytile)%flagstruct%use_hydro_pressure))  &
+             IPD_Data(nb)%Statein%phii(ix,npz+1-k) = IPD_Data(nb)%Statein%phii(ix,npz+1-k+1) - _DBL_(_RL_(Atm(mytile)%delz(i,j,npz+1-k)*grav))
+         endif
 
 ! Convert to tracer mass:
          IPD_Data(nb)%Statein%qgrs(ix,k,1:nq_adv) =  _DBL_(_RL_(Atm(mytile)%q(i,j,k1,1:nq_adv))) &
@@ -1819,19 +1887,34 @@ contains
      enddo
 
 ! Re-compute pressure (dry_mass + water_vapor) derived fields:
-     do i=1,blen
-        IPD_Data(nb)%Statein%prsi(i,npz+1) = ptop 
-     enddo
-     do k=npz,1,-1
-        do i=1,blen
-           IPD_Data(nb)%Statein%prsi(i,k)  = IPD_Data(nb)%Statein%prsi(i,k+1)  &
-                                           + IPD_Data(nb)%Statein%prsl(i,k)
+     if(flip_vc) then
+       do i=1,blen
+         IPD_Data(nb)%Statein%prsi(i,npz+1) = ptop 
+       enddo
+       do k=npz,1,-1
+         do i=1,blen
+           IPD_Data(nb)%Statein%prsi(i,k)  = IPD_Data(nb)%Statein%prsi(i,k+1) + IPD_Data(nb)%Statein%prsl(i,k)
            IPD_Data(nb)%Statein%prsik(i,k) = log( IPD_Data(nb)%Statein%prsi(i,k) )
 ! Redefine mixing ratios for GFS == tracer_mass / (dry_air_mass + water_vapor_mass)
            IPD_Data(nb)%Statein%qgrs(i,k,1:nq_adv) = IPD_Data(nb)%Statein%qgrs(i,k,1:nq_adv) &
                                                    / IPD_Data(nb)%Statein%prsl(i,k)
-        enddo
-     enddo
+         enddo
+       enddo
+     else
+       do i=1,blen
+         IPD_Data(nb)%Statein%prsi(i,    1) = ptop 
+       enddo
+       do k=1,npz
+         do i=1,blen
+           IPD_Data(nb)%Statein%prsi(i,k+1)  = IPD_Data(nb)%Statein%prsi(i,k) + IPD_Data(nb)%Statein%prsl(i,k)
+           IPD_Data(nb)%Statein%prsik(i,k) = log( IPD_Data(nb)%Statein%prsi(i,k) )
+! Redefine mixing ratios for GFS == tracer_mass / (dry_air_mass + water_vapor_mass)
+           IPD_Data(nb)%Statein%qgrs(i,k,1:nq_adv) = IPD_Data(nb)%Statein%qgrs(i,k,1:nq_adv) &
+                                                   / IPD_Data(nb)%Statein%prsl(i,k)
+         enddo
+       enddo
+     endif
+
      do i=1,blen
         IPD_Data(nb)%Statein%pgr(i)         = IPD_Data(nb)%Statein%prsi(i,1)    ! surface pressure for GFS
         IPD_Data(nb)%Statein%prsik(i,npz+1) = log(ptop)
