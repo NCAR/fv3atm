@@ -1735,7 +1735,6 @@ module module_physics_driver
                 stop
             end if
 ! End of option B
-#endif
 #else
             if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of sfc_nst'
             do i=1,im
@@ -4101,31 +4100,7 @@ module module_physics_driver
         else        ! ras or cscnv
           fscav(:) = 0.0
           if (Model%cscnv) then    ! Chikira-Sugiyama  convection scheme (via CSU)
-!JLS Start here
 #ifdef CCPP
-#if defined(CCPP_OPTION_A) && defined(__INTEL_COMPILER)
-! OPTION A - works with Intel only
-            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling cs_conv through option A'
-            call cs_conv_pre_mp_cs_conv_pre_run(im, Model%levs, tottracer+3, Stateout%gq0(:,:,1), &
-                                                clw, fswtr, dqdt, errmsg, errflg)
-
-            call cs_conv_mp_cs_conv_run(ix, im, Model%levs, tottracer+3, Model%nctp,      &
-                                        otspt(1:tottracer+3,1:2), 1,                      &
-                                        kdt, Stateout%gt0, Stateout%gq0(:,:,1:1), rain1,  &
-                                        clw, Statein%phil, Statein%phii, Statein%prsl,    &
-                                        Statein%prsi, dtp, dtf, ud_mf, dd_mf, dt_mf,      &
-                                        Stateout%gu0, Stateout%gv0, fscav, fswtr,         &
-                                        Tbd%phy_fctd, me, wcbmax, Model%cs_parm(3),       &
-                                        Model%cs_parm(4), sigmatot,                       &
-                                        Model%do_aw, Model%do_awdd, Model%flx_form,       &
-                                        lprnt, ipr, kcnv, QLCN, QICN,                     &
-                                        w_upi, cf_upi, CNV_MFD, CNV_PRC3, CNV_DQLDT,      &
-                                        CLCN, CNV_FICE, CNV_NDROP, CNV_NICE, imp_physics, &
-                                        errmsg, errflg)
-
-            call cs_conv_post_mp_cs_conv_post_run(ix, im, Model%levs, rain1, dtp, Model%do_aw,  &
-                                                  sigmatot, sigmafrac, errmsg, errflg)
-#else
 ! OPTION B - works with all compilers
             if (Model%me==0) write(0,*) 'CCPP DEBUG: calling cs_conv_pre_run through option B'
             ! Copy local variables from driver to appropriate interstitial variables
@@ -4157,7 +4132,7 @@ module module_physics_driver
             !Model%nctp                                           ! intent(in)
             Interstitial(nt)%otspt     = otspt(1:tottracer+3,1:2) ! intent(in)
             !Model%kdt                                            ! intent(in)
-            Interstitial(nt)%rain1     = rain1                    ! intent(in)
+            Interstitial(nt)%raincd    = rain1                    ! intent(out)
             Interstitial(nt)%clw       = clw                      ! intent(inout)
             !Model%dtp                                            ! intent(in)
             !Model%dtf                                            ! intent(in)
@@ -4194,6 +4169,7 @@ module module_physics_driver
             !cdata_block(nb,nt)%errflg = errflg                   ! intent(out)
             call ccpp_physics_run(cdata_block(nb,nt), scheme_name="cs_conv_run", ierr=ierr)
             ! Copy intent(inout) and intent(out) interstitial variables to local variables in driver
+            rain1     = Interstitial(nt)%raincd
             clw       = Interstitial(nt)%clw
             ud_mf     = Interstitial(nt)%ud_mf
             dd_mf     = Interstitial(nt)%dd_mf
@@ -4217,27 +4193,17 @@ module module_physics_driver
                 stop
             end if
 
-!! JLS NOTE:  The variable rain1 output from cs_conv_run (called prec inside the subroutine) is a precipitation flux (kg/m2/sec),
-!!            not meters LWE like the other schemes.  In cs_conv_post_run, it is converted to m.  In GFS_typedefs, I added rain1 
-!!            as a flux.  This probably wasn't a good idea, since in GFS_physics_driver the units of rain1 used by other schemes is m.
-!!            It would be nice to change the name of the variable output from cs_conv_run to something that actually has flux
-!!            units, or just convert it to m in cs_conv_run and be done with it, or pass in flux to cs_conv_post_run and
-!!            output rain1 in m.
-
             if (Model%me==0) write(0,*) 'CCPP DEBUG: calling cs_conv_post_run through option B'
             ! Copy local variables from driver to appropriate interstitial variables
             !Interstitial(nt)%ix       = ix                       ! intent(in) - set in Interstitial(nt)%create()
             !Interstitial(nt)%im       = im                       ! intent(in) - set in Interstitial(nt)%create()
             !Model%levs                                           ! intent(in)
-            Interstitial(nt)%rain1     = rain1                    ! intent(inout)
-            !Model%dtp                                            ! intent(in)
             Interstitial(nt)%sigmatot  = sigmatot                 ! intent(in)
             Interstitial(nt)%sigmafrac = sigmafrac                ! intent(out)
             !cdata_block(nb,nt)%errmsg = errmsg                   ! intent(out)
             !cdata_block(nb,nt)%errflg = errflg                   ! intent(out)
             call ccpp_physics_run(cdata_block(nb,nt), scheme_name="cs_conv_post", ierr=ierr)
             ! Copy intent(inout) and intent(out) interstitial variables to local variables in driver
-            rain1     = Interstitial(nt)%rain1
             sigmafrac = Interstitial(nt)%sigmafrac
             errmsg    = trim(cdata_block(nb,nt)%errmsg)
             errflg    = cdata_block(nb,nt)%errflg
@@ -4246,7 +4212,6 @@ module module_physics_driver
                 stop
             end if
 ! End of option B
-#endif
 #else
 
               fswtr(:) = 0.0
@@ -4262,6 +4227,9 @@ module module_physics_driver
               enddo
 
 !             if (lprnt) write(0,*)'befcsgt0=',Stateout%gt0(ipr,:)
+
+! NOTE:  The variable rain1 output from cs_convr (called prec inside the subroutine) is a precipitation flux (kg/m2/sec),
+!         not meters LWE like the other schemes.  It is converted to m after the call to cs_convr.
 
               call cs_convr (ix, im, levs, tottracer+3, Model%nctp,           &
                              otspt(1:tottracer+3,1:2), 1,                     &
