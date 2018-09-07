@@ -2967,9 +2967,9 @@ module module_physics_driver
             Interstitial(nt)%ix = ix              ! intent(in)
             !Model%levs                           ! intent(in)
             !Model%dtp                            ! intent(in)
-            !IPD_Data(nb)%Tbd%cactiv              ! intent(inout)
-            !IPD_Data(nb)%Tbd%forcet              ! intent(in)
-            !IPD_Data(nb)%Tbd%forceq              ! intent(in)
+            !Tbd%cactiv              ! intent(inout)
+            !Tbd%forcet              ! intent(in)
+            !Tbd%forceq              ! intent(in)
             !Statein%phil                         ! intent(in)
             Interstitial(nt)%raincd = rain1       ! intent(out)
             !Stateout%gq0                         ! intent(inout)
@@ -4645,8 +4645,8 @@ module module_physics_driver
             CCPP_shared(nt)%errmsg = errmsg       ! intent(out)
             CCPP_shared(nt)%errflg = errflg       ! intent(out)
             call ccpp_physics_run(cdata_block(nb,nt), scheme_name="cu_gf_driver_post",ierr=ierr)
-            CCPP_shared(nt)%errmsg = errmsg       ! intent(out)
-            CCPP_shared(nt)%errflg = errflg       ! intent(out)
+            errmsg = trim(CCPP_shared(nt)%errmsg)
+            errflg = CCPP_shared(nt)%errflg
 #endif
             if (errflg/=0) then
                 write(0,*) 'Error in call to cu_gf_driver_post: '//trim(errmsg)
