@@ -3465,8 +3465,8 @@ module GFS_typedefs
           levozp   = 80
           oz_coeff = 4
        else if (Model%oz_phys_2015) then
-          levozp   = 42 ! the usual answer if you don't know - @Man, update
-          oz_coeff = 6  ! this is what we know already - @Man, check
+          levozp   = 53 
+          oz_coeff = 6  
        else
           write(*,*) 'Logic error, ntoz>0 but no ozone physics selected'
           stop

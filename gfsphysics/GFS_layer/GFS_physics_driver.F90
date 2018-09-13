@@ -3373,10 +3373,37 @@ module module_physics_driver
       if (ntoz > 0 .and. ntrac >= ntoz) then
         if (oz_coeff > 4) then
 #ifdef CCPP
-          write(0,*) "Error in GFS_physics_driver.F90, ozphys_2015 not compatible with CCPP"
-          call sleep(1)
-          stop
+          if (Model%me==0) write(0,*) 'CCPP DEBUG: calling ozphys_2015 through option B'
+          ! Copy local variables from driver to appropriate interstitial variables
+          !Interstitial(nt)%ix = ix                        ! intent(in) - set in Interstitial(nt)%create()
+          !Interstitial(nt)%im = im                        ! intent(in) - set in Interstitial(nt)%create()
+          !Model%levs                                      ! intent(in)
+          !Interstitial(nt)%levozp                         ! intent(in) - associated with levozp
+          !Model%dtp                                       ! intent(in)
+          !Stateout%gq0(:,:,1)                             ! intent(inout)
+          !Stateout%gt0                                    ! intent(in)
+          !Interstitial(nt)%oz_pres                        ! intent(in) - associated with oz_pres
+          !Statein%prsl                                    ! intent(in)
+          !Tbd%ozpl                                        ! intent(in)
+          !Interstitial(nt)%oz_coeff                       ! intent(in) - associated with oz_coeff
+          Interstitial(nt)%del = del                       ! intent(in)
+          !Model%ldiag3d                                   ! intent(in)
+          !Diag%dq3dt(:,:,6:6+Interstitial(nt)%oz_coeff-1) ! intent(inout)
+          !Model%me                                        ! intent(in)
+          !cdata_block(nb,nt)%errmsg = errmsg              ! intent(out)
+          !cdata_block(nb,nt)%errflg = errflg              ! intent(out)
+          call ccpp_physics_run(cdata_block(nb,nt), scheme_name="ozphys_2015",ierr=ierr)
+          ! Copy back intent(inout) interstitial variables to local variables in
+          ! driver
+          errmsg = trim(cdata_block(nb,nt)%errmsg)
+          errflg = cdata_block(nb,nt)%errflg
+          if (errflg/=0) then
+            write(0,*) 'Error in call to ozphys_2015: ' // trim(errmsg)
+            stop
+          end if
+
 #else
+          if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of ozphys_2015'
           call ozphys_2015 (ix, im, levs, levozp, dtp,               &
                             Stateout%gq0(1,1,ntoz),                  &
                             Stateout%gq0(1,1,ntoz),                  &
