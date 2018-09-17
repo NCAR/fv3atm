@@ -267,9 +267,18 @@ contains
  subroutine atmosphere_init (Time_init, Time, Time_step, Grid_box, area)
 #ifdef CCPP
    use iso_c_binding,     only: c_loc
+#ifdef STATIC
+! For static builds, the ccpp_physics_{init,run,finalize} calls
+! are not pointing to code in the CCPP framework, but to auto-generated
+! ccpp_suite_cap and ccpp_group_*_cap modules behind a ccpp_static_api
+   use ccpp_api,          only: ccpp_init,           &
+                                ccpp_field_add
+   use ccpp_static_api,   only: ccpp_physics_init
+#else
    use ccpp_api,          only: ccpp_init,           &
                                 ccpp_physics_init,   &
                                 ccpp_field_add
+#endif
    use CCPP_data,         only: ccpp_suite,          &
                                 cdata => cdata_tile, &
                                 CCPP_interstitial,   &
@@ -672,7 +681,14 @@ contains
 !! FV3 dynamical core responsible for writing out a restart and final diagnostic state.
  subroutine atmosphere_end (Time, Grid_box)
 #ifdef CCPP
+#ifdef STATIC
+! For static builds, the ccpp_physics_{init,run,finalize} calls
+! are not pointing to code in the CCPP framework, but to auto-generated
+! ccpp_suite_cap and ccpp_group_*_cap modules behind a ccpp_static_api
+   use ccpp_static_api,   only: ccpp_physics_finalize
+#else
    use ccpp_api,          only: ccpp_physics_finalize
+#endif
    use CCPP_data,         only: cdata => cdata_tile
 #endif
    type (time_type),      intent(in)    :: Time
