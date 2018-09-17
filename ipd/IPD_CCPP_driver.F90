@@ -5,24 +5,27 @@ module IPD_CCPP_driver
                                 IPD_diag_type,     IPD_restart_type, &
                                 IPD_interstitial_type
 
+#ifdef STATIC
+! For static builds, the ccpp_physics_{init,run,finalize} calls
+! are not pointing to code in the CCPP framework, but to auto-generated
+! ccpp_suite_cap and ccpp_group_*_cap modules behind a ccpp_static_api
   use ccpp_api,           only: ccpp_t,                              &
                                 ccpp_init,                           &
                                 ccpp_finalize,                       &
-#ifdef STATIC
-! For static builds, the ccpp_physics_{init,run,finalize} calls
-! are imported via ccpp_modules_static_slow_physics.inc. These are not
-! pointing to code in the CCPP framework, but to auto-generated
-! ccpp_suite_cap and ccpp_group_*_cap modules behind a ccpp_static_api
+                                ccpp_field_add,                      &
+                                ccpp_initialized
+  use ccpp_static_api,    only: ccpp_physics_init,                   &
+                                ccpp_physics_run,                    &
+                                ccpp_physics_finalize
 #else
+  use ccpp_api,           only: ccpp_t,                              &
+                                ccpp_init,                           &
+                                ccpp_finalize,                       &
                                 ccpp_physics_init,                   &
                                 ccpp_physics_run,                    &
                                 ccpp_physics_finalize,               &
-#endif
                                 ccpp_field_add,                      &
                                 ccpp_initialized
-
-#ifdef STATIC
-#include "ccpp_modules_static_slow_physics.inc"
 #endif
 
   use CCPP_data,          only: cdata_tile,                          &
