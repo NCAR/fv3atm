@@ -138,6 +138,8 @@
 
 #ifdef CCPP
       public commglobal
+#elif MEMCHECK
+      public commglobal
 #endif
       public mp_start, mp_assign_gid, mp_barrier, mp_stop!, npes
       public domain_decomp, mp_bcst, mp_reduce_max, mp_reduce_sum, mp_gather

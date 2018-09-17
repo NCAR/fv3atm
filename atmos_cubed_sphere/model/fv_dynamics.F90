@@ -125,6 +125,9 @@ module fv_dynamics_mod
    use fv_mp_mod,           only: is_master
    use fv_mp_mod,           only: group_halo_update_type
    use fv_mp_mod,           only: start_group_halo_update, complete_group_halo_update
+#if MEMCHECK
+   use fv_mp_mod,           only: commglobal
+#endif
    use fv_timing_mod,       only: timing_on, timing_off
    use diag_manager_mod,    only: send_data
    use fv_diagnostics_mod,  only: fv_time, prt_mxm, range_check, prt_minmax
@@ -134,6 +137,10 @@ module fv_dynamics_mod
    use tracer_manager_mod,  only: get_tracer_index
    use fv_sg_mod,           only: neg_adj3
    use fv_nesting_mod,      only: setup_nested_grid_BCs
+   use fv_regional_mod,     only: regional_boundary_update, set_regional_BCs
+   use fv_regional_mod,     only: dump_field, H_STAGGER, U_STAGGER, V_STAGGER
+   use fv_regional_mod,     only: a_step, p_step, k_step
+   use fv_regional_mod,     only: current_time_in_seconds
    use boundary_mod,        only: nested_grid_BC_apply_intT
    use fv_arrays_mod,       only: fv_grid_type, fv_flags_type, fv_atmos_type, fv_nest_type, fv_diag_type, fv_grid_bounds_type
    use fv_nwp_nudge_mod,    only: do_adiabatic_init
@@ -169,9 +176,10 @@ contains
 
 #ifdef CCPP
     use mpp_mod,   only: FATAL, mpp_error
-    use ccpp_api,  only: ccpp_initialized, ccpp_physics_run
-    use CCPP_data, only: cdata => cdata_tile, &
-                         CCPP_interstitial
+    use CCPP_data, only: CCPP_interstitial
+#endif
+#ifdef MEMCHECK
+    use memcheck_mod, only: memcheck_run
 #endif
 
     real, intent(IN) :: bdt  !< Large time-step
@@ -257,6 +265,7 @@ contains
       real, allocatable :: dp1(:,:,:), dtdt_m(:,:,:), cappa(:,:,:)
 #endif
       real:: akap, rdg, ph1, ph2, mdt, gam, amdt, u0
+      real:: recip_k_split,reg_bc_update_time
       integer :: kord_tracer(ncnst)
       integer :: i,j,k, n, iq, n_map, nq, nwat, k_split
       integer :: sphum, liq_wat = -999, ice_wat = -999      ! GFDL physics
@@ -293,29 +302,25 @@ contains
       jsd = bd%jsd
       jed = bd%jed
 
+
 !     cv_air =  cp_air - rdgas
       agrav   = 1. / grav
         dt2   = 0.5*bdt
       k_split = flagstruct%k_split
+      recip_k_split=1./real(k_split)
       nwat    = flagstruct%nwat
       nq      = nq_tot - flagstruct%dnats
       rdg     = -rdgas * agrav
 
 #ifdef CCPP
       if (flagstruct%do_sat_adj) then
-         if (ccpp_initialized(cdata)) then
-            ! Reset interstitial data
-            call ccpp_physics_run(cdata, scheme_name='fv_sat_adj_pre', ierr=ierr)
-            if (ierr/=0) call mpp_error(FATAL, "Call to ccpp_physics_run for scheme 'fv_sat_adj_pre' failed")
-            ! Manually set runtime parameters
-            CCPP_interstitial%out_dt = (idiag%id_mdt > 0)
-         else
-            call mpp_error (FATAL, 'fv_dynamics: can not call ccpp fast physics because cdata not initialized')
-         end if
+         ! Manually set runtime parameters
+         CCPP_interstitial%out_dt = (idiag%id_mdt > 0)
       end if
-#endif
 
-#ifndef CCPP
+      cappa = 0.
+
+#else
       allocate ( dp1(isd:ied, jsd:jed, 1:npz) )
 
 #ifdef MOIST_CAPPA
@@ -359,6 +364,26 @@ contains
                                            call timing_off('NEST_BCs')
       endif
 
+    ! For the regional domain set values valid the beginning of the
+    ! current large timestep at the boundary points of the pertinent
+    ! prognostic arrays.
+
+      if (flagstruct%regional) then
+        call timing_on('Regional_BCs')
+
+        reg_bc_update_time=current_time_in_seconds
+        call set_regional_BCs          & !<-- Insert values into the boundary region valid for the start of this large timestep.
+              (delp,delz,w,pt                                     &
+#ifdef USE_COND
+               ,q_con                                             &
+#endif
+#ifdef MOIST_CAPPA
+               ,cappa                                             &
+#endif
+               ,q,u,v,uc,vc, bd, npz, ncnst, reg_bc_update_time )
+
+        call timing_off('Regional_BCs')
+      endif
 
       if ( flagstruct%no_dycore ) then
          if ( nwat.eq.2 .and. (.not.hydrostatic) ) then
@@ -459,7 +484,6 @@ contains
          endif
        enddo
     endif
-
       if ( flagstruct%fv_debug ) then
 #ifdef MOIST_CAPPA
          call prt_mxm('cappa', cappa, is, ie, js, je, ng, npz, 1., gridstruct%area_64, domain)
@@ -502,7 +526,7 @@ contains
 !         else
              call Rayleigh_Super(abs(bdt), npx, npy, npz, ks, pfull, phis, flagstruct%tau, u, v, w, pt,  &
                   ua, va, delz, gridstruct%agrid, cp_air, rdgas, ptop, hydrostatic,    &
-                 (.not. neststruct%nested), flagstruct%rf_cutoff, gridstruct, domain, bd)
+                 (.not. (neststruct%nested .or. flagstruct%regional)), flagstruct%rf_cutoff, gridstruct, domain, bd)
 !         endif
         else
              call Rayleigh_Friction(abs(bdt), npx, npy, npz, ks, pfull, flagstruct%tau, u, v, w, pt,  &
@@ -556,7 +580,9 @@ contains
   last_step = .false.
   mdt = bdt / real(k_split)
 
-#ifndef CCPP
+#ifdef CCPP
+  dtdt_m = 0.
+#else
   if ( idiag%id_mdt > 0 .and. (.not. do_adiabatic_init) ) then
        allocate ( dtdt_m(is:ie,js:je,npz) )
 !$OMP parallel do default(none) shared(is,ie,js,je,npz,dtdt_m)
@@ -570,8 +596,9 @@ contains
   endif
 #endif
 
-                                                  call timing_on('FV_DYN_LOOP')
+  call timing_on('FV_DYN_LOOP')
   do n_map=1, k_split   ! first level of time-split
+      k_step = n_map
                                            call timing_on('COMM_TOTAL')
 #ifdef USE_COND
       call start_group_halo_update(i_pack(11), q_con, domain)
@@ -617,7 +644,6 @@ contains
                     domain, n_map==1, i_pack, last_step, diss_est,time_total)
                                            call timing_off('DYN_CORE')
 
-
 #ifdef SW_DYNAMICS
 !!$OMP parallel do default(none) shared(is,ie,js,je,ps,delp,agrav)
       do j=js,je
@@ -632,20 +658,20 @@ contains
 ! mass fluxes
                                               call timing_on('tracer_2d')
        !!! CLEANUP: merge these two calls?
-       if (gridstruct%nested) then
+       if (gridstruct%nested .or. flagstruct%regional) then
          call tracer_2d_nested(q, dp1, mfx, mfy, cx, cy, gridstruct, bd, domain, npx, npy, npz, nq,    &
                         flagstruct%hord_tr, q_split, mdt, idiag%id_divg, i_pack(10), &
                         flagstruct%nord_tr, flagstruct%trdm2, &
-                        k_split, neststruct, parent_grid, flagstruct%lim_fac)
+                        k_split, neststruct, parent_grid, flagstruct%lim_fac,flagstruct%regional)
        else
          if ( flagstruct%z_tracer ) then
          call tracer_2d_1L(q, dp1, mfx, mfy, cx, cy, gridstruct, bd, domain, npx, npy, npz, nq,    &
                         flagstruct%hord_tr, q_split, mdt, idiag%id_divg, i_pack(10), &
-                        flagstruct%nord_tr, flagstruct%trdm2, flagstruct%lim_fac)
+                        flagstruct%nord_tr, flagstruct%trdm2, flagstruct%lim_fac,flagstruct%regional)
          else
          call tracer_2d(q, dp1, mfx, mfy, cx, cy, gridstruct, bd, domain, npx, npy, npz, nq,    &
                         flagstruct%hord_tr, q_split, mdt, idiag%id_divg, i_pack(10), &
-                        flagstruct%nord_tr, flagstruct%trdm2, flagstruct%lim_fac)
+                        flagstruct%nord_tr, flagstruct%trdm2, flagstruct%lim_fac,flagstruct%regional)
          endif
        endif
                                              call timing_off('tracer_2d')
@@ -654,15 +680,15 @@ contains
      if ( flagstruct%hord_tr<8 .and. flagstruct%moist_phys ) then
                                                   call timing_on('Fill2D')
        if ( liq_wat > 0 )  &
-        call fill2D(is, ie, js, je, ng, npz, q(isd,jsd,1,liq_wat), delp, gridstruct%area, domain, neststruct%nested, npx, npy)
+        call fill2D(is, ie, js, je, ng, npz, q(isd,jsd,1,liq_wat), delp, gridstruct%area, domain, neststruct%nested, gridstruct%regional, npx, npy)
        if ( rainwat > 0 )  &
-        call fill2D(is, ie, js, je, ng, npz, q(isd,jsd,1,rainwat), delp, gridstruct%area, domain, neststruct%nested, npx, npy)
+        call fill2D(is, ie, js, je, ng, npz, q(isd,jsd,1,rainwat), delp, gridstruct%area, domain, neststruct%nested, gridstruct%regional, npx, npy)
        if ( ice_wat > 0  )  &
-        call fill2D(is, ie, js, je, ng, npz, q(isd,jsd,1,ice_wat), delp, gridstruct%area, domain, neststruct%nested, npx, npy)
+        call fill2D(is, ie, js, je, ng, npz, q(isd,jsd,1,ice_wat), delp, gridstruct%area, domain, neststruct%nested, gridstruct%regional, npx, npy)
        if ( snowwat > 0 )  &
-        call fill2D(is, ie, js, je, ng, npz, q(isd,jsd,1,snowwat), delp, gridstruct%area, domain, neststruct%nested, npx, npy)
+        call fill2D(is, ie, js, je, ng, npz, q(isd,jsd,1,snowwat), delp, gridstruct%area, domain, neststruct%nested, gridstruct%regional, npx, npy)
        if ( graupel > 0 )  &
-        call fill2D(is, ie, js, je, ng, npz, q(isd,jsd,1,graupel), delp, gridstruct%area, domain, neststruct%nested, npx, npy)
+        call fill2D(is, ie, js, je, ng, npz, q(isd,jsd,1,graupel), delp, gridstruct%area, domain, neststruct%nested, gridstruct%regional, npx, npy)
                                                   call timing_off('Fill2D')
      endif
 #endif
@@ -712,6 +738,15 @@ contains
                  0, 0, npx, npy, npz, bd, real(n_map+1), real(k_split), &
                  neststruct%cappa_BC, bctype=neststruct%nestbctype  )
          endif
+
+         if ( flagstruct%regional .and. .not. last_step) then
+            reg_bc_update_time=current_time_in_seconds+(n_map+1)*mdt
+            call regional_boundary_update(cappa, 'cappa', &
+                                          isd, ied, jsd, jed, npz, &
+                                          is,  ie,  js,  je,       &
+                                          isd, ied, jsd, jed,      &
+                                          reg_bc_update_time )
+         endif
 #endif
 
          if( last_step )  then
@@ -735,6 +770,10 @@ contains
 #endif
   enddo    ! n_map loop
                                                   call timing_off('FV_DYN_LOOP')
+#ifdef MEMCHECK
+  if (mpp_pe()==mpp_root_pe()) write(0,*) 'CCPP DEBUG: calling memcheck in dynamics after FV_DYN_LOOP'
+  call memcheck_run(commglobal, mpp_root_pe())
+#endif
   if ( idiag%id_mdt > 0 .and. (.not.do_adiabatic_init) ) then
 ! Output temperature tendency due to inline moist physics:
 #if defined(CCPP) && defined(__GFORTRAN__)

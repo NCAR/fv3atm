@@ -23,7 +23,7 @@ endif
 
 LIBRARY  = libipd.a
 
-FFLAGS   += -I../fms -I../fms/include -I../gfsphysics
+FFLAGS   += -I../fms -I../fms/include -I../gfsphysics -I../namphysics
 
 CPPDEFS += -DNEW_TAUCTMAX -DSMALL_PE -DNEMS_GSM -DINTERNAL_FILE_NML
 
@@ -49,15 +49,6 @@ all default: depend $(LIBRARY)
 $(LIBRARY): $(OBJS)
 	$(AR) $(ARFLAGS) $@ $?
 
-# this is the place to override default (implicit) compilation rules
-# and create specific (explicit) rules
-
-./physics/radiation_aerosols.o : ./physics/radiation_aerosols.f
-	$(FC) $(FFLAGS) $(OTHER_FFLAGS) -xCORE-AVX-I -c $< -o $@
-
-./GFS_layer/GFS_diagnostics.o : ./GFS_layer/GFS_diagnostics.F90
-	$(FC) $(FFLAGS) $(OTHER_FFLAGS) -O0 -c $< -o $@
-
 # Do preprocessing of the IPD-CCPP driver in two steps to be
 # able to look at the actual .f90 file that gets compiled
 ifneq (,$(findstring CCPP,$(CPPDEFS)))
@@ -70,7 +61,7 @@ endif
 clean:
 	@echo "Cleaning ipd  ... "
 	@echo
-	$(RM) -f $(LIBRARY) *__genmod.f90 *.o */*.o *.mod *.lst *.i depend
+	$(RM) -f $(LIBRARY) *__genmod.f90 *.o */*.o *.mod *.i90 *.lst *.i depend
 
 MKDEPENDS = ../mkDepends.pl
 include ../conf/make.rules
