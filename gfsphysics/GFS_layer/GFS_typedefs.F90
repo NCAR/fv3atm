@@ -585,7 +585,8 @@ module GFS_typedefs
 !! | IPD_Data(nb)%Coupling%dwn_mfi        | instantaneous_atmosphere_downdraft_convective_mass_flux_on_dynamics_timestep                   | (downdraft mass flux) * delt                           | kg m-2        |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Coupling%det_mfi        | instantaneous_atmosphere_detrainment_convective_mass_flux_on_dynamics_timestep                 | (detrainment mass flux) * delt                         | kg m-2        |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Coupling%cldcovi        |                                                                                                | instantaneous 3D cloud fraction                        |               |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Coupling%nwfa2d         | tendency_of_water_friendly_surface_aerosols_at_surface                                         | instantaneous sfc aerosol source                       | kg-1 s-1      |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Coupling%nwfa2d         | tendency_of_water_friendly_aerosols_at_surface                                                 | instantaneous water-friendly sfc aerosol source        | kg-1 s-1      |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Coupling%nifa2d         | tendency_of_ice_friendly_aerosols_at_surface                                                   | instantaneous ice-friendly sfc aerosol source          | kg-1 s-1      |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Coupling%ushfsfci       | instantaneous_upward_sensible_heat_flux                                                        | instantaneous upward sensible heat flux                | W m-2         |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Coupling%dkt            | instantaneous_atmosphere_heat_diffusivity                                                      | instantaneous atmospheric heat diffusivity             | m2 s-1        |    2 | real    | kind_phys | none   | F        |
 !!
@@ -778,7 +779,6 @@ module GFS_typedefs
 !! | IPD_Control%ncld                     | number_of_hydrometeors                                                        | choice of cloud scheme / number of hydrometeors         | count         |    0 | integer   |           | none   | F        |
 !! | IPD_Control%imp_physics              | flag_for_microphysics_scheme                                                  | choice of microphysics scheme                           | flag          |    0 | integer   |           | none   | F        |
 !! | IPD_Control%imp_physics_gfdl         | flag_for_gfdl_microphysics_scheme                                             | choice of GFDL microphysics scheme                      | flag          |    0 | integer   |           | none   | F        |
-!! | IPD_Control%imp_physics_mg           | flag_for_mg_microphysics_scheme                                               | choice of MG microphysics scheme                        | flag          |    0 | integer   |           | none   | F        |
 !! | IPD_Control%imp_physics_thompson     | flag_for_thompson_microphysics_scheme                                         | choice of Thompson microphysics scheme                  | flag          |    0 | integer   |           | none   | F        |
 !! | IPD_Control%imp_physics_wsm6         | flag_for_wsm6_microphysics_scheme                                             | choice of WSM6 microphysics scheme                      | flag          |    0 | integer   |           | none   | F        |
 !! | IPD_Control%imp_physics_zhao_carr    | flag_for_zhao_carr_microphysics_scheme                                        | choice of Zhao-Carr microphysics scheme                 | flag          |    0 | integer   |           | none   | F        |
@@ -1072,7 +1072,6 @@ module GFS_typedefs
     !--- new microphysical switch
     integer              :: imp_physics        !< choice of microphysics scheme
     integer              :: imp_physics_gfdl = 11     !< choice of GFDL     microphysics scheme
-    integer              :: imp_physics_mg = 10       !< choice of MP       microphysics scheme
     integer              :: imp_physics_thompson = 8  !< choice of Thompson microphysics scheme
     integer              :: imp_physics_wsm6 = 6      !< choice of WSMG     microphysics scheme
     integer              :: imp_physics_zhao_carr = 99  !< choice of Zhao-Carr microphysics scheme
@@ -1611,7 +1610,6 @@ module GFS_typedefs
 !! | IPD_Data(nb)%Intdiag%wind10mmax           | maximum_wind_at_10m                                                     | maximum wind speed at 10 m                                      | m s-1         |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%rain                 | lwe_thickness_of_precipitation_amount_on_dynamics_timestep              | total rain at this time step                                    | m             |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%rainc                | lwe_thickness_of_convective_precipitation_amount_on_dynamics_timestep   | convective rain at this time step                               | m             |    1 | real        | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Intdiag%rainnc               | lwe_thickness_of_stratiform_precipitation_amount_on_dynamics_timestep   | stratiform rainfall amount on dynamics timestep                 | m             |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%ice                  | lwe_thickness_of_ice_amount_on_dynamics_timestep                        | ice fall at this time step                                      | m             |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%snow                 | lwe_thickness_of_snow_amount_on_dynamics_timestep                       | snow fall at this time step                                     | m             |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%graupel              | lwe_thickness_of_graupel_amount_on_dynamics_timestep                    | graupel fall at this time step                                  | m             |    1 | real        | kind_phys | none   | F        |
@@ -1732,9 +1730,6 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: wind10mmax(:)  => null()   !< maximum wind speed
     real (kind=kind_phys), pointer :: rain   (:)     => null()   !< total rain at this time step
     real (kind=kind_phys), pointer :: rainc  (:)     => null()   !< convective rain at this time step
-#ifdef CCPP
-    real (kind=kind_phys), pointer :: rainnc (:)     => null()   !< grid-scale rain at this time step
-#endif
     real (kind=kind_phys), pointer :: ice    (:)     => null()   !< ice fall at this time step
     real (kind=kind_phys), pointer :: snow   (:)     => null()   !< snow fall at this time step
     real (kind=kind_phys), pointer :: graupel(:)     => null()   !< graupel fall at this time step
@@ -1969,7 +1964,6 @@ module GFS_typedefs
 !! | IPD_Interstitial(nt)%prcpmp                        | lwe_thickness_of_explicit_precipitation_amount                                                 | explicit precipitation (rain, ice, snow, graupel, ...) on physics timestep          | m             |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%qss                           | surface_specific_humidity                                                                      | surface air saturation specific humidity                                            | kg kg-1       |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%raddt                         | time_step_for_radiation                                                                        | radiation time step                                                                 | s             |    0 | real        | kind_phys | none   | F        |
-!! | IPD_Interstitial(nt)%rain0                         | lwe_thickness_of_stratiform_precipitation_amount_per_day                                       | stratiform rain over 24h period                                                     | mm            |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%raincd                        | lwe_thickness_of_deep_convective_precipitation_amount                                          | deep convective rainfall amount on physics timestep                                 | m             |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%raincs                        | lwe_thickness_of_shallow_convective_precipitation_amount                                       | shallow convective rainfall amount on physics timestep                              | m             |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%rainmcadj                     | lwe_thickness_of_moist_convective_adj_precipitation_amount                                     | adjusted moist convective rainfall amount on physics timestep                       | m             |    1 | real        | kind_phys | none   | F        |
@@ -2171,7 +2165,6 @@ module GFS_typedefs
     real (kind=kind_phys), pointer      :: sigmaf(:)        => null()  !<
     logical                             :: skip_macro                  !<
     integer, pointer                    :: slopetype(:)     => null()  !<
-    real (kind=kind_phys), pointer      :: snow0(:)         => null()  !<
     real (kind=kind_phys), pointer      :: snowc(:)         => null()  !<
     real (kind=kind_phys), pointer      :: snohf(:)         => null()  !<
     real (kind=kind_phys), pointer      :: snowmp(:)        => null()  !<
@@ -4348,9 +4341,6 @@ module GFS_typedefs
     allocate (Diag%wind10mmax (IM))
     allocate (Diag%rain    (IM))
     allocate (Diag%rainc   (IM))
-#ifdef CCPP
-    allocate (Diag%rainnc  (IM))
-#endif
     allocate (Diag%ice     (IM))
     allocate (Diag%snow    (IM))
     allocate (Diag%graupel (IM))
@@ -4490,9 +4480,6 @@ module GFS_typedefs
     Diag%wind10mmax = zero
     Diag%rain       = zero
     Diag%rainc      = zero
-#ifdef CCPP
-    Diag%rainnc     = zero
-#endif
     Diag%ice        = zero
     Diag%snow       = zero
     Diag%graupel    = zero
@@ -4714,7 +4701,7 @@ module GFS_typedefs
     allocate (Interstitial%z01d       (IM))
     allocate (Interstitial%zt1d       (IM))
     ! Allocate arrays that are conditional on physics choices
-    if (Model%imp_physics == Model%imp_physics_gfdl) then
+    if (Model%imp_physics == Model%imp_physics_gfdl .or. Model%imp_physics == Model%imp_physics_thompson) then
        allocate (Interstitial%graupelmp  (IM))
        allocate (Interstitial%icemp      (IM))
        allocate (Interstitial%rainmp     (IM))
@@ -4996,7 +4983,7 @@ module GFS_typedefs
     Interstitial%z01d         = clear_val
     Interstitial%zt1d         = clear_val
     ! Reset fields that are conditional on physics choices
-    if (Model%imp_physics == Model%imp_physics_gfdl) then
+    if (Model%imp_physics == Model%imp_physics_gfdl .or. Model%imp_physics == Model%imp_physics_thompson) then
        Interstitial%graupelmp = clear_val
        Interstitial%icemp     = clear_val
        Interstitial%rainmp    = clear_val
@@ -5175,8 +5162,8 @@ module GFS_typedefs
     write (0,*) 'sum(Interstitial%z01d        ) = ', sum(Interstitial%z01d        )
     write (0,*) 'sum(Interstitial%zt1d        ) = ', sum(Interstitial%zt1d        )
     ! Print arrays that are conditional on physics choices
-    if (Model%imp_physics == Model%imp_physics_gfdl) then
-       write (0,*) 'Interstitial_print: values specific to GFDL microphysics'
+    if (Model%imp_physics == Model%imp_physics_gfdl .or. Model%imp_physics == Model%imp_physics_thompson) then
+       write (0,*) 'Interstitial_print: values specific to GFDL/ Thompson microphysics'
        write (0,*) 'sum(Interstitial%graupelmp) = ', sum(Interstitial%graupelmp   )
        write (0,*) 'sum(Interstitial%icemp    ) = ', sum(Interstitial%icemp       )
        write (0,*) 'sum(Interstitial%rainmp   ) = ', sum(Interstitial%rainmp      )
