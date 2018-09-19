@@ -510,10 +510,10 @@ module module_physics_driver
            islmsk_cice
 
 !--- LOGICAL VARIABLES
-      logical :: lprnt, revap, mg3_as_mg2
+      logical :: lprnt, revap, mg3_as_mg2, skip_macro
 
       logical, dimension(size(Grid%xlon,1)) ::                          &
-           flag_iter, flag_guess, invrsn, skip_macro,                   &
+           flag_iter, flag_guess, invrsn,                               &
 !--- coupling inputs for physics
            flag_cice
 
