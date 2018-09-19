@@ -4102,7 +4102,7 @@ module module_physics_driver
           if (Model%cscnv) then    ! Chikira-Sugiyama  convection scheme (via CSU)
 #ifdef CCPP
 ! OPTION B - works with all compilers
-            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling cs_conv_pre_run through option B'
+            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling cs_conv_pre through option B'
             ! Copy local variables from driver to appropriate interstitial variables
             !Interstitial(nt)%im       = im                       ! intent(in) - set in Interstitial(nt)%create()
             !Model%levs                                           ! intent(in)
@@ -4119,11 +4119,11 @@ module module_physics_driver
             errmsg = trim(cdata_block(nb,nt)%errmsg)
             errflg = cdata_block(nb,nt)%errflg
             if (errflg/=0) then
-                write(0,*) 'Error in call to cs_conv_pre_mp_cs_conv_pre_run: ' // trim(errmsg)
+                write(0,*) 'Error in call to cs_conv_pre_mp_cs_conv_pre: ' // trim(errmsg)
                 stop
             end if
 
-            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling cs_conv_run through option B'
+            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling cs_conv through option B'
             ! Copy local variables from driver to appropriate interstitial variables
             !Interstitial(nt)%ix       = ix                       ! intent(in) - set in Interstitial(nt)%create()
             !Interstitial(nt)%im       = im                       ! intent(in) - set in Interstitial(nt)%create()
@@ -4167,7 +4167,7 @@ module module_physics_driver
             !Model%imp_physics                                    ! intent(in)
             !cdata_block(nb,nt)%errmsg = errmsg                   ! intent(out)
             !cdata_block(nb,nt)%errflg = errflg                   ! intent(out)
-            call ccpp_physics_run(cdata_block(nb,nt), scheme_name="cs_conv_run", ierr=ierr)
+            call ccpp_physics_run(cdata_block(nb,nt), scheme_name="cs_conv", ierr=ierr)
             ! Copy intent(inout) and intent(out) interstitial variables to local variables in driver
             rain1     = Interstitial(nt)%raincd
             clw       = Interstitial(nt)%clw
@@ -4189,11 +4189,11 @@ module module_physics_driver
             errmsg    = trim(cdata_block(nb,nt)%errmsg)
             errflg    = cdata_block(nb,nt)%errflg
             if (errflg/=0) then
-                write(0,*) 'Error in call to cs_conv_mp_cs_conv_run: ' // trim(errmsg)
+                write(0,*) 'Error in call to cs_conv_mp_cs_conv: ' // trim(errmsg)
                 stop
             end if
 
-            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling cs_conv_post_run through option B'
+            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling cs_conv_post through option B'
             ! Copy local variables from driver to appropriate interstitial variables
             !Interstitial(nt)%ix       = ix                       ! intent(in) - set in Interstitial(nt)%create()
             !Interstitial(nt)%im       = im                       ! intent(in) - set in Interstitial(nt)%create()
@@ -4208,7 +4208,7 @@ module module_physics_driver
             errmsg    = trim(cdata_block(nb,nt)%errmsg)
             errflg    = cdata_block(nb,nt)%errflg
             if (errflg/=0) then
-                write(0,*) 'Error in call to cs_conv_post_mp_cs_conv_post_run: ' // trim(errmsg)
+                write(0,*) 'Error in call to cs_conv_post_mp_cs_conv_post: ' // trim(errmsg)
                 stop
             end if
 ! End of option B
