@@ -617,7 +617,6 @@ module module_physics_driver
            dqdt
 
 #ifndef CCPP
-      !real(kind=kind_phys), dimension(size(Grid%xlon,1),Model%levs,oz_coeff+5) ::  &
       real(kind=kind_phys), dimension(size(Grid%xlon,1),Model%levs,9) ::  &
            dq3dt_loc
 #endif
@@ -3371,7 +3370,7 @@ module module_physics_driver
 
 !  --- ...  ozone physics
       if (ntoz > 0 .and. ntrac >= ntoz) then
-        if (Interstitial(nt)%oz_coeff > 4) then
+        if (oz_coeff > 4) then
 #ifdef CCPP
           if (Model%me==0) write(0,*) 'CCPP DEBUG: calling ozphys_2015 through option B'
           ! Copy local variables from driver to appropriate interstitial variables
