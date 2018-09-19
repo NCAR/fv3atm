@@ -617,7 +617,8 @@ module module_physics_driver
            dqdt
 
 #ifndef CCPP
-      real(kind=kind_phys), dimension(size(Grid%xlon,1),Model%levs,oz_coeff+5) ::  &
+      !real(kind=kind_phys), dimension(size(Grid%xlon,1),Model%levs,oz_coeff+5) ::  &
+      real(kind=kind_phys), dimension(size(Grid%xlon,1),Model%levs,9) ::  &
            dq3dt_loc
 #endif
 
@@ -3369,26 +3370,26 @@ module module_physics_driver
       endif
 
 !  --- ...  ozone physics
-
       if (ntoz > 0 .and. ntrac >= ntoz) then
-        if (oz_coeff > 4) then
+        if (Interstitial(nt)%oz_coeff > 4) then
 #ifdef CCPP
           if (Model%me==0) write(0,*) 'CCPP DEBUG: calling ozphys_2015 through option B'
           ! Copy local variables from driver to appropriate interstitial variables
           !Interstitial(nt)%ix = ix                        ! intent(in) - set in Interstitial(nt)%create()
           !Interstitial(nt)%im = im                        ! intent(in) - set in Interstitial(nt)%create()
           !Model%levs                                      ! intent(in)
-          !Interstitial(nt)%levozp                         ! intent(in) - associated with levozp
+          !Interstitial(nt)%levozp = levozp                    ! intent(in) - associated with levozp
           !Model%dtp                                       ! intent(in)
           !Stateout%gq0(:,:,1)                             ! intent(inout)
           !Stateout%gt0                                    ! intent(in)
-          !Interstitial(nt)%oz_pres                        ! intent(in) - associated with oz_pres
+          !Interstitial(nt)%oz_pres = oz_pres               ! intent(in) - associated with oz_pres
           !Statein%prsl                                    ! intent(in)
-          !Tbd%ozpl                                        ! intent(in)
-          !Interstitial(nt)%oz_coeff                       ! intent(in) - associated with oz_coeff
+          !Tbd%ozpl = ozpl                                  ! intent(in)
+          !Interstitial(nt)%oz_coeff = oz_coeff             ! intent(in) - associated with oz_coeff
           Interstitial(nt)%del = del                       ! intent(in)
           !Model%ldiag3d                                   ! intent(in)
           !Diag%dq3dt(:,:,6:6+Interstitial(nt)%oz_coeff-1) ! intent(inout)
+          !con_g
           !Model%me                                        ! intent(in)
           !cdata_block(nb,nt)%errmsg = errmsg              ! intent(out)
           !cdata_block(nb,nt)%errflg = errflg              ! intent(out)
@@ -3428,14 +3429,14 @@ module module_physics_driver
           !Interstitial(nt)%ix = ix                        ! intent(in) - set in Interstitial(nt)%create()
           !Interstitial(nt)%im = im                        ! intent(in) - set in Interstitial(nt)%create()
           !Model%levs                                      ! intent(in)
-          !Interstitial(nt)%levozp                         ! intent(in) - associated with levozp
+          !Interstitial(nt)%levozp = levozp                         ! intent(in) - associated with levozp
           !Model%dtp                                       ! intent(in)
           !Stateout%gq0(:,:,1)                             ! intent(inout)
           !Stateout%gt0                                    ! intent(in)
-          !Interstitial(nt)%oz_pres                        ! intent(in) - associated with oz_pres
+          !Interstitial(nt)%oz_pres = oz_pres                        ! intent(in) - associated with oz_pres
           !Statein%prsl                                    ! intent(in)
-          !Tbd%ozpl                                        ! intent(in)
-          !Interstitial(nt)%oz_coeff                       ! intent(in) - associated with oz_coeff
+          !Tbd%ozpl = ozpl                                       ! intent(in)
+          !Interstitial(nt)%oz_coeff = oz_coeff             ! intent(in) - associated with oz_coeff
           Interstitial(nt)%del = del                       ! intent(in)
           !Model%ldiag3d                                   ! intent(in)
           !Diag%dq3dt(:,:,6:6+Interstitial(nt)%oz_coeff-1) ! intent(inout)

@@ -837,7 +837,7 @@ module GFS_typedefs
 !! | IPD_Control%shocaftcnv               |                                                                               | flag for SHOC                                           |               |    0 | logical   |           | none   | F        |
 !! | IPD_Control%shoc_cld                 |                                                                               | flag for clouds                                         |               |    0 | logical   |           | none   | F        |
 !! | IPD_Control%uni_cld                  |                                                                               | flag for clouds in grrad                                |               |    0 | logical   |           | none   | F        |
-!! | IPD_Control%oz_phys                  | flag_for_ozone_physics                                                        | flag for old (2006?) ozone physics                      | flag          |    0 | logical   |           | none   | F        |
+!! | IPD_Control%oz_phys                  | flag_for_ozone_physics                                                        | flag for old (2006) ozone physics                      | flag          |    0 | logical   |           | none   | F        |
 !! | IPD_Control%oz_phys_2015             | flag_for_2015_ozone_physics                                                   | flag for new (2015) ozone physics                       | flag          |    0 | logical   |           | none   | F        |
 !! | IPD_Control%h2o_phys                 |                                                                               | flag for stratosphere h2o                               |               |    0 | logical   |           | none   | F        |
 !! | IPD_Control%pdfcld                   |                                                                               | flag for pdfcld                                         |               |    0 | logical   |           | none   | F        |
@@ -1154,7 +1154,7 @@ module GFS_typedefs
     logical              :: shoc_cld        !< flag for clouds
     logical              :: uni_cld         !< flag for clouds in grrad
 #ifdef CCPP
-    logical              :: oz_phys         !< flag for old (2006?) ozone physics
+    logical              :: oz_phys         !< flag for old (2006) ozone physics
     logical              :: oz_phys_2015    !< flag for new (2015) ozone physics
 #endif
     logical              :: h2o_phys        !< flag for stratosphere h2o
@@ -1677,7 +1677,10 @@ module GFS_typedefs
 !! | IPD_Data(nb)%Intdiag%dq3dt(:,:,3)         | cumulative_change_in_water_vapor_specific_humidity_due_to_shal_convection | cumulative change in water vapor specific humidity due to shal conv.   | kg kg-1       |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%dq3dt(:,:,4)         | cumulative_change_in_water_vapor_specific_humidity_due_to_microphysics    | cumulative change in water vapor specific humidity due to microphysics | kg kg-1       |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%dq3dt(:,:,5)         | cumulative_change_in_ozone_mixing_ratio_due_to_PBL                        | cumulative change in ozone mixing ratio due to PBL                     | kg kg-1       |    2 | real        | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Intdiag%dq3dt(:,:,6:6+IPD_Interstitial(nt)%oz_coeff-1) | change_in_ozone_concentration                   | change in ozone concentration                                          | kg kg-1       |    3 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%dq3dt(:,:,6)         | cumulative_change_in_ozone_concentration_due_to_production_and_loss_rate  | cumulative change in ozone concentration due to production and loss rate | kg kg-1     |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%dq3dt(:,:,7)         | cumulative_change_in_ozone_concentration_due_to_ozone_mixing_ratio        | cumulative change in ozone concentration due to ozone mixing ratio     | kg kg-1       |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%dq3dt(:,:,8)         | cumulative_change_in_ozone_concentration_due_to_temperature               | cumulative change in ozone concentration due to temperature            | kg kg-1       |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%dq3dt(:,:,9)         | cumulative_change_in_ozone_concentration_due_to_overhead_ozone_column     | cumulative change in ozone concentration due to overhead ozone column  | kg kg-1       |    2 | real        | kind_phys | none   | F        |  
 !! | IPD_Data(nb)%Intdiag%upd_mf               | cumulative_atmosphere_updraft_convective_mass_flux                        | cumulative updraft mass flux                                           | Pa            |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%dwn_mf               | cumulative_atmosphere_downdraft_convective_mass_flux                      | cumulative downdraft mass flux                                         | Pa            |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%det_mf               | cumulative_atmosphere_detrainment_convective_mass_flux                    | cumulative detrainment mass flux                                       | Pa            |    2 | real        | kind_phys | none   | F        |
@@ -2935,7 +2938,7 @@ module GFS_typedefs
     logical              :: shocaftcnv     = .false.                  !< flag for SHOC
     logical              :: shoc_cld       = .false.                  !< flag for SHOC in grrad
 #ifdef CCPP
-    logical              :: oz_phys        = .true.                   !< flag for old (2006?) ozone physics
+    logical              :: oz_phys        = .true.                   !< flag for old (2006) ozone physics
     logical              :: oz_phys_2015   = .false.                  !< flag for new (2015) ozone physics
 #endif
     logical              :: h2o_phys       = .false.                  !< flag for stratosphere h2o
@@ -4429,7 +4432,7 @@ module GFS_typedefs
       allocate (Diag%du3dt  (IM,Model%levs,4))
       allocate (Diag%dv3dt  (IM,Model%levs,4))
       allocate (Diag%dt3dt  (IM,Model%levs,6))
-      allocate (Diag%dq3dt  (IM,Model%levs,oz_coeff+5))
+      allocate (Diag%dq3dt  (IM,Model%levs,9))
 !--- needed to allocate GoCart coupling fields
       allocate (Diag%upd_mf (IM,Model%levs))
       allocate (Diag%dwn_mf (IM,Model%levs))
