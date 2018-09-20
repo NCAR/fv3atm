@@ -176,9 +176,7 @@ contains
 
 #ifdef CCPP
     use mpp_mod,   only: FATAL, mpp_error
-    use ccpp_api,  only: ccpp_initialized, ccpp_physics_run
-    use CCPP_data, only: cdata => cdata_tile, &
-                         CCPP_interstitial
+    use CCPP_data, only: CCPP_interstitial
 #endif
 #ifdef MEMCHECK
     use memcheck_mod, only: memcheck_run
@@ -316,19 +314,13 @@ contains
 
 #ifdef CCPP
       if (flagstruct%do_sat_adj) then
-         if (ccpp_initialized(cdata)) then
-            ! Reset interstitial data
-            call ccpp_physics_run(cdata, scheme_name='fv_sat_adj_pre', ierr=ierr)
-            if (ierr/=0) call mpp_error(FATAL, "Call to ccpp_physics_run for scheme 'fv_sat_adj_pre' failed")
-            ! Manually set runtime parameters
-            CCPP_interstitial%out_dt = (idiag%id_mdt > 0)
-         else
-            call mpp_error (FATAL, 'fv_dynamics: can not call ccpp fast physics because cdata not initialized')
-         end if
+         ! Manually set runtime parameters
+         CCPP_interstitial%out_dt = (idiag%id_mdt > 0)
       end if
-#endif
 
-#ifndef CCPP
+      cappa = 0.
+
+#else
       allocate ( dp1(isd:ied, jsd:jed, 1:npz) )
 
 #ifdef MOIST_CAPPA
@@ -588,7 +580,9 @@ contains
   last_step = .false.
   mdt = bdt / real(k_split)
 
-#ifndef CCPP
+#ifdef CCPP
+  dtdt_m = 0.
+#else
   if ( idiag%id_mdt > 0 .and. (.not. do_adiabatic_init) ) then
        allocate ( dtdt_m(is:ie,js:je,npz) )
 !$OMP parallel do default(none) shared(is,ie,js,je,npz,dtdt_m)
