@@ -1673,7 +1673,7 @@ module module_physics_driver
             errmsg = trim(cdata_block(nb,nt)%errmsg)
             errflg = cdata_block(nb,nt)%errflg
             if (errflg/=0) then
-                write(0,*) 'Error in call to sfc_nst_pre: ' // trim(errmsg)
+                write(0,*) 'Error in call to sfc_nst_pre_mp_sfc_nst_pre_run: ' // trim(errmsg)
                 stop
             end if
             !
@@ -1731,9 +1731,10 @@ module module_physics_driver
             errmsg = trim(cdata_block(nb,nt)%errmsg)
             errflg = cdata_block(nb,nt)%errflg
             if (errflg/=0) then
-                write(0,*) 'Error in call to sfc_nst_post: ' // trim(errmsg)
+                write(0,*) 'Error in call to sfc_nst_post_mp_sfc_nst_post_run: ' // trim(errmsg)
                 stop
             end if
+! End of option B
 #else
             if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of sfc_nst'
             do i=1,im
@@ -1790,6 +1791,7 @@ module module_physics_driver
 !         if (lprnt) print *,' tseaz2=',Sfcprop%tsfc(ipr),' tref=',tref(ipr),   &
 !    &    ' dt_cool=',dt_cool(ipr),' dt_warm=',dt_warm(ipr),' kdt=',kdt
 
+! end of ifdef CCPP for sfc_nst
 #endif
 
          else
@@ -4098,60 +4100,194 @@ module module_physics_driver
         else        ! ras or cscnv
           fscav(:) = 0.0
           if (Model%cscnv) then    ! Chikira-Sugiyama  convection scheme (via CSU)
+#ifdef CCPP
+! OPTION B - works with all compilers
+            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling cs_conv_pre through option B'
+            ! Copy local variables from driver to appropriate interstitial variables
+            !Interstitial(nt)%im              = im                ! intent(in) - set in Interstitial(nt)%create()
+            !Model%levs                                           ! intent(in)
+            !Interstitial(nt)%ncstrac         = tottracer+3       ! intent(in)
+            !Stateout%gq0(:,:,1)
+            Interstitial(nt)%clw              = clw               ! intent(in)
+            !Interstitial(nt)%fswtr           = fswtr             ! intent(out)
+            !Interstitial(nt)%save_q(:,:,1:3) = dqdt(:,:,1:3)     ! intent(out)
+            !cdata_block(nb,nt)%errmsg        = errmsg            ! intent(out)
+            !cdata_block(nb,nt)%errflg        = errflg            ! intent(out)
+            call ccpp_physics_run(cdata_block(nb,nt), scheme_name="cs_conv_pre", ierr=ierr)
+            ! Copy intent(inout) and intent(out) interstitial variables to local variables in driver
+            fswtr         = Interstitial(nt)%fswtr                ! intent(out)
+            dqdt(:,:,1:3) = Interstitial(nt)%save_q(:,:,1:3)      ! intent(out)
+            errmsg        = trim(cdata_block(nb,nt)%errmsg)
+            errflg        = cdata_block(nb,nt)%errflg
+            if (errflg/=0) then
+                write(0,*) 'Error in call to cs_conv_pre_mp_cs_conv_pre: ' // trim(errmsg)
+                stop
+            end if
 
-           fswtr(:) = 0.0
-!     write(0,*)' bef cs_cconv phii=',phii(ipr,:)
-!    &,' sizefsc=',size(fscav)
-!     write(0,*)' bef cs_cconv otspt=',otspt,' kdt=',kdt,' me=',me
-            do k=1,levs
-              do i=1,im
-                dqdt(i,k,1) = Stateout%gq0(i,k,1)
-                dqdt(i,k,2) = max(0.0,clw(i,k,2))
-                dqdt(i,k,3) = max(0.0,clw(i,k,1))
-              enddo
-            enddo
+            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling cs_conv through option B'
+            ! Copy local variables from driver to appropriate interstitial variables
+            !Interstitial(nt)%ix       = ix                       ! intent(in) - set in Interstitial(nt)%create()
+            !Interstitial(nt)%im       = im                       ! intent(in) - set in Interstitial(nt)%create()
+            !Model%levs                                           ! intent(in)
+            !Interstitial(nt)%ncstrac  = tottracer+3              ! intent(in)
+            !Model%nctp                                           ! intent(in)
+            !Interstitial(nt)%otspt    = otspt(1:tottracer+3,1:2) ! intent(in)
+            ! lat = 1                                             ! intent(in)
+            !Model%kdt                                            ! intent(in)
+            !Stateout%gt0                                         ! intent(inout)
+            !Stateout%gq0(:,:,1:1)                                ! intent(inout)
+            Interstitial(nt)%raincd    = rain1                    ! intent(out)
+            Interstitial(nt)%clw       = clw                      ! intent(inout)
+            !Statein%phil                                         ! intent(in)
+            !Statein%phii                                         ! intent(in)
+            !Statein%prsl                                         ! intent(in)
+            !Statein%prsi                                         ! intent(in)
+            !Model%dtp                                            ! intent(in)
+            !Model%dtf                                            ! intent(in)
 
-!           if (lprnt) write(0,*)'befcsgt0=',Stateout%gt0(ipr,:)
+!! JLS NOTE:  The convective mass fluxes (dt_mf, dd_mf and ud_mf) passed in and out of cs_conv have not been multiplied by
+!!            the timestep (kg/m2/sec) as they are in all other convective schemes.  EMC is aware of this problem, 
+!!            and in the future will be fixing this discrepancy.  In the meantime, CCPP will use the same mass flux standard_name
+!!            and long_name as the other convective schemes, where the units are in kg/m2. (Aug 2018)
 
-            call cs_convr (ix, im, levs, tottracer+3, Model%nctp,           &
-                           otspt(1:tottracer+3,1:2), 1,                     &
-                           kdt, Stateout%gt0, Stateout%gq0(:,:,1:1), rain1, &
-                           clw, Statein%phil, Statein%phii, Statein%prsl,   &
-                           Statein%prsi, dtp, dtf, ud_mf, dd_mf, dt_mf,     &
-                           Stateout%gu0, Stateout%gv0, fscav, fswtr,        &
-                           Tbd%phy_fctd, me, wcbmax, Model%cs_parm(3),      &
-                           Model%cs_parm(4), sigmatot,                      &
-!                          Model%cs_parm(4), sigmai, sigmatot, vverti,      &
-                           Model%do_aw, Model%do_awdd, Model%flx_form,      &
-                           lprnt, ipr, kcnv, QLCN, QICN,                    &
-                           w_upi, cf_upi, CNV_MFD, CNV_PRC3, CNV_DQLDT,     &
-                           CLCN, CNV_FICE, CNV_NDROP, CNV_NICE, imp_physics)
+            Interstitial(nt)%ud_mf     = ud_mf                    ! intent(inout)
+            Interstitial(nt)%dd_mf     = dd_mf                    ! intent(inout)
+            Interstitial(nt)%dt_mf     = dt_mf                    ! intent(inout)
+            !Stateout%gu0                                         ! intent(inout)
+            !Stateout%gv0                                         ! intent(inout)
+            Interstitial(nt)%fscav     = fscav                    ! intent(in)
+            Interstitial(nt)%fswtr     = fswtr                    ! intent(in)
+            !Tbd%phy_fctd                                         ! intent(inout)
+            !IPD_Control%me                                       ! intent(in)
+            Interstitial(nt)%wcbmax    = wcbmax                   ! intent(in)
+            !Model%cs_parm(3)                                     ! intent(in)
+            !Model%cs_parm(4)                                     ! intent(in)
+            !Interstitial(nt)%sigmatot = sigmatot                 ! intent(out)
+            !Model%do_aw                                          ! intent(in)
+            !Model%do_awdd                                        ! intent(in)
+            !Model%flx_form                                       ! intent(in)
+            !IPD_Control%lprnt                                    ! intent(in)
+            Interstitial(nt)%ipr       = ipr                      ! intent(in)
+            Interstitial(nt)%kcnv      = kcnv                     ! intent(in)
+            !Interstitial(nt)%qlcn      = qlcn                     ! intent(out)
+            !Interstitial(nt)%qicn      = qicn                     ! intent(out)
+            !Interstitial(nt)%w_upi     = w_upi                    ! intent(out)
+            !Interstitial(nt)%cf_upi    = cf_upi                   ! intent(out)
+            !Interstitial(nt)%cnv_mfd   = cnv_mfd                  ! intent(out)
+            !Interstitial(nt)%cnv_prc3  = cnv_prc3                 ! intent(out)
+            !Interstitial(nt)%cnv_dqldt = cnv_dqldt                ! intent(out)
+            !Interstitial(nt)%clcn      = clcn                     ! intent(out)
+            !Interstitial(nt)%cnv_fice  = cnv_fice                 ! intent(out)
+            !Interstitial(nt)%cnv_ndrop = cnv_ndrop                ! intent(out)
+            !Interstitial(nt)%cnv_nice  = cnv_nice                 ! intent(out)
+            !Model%imp_physics                                    ! intent(in)
+            !cdata_block(nb,nt)%errmsg = errmsg                   ! intent(out)
+            !cdata_block(nb,nt)%errflg = errflg                   ! intent(out)
+            call ccpp_physics_run(cdata_block(nb,nt), scheme_name="cs_conv", ierr=ierr)
+            ! Copy intent(inout) and intent(out) interstitial variables to local variables in driver
+            rain1     = Interstitial(nt)%raincd
+            clw       = Interstitial(nt)%clw
+            ud_mf     = Interstitial(nt)%ud_mf
+            dd_mf     = Interstitial(nt)%dd_mf
+            dt_mf     = Interstitial(nt)%dt_mf
+            sigmatot  = Interstitial(nt)%sigmatot
+            qlcn      = Interstitial(nt)%qlcn
+            qicn      = Interstitial(nt)%qicn
+            w_upi     = Interstitial(nt)%w_upi
+            cf_upi    = Interstitial(nt)%cf_upi
+            cnv_mfd   = Interstitial(nt)%cnv_mfd
+            cnv_prc3  = Interstitial(nt)%cnv_prc3
+            cnv_dqldt = Interstitial(nt)%cnv_dqldt
+            clcn      = Interstitial(nt)%clcn
+            cnv_fice  = Interstitial(nt)%cnv_fice
+            cnv_ndrop = Interstitial(nt)%cnv_ndrop
+            cnv_nice  = Interstitial(nt)%cnv_nice
+            errmsg    = trim(cdata_block(nb,nt)%errmsg)
+            errflg    = cdata_block(nb,nt)%errflg
+            if (errflg/=0) then
+                write(0,*) 'Error in call to cs_conv_mp_cs_conv: ' // trim(errmsg)
+                stop
+            end if
 
-!           if (lprnt) write(0,*)'aftcsgt0=',Stateout%gt0(ipr,:)
+            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling cs_conv_post through option B'
+            ! Copy local variables from driver to appropriate interstitial variables
+            !Interstitial(nt)%im       = im                       ! intent(in) - set in Interstitial(nt)%create()
+            !Model%levs                                           ! intent(in)
+            !Model%do_aw                                          ! intent(in)
+            Interstitial(nt)%sigmatot  = sigmatot                 ! intent(in)
+            !Interstitial(nt)%sigmafrac = sigmafrac                ! intent(out)
+            !cdata_block(nb,nt)%errmsg = errmsg                   ! intent(out)
+            !cdata_block(nb,nt)%errflg = errflg                   ! intent(out)
+            call ccpp_physics_run(cdata_block(nb,nt), scheme_name="cs_conv_post", ierr=ierr)
+            ! Copy intent(inout) and intent(out) interstitial variables to local variables in driver
+            sigmafrac = Interstitial(nt)%sigmafrac
+            errmsg    = trim(cdata_block(nb,nt)%errmsg)
+            errflg    = cdata_block(nb,nt)%errflg
+            if (errflg/=0) then
+                write(0,*) 'Error in call to cs_conv_post_mp_cs_conv_post: ' // trim(errmsg)
+                stop
+            end if
+! End of option B
+#else
 
-!     write(1000+me,*)' at latitude = ',lat
-!     call moist_bud(im,im,ix,levs,me,kdt,con_g,dtp,del,rain1
-!    &,                    dqdt(1,1,1), dqdt(1,1,2), dqdt(1,1,3)
-!    &,                    gq0(1,1,1),clw(1,1,2),clw(1,1,1),' cs_conv')
-
-            rain1(:) = rain1(:) * (dtp*0.001)
-            if (Model%do_aw) then
+              fswtr(:) = 0.0
+!             write(0,*)' bef cs_cconv phii=',phii(ipr,:)
+!            &,' sizefsc=',size(fscav)
+!             write(0,*)' bef cs_cconv otspt=',otspt,' kdt=',kdt,' me=',me
               do k=1,levs
-                kk = min(k+1,levs)  ! assuming no cloud top reaches the model top
-                do i=1,im                                               !DD
-                  sigmafrac(i,k) = 0.5 * (sigmatot(i,k)+sigmatot(i,kk))
+                do i=1,im
+                  dqdt(i,k,1) = Stateout%gq0(i,k,1)
+                  dqdt(i,k,2) = max(0.0,clw(i,k,2))
+                  dqdt(i,k,3) = max(0.0,clw(i,k,1))
                 enddo
               enddo
-            endif
 
-!           if (lprnt) then
-!             write(0,*)' gt01=',stateout%gt0(ipr,:),' kdt=',kdt
-!             write(0,*)' gq01=',stateout%gq0(ipr,:,1),' kdt=',kdt
-!             write(0,*)' clw1=',clw(ipr,:,1),' kdt=',kdt
-!             write(0,*)' clw2=',clw(ipr,:,1),' kdt=',kdt
-!             write(0,*)' aft cs rain1=',rain1(ipr)*86400
-!             write(0,*)' aft cs rain1=',rain1(ipr)
-!           endif
+!             if (lprnt) write(0,*)'befcsgt0=',Stateout%gt0(ipr,:)
+
+! NOTE:  The variable rain1 output from cs_convr (called prec inside the subroutine) is a precipitation flux (kg/m2/sec),
+!         not meters LWE like the other schemes.  It is converted to m after the call to cs_convr.
+
+              call cs_convr (ix, im, levs, tottracer+3, Model%nctp,           &
+                             otspt(1:tottracer+3,1:2), 1,                     &
+                             kdt, Stateout%gt0, Stateout%gq0(:,:,1:1), rain1, &
+                             clw, Statein%phil, Statein%phii, Statein%prsl,   &
+                             Statein%prsi, dtp, dtf, ud_mf, dd_mf, dt_mf,     &
+                             Stateout%gu0, Stateout%gv0, fscav, fswtr,        &
+                             Tbd%phy_fctd, me, wcbmax, Model%cs_parm(3),      &
+                             Model%cs_parm(4), sigmatot,                      &
+!                            Model%cs_parm(4), sigmai, sigmatot, vverti,      &
+                             Model%do_aw, Model%do_awdd, Model%flx_form,      &
+                             lprnt, ipr, kcnv, QLCN, QICN,                    &
+                             w_upi, cf_upi, CNV_MFD, CNV_PRC3, CNV_DQLDT,     &
+                             CLCN, CNV_FICE, CNV_NDROP, CNV_NICE, imp_physics)
+
+!             if (lprnt) write(0,*)'aftcsgt0=',Stateout%gt0(ipr,:)
+
+!             write(1000+me,*)' at latitude = ',lat
+!             call moist_bud(im,im,ix,levs,me,kdt,con_g,dtp,del,rain1
+!            &,                    dqdt(1,1,1), dqdt(1,1,2), dqdt(1,1,3)
+!            &,                    gq0(1,1,1),clw(1,1,2),clw(1,1,1),' cs_conv')
+
+              rain1(:) = rain1(:) * (dtp*0.001)
+              if (Model%do_aw) then
+                do k=1,levs
+                  kk = min(k+1,levs)  ! assuming no cloud top reaches the model top
+                  do i=1,im                                               !DD
+                    sigmafrac(i,k) = 0.5 * (sigmatot(i,k)+sigmatot(i,kk))
+                  enddo
+                enddo
+              endif
+
+!             if (lprnt) then
+!               write(0,*)' gt01=',stateout%gt0(ipr,:),' kdt=',kdt
+!               write(0,*)' gq01=',stateout%gq0(ipr,:,1),' kdt=',kdt
+!               write(0,*)' clw1=',clw(ipr,:,1),' kdt=',kdt
+!               write(0,*)' clw2=',clw(ipr,:,1),' kdt=',kdt
+!               write(0,*)' aft cs rain1=',rain1(ipr)*86400
+!               write(0,*)' aft cs rain1=',rain1(ipr)
+!            endif
+! end of ifdef CCPP for cs_conv
+#endif
 
           else      ! ras version 2
 
