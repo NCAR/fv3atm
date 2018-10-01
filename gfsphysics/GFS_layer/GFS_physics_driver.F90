@@ -590,12 +590,12 @@ module module_physics_driver
       real(kind=kind_phys), dimension(size(Grid%xlon,1),4) ::           &
            oa4, clx
 
+#ifndef
       real(kind=kind_phys), dimension(size(Grid%xlon,1),Model%lsoil) :: &
           smsoil, stsoil, slsoil
+#endif
 
 #ifdef CCPP
-      real(kind=kind_phys), dimension(size(Grid%xlon,1),Model%lsoil_lsm) :: &
-          smsoil_lsm, stsoil_lsm, slsoil_lsm
       real(kind=kind_phys), dimension(size(Grid%xlon,1),Model%levs) ::  &
           del, rhc, dtdt, dudt, dvdt, gwdcu, gwdcv, dtdtc, rainp,       &
           ud_mf, dd_mf, dt_mf, prnum, sigmatot, sigmafrac
@@ -1193,24 +1193,6 @@ module module_physics_driver
           enddo
         enddo
       enddo
-
-#else
-      do k=1,lsoil
-        do i=1,im
-          smsoil(i,k) = Sfcprop%smc(i,k)
-          stsoil(i,k) = Sfcprop%stc(i,k)
-          slsoil(i,k) = Sfcprop%slc(i,k)          !! clu: slc -> slsoil
-        enddo
-      enddo
-    if (Model%lsm == Model%lsm_ruc) then
-      do k=1,lsoil_lsm
-        do i=1,im
-          smsoil_lsm(i,k) = Sfcprop%smois(i,k)
-          stsoil_lsm(i,k) = Sfcprop%tslb(i,k)
-          slsoil_lsm(i,k) = Sfcprop%sh2o(i,k)
-        enddo
-      enddo
-    endif
 #endif
 
 !  --- ...  initialize dtdt with heating rate from dcyc2
@@ -1983,21 +1965,6 @@ module module_physics_driver
 #if defined(CCPP_OPTION_A) && defined(__INTEL_COMPILER)
           if (Model%me==0) write(0,*) 'CCPP DEBUG: calling lsm_ruc_run through option A'
 
-      do k=1,lsoil_lsm
-        do i=1,im
-          Sfcprop%smois(i,k) = smsoil_lsm(i,k)
-          Sfcprop%tslb(i,k)  = stsoil_lsm(i,k)
-          Sfcprop%sh2o(i,k)  = slsoil_lsm(i,k)
-        enddo
-      enddo
-      do k=1,lsoil
-        do i=1,im
-          Sfcprop%smc(i,k) = smsoil(i,k)
-          Sfcprop%stc(i,k) = stsoil(i,k)
-          Sfcprop%slc(i,k) = slsoil(i,k)
-        enddo
-      enddo
-
         do i=1,im
           Sfcprop%fice(i) = cice(i)
         enddo
@@ -2021,7 +1988,7 @@ module module_physics_driver
              Statein%ugrs(:,1), Statein%vgrs(:,1), Statein%tgrs(:,1),   &
              Statein%qgrs(:,1,1), Statein%qgrs(:,1,ntcw),               &
              soiltyp, vegtype, sigmaf, soilcat, landcat,                &
-             Radtend%semis, adjsfcdlw, adjsfcdsw, adjsfcnsw, Model%dtf, &
+             Radtend%semis, Diag%dlwsfci, adjsfcdsw, adjsfcnsw, Model%dtf, &
              Sfcprop%tg3, cd, cdq, Statein%prsl(:,1), Diag%zlvl,        &
              islmsk, Sfcprop%shdmin, Sfcprop%shdmax, Sfcprop%albedo,    &
              Sfcprop%snoalb, Radtend%sfalb, flag_iter, flag_guess,      &
@@ -2037,7 +2004,7 @@ module module_physics_driver
              Sfcprop%smois,Sfcprop%tslb,Sfcprop%sh2o,                   &
              Sfcprop%flag_frsoil,Sfcprop%keepsmfr,                      &
              Sfcprop%canopy, trans, tsurf, Sfcprop%tsnow, Sfcprop%zorl, &
-             Sfcprop%clw_surf, Sfcprop%cndm_surf, tice,                 &
+             Sfcprop%clw_surf, Sfcprop%cndm_surf, Sfcprop%tisfc(i),     &
              Sfcprop%qwv_surf,                                          &
 ! --- outputs
              Sfcprop%sncovr, qss, gflx, drain,                          &
@@ -2047,21 +2014,6 @@ module module_physics_driver
              Diag%acsnow, Diag%snowfallac,                              &
              errmsg, errflg                                             &
            )
-
-      do k=1,lsoil
-        do i=1,im
-          smsoil(i,k) = Sfcprop%smc(i,k)
-          stsoil(i,k) = Sfcprop%stc(i,k)
-          slsoil(i,k) = Sfcprop%slc(i,k)          !! clu: slc -> slsoil
-        enddo
-      enddo
-      do k=1,lsoil_lsm
-        do i=1,im
-          smsoil_lsm(i,k) = Sfcprop%smois(i,k)
-          stsoil_lsm(i,k) = Sfcprop%tslb(i,k)
-          slsoil_lsm(i,k) = Sfcprop%sh2o(i,k)          !! clu: slc -> slsoil
-        enddo
-      enddo
 
      if(lprnt) then
           if (Model%me==0) then
@@ -2104,7 +2056,7 @@ module module_physics_driver
               Interstitial(nt)%soilcat = soilcat     ! intent(in)
               Interstitial(nt)%landcat = landcat     ! intent(in)
               !Radtend%semis                         ! intent(in)
-              Interstitial(nt)%adjsfcdlw = adjsfcdlw ! intent(in)
+              !Diag%dlwsfci                          ! intent(in)
               !Diag%dswsfci                          ! intent(in)
               !Diag%nswsfci                          ! intent(in)
               !Model%dtf                             ! intent(in)
@@ -2161,7 +2113,7 @@ module module_physics_driver
               !Sfcprop%rhofr                         ! intent(out)
               Interstitial(nt)%trans  = trans        ! intent(inout)
               Interstitial(nt)%tsurf  = tsurf        ! intent(inout)
-              Interstitial(nt)%tice   = tice         ! intent(inout)
+              !Sfcprop%tisfc(i)                      ! intent(inout)
               Interstitial(nt)%snowc  = snowc        ! intent(inout)
               Interstitial(nt)%qss    = qss          ! intent(out)
               Interstitial(nt)%gflx   = gflx         ! intent(out)
@@ -2187,7 +2139,6 @@ module module_physics_driver
               ! Copy back intent(inout) interstitial variables to local variables in driver
               trans  = Interstitial(nt)%trans
               tsurf  = Interstitial(nt)%tsurf
-              tice   = Interstitial(nt)%tice
               qss    = Interstitial(nt)%qss
               gflx   = Interstitial(nt)%gflx
               drain  = Interstitial(nt)%drain
@@ -2201,23 +2152,6 @@ module module_physics_driver
               snohf  = Interstitial(nt)%snohf
               errmsg = trim(cdata_block(nb,nt)%errmsg)
               errflg = cdata_block(nb,nt)%errflg
-
-      do k=1,lsoil
-        do i=1,im
-          smsoil(i,k) = Sfcprop%smc(i,k)
-          stsoil(i,k) = Sfcprop%stc(i,k)
-          slsoil(i,k) = Sfcprop%slc(i,k)
-        enddo
-      enddo
-
-      do k=1,lsoil_lsm
-        do i=1,im
-          smsoil_lsm(i,k) = Sfcprop%smois(i,k)
-          stsoil_lsm(i,k) = Sfcprop%tslb(i,k)
-          slsoil_lsm(i,k) = Sfcprop%sh2o(i,k)
-        enddo
-      enddo
-
          if (errflg/=0) then
              write(0,*) 'Error in call to lsm_ruc: ' // trim(errmsg)
              stop
@@ -6769,24 +6703,6 @@ module module_physics_driver
 
 #ifndef CCPP
 !!  --- ...  return updated smsoil and stsoil to global arrays
-      do k=1,lsoil
-        do i=1,im
-          Sfcprop%smc(i,k) = smsoil(i,k)
-          Sfcprop%stc(i,k) = stsoil(i,k)
-          Sfcprop%slc(i,k) = slsoil(i,k)
-        enddo
-      enddo
-#else
-    if(Model%lsm == Model%lsm_ruc) then
-      do k=1,lsoil_lsm
-        do i=1,im
-          Sfcprop%smc(i,k) = smsoil_lsm(i,k)
-          Sfcprop%stc(i,k) = stsoil_lsm(i,k)
-          Sfcprop%slc(i,k) = slsoil_lsm(i,k)
-        enddo
-      enddo
-    endif
-
       do k=1,lsoil
         do i=1,im
           Sfcprop%smc(i,k) = smsoil(i,k)
