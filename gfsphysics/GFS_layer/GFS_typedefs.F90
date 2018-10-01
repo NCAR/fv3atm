@@ -249,6 +249,10 @@ module GFS_typedefs
 !! | IPD_Data(nb)%Statein%smc                        |                                                           | total soil moisture                                                                 | frac          |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Statein%stc                        |                                                           | soil temperature                                                                    | K             |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Statein%slc                        |                                                           | liquid soil moisture                                                                | frac          |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Statein%sh2o                       |                                                           | volume fraction of unfrozen soil moisture for lsm                                   | frac          |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Statein%keepsmfr                   |                                                           | volume fraction of frozen soil moisture for lsm                                     | frac          |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Statein%smois                      |                                                           | volumetric fraction of soil moisture for lsm                                        | frac          |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Statein%tslb                       |                                                           | soil temperature for land surface model                                             | K             |    2 | real    | kind_phys | none   | F        |
 !!
 #endif
   type GFS_statein_type
@@ -276,6 +280,14 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: smc (:,:)   => null()  !< soil moisture content
     real (kind=kind_phys), pointer :: stc (:,:)   => null()  !< soil temperature content
     real (kind=kind_phys), pointer :: slc (:,:)   => null()  !< soil liquid water content
+
+#ifdef CCPP
+! soil variables for other than Noah lsms
+    real (kind=kind_phys), pointer :: smois (:,:)      => null()  !< soil moisture content
+    real (kind=kind_phys), pointer :: tslb  (:,:)      => null()  !< soil temperature content
+    real (kind=kind_phys), pointer :: sh2o  (:,:)      => null()  !< soil liquid water content
+    real (kind=kind_phys), pointer :: keepsmfr (:,:)   => null()  !< soil frozen water content
+#endif
 
     contains
       procedure :: create  => statein_create  !<   allocate array data
@@ -395,14 +407,17 @@ module GFS_typedefs
 !! | IPD_Data(nb)%Sfcprop%dt_cool     | sub-layer_cooling_amount                                               | sub-layer cooling amount                               | K             |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%qrain       | sensible_heat_flux_due_to_rainfall                                     | sensible heat flux due to rainfall                     | W             |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%sh2o        | volume_fraction_of_unfrozen_soil_moisture_for_land_surface_model       | volume fraction of unfrozen soil moisture for lsm      | frac          |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%keepsmfr    | volume_fraction_of_frozen_soil_moisture_for_land_surface_model         | volume fraction of frozen soil moisture for lsm        | frac          |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%smois       | volume_fraction_of_soil_moisture_for_land_surface_model                | volumetric fraction of soil moisture for lsm           | frac          |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%tslb        | soil_temperature_for_land_surface_model                                | soil temperature for land surface model                | K             |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%zs          | depth_of_soil_levels_for_land_surface_model                            | depth of soil levels for land surface model            | m             |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%clw_surf    | cloud_condensed_water_mixing_ratio_at_surface                          | moist cloud water mixing ratio at surface              | kg kg-1       |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%qwv_surf    | water_vapor_mixing_ratio_at_surface                                    | water vapor mixing ratio at surface                    | kg kg-1       |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%cndm_surf   | surface_condensation_mass                                              | surface condensation mass                              | kg m-2        |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%flag_frsoil | flag_for_frozen_soil_physics                                           | flag for frozen soil physics (RUC)                     | flag          |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%rhofr       | density_of_frozen_precipitation                                        | density of frozen precipitation                        | kg m-3        |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%tsnow       | snow_temperature_bottom_first_layer                                    | snow temperature at the bottom of the first soil layer | K             |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%tsnow       | snow_temperature_bottom_first_layer                                    | snow temperature at the bottom of the first snow layer | K             |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%albedo      | surface_albedo_including_snow_effect                                   | surface albedo including snow effect                   | frac          |    1 | real    | kind_phys | none   | F        |
 !!
 #endif
   type GFS_sfcprop_type
@@ -482,15 +497,18 @@ module GFS_typedefs
 #ifdef CCPP
     ! Soil properties for land-surface model (if number of levels different from NOAH 4-layer model)
     real (kind=kind_phys), pointer :: sh2o(:,:)        => null()  !< volume fraction of unfrozen soil moisture for lsm
+    real (kind=kind_phys), pointer :: keepsmfr(:,:)    => null()  !< RUC LSM: frozen moisture in soil 
     real (kind=kind_phys), pointer :: smois(:,:)       => null()  !< volumetric fraction of soil moisture for lsm
     real (kind=kind_phys), pointer :: tslb(:,:)        => null()  !< soil temperature for land surface model
     real (kind=kind_phys), pointer :: zs(:)            => null()  !< depth of soil levels for land surface model
     !
     real (kind=kind_phys), pointer :: clw_surf(:)      => null()  !< RUC LSM: moist cloud water mixing ratio at surface
+    real (kind=kind_phys), pointer :: qwv_surf(:)      => null()  !< RUC LSM: water vapor mixing ratio at surface
     real (kind=kind_phys), pointer :: cndm_surf(:)     => null()  !< RUC LSM: surface condensation mass
     real (kind=kind_phys), pointer :: flag_frsoil(:,:) => null()  !< RUC LSM: flag for frozen soil physics
     real (kind=kind_phys), pointer :: rhofr(:)         => null()  !< RUC LSM: density of frozen precipitation
     real (kind=kind_phys), pointer :: tsnow(:)         => null()  !< RUC LSM: snow temperature at the bottom of the first soil layer
+    real (kind=kind_phys), pointer :: albedo(:)        => null()  !< RUC LSM: surface sw albedo with snow effect
 #endif
 
     contains
@@ -816,6 +834,9 @@ module GFS_typedefs
 !! | IPD_Control%lsm_ruc                  | flag_for_ruc_land_surface_scheme                                              | flag for RUC land surface model                         | flag          |    0 | integer   |           | none   | F        |
 !! | IPD_Control%lsoil                    | soil_vertical_dimension                                                       | number of soil layers                                   | count         |    0 | integer   |           | none   | F        |
 !! | IPD_Control%lsoil_lsm                | soil_vertical_dimension_for_land_surface_model                                | number of soil layers for land surface model            | count         |    0 | integer   |           | none   | F        |
+!! | IPD_Control%ivegsrc                  | vegetation_type                                                               | land use classification                                 | index         |    0 | integer   |           | none   | F        |
+!! | IPD_Control%nscat                    | number_of_soil_categories                                                     | number of soil categories                               | index         |    0 | integer   |           | none   | F        |
+!! | IPD_Control%nlcat                    | number_of_land_categories                                                     | number of landuse categories                            | index         |    0 | integer   |           | none   | F        |
 !! | IPD_Control%ivegsrc                  | vegetation_type_dataset_choice                                                | land use dataset choice                                 | index         |    0 | integer   |           | none   | F        |
 !! | IPD_Control%isot                     | soil_type_dataset_choice                                                      | soil type dataset choice                                | index         |    0 | integer   |           | none   | F        |
 !! | IPD_Control%mom4ice                  | flag_for_mom4_coupling                                                        | flag controls mom4 sea ice                              | flag          |    0 | logical   |           | none   | F        |
@@ -1126,6 +1147,8 @@ module GFS_typedefs
     integer              :: lsoil           !< number of soil layers
 #ifdef CCPP
     integer              :: lsoil_lsm       !< number of soil layers internal to land surface model
+    integer              :: nscat           !< number of soil categories
+    integer              :: nlcat           !< number of landuse categories
 #endif
     integer              :: ivegsrc         !< ivegsrc = 0   => USGS,
                                             !< ivegsrc = 1   => IGBP (20 category)
@@ -1649,6 +1672,8 @@ module GFS_typedefs
 !! | IPD_Data(nb)%Intdiag%tdomzr               | dominant_freezing_rain_type                                             | dominant freezing rain type                                     | none          |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%tdomip               | dominant_sleet_type                                                     | dominant sleet type                                             | none          |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%tdoms                | dominant_snow_type                                                      | dominant snow type                                              | none          |    1 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%snowfallac           | total_accumulated_snowfall                                              | run-total snow accumulation on the ground                       | kg m-2        |    1 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%acsnow               | accumulated_water_equivalent_of_frozen_precip                           | snow water equivalent of run-total frozen precip                | kg m-2        |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%skebu_wts            | weights_for_stochastic_skeb_perturbation_of_x_wind_flipped              | weights for stochastic skeb perturbation of x wind, flipped     | none          |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%skebv_wts            | weights_for_stochastic_skeb_perturbation_of_y_wind_flipped              | weights for stochastic skeb perturbation of y wind, flipped     | none          |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%sppt_wts             | weights_for_stochastic_sppt_perturbation_flipped                        | weights for stochastic sppt perturbation, flipped               | none          |    2 | real        | kind_phys | none   | F        |
@@ -1709,6 +1734,10 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: transa (:)     => null()   !< noah lsm diagnostics
     real (kind=kind_phys), pointer :: sbsnoa (:)     => null()   !< noah lsm diagnostics
     real (kind=kind_phys), pointer :: snowca (:)     => null()   !< noah lsm diagnostics
+#ifdef CCPP
+    real (kind=kind_phys), pointer :: snowfallac (:) => null()   !< ruc lsm diagnostics
+    real (kind=kind_phys), pointer :: acsnow     (:) => null()   !< ruc lsm diagnostics
+#endif
     real (kind=kind_phys), pointer :: soilm  (:)     => null()   !< soil moisture
     real (kind=kind_phys), pointer :: tmpmin (:)     => null()   !< min temperature at 2m height (k)
     real (kind=kind_phys), pointer :: tmpmax (:)     => null()   !< max temperature at 2m height (k)
@@ -2004,6 +2033,8 @@ module GFS_typedefs
 !! | IPD_Interstitial(nt)%snohf                         | snow_freezing_rain_upward_latent_heat_flux                                                     | latent heat flux due to snow and frz rain                                           | W m-2         |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%snowmp                        | lwe_thickness_of_snow_amount                                                                   | explicit snow fall on physics timestep                                              | m             |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%snowmt                        | surface_snow_melt                                                                              | snow melt during timestep                                                           | m             |    1 | real        | kind_phys | none   | F        |
+!! | IPD_Interstitial(nt)%soilcat                       | number_of_soil_type                                                                            | number of soil types                                                                | index         |    0 | integer     |           | none   | F        |
+!! | IPD_Interstitial(nt)%landcat                       | number_of_vegetation_type                                                                      | number of vegetation types                                                          | index         |    0 | integer     |           | none   | F        |
 !! | IPD_Interstitial(nt)%soiltype                      | soil_type_classification                                                                       | soil type at each grid cell                                                         | index         |    1 | integer     |           | none   | F        |
 !! | IPD_Interstitial(nt)%stress                        | surface_wind_stress                                                                            | surface wind stress                                                                 | m2 s-2        |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%theta                         | angle_from_east_of_maximum_subgrid_orographic_variations                                       | angle with_respect to east of maximum subgrid orographic variations                 | degrees       |    1 | real        | kind_phys | none   | F        |
@@ -2053,6 +2084,7 @@ module GFS_typedefs
     real (kind=kind_phys), pointer      :: clouds(:,:,:)    => null()  !<
     real (kind=kind_phys), pointer      :: clw(:,:,:)       => null()  !<
     real (kind=kind_phys), pointer      :: clw_surf(:)      => null()  !<
+    real (kind=kind_phys), pointer      :: qwv_surf(:)      => null()  !<
     real (kind=kind_phys), pointer      :: clx(:,:)         => null()  !<
     real (kind=kind_phys), pointer      :: cndm_surf(:)     => null()  !<
     real (kind=kind_phys), pointer      :: cnvc(:,:)        => null()  !<
@@ -2177,6 +2209,8 @@ module GFS_typedefs
     real (kind=kind_phys), pointer      :: snowmp(:)        => null()  !<
     real (kind=kind_phys), pointer      :: snowmt(:)        => null()  !<
     integer, pointer                    :: soiltype(:)      => null()  !<
+    integer                             :: soilcat                     !<
+    integer                             :: landcat                     !<
     real (kind=kind_phys), pointer      :: stress(:)        => null()  !<
     real (kind=kind_phys), pointer      :: theta(:)         => null()  !<
     real (kind=kind_phys), pointer      :: tlvl(:,:)        => null()  !<
@@ -2189,6 +2223,7 @@ module GFS_typedefs
     real (kind=kind_phys), pointer      :: tsfa(:)          => null()  !<
     real (kind=kind_phys), pointer      :: tsfg(:)          => null()  !<
     real (kind=kind_phys), pointer      :: tsnow(:)         => null()  !<
+    real (kind=kind_phys), pointer      :: albedo(:)        => null()  !<
     real (kind=kind_phys), pointer      :: tsurf(:)         => null()  !<
     real (kind=kind_phys), pointer      :: ud_mf(:,:)       => null()  !<
     real (kind=kind_phys), pointer      :: vdftra(:,:,:)    => null()  !<
@@ -2301,6 +2336,18 @@ module GFS_typedefs
     Statein%smc   = clear_val
     Statein%stc   = clear_val
     Statein%slc   = clear_val
+
+#ifdef CCPP
+    allocate (Statein%keepsmfr (IM,Model%lsoil_lsm))
+    allocate (Statein%smois    (IM,Model%lsoil_lsm))
+    allocate (Statein%tslb     (IM,Model%lsoil_lsm))
+    allocate (Statein%sh2o     (IM,Model%lsoil_lsm))
+
+    Statein%keepsmfr = clear_val
+    Statein%smois    = clear_val
+    Statein%tslb     = clear_val
+    Statein%sh2o     = clear_val
+#endif
 
   end subroutine statein_create
 
@@ -2484,24 +2531,30 @@ module GFS_typedefs
     if (Model%lsm == Model%lsm_ruc) then
        ! For land surface models with different numbers of levels than the four NOAH levels
        allocate (Sfcprop%sh2o        (IM,Model%lsoil_lsm))
+       allocate (Sfcprop%keepsmfr    (IM,Model%lsoil_lsm))
        allocate (Sfcprop%smois       (IM,Model%lsoil_lsm))
        allocate (Sfcprop%tslb        (IM,Model%lsoil_lsm))
        allocate (Sfcprop%zs          (Model%lsoil_lsm))
        allocate (Sfcprop%clw_surf    (IM))
+       allocate (Sfcprop%qwv_surf    (IM))
        allocate (Sfcprop%cndm_surf   (IM))
        allocate (Sfcprop%flag_frsoil (IM,Model%lsoil_lsm))
        allocate (Sfcprop%rhofr       (IM))
        allocate (Sfcprop%tsnow       (IM))
+       allocate (Sfcprop%albedo      (IM))
        !
        Sfcprop%sh2o        = clear_val
+       Sfcprop%keepsmfr    = clear_val
        Sfcprop%smois       = clear_val
        Sfcprop%tslb        = clear_val
        Sfcprop%zs          = clear_val
        Sfcprop%clw_surf    = clear_val
+       Sfcprop%qwv_surf    = clear_val
        Sfcprop%cndm_surf   = clear_val
        Sfcprop%flag_frsoil = clear_val
        Sfcprop%rhofr       = clear_val
        Sfcprop%tsnow       = clear_val
+       Sfcprop%albedo      = clear_val
     end if
 #endif
 
@@ -2911,6 +2964,8 @@ module GFS_typedefs
     integer              :: lsoil          =  4              !< number of soil layers
 #ifdef CCPP
     integer              :: lsoil_lsm      =  -1             !< number of soil layers internal to land surface model; -1 use lsoil
+    integer              :: nscat          =  19 
+    integer              :: nlcat          =  20 
 #endif
     integer              :: ivegsrc        =  2              !< ivegsrc = 0   => USGS,
                                                              !< ivegsrc = 1   => IGBP (20 category)
@@ -3085,6 +3140,7 @@ module GFS_typedefs
                           !--- land/surface model control
 #ifdef CCPP
                                lsm, lsoil, lsoil_lsm, nmtvr, ivegsrc, mom4ice, use_ufo,     &
+                               nscat, nlcat,                                                &
 #else
                                lsm, lsoil, nmtvr, ivegsrc, mom4ice, use_ufo,                &
 #endif
@@ -3304,6 +3360,8 @@ module GFS_typedefs
     else
       Model%lsoil_lsm      = lsoil_lsm
     end if
+    Model%nscat            = nscat
+    Model%nlcat            = nlcat
 #endif
     Model%ivegsrc          = ivegsrc
     Model%isot             = isot
@@ -4346,6 +4404,10 @@ module GFS_typedefs
     allocate (Diag%transa  (IM))
     allocate (Diag%sbsnoa  (IM))
     allocate (Diag%snowca  (IM))
+#ifdef CCPP
+    allocate (Diag%snowfallac  (IM))
+    allocate (Diag%acsnow      (IM))
+#endif
     allocate (Diag%soilm   (IM))
     allocate (Diag%tmpmin  (IM))
     allocate (Diag%tmpmax  (IM))
@@ -4489,6 +4551,10 @@ module GFS_typedefs
     Diag%transa     = zero
     Diag%sbsnoa     = zero
     Diag%snowca     = zero
+#ifdef CCPP
+    Diag%snowfallac = zero
+    Diag%acsnow     = zero
+#endif
     Diag%soilm      = zero
     Diag%tmpmin     = huge
     Diag%tmpmax     = zero
@@ -4997,6 +5063,8 @@ module GFS_typedefs
     Interstitial%snohf        = clear_val
     Interstitial%snowmt       = clear_val
     Interstitial%soiltype     = 0
+    Interstitial%soilcat      = 19
+    Interstitial%landcat      = 20
     Interstitial%stress       = clear_val
     Interstitial%theta        = clear_val
     Interstitial%trans        = clear_val
@@ -5123,6 +5191,8 @@ module GFS_typedefs
     write (0,*) 'sum(Interstitial%idxday      ) = ', sum(Interstitial%idxday      )
     write (0,*) 'sum(Interstitial%islmsk      ) = ', sum(Interstitial%islmsk      )
     write (0,*) 'Interstitial%iter              = ', Interstitial%iter
+    write (0,*) 'Interstitial%soilcat           = ', Interstitial%soilcat
+    write (0,*) 'Interstitial%landcat           = ', Interstitial%landcat
     write (0,*) 'Interstitial%kb                = ', Interstitial%kb
     write (0,*) 'sum(Interstitial%kbot        ) = ', sum(Interstitial%kbot        )
     write (0,*) 'sum(Interstitial%kcnv        ) = ', sum(Interstitial%kcnv        )

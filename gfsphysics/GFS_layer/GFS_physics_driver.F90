@@ -493,6 +493,10 @@ module module_physics_driver
                  ntrw, ntsw, ntrnc, ntsnc, ntot3d, ntgl, ntgnc, ntclamt,&
                  ims, ime, kms, kme, its, ite, kts, kte, imp_physics,   &
                  ntwa, ntia
+#ifdef CCPP
+      integer :: lsoil_lsm
+      integer :: landcat, soilcat
+#endif
 
 #ifdef CCPP
 
@@ -586,12 +590,12 @@ module module_physics_driver
       real(kind=kind_phys), dimension(size(Grid%xlon,1),4) ::           &
            oa4, clx
 
-#ifndef CCPP
       real(kind=kind_phys), dimension(size(Grid%xlon,1),Model%lsoil) :: &
           smsoil, stsoil, slsoil
-#endif
 
 #ifdef CCPP
+      real(kind=kind_phys), dimension(size(Grid%xlon,1),Model%lsoil_lsm) :: &
+          smsoil_lsm, stsoil_lsm, slsoil_lsm
       real(kind=kind_phys), dimension(size(Grid%xlon,1),Model%levs) ::  &
           del, rhc, dtdt, dudt, dvdt, gwdcu, gwdcv, dtdtc, rainp,       &
           ud_mf, dd_mf, dt_mf, prnum, sigmatot, sigmafrac
@@ -746,6 +750,7 @@ module module_physics_driver
       ix      = Interstitial(nt)%ix
       im      = Interstitial(nt)%im
       ipr     = Interstitial(nt)%ipr
+      lsoil_lsm = Model%lsoil_lsm
 #else
       ix      = size(Grid%xlon,1)
       im      = size(Grid%xlon,1)
@@ -753,6 +758,10 @@ module module_physics_driver
 #endif
       levs    = Model%levs
       lsoil   = Model%lsoil
+#ifdef CCPP
+      landcat   = Model%nlcat
+      soilcat   = Model%nscat
+#endif
       ntrac   = Model%ntrac
       dtf     = Model%dtf
       dtp     = Model%dtp
@@ -1100,6 +1109,19 @@ module module_physics_driver
           vegtype(i)  = int( Sfcprop%vtype(i)+0.5 )
           slopetyp(i) = int( Sfcprop%slope(i)+0.5 )    !! clu: slope -> slopetyp
         endif
+#ifdef CCPP
+          if (Model%isot == 1) then
+            soilcat = 19 ! stasgo
+          else
+            soilcat = 9  ! zobler
+          endif
+
+          if(Model%ivegsrc == 1) then
+            landcat = 20  ! IGBP - "MODI-RUC"
+          else
+            landcat = 13
+          endif
+#endif 
 
 !  --- ...  xw: transfer ice thickness & concentration from global to local variables
         zice(i) = Sfcprop%hice(i)
@@ -1171,6 +1193,24 @@ module module_physics_driver
           enddo
         enddo
       enddo
+
+#else
+      do k=1,lsoil
+        do i=1,im
+          smsoil(i,k) = Sfcprop%smc(i,k)
+          stsoil(i,k) = Sfcprop%stc(i,k)
+          slsoil(i,k) = Sfcprop%slc(i,k)          !! clu: slc -> slsoil
+        enddo
+      enddo
+    if (Model%lsm == Model%lsm_ruc) then
+      do k=1,lsoil_lsm
+        do i=1,im
+          smsoil_lsm(i,k) = Sfcprop%smois(i,k)
+          stsoil_lsm(i,k) = Sfcprop%tslb(i,k)
+          slsoil_lsm(i,k) = Sfcprop%sh2o(i,k)
+        enddo
+      enddo
+    endif
 #endif
 
 !  --- ...  initialize dtdt with heating rate from dcyc2
@@ -1937,11 +1977,261 @@ module module_physics_driver
 !     if (lprnt) write(0,*)' tseae=',tsea(ipr),' tsurf=',tsurf(ipr),iter &
 !    &,' phy_f2d=',phy_f2d(ipr,num_p2d)
 
+
+        elseif (Model%lsm == Model%lsm_ruc) then
+#ifdef CCPP  
+#if defined(CCPP_OPTION_A) && defined(__INTEL_COMPILER)
+          if (Model%me==0) write(0,*) 'CCPP DEBUG: calling lsm_ruc_run through option A'
+
+      do k=1,lsoil_lsm
+        do i=1,im
+          Sfcprop%smois(i,k) = smsoil_lsm(i,k)
+          Sfcprop%tslb(i,k)  = stsoil_lsm(i,k)
+          Sfcprop%sh2o(i,k)  = slsoil_lsm(i,k)
+        enddo
+      enddo
+      do k=1,lsoil
+        do i=1,im
+          Sfcprop%smc(i,k) = smsoil(i,k)
+          Sfcprop%stc(i,k) = stsoil(i,k)
+          Sfcprop%slc(i,k) = slsoil(i,k)
+        enddo
+      enddo
+
+        do i=1,im
+          Sfcprop%fice(i) = cice(i)
+        enddo
+
+     if(lprnt) then
+          if (Model%me==0) then
+        print *,'before call to RUC  ', 'iter=',iter
+        print *,'current timestep=',Model%kdt
+        print *,'flag_iter, flag_guess=',ipr,flag_iter(ipr),flag_guess(ipr)
+        print *,'islmsk, vegtype, soiltyp',ipr, islmsk(ipr),vegtype(ipr),soiltyp(ipr)     &
+               ,'sfcemis=',Radtend%semis(ipr)
+        print *,'tsfc,tsurf =',ipr,Sfcprop%tsfc(ipr),tsurf(ipr)
+        print *,'stsoil(i,k) = ',ipr,stsoil(ipr,:)
+        print *,'stsoil_lsm(i,k) = ',ipr,stsoil_lsm(ipr,:)
+          endif
+     endif
+        call lsm_ruc_mp_lsm_ruc_run                                     &
+! --- inputs
+           ( iter,  me,                                                 &
+             Model%kdt, im, Model%levs, Model%lsoil_lsm, Sfcprop%zs,    &
+             Statein%ugrs(:,1), Statein%vgrs(:,1), Statein%tgrs(:,1),   &
+             Statein%qgrs(:,1,1), Statein%qgrs(:,1,ntcw),               &
+             soiltyp, vegtype, sigmaf, soilcat, landcat,                &
+             Radtend%semis, adjsfcdlw, adjsfcdsw, adjsfcnsw, Model%dtf, &
+             Sfcprop%tg3, cd, cdq, Statein%prsl(:,1), Diag%zlvl,        &
+             islmsk, Sfcprop%shdmin, Sfcprop%shdmax, Sfcprop%albedo,    &
+             Sfcprop%snoalb, Radtend%sfalb, flag_iter, flag_guess,      &
+             Model%isot, Model%ivegsrc, Sfcprop%fice,                   &
+             Sfcprop%smc, Sfcprop%stc, Sfcprop%slc,                     &
+             Model%lsm_ruc, Model%lsm,                                  &
+! --- constants
+             con_cp, con_rv, con_rd, con_g, con_pi, con_hvap, con_fvirt,&
+! --- in/outs
+             Sfcprop%weasd, Sfcprop%snowd, Sfcprop%tsfc, Sfcprop%tprcp, &
+             Diag%rain, Diag%rainc, Diag%snow,                          &
+             Diag%graupel, Sfcprop%srflag, Diag%sr,                     &
+             Sfcprop%smois,Sfcprop%tslb,Sfcprop%sh2o,                   &
+             Sfcprop%flag_frsoil,Sfcprop%keepsmfr,                      &
+             Sfcprop%canopy, trans, tsurf, Sfcprop%tsnow, Sfcprop%zorl, &
+             Sfcprop%clw_surf, Sfcprop%cndm_surf, tice,                 &
+             Sfcprop%qwv_surf,                                          &
+! --- outputs
+             Sfcprop%sncovr, qss, gflx, drain,                          &
+             evap, hflx,  Sfcprop%rhofr, runof,                         &
+             Diag%runoff, Diag%srunoff,                                 &
+             evbs, evcw, sbsno, snowc, Diag%soilm, Diag%wet1,           &
+             Diag%acsnow, Diag%snowfallac,                              &
+             errmsg, errflg                                             &
+           )
+
+      do k=1,lsoil
+        do i=1,im
+          smsoil(i,k) = Sfcprop%smc(i,k)
+          stsoil(i,k) = Sfcprop%stc(i,k)
+          slsoil(i,k) = Sfcprop%slc(i,k)          !! clu: slc -> slsoil
+        enddo
+      enddo
+      do k=1,lsoil_lsm
+        do i=1,im
+          smsoil_lsm(i,k) = Sfcprop%smois(i,k)
+          stsoil_lsm(i,k) = Sfcprop%tslb(i,k)
+          slsoil_lsm(i,k) = Sfcprop%sh2o(i,k)          !! clu: slc -> slsoil
+        enddo
+      enddo
+
+     if(lprnt) then
+          if (Model%me==0) then
+        print *,'after call to RUC  ', 'iter=',iter
+        print *,'current timestep=',Model%kdt
+        print *,'flag_iter, flag_guess=',ipr,flag_iter(ipr),flag_guess(ipr)
+        print *,'islmsk, vegtype, soiltyp',ipr, islmsk(ipr),vegtype(ipr),soiltyp(ipr)     &
+               ,'sfcemis=',Radtend%semis(ipr)
+        print *,'tsfc,tsurf =',ipr,Sfcprop%tsfc(ipr),tsurf(ipr)
+        print *,'Sfcprop%tslb(i,k) = ',ipr,Sfcprop%tslb(ipr,:)
+        print *,'stsoil =',ipr,stsoil(ipr,:)
+        print *,'stsoil_lsm(i,k) = ',ipr,stsoil_lsm(ipr,:)
+        print *, ' after RUC  tsurf=',tsurf(ipr),'iter=',iter
+          endif
+     endif
+
+      if (lprnt) print *, ' after RUC  tsurf=',tsurf(ipr),'iter=',iter
+
+        if(errflg /= 0) then
+          write (0,*) errmsg
+        endif
+#else
+       if (Model%me==0) write(0,*) 'CCPP DEBUG: calling lsm_ruc_run through option B' 
+
+              Interstitial(nt)%iter = iter           ! intent(in)
+              !Model%me                              ! intent(in)
+              !Model%kdt                             ! intent(in)
+              ! Interstitial(nt)%im = im             ! intent(in)- set in Interstitial(nt)%create()
+              !Model%levs                            ! intent(in)
+              !Model%lsoil_lsm                       ! intent(in)
+              !Model%zs                              ! intent(in)
+              !Statein%ugrs(:,1,1)                   ! intent(in)
+              !Statein%vgrs(:,1,1)                   ! intent(in)
+              !Statein%tgrs(:,1,1)                   ! intent(in)
+              !Statein%qgrs(:,1,1)                   ! intent(in)
+              !Statein%qgrs(:,1,ntcw)                ! intent(in)
+              Interstitial(nt)%soiltype= soiltyp     ! intent(in)
+              Interstitial(nt)%vegtype = vegtype     ! intent(in)
+              Interstitial(nt)%sigmaf  = sigmaf      ! intent(in)
+              Interstitial(nt)%soilcat = soilcat     ! intent(in)
+              Interstitial(nt)%landcat = landcat     ! intent(in)
+              !Radtend%semis                         ! intent(in)
+              Interstitial(nt)%adjsfcdlw = adjsfcdlw ! intent(in)
+              !Diag%dswsfci                          ! intent(in)
+              !Diag%nswsfci                          ! intent(in)
+              !Model%dtf                             ! intent(in)
+              !Sfcprop%tg3                           ! intent(in)
+              Interstitial(nt)%cd = cd               ! intent(in)
+              Interstitial(nt)%cdq = cdq             ! intent(in)
+              !Statein%prsl(:,1)                     ! intent(in)
+              !Diag%zlvl                             ! intent(in)
+              Interstitial(nt)%islmsk = islmsk       ! intent(in)
+              !Sfcprop%shdmin                        ! intent(in)
+              !Sfcprop%shdmax                        ! intent(in)
+              !Sfcprop%albedo                        ! intent(inout)
+              !Sfcprop%snoalb                        ! intent(in)
+              !Radtend%sfalb                         ! intent(in)
+              Interstitial(nt)%flag_iter = flag_iter ! intent(in)
+              Interstitial(nt)%flag_guess= flag_guess! intent(in)
+              !Model%isot                            ! intent(in)
+              !Model%ivegsrc                         ! intent(in)
+              !Model%fice                            ! intent(in)
+              !Model%lsm_ruc                         ! intent(in)
+              !Model%lsm                             ! intent(in)
+              !Interstitial(nt)%con_cp    = con_cp   ! intent(in)
+              !Interstitial(nt)%con_rv    = con_rv   ! intent(in)
+              !Interstitial(nt)%con_rd    = con_rd   ! intent(in)
+              !Interstitial(nt)%con_g     = con_g    ! intent(in)
+              !Interstitial(nt)%con_pi    = con_pi   ! intent(in)
+              !Interstitial(nt)%con_hvap  = con_hvap ! intent(in)
+              !Interstitial(nt)%con_fvirt = con_fvirt! intent(in)
+              !Sfcprop%tprcp                         ! intent(in)
+              !Diag%rain                             ! intent(in)
+              !Diag%rainc                            ! intent(in)
+              !Diag%snow                             ! intent(in)
+              !Diag%graupel                          ! intent(in)
+              !Sfcprop%srflag                        ! intent(in)
+              !Diag%sr                               ! intent(in)
+              !Sfcprop%smc                           ! intent(inout)
+              !Sfcprop%stc                           ! intent(inout)
+              !Sfcprop%slc                           ! intent(inout)
+              !Sfcprop%weasd                         ! intent(inout)
+              !Sfcprop%snowd                         ! intent(inout)
+              !Sfcprop%tsfc                          ! intent(inout)
+              !Sfcprop%smois                         ! intent(inout)
+              !Sfcprop%tslb                          ! intent(inout)
+              !Sfcprop%sh2o                          ! intent(inout)
+              !Sfcprop%flag_frsoil                   ! intent(inout)
+              !Sfcprop%keepsmfr                      ! intent(inout)
+              !Sfcprop%canopy                        ! intent(inout)
+              !Sfcprop%tsnow                         ! intent(inout)
+              !Sfcprop%zorl                          ! intent(inout)
+              !Sfcprop%clw_surf                      ! intent(inout)
+              !Sfcprop%qwv_surf                      ! intent(inout)
+              !Sfcprop%cndm_surf                     ! intent(out)
+              !Sfcprop%sncovr                        ! intent(out)
+              !Sfcprop%rhofr                         ! intent(out)
+              Interstitial(nt)%trans  = trans        ! intent(inout)
+              Interstitial(nt)%tsurf  = tsurf        ! intent(inout)
+              Interstitial(nt)%tice   = tice         ! intent(inout)
+              Interstitial(nt)%snowc  = snowc        ! intent(inout)
+              Interstitial(nt)%qss    = qss          ! intent(out)
+              Interstitial(nt)%gflx   = gflx         ! intent(out)
+              Interstitial(nt)%drain  = drain        ! intent(out)
+              Interstitial(nt)%evap   = evap         ! intent(out)
+              Interstitial(nt)%hflx   = hflx         ! intent(out)
+              Interstitial(nt)%runoff = runof        ! intent(out)
+              Interstitial(nt)%evbs   = evbs         ! intent(out)
+              Interstitial(nt)%evcw   = evcw         ! intent(out)
+              Interstitial(nt)%sbsno  = sbsno        ! intent(out)
+              Interstitial(nt)%snohf  = snohf        ! intent(out)
+              !Diag%runoff                           ! intent(inout)
+              !Diag%srunoff                          ! intent(inout)
+              !Diag%soilm                            ! intent(out)
+              !Diag%wet1                             ! intent(out)
+              !Diag%acsnow                           ! intent(out)
+              !Diag%snowfallac                       ! intent(out)
+              !cdata_block(nb,nt)%errmsg = errmsg    ! intent(out)
+              !cdata_block(nb,nt)%errflg = errflg    ! intent(out)
+
+              call ccpp_physics_run(cdata_block(nb,nt), scheme_name="lsm_ruc", ierr=ierr)
+
+              ! Copy back intent(inout) interstitial variables to local variables in driver
+              trans  = Interstitial(nt)%trans
+              tsurf  = Interstitial(nt)%tsurf
+              tice   = Interstitial(nt)%tice
+              qss    = Interstitial(nt)%qss
+              gflx   = Interstitial(nt)%gflx
+              drain  = Interstitial(nt)%drain
+              runof  = Interstitial(nt)%runoff
+              evap   = Interstitial(nt)%evap
+              hflx   = Interstitial(nt)%hflx
+              evbs   = Interstitial(nt)%evbs
+              evcw   = Interstitial(nt)%evcw
+              sbsno  = Interstitial(nt)%sbsno
+              snowc  = Interstitial(nt)%snowc
+              snohf  = Interstitial(nt)%snohf
+              errmsg = trim(cdata_block(nb,nt)%errmsg)
+              errflg = cdata_block(nb,nt)%errflg
+
+      do k=1,lsoil
+        do i=1,im
+          smsoil(i,k) = Sfcprop%smc(i,k)
+          stsoil(i,k) = Sfcprop%stc(i,k)
+          slsoil(i,k) = Sfcprop%slc(i,k)
+        enddo
+      enddo
+
+      do k=1,lsoil_lsm
+        do i=1,im
+          smsoil_lsm(i,k) = Sfcprop%smois(i,k)
+          stsoil_lsm(i,k) = Sfcprop%tslb(i,k)
+          slsoil_lsm(i,k) = Sfcprop%sh2o(i,k)
+        enddo
+      enddo
+
+         if (errflg/=0) then
+             write(0,*) 'Error in call to lsm_ruc: ' // trim(errmsg)
+             stop
+         end if
+#endif
+#else
+        write (0,*) 'RUC LSM is available only in CCPP'
+#endif
          end if
 
 !       if (lprnt) write(0,*)' tseabeficemodel =',Sfcprop%tsfc(ipr),' me=',me   &
 !    &,   ' kdt=',kdt
 
+      if (Model%lsm == 1) then  ! Noah lsm
 !  --- ...  surface energy balance over seaice
 
          if (Model%cplflx) then
@@ -2044,6 +2334,7 @@ module module_physics_driver
 !  ---  outputs:
              qss, Diag%cmm, Diag%chh, evap, hflx)
          endif
+       endif ! lsm==1 for sea ice
 
 !  --- ...  lu: update flag_iter and flag_guess
 #ifdef CCPP
@@ -6478,6 +6769,24 @@ module module_physics_driver
 
 #ifndef CCPP
 !!  --- ...  return updated smsoil and stsoil to global arrays
+      do k=1,lsoil
+        do i=1,im
+          Sfcprop%smc(i,k) = smsoil(i,k)
+          Sfcprop%stc(i,k) = stsoil(i,k)
+          Sfcprop%slc(i,k) = slsoil(i,k)
+        enddo
+      enddo
+#else
+    if(Model%lsm == Model%lsm_ruc) then
+      do k=1,lsoil_lsm
+        do i=1,im
+          Sfcprop%smc(i,k) = smsoil_lsm(i,k)
+          Sfcprop%stc(i,k) = stsoil_lsm(i,k)
+          Sfcprop%slc(i,k) = slsoil_lsm(i,k)
+        enddo
+      enddo
+    endif
+
       do k=1,lsoil
         do i=1,im
           Sfcprop%smc(i,k) = smsoil(i,k)
