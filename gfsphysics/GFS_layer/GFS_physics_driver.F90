@@ -4175,7 +4175,7 @@ module module_physics_driver
 #endif        
 
 !zhang test
-#ifndef CCPP
+#ifdef CCPP
 
             if (Model%me==0) write(0,*) 'CCPP DEBUG: calling cs_conv through option B'
             ! Copy local variables from driver to appropriate interstitial variables
