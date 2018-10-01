@@ -4134,23 +4134,48 @@ module module_physics_driver
             ! Copy local variables from driver to appropriate interstitial variables
             !Interstitial(nt)%im              = im                ! intent(in) - set in Interstitial(nt)%create()
             !Model%levs                                           ! intent(in)
-            !Interstitial(nt)%ncstrac         = tottracer+3       ! intent(in)
+            !IPD_Contral%ntrac    
             !Stateout%gq0(:,:,1)
-            Interstitial(nt)%clw              = clw               ! intent(in)
-            !Interstitial(nt)%fswtr           = fswtr             ! intent(out)
-            !Interstitial(nt)%save_q(:,:,1:3) = dqdt(:,:,1:3)     ! intent(out)
+            Interstitial(nt)%clw(:,:,1)                = clw(:,:,1)               ! intent(in)
+            Interstitial(nt)%clw(:,:,2)                = clw(:,:,2)              ! intent(in)
+            Interstitial(nt)%fswtr                     = fswtr             ! intent(out)
+            Interstitial(nt)%save_q(:,:,1)             = dqdt(:,:,1)       ! intent(out)
+            Interstitial(nt)%save_q(:,:,ntcw)    = dqdt(:,:,2)       ! intent(out)  ntcw=2 
+            Interstitial(nt)%save_q(:,:,ntiw)    = dqdt(:,:,3)       ! intent(out)  ntiw=3 
             !cdata_block(nb,nt)%errmsg        = errmsg            ! intent(out)
             !cdata_block(nb,nt)%errflg        = errflg            ! intent(out)
             call ccpp_physics_run(cdata_block(nb,nt), scheme_name="cs_conv_pre", ierr=ierr)
             ! Copy intent(inout) and intent(out) interstitial variables to local variables in driver
-            fswtr         = Interstitial(nt)%fswtr                ! intent(out)
-            dqdt(:,:,1:3) = Interstitial(nt)%save_q(:,:,1:3)      ! intent(out)
+            fswtr         = Interstitial(nt)%fswtr                    ! intent(out)
+            dqdt(:,:,1)   = Interstitial(nt)%save_q(:,:,1)            ! intent(out)
+            dqdt(:,:,2)   = Interstitial(nt)%save_q(:,:,ntcw)   
+            dqdt(:,:,3)   = Interstitial(nt)%save_q(:,:,ntiw)
             errmsg        = trim(cdata_block(nb,nt)%errmsg)
             errflg        = cdata_block(nb,nt)%errflg
             if (errflg/=0) then
                 write(0,*) 'Error in call to cs_conv_pre_mp_cs_conv_pre: ' // trim(errmsg)
                 stop
             end if
+
+#else
+         if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of cs_conv_pre'
+          fswtr(:) = 0.0
+!     write(0,*)' bef cs_cconv phii=',phii(ipr,:)
+!    &,' sizefsc=',size(fscav)
+!     write(0,*)' bef cs_cconv otspt=',otspt,' kdt=',kdt,' me=',me
+            do k=1,levs
+              do i=1,im
+                dqdt(i,k,1) = Stateout%gq0(i,k,1)
+                dqdt(i,k,2) = max(0.0,clw(i,k,2))
+                dqdt(i,k,3) = max(0.0,clw(i,k,1))
+              enddo
+            enddo
+
+
+#endif        
+
+!zhang test
+#ifndef CCPP
 
             if (Model%me==0) write(0,*) 'CCPP DEBUG: calling cs_conv through option B'
             ! Copy local variables from driver to appropriate interstitial variables
@@ -4258,17 +4283,17 @@ module module_physics_driver
 ! End of option B
 #else
 
-              fswtr(:) = 0.0
+!zhang              fswtr(:) = 0.0
 !             write(0,*)' bef cs_cconv phii=',phii(ipr,:)
 !            &,' sizefsc=',size(fscav)
 !             write(0,*)' bef cs_cconv otspt=',otspt,' kdt=',kdt,' me=',me
-              do k=1,levs
-                do i=1,im
-                  dqdt(i,k,1) = Stateout%gq0(i,k,1)
-                  dqdt(i,k,2) = max(0.0,clw(i,k,2))
-                  dqdt(i,k,3) = max(0.0,clw(i,k,1))
-                enddo
-              enddo
+!zhang              do k=1,levs
+!zhang                do i=1,im
+!zhang                  dqdt(i,k,1) = Stateout%gq0(i,k,1)
+!zhang                  dqdt(i,k,2) = max(0.0,clw(i,k,2))
+!zhang                  dqdt(i,k,3) = max(0.0,clw(i,k,1))
+!zhang                enddo
+!zhang              enddo
 
 !             if (lprnt) write(0,*)'befcsgt0=',Stateout%gt0(ipr,:)
 
