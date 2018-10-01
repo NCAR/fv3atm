@@ -590,7 +590,7 @@ module module_physics_driver
       real(kind=kind_phys), dimension(size(Grid%xlon,1),4) ::           &
            oa4, clx
 
-#ifndef
+#ifndef CCPP
       real(kind=kind_phys), dimension(size(Grid%xlon,1),Model%lsoil) :: &
           smsoil, stsoil, slsoil
 #endif
