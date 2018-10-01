@@ -2953,8 +2953,8 @@ module module_physics_driver
             CCPP_shared(nt)%errmsg = errmsg       ! intent(out)
             CCPP_shared(nt)%errflg = errflg       ! intent(out)
             call ccpp_physics_run(cdata_block(nb,nt), scheme_name="cu_gf_driver_pre",ierr=ierr)
-            CCPP_shared(nt)%errmsg = errmsg       ! intent(out)
-            CCPP_shared(nt)%errflg = errflg       ! intent(out)
+            errmsg = trim(CCPP_shared(nt)%errmsg)
+            errflg = CCPP_shared(nt)%errflg
             if (errflg/=0) then
                 write(0,*) 'Error in call to cu_gf_driver_pre: '//trim(errmsg)
                 stop
@@ -3712,6 +3712,9 @@ module module_physics_driver
               enddo
             endif
 
+          elseif (Model%imfshalcnv == 3) then
+             write(0,*) "hli: the shallow convection of GF is called in gf_driver"
+
           elseif (Model%imfshalcnv == 0) then    ! modified Tiedtke Shallow convecton
                                                  !-----------------------------------
             levshc(:) = 0
@@ -3740,7 +3743,6 @@ module module_physics_driver
                              Stateout%gq0, Stateout%gt0)
             endif
 !           if (lprnt) print *,' levshcm=',levshcm,' gt0sha=',gt0(ipr,:)
-
           endif   ! end if_imfshalcnv
         endif     ! end if_shal_cnv
 
