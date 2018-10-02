@@ -4171,10 +4171,8 @@ module module_physics_driver
               enddo
             enddo
 
-
 #endif        
 
-!zhang test
 #ifdef CCPP
 
             if (Model%me==0) write(0,*) 'CCPP DEBUG: calling cs_conv through option B'
@@ -4215,24 +4213,24 @@ module module_physics_driver
             Interstitial(nt)%wcbmax    = wcbmax                   ! intent(in)
             !Model%cs_parm(3)                                     ! intent(in)
             !Model%cs_parm(4)                                     ! intent(in)
-            !Interstitial(nt)%sigmatot = sigmatot                 ! intent(out)
+            Interstitial(nt)%sigmatot = sigmatot                  ! intent(out)
             !Model%do_aw                                          ! intent(in)
             !Model%do_awdd                                        ! intent(in)
             !Model%flx_form                                       ! intent(in)
             !IPD_Control%lprnt                                    ! intent(in)
             Interstitial(nt)%ipr       = ipr                      ! intent(in)
             Interstitial(nt)%kcnv      = kcnv                     ! intent(in)
-            !Interstitial(nt)%qlcn      = qlcn                     ! intent(out)
-            !Interstitial(nt)%qicn      = qicn                     ! intent(out)
-            !Interstitial(nt)%w_upi     = w_upi                    ! intent(out)
-            !Interstitial(nt)%cf_upi    = cf_upi                   ! intent(out)
-            !Interstitial(nt)%cnv_mfd   = cnv_mfd                  ! intent(out)
-            !Interstitial(nt)%cnv_prc3  = cnv_prc3                 ! intent(out)
-            !Interstitial(nt)%cnv_dqldt = cnv_dqldt                ! intent(out)
-            !Interstitial(nt)%clcn      = clcn                     ! intent(out)
-            !Interstitial(nt)%cnv_fice  = cnv_fice                 ! intent(out)
-            !Interstitial(nt)%cnv_ndrop = cnv_ndrop                ! intent(out)
-            !Interstitial(nt)%cnv_nice  = cnv_nice                 ! intent(out)
+            Interstitial(nt)%qlcn      = qlcn                     ! intent(out)
+            Interstitial(nt)%qicn      = qicn                     ! intent(out)
+            Interstitial(nt)%w_upi     = w_upi                    ! intent(out)
+            Interstitial(nt)%cf_upi    = cf_upi                   ! intent(out)
+            Interstitial(nt)%cnv_mfd   = cnv_mfd                  ! intent(out)
+            Interstitial(nt)%cnv_prc3  = cnv_prc3                 ! intent(out)
+            Interstitial(nt)%cnv_dqldt = cnv_dqldt                ! intent(out)
+            Interstitial(nt)%clcn      = clcn                     ! intent(out)
+            Interstitial(nt)%cnv_fice  = cnv_fice                 ! intent(out)
+            Interstitial(nt)%cnv_ndrop = cnv_ndrop                ! intent(out)
+            Interstitial(nt)%cnv_nice  = cnv_nice                 ! intent(out)
             !Model%imp_physics                                    ! intent(in)
             !cdata_block(nb,nt)%errmsg = errmsg                   ! intent(out)
             !cdata_block(nb,nt)%errflg = errflg                   ! intent(out)
@@ -4243,7 +4241,9 @@ module module_physics_driver
             ud_mf     = Interstitial(nt)%ud_mf
             dd_mf     = Interstitial(nt)%dd_mf
             dt_mf     = Interstitial(nt)%dt_mf
+            wcbmax    = Interstitial(nt)%wcbmax
             sigmatot  = Interstitial(nt)%sigmatot
+
             qlcn      = Interstitial(nt)%qlcn
             qicn      = Interstitial(nt)%qicn
             w_upi     = Interstitial(nt)%w_upi
@@ -4262,44 +4262,14 @@ module module_physics_driver
                 stop
             end if
 
-            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling cs_conv_post through option B'
-            ! Copy local variables from driver to appropriate interstitial variables
-            !Interstitial(nt)%im       = im                       ! intent(in) - set in Interstitial(nt)%create()
-            !Model%levs                                           ! intent(in)
-            !Model%do_aw                                          ! intent(in)
-            Interstitial(nt)%sigmatot  = sigmatot                 ! intent(in)
-            !Interstitial(nt)%sigmafrac = sigmafrac                ! intent(out)
-            !cdata_block(nb,nt)%errmsg = errmsg                   ! intent(out)
-            !cdata_block(nb,nt)%errflg = errflg                   ! intent(out)
-            call ccpp_physics_run(cdata_block(nb,nt), scheme_name="cs_conv_post", ierr=ierr)
-            ! Copy intent(inout) and intent(out) interstitial variables to local variables in driver
-            sigmafrac = Interstitial(nt)%sigmafrac
-            errmsg    = trim(cdata_block(nb,nt)%errmsg)
-            errflg    = cdata_block(nb,nt)%errflg
-            if (errflg/=0) then
-                write(0,*) 'Error in call to cs_conv_post_mp_cs_conv_post: ' // trim(errmsg)
-                stop
-            end if
-! End of option B
 #else
-
-!zhang              fswtr(:) = 0.0
-!             write(0,*)' bef cs_cconv phii=',phii(ipr,:)
-!            &,' sizefsc=',size(fscav)
-!             write(0,*)' bef cs_cconv otspt=',otspt,' kdt=',kdt,' me=',me
-!zhang              do k=1,levs
-!zhang                do i=1,im
-!zhang                  dqdt(i,k,1) = Stateout%gq0(i,k,1)
-!zhang                  dqdt(i,k,2) = max(0.0,clw(i,k,2))
-!zhang                  dqdt(i,k,3) = max(0.0,clw(i,k,1))
-!zhang                enddo
-!zhang              enddo
 
 !             if (lprnt) write(0,*)'befcsgt0=',Stateout%gt0(ipr,:)
 
 ! NOTE:  The variable rain1 output from cs_convr (called prec inside the subroutine) is a precipitation flux (kg/m2/sec),
 !         not meters LWE like the other schemes.  It is converted to m after the call to cs_convr.
-
+          
+              if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of cs_conv'
               call cs_convr (ix, im, levs, tottracer+3, Model%nctp,           &
                              otspt(1:tottracer+3,1:2), 1,                     &
                              kdt, Stateout%gt0, Stateout%gq0(:,:,1:1), rain1, &
@@ -4322,6 +4292,35 @@ module module_physics_driver
 !            &,                    gq0(1,1,1),clw(1,1,2),clw(1,1,1),' cs_conv')
 
               rain1(:) = rain1(:) * (dtp*0.001)
+
+#endif
+
+
+#ifdef CCPP
+            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling cs_conv_post through option B'
+            ! Copy local variables from driver to appropriate interstitial
+            ! variables
+            !Interstitial(nt)%im       = im                       ! intent(in) - set in Interstitial(nt)%create()
+            !Model%levs                                           ! intent(in)
+            !Model%do_aw                                          ! intent(in)
+            Interstitial(nt)%sigmatot  = sigmatot                 ! intent(in)
+            Interstitial(nt)%sigmafrac = sigmafrac                ! intent(out)
+            !cdata_block(nb,nt)%errmsg = errmsg                   ! intent(out)
+            !cdata_block(nb,nt)%errflg = errflg                   ! intent(out)
+            call ccpp_physics_run(cdata_block(nb,nt), scheme_name="cs_conv_post", ierr=ierr)
+            ! Copy intent(inout) and intent(out) interstitial variables to local
+            ! variables in driver
+            sigmafrac = Interstitial(nt)%sigmafrac
+            errmsg    = trim(cdata_block(nb,nt)%errmsg)
+            errflg    = cdata_block(nb,nt)%errflg
+            if (errflg/=0) then
+                write(0,*) 'Error in call to cs_conv_post_mp_cs_conv_post: ' // trim(errmsg)
+                stop
+            end if
+
+
+#else
+              if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of cs_conv_post'
               if (Model%do_aw) then
                 do k=1,levs
                   kk = min(k+1,levs)  ! assuming no cloud top reaches the model top
