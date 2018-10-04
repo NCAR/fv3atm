@@ -714,7 +714,6 @@ module module_physics_driver
 !
       if (Model%imfdeepcnv == 3) then
         do i= 1, im
-          print*,'hli conv_act',Sfcprop%conv_act(i)
           Tbd%cactiv(i)=nint(Sfcprop%conv_act(i))
         enddo
       endif
@@ -2935,7 +2934,6 @@ module module_physics_driver
 #if defined(CCPP_OPTION_A) && defined(__INTEL_COMPILER)
 ! OPTION A - works with Intel only
             if (Model%me==0) write(0,*) 'CCPP DEBUG: calling gf_driver_run through option A'
-            print*,'hli GF run'
             call cu_gf_driver_pre_mp_cu_gf_driver_pre_run(Model, Statein, Grid, Tbd, errmsg, errflg)
 
             call cu_gf_driver_mp_cu_gf_driver_run                              &
@@ -3712,8 +3710,8 @@ module module_physics_driver
               enddo
             endif
 
-          elseif (Model%imfshalcnv == 3) then
-             write(0,*) "hli: the shallow convection of GF is called in gf_driver"
+         !elseif (Model%imfshalcnv == 3) then
+         !   write(0,*) "hli: the shallow convection of GF is called in gf_driver"
 
           elseif (Model%imfshalcnv == 0) then    ! modified Tiedtke Shallow convecton
                                                  !-----------------------------------
@@ -4951,7 +4949,6 @@ module module_physics_driver
           else
             Sfcprop%conv_act(i)=0.0
           endif
-          !print*,'hli conv_act',Sfcprop%conv_act(i)
         enddo
       endif
 ! hli

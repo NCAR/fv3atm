@@ -1342,6 +1342,8 @@ module GFS_typedefs
 !! | IPD_Data(nb)%Tbd%htsw0                          | tendency_of_air_temperature_due_to_shortwave_heating_assuming_clear_sky_on_radiation_time_step | clear sky heating rates due to shortwave radiation      | K s-1         |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Tbd%forcet                         |  temperature_tendency_due_to_dynamics                                                          | temperature tendency due to dynamics only               | K s-1         |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Tbd%forceq                         |  moisture_tendency_due_to_dynamics                                                             | moisture tendency due to dynamics only                  | kg kg-1 s-1   |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Tbd%prevst                         |  temperature_from_previous_timestep                                                            | temperature from previous time step                     | K s-1         |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Tbd%vrevsq                         |  moisture_from_previous_timestep                                                               | moisture from previous time step                        | kg kg-1 s-1   |    2 | real    | kind_phys | none   | F        |
 !!
 #endif
   type GFS_tbd_type
@@ -1389,6 +1391,8 @@ module GFS_typedefs
     !--- dynamical forcing variables for Grell-Freitas convection
     real (kind=kind_phys), pointer :: forcet (:,:)     => null()  !<
     real (kind=kind_phys), pointer :: forceq (:,:)     => null()  !<
+    real (kind=kind_phys), pointer :: prevst (:,:)     => null()  !<
+    real (kind=kind_phys), pointer :: prevsq (:,:)     => null()  !<
 #endif
 
     contains
@@ -3513,10 +3517,10 @@ module GFS_typedefs
       stop
     endif
 
-    if (Model%imfdeepcnv == 3) then ! hli mod 04/05/2018
-      Model%num_p3d = Model%num_p3d + 2
+    !if (Model%imfdeepcnv == 3) then ! hli mod 04/05/2018
+    !  Model%num_p3d = Model%num_p3d + 2
       !print*,'hli Model%num_p3d', Model%num_p3d
-    endif
+    !endif
 
     Model%uni_cld = .false.
 !   if (Model%shoc_cld .or. Model%ncld == 2 .or. Model%ntclamt > 0) then
@@ -3985,8 +3989,12 @@ module GFS_typedefs
 
     allocate(Tbd%forcet(IM, Model%levs))
     allocate(Tbd%forceq(IM, Model%levs))
+    allocate(Tbd%prevst(IM, Model%levs))
+    allocate(Tbd%prevsq(IM, Model%levs))
     Tbd%forcet = clear_val
     Tbd%forceq = clear_val
+    Tbd%prevst = clear_val
+    Tbd%prevsq = clear_val
 #endif
 
   end subroutine tbd_create

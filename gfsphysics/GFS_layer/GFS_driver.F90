@@ -727,22 +727,6 @@ module GFS_driver
       endif
     endif
 
-    if (Model%num_p3d == 6) then ! hli mod 09/06/2017
-      if (Model%kdt == 1) then
-        print*,'hli GFS_rad_time_vary'
-        do nb = 1,nblks
-          Tbd(nb)%phy_f3d(:,:,1) = Statein(nb)%tgrs
-          Tbd(nb)%phy_f3d(:,:,2) = max(qmin,Statein(nb)%qgrs(:,:,1))
-          Tbd(nb)%phy_f3d(:,:,3) = Statein(nb)%tgrs
-          Tbd(nb)%phy_f3d(:,:,4) = max(qmin,Statein(nb)%qgrs(:,:,1))
-          Tbd(nb)%phy_f3d(:,:,5) = Statein(nb)%tgrs                 ! for GF
-          Tbd(nb)%phy_f3d(:,:,6) = max(qmin,Statein(nb)%qgrs(:,:,1))! for GF
-          Tbd(nb)%phy_f2d(:,1)   = Statein(nb)%prsi(:,1)
-          Tbd(nb)%phy_f2d(:,2)   = Statein(nb)%prsi(:,1)
-        enddo
-      endif
-    endif
-
   end subroutine GFS_rad_time_vary
 
 
