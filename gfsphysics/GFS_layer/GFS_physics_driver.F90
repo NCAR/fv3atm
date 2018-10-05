@@ -659,10 +659,6 @@ module module_physics_driver
       real(kind=kind_phys), parameter :: liqm = 4./3.*con_pi*1.e-12,    &
                               icem = 4./3.*con_pi*3.2768*1.e-14*890.
 #endif
-! DH*
-!      logical :: abort_for_debug = .false.
-!      real(kind=kind_phys) :: meanval, threshold
-! *DH
 #ifdef CCPP
       integer :: nb
       integer :: nt
@@ -822,18 +818,6 @@ module module_physics_driver
       endif
 #endif
 
-! DH*
-!      if (Model%me==0) then
-!         write(0,*) "DH DEBUG GFS_PHYSICS_DRIVER A: Model%ntrac, shape(Statein%qgrs), shape(dqdt), shape(Stateout%gq0):", &
-!                    Model%ntrac, shape(Statein%qgrs), shape(dqdt), shape(Stateout%gq0)
-!         do k=1,12
-!            write(0,*) "DH DEBUG GFS_PHYSICS_DRIVER A: k, (Statein%qgrs(:,:,k) | dqdt | Stateout%gq0) min/mean/max =", &
-!                  & k, minval(Statein%qgrs(:,:,k)), sum(Statein%qgrs(:,:,k))/real(size(Statein%qgrs(:,:,k))), maxval(Statein%qgrs(:,:,k)),  '|||', &
-!                       minval(dqdt(:,:,k)),         sum(dqdt(:,:,k))/real(size(dqdt(:,:,k))),                 maxval(dqdt(:,:,k)),          '|||', &
-!                       minval(Stateout%gq0(:,:,k)), sum(Stateout%gq0(:,:,k))/real(size(Stateout%gq0(:,:,k))), maxval(Stateout%gq0(:,:,k))
-!         end do
-!      end if
-! *DH
 !-------------------------------------------------------------------------------------------
 !     lprnt   = .false.
 
@@ -3108,31 +3092,6 @@ module module_physics_driver
                 dqdt(i,k,ntia)  = dvdftra(i,k,8)
               enddo
             enddo
-! DH*
-!            if (Model%me==0) then
-!               write(0,'(a,i0,a,i4)') "DH DEBUG task 0 kdt ", kdt, ": nncl   =", nncl
-!               write(0,'(a,i0,a,i4)') "DH DEBUG task 0 kdt ", kdt, ": nvdiff =", nvdiff
-!               write(0,'(a,i0,a,i4)') "DH DEBUG task 0 kdt ", kdt, ": ntqv   =", 1
-!               write(0,'(a,i0,a,i4)') "DH DEBUG task 0 kdt ", kdt, ": ntcw   =", ntcw
-!               write(0,'(a,i0,a,i4)') "DH DEBUG task 0 kdt ", kdt, ": ntiw   =", ntiw
-!               write(0,'(a,i0,a,i4)') "DH DEBUG task 0 kdt ", kdt, ": ntlnc  =", ntlnc
-!               write(0,'(a,i0,a,i4)') "DH DEBUG task 0 kdt ", kdt, ": ntinc  =", ntinc
-!               write(0,'(a,i0,a,i4)') "DH DEBUG task 0 kdt ", kdt, ": ntoz   =", ntoz
-!               write(0,'(a,i0,a,i4)') "DH DEBUG task 0 kdt ", kdt, ": ntwa   =", ntwa
-!               write(0,'(a,i0,a,i4)') "DH DEBUG task 0 kdt ", kdt, ": ntia   =", ntia
-!               write(0,'(a,i0,a,3e16.7)') "DH DEBUG task 0 kdt ", kdt, ": min/avg/max(dqdt(:,:,ntqv )) =", minval(dqdt(:,:,1    )), sum(dqdt(:,:,1    ))/real(size(dqdt(:,:,1    ))), maxval(dqdt(:,:,1    ))
-!               write(0,'(a,i0,a,3e16.7)') "DH DEBUG task 0 kdt ", kdt, ": min/avg/max(dqdt(:,:,ntcw )) =", minval(dqdt(:,:,ntcw )), sum(dqdt(:,:,ntcw ))/real(size(dqdt(:,:,ntcw ))), maxval(dqdt(:,:,ntcw ))
-!               write(0,'(a,i0,a,3e16.7)') "DH DEBUG task 0 kdt ", kdt, ": min/avg/max(dqdt(:,:,ntiw )) =", minval(dqdt(:,:,ntiw )), sum(dqdt(:,:,ntiw ))/real(size(dqdt(:,:,ntiw ))), maxval(dqdt(:,:,ntiw ))
-!               write(0,'(a,i0,a,3e16.7)') "DH DEBUG task 0 kdt ", kdt, ": min/avg/max(dqdt(:,:,ntlnc)) =", minval(dqdt(:,:,ntlnc)), sum(dqdt(:,:,ntlnc))/real(size(dqdt(:,:,ntlnc))), maxval(dqdt(:,:,ntlnc))
-!               write(0,'(a,i0,a,3e16.7)') "DH DEBUG task 0 kdt ", kdt, ": min/avg/max(dqdt(:,:,ntinc)) =", minval(dqdt(:,:,ntinc)), sum(dqdt(:,:,ntinc))/real(size(dqdt(:,:,ntinc))), maxval(dqdt(:,:,ntinc))
-!               write(0,'(a,i0,a,3e16.7)') "DH DEBUG task 0 kdt ", kdt, ": min/avg/max(dqdt(:,:,ntoz )) =", minval(dqdt(:,:,ntoz )), sum(dqdt(:,:,ntoz ))/real(size(dqdt(:,:,ntoz ))), maxval(dqdt(:,:,ntoz ))
-!               write(0,'(a,i0,a,3e16.7)') "DH DEBUG task 0 kdt ", kdt, ": min/avg/max(dqdt(:,:,ntwa )) =", minval(dqdt(:,:,ntwa )), sum(dqdt(:,:,ntwa ))/real(size(dqdt(:,:,ntwa ))), maxval(dqdt(:,:,ntwa ))
-!               write(0,'(a,i0,a,3e16.7)') "DH DEBUG task 0 kdt ", kdt, ": min/avg/max(dqdt(:,:,ntia )) =", minval(dqdt(:,:,ntia )), sum(dqdt(:,:,ntia ))/real(size(dqdt(:,:,ntia ))), maxval(dqdt(:,:,ntia ))
-!               write(0,'(a,i0,a,3e16.7)') "DH DEBUG task 0 kdt ", kdt, ": min/avg/max(dtdt(:,:)) =", minval(dtdt(:,:)), sum(dtdt(:,:))/real(size(dtdt(:,:))), maxval(dtdt(:,:))
-!               write(0,'(a,i0,a,3e16.7)') "DH DEBUG task 0 kdt ", kdt, ": min/avg/max(dudt(:,:)) =", minval(dudt(:,:)), sum(dudt(:,:))/real(size(dudt(:,:))), maxval(dudt(:,:))
-!               write(0,'(a,i0,a,3e16.7)') "DH DEBUG task 0 kdt ", kdt, ": min/avg/max(dvdt(:,:)) =", minval(dvdt(:,:)), sum(dvdt(:,:))/real(size(dvdt(:,:))), maxval(dvdt(:,:))
-!            end if
-! *DH
           else
             do k=1,levs
               do i=1,im
@@ -3143,25 +3102,6 @@ module module_physics_driver
                 dqdt(i,k,ntoz)  = dvdftra(i,k,5)
               enddo
             enddo
-! DH*
-!            if (Model%me==0) then
-!               write(0,'(a,i0,a,i4)') "DH DEBUG task 0 kdt ", kdt, ": nncl   =", nncl
-!               write(0,'(a,i0,a,i4)') "DH DEBUG task 0 kdt ", kdt, ": nvdiff =", nvdiff
-!               write(0,'(a,i0,a,i4)') "DH DEBUG task 0 kdt ", kdt, ": ntqv   =", 1
-!               write(0,'(a,i0,a,i4)') "DH DEBUG task 0 kdt ", kdt, ": ntcw   =", ntcw
-!               write(0,'(a,i0,a,i4)') "DH DEBUG task 0 kdt ", kdt, ": ntiw   =", ntiw
-!               write(0,'(a,i0,a,i4)') "DH DEBUG task 0 kdt ", kdt, ": ntinc  =", ntinc
-!               write(0,'(a,i0,a,i4)') "DH DEBUG task 0 kdt ", kdt, ": ntoz   =", ntoz
-!               write(0,'(a,i0,a,3e16.7)') "DH DEBUG task 0 kdt ", kdt, ": min/avg/max(dqdt(:,:,ntqv )) =", minval(dqdt(:,:,1    )), sum(dqdt(:,:,1    ))/real(size(dqdt(:,:,1    ))), maxval(dqdt(:,:,1    ))
-!               write(0,'(a,i0,a,3e16.7)') "DH DEBUG task 0 kdt ", kdt, ": min/avg/max(dqdt(:,:,ntcw )) =", minval(dqdt(:,:,ntcw )), sum(dqdt(:,:,ntcw ))/real(size(dqdt(:,:,ntcw ))), maxval(dqdt(:,:,ntcw ))
-!               write(0,'(a,i0,a,3e16.7)') "DH DEBUG task 0 kdt ", kdt, ": min/avg/max(dqdt(:,:,ntiw )) =", minval(dqdt(:,:,ntiw )), sum(dqdt(:,:,ntiw ))/real(size(dqdt(:,:,ntiw ))), maxval(dqdt(:,:,ntiw ))
-!               write(0,'(a,i0,a,3e16.7)') "DH DEBUG task 0 kdt ", kdt, ": min/avg/max(dqdt(:,:,ntinc)) =", minval(dqdt(:,:,ntinc)), sum(dqdt(:,:,ntinc))/real(size(dqdt(:,:,ntinc))), maxval(dqdt(:,:,ntinc))
-!               write(0,'(a,i0,a,3e16.7)') "DH DEBUG task 0 kdt ", kdt, ": min/avg/max(dqdt(:,:,ntoz )) =", minval(dqdt(:,:,ntoz )), sum(dqdt(:,:,ntoz ))/real(size(dqdt(:,:,ntoz ))), maxval(dqdt(:,:,ntoz ))
-!               write(0,'(a,i0,a,3e16.7)') "DH DEBUG task 0 kdt ", kdt, ": min/avg/max(dtdt(:,:)) =", minval(dtdt(:,:)), sum(dtdt(:,:))/real(size(dtdt(:,:))), maxval(dtdt(:,:))
-!               write(0,'(a,i0,a,3e16.7)') "DH DEBUG task 0 kdt ", kdt, ": min/avg/max(dudt(:,:)) =", minval(dudt(:,:)), sum(dudt(:,:))/real(size(dudt(:,:))), maxval(dudt(:,:))
-!               write(0,'(a,i0,a,3e16.7)') "DH DEBUG task 0 kdt ", kdt, ": min/avg/max(dvdt(:,:)) =", minval(dvdt(:,:)), sum(dvdt(:,:))/real(size(dvdt(:,:))), maxval(dvdt(:,:))
-!            end if
-! *DH
           endif
 !
         elseif (imp_physics == Model%imp_physics_gfdl) then
@@ -3181,33 +3121,6 @@ module module_physics_driver
 #endif
         deallocate(vdftra, dvdftra)
       endif
-
-! DH*
-!            if (Model%me==0) then
-!               write(0,'(a,i0,a,i4)') "DH DEBUG task 0 kdt ", kdt, ": BEFORE GFS_PBL_generic_post"
-!               write(0,'(a,i0,a,i4)') "DH DEBUG task 0 kdt ", kdt, ": nncl   =", nncl
-!               write(0,'(a,i0,a,i4)') "DH DEBUG task 0 kdt ", kdt, ": nvdiff =", nvdiff
-!               write(0,'(a,i0,a,i4)') "DH DEBUG task 0 kdt ", kdt, ": ntqv   =", 1
-!               write(0,'(a,i0,a,i4)') "DH DEBUG task 0 kdt ", kdt, ": ntcw   =", ntcw
-!               write(0,'(a,i0,a,i4)') "DH DEBUG task 0 kdt ", kdt, ": ntiw   =", ntiw
-!               write(0,'(a,i0,a,i4)') "DH DEBUG task 0 kdt ", kdt, ": ntlnc  =", ntlnc
-!               write(0,'(a,i0,a,i4)') "DH DEBUG task 0 kdt ", kdt, ": ntinc  =", ntinc
-!               write(0,'(a,i0,a,i4)') "DH DEBUG task 0 kdt ", kdt, ": ntoz   =", ntoz
-!               write(0,'(a,i0,a,i4)') "DH DEBUG task 0 kdt ", kdt, ": ntwa   =", ntwa
-!               write(0,'(a,i0,a,i4)') "DH DEBUG task 0 kdt ", kdt, ": ntia   =", ntia
-!               write(0,'(a,i0,a,3e16.7)') "DH DEBUG task 0 kdt ", kdt, ": min/avg/max(dqdt(:,:,ntqv )) =", minval(dqdt(:,:,1    )), sum(dqdt(:,:,1    ))/real(size(dqdt(:,:,1    ))), maxval(dqdt(:,:,1    ))
-!               write(0,'(a,i0,a,3e16.7)') "DH DEBUG task 0 kdt ", kdt, ": min/avg/max(dqdt(:,:,ntcw )) =", minval(dqdt(:,:,ntcw )), sum(dqdt(:,:,ntcw ))/real(size(dqdt(:,:,ntcw ))), maxval(dqdt(:,:,ntcw ))
-!               write(0,'(a,i0,a,3e16.7)') "DH DEBUG task 0 kdt ", kdt, ": min/avg/max(dqdt(:,:,ntiw )) =", minval(dqdt(:,:,ntiw )), sum(dqdt(:,:,ntiw ))/real(size(dqdt(:,:,ntiw ))), maxval(dqdt(:,:,ntiw ))
-!               write(0,'(a,i0,a,3e16.7)') "DH DEBUG task 0 kdt ", kdt, ": min/avg/max(dqdt(:,:,ntlnc)) =", minval(dqdt(:,:,ntlnc)), sum(dqdt(:,:,ntlnc))/real(size(dqdt(:,:,ntlnc))), maxval(dqdt(:,:,ntlnc))
-!               write(0,'(a,i0,a,3e16.7)') "DH DEBUG task 0 kdt ", kdt, ": min/avg/max(dqdt(:,:,ntinc)) =", minval(dqdt(:,:,ntinc)), sum(dqdt(:,:,ntinc))/real(size(dqdt(:,:,ntinc))), maxval(dqdt(:,:,ntinc))
-!               write(0,'(a,i0,a,3e16.7)') "DH DEBUG task 0 kdt ", kdt, ": min/avg/max(dqdt(:,:,ntoz )) =", minval(dqdt(:,:,ntoz )), sum(dqdt(:,:,ntoz ))/real(size(dqdt(:,:,ntoz ))), maxval(dqdt(:,:,ntoz ))
-!               write(0,'(a,i0,a,3e16.7)') "DH DEBUG task 0 kdt ", kdt, ": min/avg/max(dqdt(:,:,ntwa )) =", minval(dqdt(:,:,ntwa )), sum(dqdt(:,:,ntwa ))/real(size(dqdt(:,:,ntwa ))), maxval(dqdt(:,:,ntwa ))
-!               write(0,'(a,i0,a,3e16.7)') "DH DEBUG task 0 kdt ", kdt, ": min/avg/max(dqdt(:,:,ntia )) =", minval(dqdt(:,:,ntia )), sum(dqdt(:,:,ntia ))/real(size(dqdt(:,:,ntia ))), maxval(dqdt(:,:,ntia ))
-!               write(0,'(a,i0,a,3e16.7)') "DH DEBUG task 0 kdt ", kdt, ": min/avg/max(dtdt(:,:)) =", minval(dtdt(:,:)), sum(dtdt(:,:))/real(size(dtdt(:,:))), maxval(dtdt(:,:))
-!               write(0,'(a,i0,a,3e16.7)') "DH DEBUG task 0 kdt ", kdt, ": min/avg/max(dudt(:,:)) =", minval(dudt(:,:)), sum(dudt(:,:))/real(size(dudt(:,:))), maxval(dudt(:,:))
-!               write(0,'(a,i0,a,3e16.7)') "DH DEBUG task 0 kdt ", kdt, ": min/avg/max(dvdt(:,:)) =", minval(dvdt(:,:)), sum(dvdt(:,:))/real(size(dvdt(:,:))), maxval(dvdt(:,:))
-!            end if
-! *DH
 
       if (Model%cplflx) then
         do i=1,im
@@ -3410,32 +3323,6 @@ module module_physics_driver
       call memcheck_run(Model%communicator, Model%master)
 #endif
 #endif
-! DH*
-!            if (Model%me==0) then
-!               write(0,'(a,i0,a,i4)') "DH DEBUG task 0 kdt ", kdt, ": AFTER GFS_PBL_generic_post, before gwdps_pre"
-!               write(0,'(a,i0,a,i4)') "DH DEBUG task 0 kdt ", kdt, ": nncl   =", nncl
-!               write(0,'(a,i0,a,i4)') "DH DEBUG task 0 kdt ", kdt, ": nvdiff =", nvdiff
-!               write(0,'(a,i0,a,i4)') "DH DEBUG task 0 kdt ", kdt, ": ntqv   =", 1
-!               write(0,'(a,i0,a,i4)') "DH DEBUG task 0 kdt ", kdt, ": ntcw   =", ntcw
-!               write(0,'(a,i0,a,i4)') "DH DEBUG task 0 kdt ", kdt, ": ntiw   =", ntiw
-!               write(0,'(a,i0,a,i4)') "DH DEBUG task 0 kdt ", kdt, ": ntlnc  =", ntlnc
-!               write(0,'(a,i0,a,i4)') "DH DEBUG task 0 kdt ", kdt, ": ntinc  =", ntinc
-!               write(0,'(a,i0,a,i4)') "DH DEBUG task 0 kdt ", kdt, ": ntoz   =", ntoz
-!               write(0,'(a,i0,a,i4)') "DH DEBUG task 0 kdt ", kdt, ": ntwa   =", ntwa
-!               write(0,'(a,i0,a,i4)') "DH DEBUG task 0 kdt ", kdt, ": ntia   =", ntia
-!               write(0,'(a,i0,a,3e16.7)') "DH DEBUG task 0 kdt ", kdt, ": min/avg/max(dqdt(:,:,ntqv )) =", minval(dqdt(:,:,1    )), sum(dqdt(:,:,1    ))/real(size(dqdt(:,:,1    ))), maxval(dqdt(:,:,1    ))
-!               write(0,'(a,i0,a,3e16.7)') "DH DEBUG task 0 kdt ", kdt, ": min/avg/max(dqdt(:,:,ntcw )) =", minval(dqdt(:,:,ntcw )), sum(dqdt(:,:,ntcw ))/real(size(dqdt(:,:,ntcw ))), maxval(dqdt(:,:,ntcw ))
-!               write(0,'(a,i0,a,3e16.7)') "DH DEBUG task 0 kdt ", kdt, ": min/avg/max(dqdt(:,:,ntiw )) =", minval(dqdt(:,:,ntiw )), sum(dqdt(:,:,ntiw ))/real(size(dqdt(:,:,ntiw ))), maxval(dqdt(:,:,ntiw ))
-!               write(0,'(a,i0,a,3e16.7)') "DH DEBUG task 0 kdt ", kdt, ": min/avg/max(dqdt(:,:,ntlnc)) =", minval(dqdt(:,:,ntlnc)), sum(dqdt(:,:,ntlnc))/real(size(dqdt(:,:,ntlnc))), maxval(dqdt(:,:,ntlnc))
-!               write(0,'(a,i0,a,3e16.7)') "DH DEBUG task 0 kdt ", kdt, ": min/avg/max(dqdt(:,:,ntinc)) =", minval(dqdt(:,:,ntinc)), sum(dqdt(:,:,ntinc))/real(size(dqdt(:,:,ntinc))), maxval(dqdt(:,:,ntinc))
-!               write(0,'(a,i0,a,3e16.7)') "DH DEBUG task 0 kdt ", kdt, ": min/avg/max(dqdt(:,:,ntoz )) =", minval(dqdt(:,:,ntoz )), sum(dqdt(:,:,ntoz ))/real(size(dqdt(:,:,ntoz ))), maxval(dqdt(:,:,ntoz ))
-!               write(0,'(a,i0,a,3e16.7)') "DH DEBUG task 0 kdt ", kdt, ": min/avg/max(dqdt(:,:,ntwa )) =", minval(dqdt(:,:,ntwa )), sum(dqdt(:,:,ntwa ))/real(size(dqdt(:,:,ntwa ))), maxval(dqdt(:,:,ntwa ))
-!               write(0,'(a,i0,a,3e16.7)') "DH DEBUG task 0 kdt ", kdt, ": min/avg/max(dqdt(:,:,ntia )) =", minval(dqdt(:,:,ntia )), sum(dqdt(:,:,ntia ))/real(size(dqdt(:,:,ntia ))), maxval(dqdt(:,:,ntia ))
-!               write(0,'(a,i0,a,3e16.7)') "DH DEBUG task 0 kdt ", kdt, ": min/avg/max(dtdt(:,:)) =", minval(dtdt(:,:)), sum(dtdt(:,:))/real(size(dtdt(:,:))), maxval(dtdt(:,:))
-!               write(0,'(a,i0,a,3e16.7)') "DH DEBUG task 0 kdt ", kdt, ": min/avg/max(dudt(:,:)) =", minval(dudt(:,:)), sum(dudt(:,:))/real(size(dudt(:,:))), maxval(dudt(:,:))
-!               write(0,'(a,i0,a,3e16.7)') "DH DEBUG task 0 kdt ", kdt, ": min/avg/max(dvdt(:,:)) =", minval(dvdt(:,:)), sum(dvdt(:,:))/real(size(dvdt(:,:))), maxval(dvdt(:,:))
-!            end if
-! *DH
 !-------------------------------------------------------lssav if loop ----------
 !
 !            Orographic gravity wave drag parameterization
@@ -3707,33 +3594,6 @@ module module_physics_driver
       enddo
       Stateout%gq0(1:im,:,:) = Statein%qgrs(1:im,:,:) + dqdt(1:im,:,:) * dtp
 #endif
-!      ! DH* 20180822
-!      do n=1,size(Stateout%gq0(1,1,:))
-!         meanval = sum(Stateout%gq0(:,:,n))/real(size(Stateout%gq0(:,:,n)))
-!         threshold = 1E-10
-!         do k=1,levs
-!            do i=1,im
-!               if (Stateout%gq0(i,k,n) < 0) then
-!                  if (abs(Stateout%gq0(i,k,n))>max(threshold,meanval)) then
-!                     abort_for_debug = .true.
-!                     write(0,*) "DH DEBUG: fixing negative Stateout%gq0 for i, k,n =", i, k, n, ";", Stateout%gq0(i,k,n), "->", 0.0
-!                  end if
-!                  Stateout%gq0(i,k,n) = 0.0
-!               end if
-!            end do
-!         end do
-!      end do
-!      ! *DH
-!! DH*
-!      if (Model%me==0) then
-!         do k=1,12
-!            write(0,*) "DH DEBUG GFS_PHYSICS_DRIVER B: k, (Statein%qgrs(:,:,k) | dqdt | Stateout%gq0) min/mean/max =", &
-!                  & k, minval(Statein%qgrs(:,:,k)), sum(Statein%qgrs(:,:,k))/real(size(Statein%qgrs(:,:,k))), maxval(Statein%qgrs(:,:,k)),  '|||', &
-!                       minval(dqdt(:,:,k)),         sum(dqdt(:,:,k))/real(size(dqdt(:,:,k))),                 maxval(dqdt(:,:,k)),          '|||', &
-!                       minval(Stateout%gq0(:,:,k)), sum(Stateout%gq0(:,:,k))/real(size(Stateout%gq0(:,:,k))), maxval(Stateout%gq0(:,:,k))
-!         end do
-!      end if
-!! *DH
 
       if (Model%lsidea) then            ! idea convective adjustment
         call ideaca_up(Statein%prsi,Stateout%gt0,ix,im,levs+1)
@@ -5405,16 +5265,6 @@ module module_physics_driver
           endif   ! end if_imfshalcnv
         endif     ! end if_shal_cnv
 
-! DH*
-!      if (Model%me==0) then
-!         do k=1,12
-!            write(0,*) "DH DEBUG GFS_PHYSICS_DRIVER E (before GFS_SCNV_generic_post_run): k, (Statein%qgrs(:,:,k) | dqdt | Stateout%gq0) min/mean/max =", &
-!                  & k, minval(Statein%qgrs(:,:,k)), sum(Statein%qgrs(:,:,k))/real(size(Statein%qgrs(:,:,k))), maxval(Statein%qgrs(:,:,k)), '|||', &
-!                       minval(dqdt(:,:,k)),         sum(dqdt(:,:,k))/real(size(dqdt(:,:,k))),                 maxval(dqdt(:,:,k)),         '|||', &
-!                       minval(Stateout%gq0(:,:,k)), sum(Stateout%gq0(:,:,k))/real(size(Stateout%gq0(:,:,k))), maxval(Stateout%gq0(:,:,k))
-!         end do
-!      end if
-! *DH
 #ifdef CCPP
       if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_SCNV_generic_post through option B'
       ! Copy local variables from driver to appropriate interstitial variables
@@ -5471,16 +5321,6 @@ module module_physics_driver
           enddo
         enddo
 #endif
-! DH*
-!      if (Model%me==0) then
-!         do k=1,12
-!            write(0,*) "DH DEBUG GFS_PHYSICS_DRIVER F (after GFS_SCNV_generic_post_run): k, (Statein%qgrs(:,:,k) | dqdt | Stateout%gq0) min/mean/max =", &
-!                  & k, minval(Statein%qgrs(:,:,k)), sum(Statein%qgrs(:,:,k))/real(size(Statein%qgrs(:,:,k))), maxval(Statein%qgrs(:,:,k)), '|||', &
-!                       minval(dqdt(:,:,k)),         sum(dqdt(:,:,k))/real(size(dqdt(:,:,k))),                 maxval(dqdt(:,:,k)),         '|||', &
-!                       minval(Stateout%gq0(:,:,k)), sum(Stateout%gq0(:,:,k))/real(size(Stateout%gq0(:,:,k))), maxval(Stateout%gq0(:,:,k))
-!         end do
-!      end if
-! *DH
 
 
 !       if (lprnt) then
@@ -5726,9 +5566,7 @@ module module_physics_driver
 !         if ( n /= ntcw .and. n /= ntiw .and. n /= ntclamt) then
           if ( n /= ntcw  .and. n /= ntiw  .and. n /= ntclamt .and. &
                n /= ntrw  .and. n /= ntsw  .and. n /= ntrnc   .and. &
-               n /= ntsnc .and. n /= ntgl  .and. n /= ntgnc   .and. &
-               n /= ntlnc .and. n /= ntinc .and.                    &
-               n /= ntwa  .and. n /= ntia                           ) then
+               n /= ntsnc .and. n /= ntgl  .and. n /= ntgnc ) then
               tracers = tracers + 1
             do k=1,levs
               do i=1,im
@@ -5822,17 +5660,6 @@ module module_physics_driver
                    Tbd%acv, Tbd%acvb, Tbd%acvt, Cldprop%cv, Cldprop%cvb, Cldprop%cvt)
 #endif
 
-! DH*
-!      if (Model%me==0) then
-!         write(0,*) "DH DEBUG GFS_PHYSICS_DRIVER G AFTER cnvc90, BEFORE 'if (Model%moist_adj)', Model%moist_adj=", Model%moist_adj
-!         do k=1,12
-!            write(0,*) "DH DEBUG GFS_PHYSICS_DRIVER G (after GFS_SCNV_generic_post_run): k, (Statein%qgrs(:,:,k) | dqdt | Stateout%gq0) min/mean/max =", &
-!                  & k, minval(Statein%qgrs(:,:,k)), sum(Statein%qgrs(:,:,k))/real(size(Statein%qgrs(:,:,k))), maxval(Statein%qgrs(:,:,k)), '|||', &
-!                       minval(dqdt(:,:,k)),         sum(dqdt(:,:,k))/real(size(dqdt(:,:,k))),                 maxval(dqdt(:,:,k)),         '|||', &
-!                       minval(Stateout%gq0(:,:,k)), sum(Stateout%gq0(:,:,k))/real(size(Stateout%gq0(:,:,k))), maxval(Stateout%gq0(:,:,k))
-!         end do
-!      end if
-! *DH
       if (Model%moist_adj) then       ! moist convective adjustment
 !                                     ---------------------------
 !
@@ -5925,19 +5752,6 @@ module module_physics_driver
         enddo
       endif
 #endif
-! DH*
-!      if (Model%me==0) then
-!         write(0,*) "DH DEBUG GFS_PHYSICS_DRIVER H AFTER 'if (Model%ldiag3d .or. Model%do_aw)', Model%ldiag3d=", &
-!            Model%ldiag3d, ", Model%do_aw=", Model%do_aw, ", Model%lgocart=",Model%lgocart
-!         write(0,*) "DH DEBUG GFS_PHYSICS_DRIVER H : ntcw, nncl, ntcw+nncl-1:", ntcw, nncl, ntcw+nncl-1
-!         do k=1,12
-!            write(0,*) "DH DEBUG GFS_PHYSICS_DRIVER H: k, (Statein%qgrs(:,:,k) | dqdt | Stateout%gq0) min/mean/max =", &
-!                  & k, minval(Statein%qgrs(:,:,k)), sum(Statein%qgrs(:,:,k))/real(size(Statein%qgrs(:,:,k))), maxval(Statein%qgrs(:,:,k)), '|||', &
-!                       minval(dqdt(:,:,k)),         sum(dqdt(:,:,k))/real(size(dqdt(:,:,k))),                 maxval(dqdt(:,:,k)),         '|||', &
-!                       minval(Stateout%gq0(:,:,k)), sum(Stateout%gq0(:,:,k))/real(size(Stateout%gq0(:,:,k))), maxval(Stateout%gq0(:,:,k))
-!         end do
-!      end if
-! *DH
 
 ! dqdt_v : instaneous moisture tendency (kg/kg/sec)
 #ifndef CCPP
@@ -6199,17 +6013,6 @@ module module_physics_driver
           !cdata_block(nb,nt)%errmsg = errmsg                   ! intent(  out)
           !cdata_block(nb,nt)%errflg = errflg                   ! intent(  out)
           !
-! DH*
-!      if (Model%me==0) then
-!         write(0,*) "DH DEBUG GFS_PHYSICS_DRIVER I : JUST BEFORE CCPP mp_thompson_hrrr call"
-!         do k=1,12
-!            write(0,*) "DH DEBUG GFS_PHYSICS_DRIVER I: k, (Statein%qgrs(:,:,k) | dqdt | Stateout%gq0) min/mean/max =", &
-!                  & k, minval(Statein%qgrs(:,:,k)), sum(Statein%qgrs(:,:,k))/real(size(Statein%qgrs(:,:,k))), maxval(Statein%qgrs(:,:,k)), '|||', &
-!                       minval(dqdt(:,:,k)),         sum(dqdt(:,:,k))/real(size(dqdt(:,:,k))),                 maxval(dqdt(:,:,k)),         '|||', &
-!                       minval(Stateout%gq0(:,:,k)), sum(Stateout%gq0(:,:,k))/real(size(Stateout%gq0(:,:,k))), maxval(Stateout%gq0(:,:,k))
-!         end do
-!      end if
-! *DH
           call ccpp_physics_run(cdata_block(nb,nt), scheme_name="mp_thompson_hrrr", ierr=ierr)
           ! Copy back intent(inout) and intent(out) interstitial variables to local variables in driver
           rain1 = Interstitial(nt)%prcpmp ! DH* fix
@@ -7177,13 +6980,6 @@ module module_physics_driver
       end associate associate_ccpp_vars
 #endif
 
-! DH*
-!      if (abort_for_debug) then
-!         write(0,*) "DH DEBUG abort_for_debug == .true. at end of GFS_physics_driver, kdt=",Model%kdt
-!         call sleep(5)
-!         stop
-!      end if
-! *DH
       return
 !...................................
       end subroutine GFS_physics_driver
