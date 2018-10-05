@@ -27,8 +27,8 @@ module module_physics_driver
 
 #ifndef CCPP
   use gfdl_cloud_microphys_mod, only: gfdl_cloud_microphys_driver
-#endif
   use module_mp_thompson,    only: mp_gt_driver
+#endif
   use module_mp_wsm6,        only: wsm6
   use funcphys,              only: ftdp
 #ifndef CCPP
@@ -788,21 +788,21 @@ module module_physics_driver
 #else
       nncl = ncld
 
-      if (imp_physics == 8) then
+      if (imp_physics == Model%imp_physics_thompson) then
         if (Model%ltaerosol) then
           nvdiff = 8
         else
           nvdiff = 5
         endif
         nncl = 5
-      elseif (imp_physics == 6) then
+      elseif (imp_physics == Model%imp_physics_wsm6) then
         nvdiff = ntrac -3
         nncl = 5
       elseif (ntclamt > 0) then             ! for GFDL MP don't diffuse cloud amount
         nvdiff = ntrac - 1
       endif
 
-      if (imp_physics == 10) then
+      if (imp_physics == Model%imp_physics_mg) then
         if (abs(Model%fprcp) == 1) then
           nncl = 4                          ! MG2 with rain and snow
           mg3_as_mg2 = .false.
@@ -925,7 +925,7 @@ module module_physics_driver
         enddo
       endif
 !
-      if (imp_physics == 8 ) then
+      if (imp_physics == Model%imp_physics_thompson) then
         if(Model%ltaerosol) then
           allocate(ice00(im,levs))
           allocate(liq0(im,levs))
@@ -935,7 +935,7 @@ module module_physics_driver
         endif
       endif
 
-      if (imp_physics == 10) then         ! For MGB double moment microphysics
+      if (imp_physics == Model%imp_physics_mg) then         ! For MGB double moment microphysics
         allocate (qlcn(im,levs),      qicn(im,levs),    w_upi(im,levs),     &
                   cf_upi(im,levs),    CNV_MFD(im,levs), CNV_PRC3(im,levs),  &
                   CNV_DQLDT(im,levs), clcn(im,levs),    cnv_fice(im,levs),  &
@@ -960,7 +960,7 @@ module module_physics_driver
                   CNV_MFD(1,1), CNV_PRC3(1,1), CNV_DQLDT(1,1),              &
                   clcn(1,1),    cnv_fice(1,1), cnv_ndrop(1,1), cnv_nice(1,1))
 #ifndef CCPP
-        if (imp_physics == 11) then       ! GFDL MP
+        if (imp_physics == Model%imp_physics_gfdl) then       ! GFDL MP
           allocate (delp(im,1,levs),  dz(im,1,levs),    uin(im,1,levs),                    &
                     vin(im,1,levs),   pt(im,1,levs),    qv1(im,1,levs),   ql1(im,1,levs),  &
                     qr1(im,1,levs),   qg1(im,1,levs),   qa1(im,1,levs),   qn1(im,1,levs),  &
@@ -2800,7 +2800,7 @@ module module_physics_driver
             end if
 #else
 !
-        if (imp_physics == 6) then
+        if (imp_physics == Model%imp_physics_wsm6) then
 ! WSM6
           do k=1,levs
             do i=1,im
@@ -2810,7 +2810,7 @@ module module_physics_driver
               vdftra(i,k,4) = Statein%qgrs(i,k,ntoz)
             enddo
           enddo
-        elseif (imp_physics == 8) then
+        elseif (imp_physics == Model%imp_physics_thompson) then
 ! Thompson
           if(Model%ltaerosol) then
             do k=1,levs
@@ -2837,7 +2837,7 @@ module module_physics_driver
             enddo
           endif
 !
-        elseif (imp_physics == 11) then
+        elseif (imp_physics == Model%imp_physics_gfdl) then
 ! GFDL MP
           do k=1,levs
             do i=1,im
@@ -3067,7 +3067,7 @@ module module_physics_driver
           endif   ! end if_hybedmf
         endif     ! end if_do_shoc
 #ifndef CCPP
-        if (imp_physics == 6) then
+        if (imp_physics == Model%imp_physics_wsm6) then
 ! WSM6
           do k=1,levs
             do i=1,im
@@ -3077,7 +3077,7 @@ module module_physics_driver
               dqdt(i,k,ntoz)  = dvdftra(i,k,4)
             enddo
           enddo
-        elseif (imp_physics == 8) then
+        elseif (imp_physics == Model%imp_physics_thompson) then
 ! Thompson
           if(Model%ltaerosol) then
             do k=1,levs
@@ -3104,7 +3104,7 @@ module module_physics_driver
             enddo
           endif
 !
-        elseif (imp_physics == 11) then
+        elseif (imp_physics == Model%imp_physics_gfdl) then
 ! GFDL MP
           do k=1,levs
             do i=1,im
@@ -3961,7 +3961,7 @@ module module_physics_driver
         enddo
       endif
 
-      if(imp_physics == 8) then
+      if(imp_physics == Model%imp_physics_thompson) then
         if(Model%ltaerosol) then
           ice00 (:,:) = 0.0
           liq0  (:,:) = 0.0
@@ -4014,7 +4014,7 @@ module module_physics_driver
 !           --------------------------------------------
 
       if (ntcw > 0) then
-        if (imp_physics == 10 .and. .not. Model%do_shoc) then ! compute rhc for GMAO macro physics cloud pdf
+        if (imp_physics == Model%imp_physics_mg .and. .not. Model%do_shoc) then ! compute rhc for GMAO macro physics cloud pdf
           do i=1,im
             tx1(i) = 1.0 / Statein%prsi(i,1)
             tx2(i) = 1.0 - rhbbot
@@ -4064,9 +4064,9 @@ module module_physics_driver
             clw(i,k,1) = Stateout%gq0(i,k,ntcw)
           enddo
         enddo
-      elseif (imp_physics == 11) then
+      elseif (imp_physics == Model%imp_physics_gfdl) then
         clw(1:im,:,1) = Stateout%gq0(1:im,:,ntcw)
-      elseif (imp_physics == 8) then
+      elseif (imp_physics == Model%imp_physics_thompson) then
         do k=1,levs
           do i=1,im
             clw(i,k,1) = Stateout%gq0(i,k,ntiw)                    ! ice
@@ -4079,7 +4079,7 @@ module module_physics_driver
         else
           ice00(:,:) = clw(:,:,1)
         endif
-      elseif (imp_physics == 6 .or. imp_physics == 10) then
+      elseif (imp_physics == Model%imp_physics_wsm6 .or. imp_physics == Model%imp_physics_mg) then
         do k=1,levs
           do i=1,im
             clw(i,k,1) = Stateout%gq0(i,k,ntiw)                    ! ice
@@ -4172,7 +4172,7 @@ module module_physics_driver
             stop
         end if
 #else
-        if (imp_physics == 10) then
+        if (imp_physics == Model%imp_physics_mg) then
           skip_macro = Model%do_shoc
           do k=1,levs
             do i=1,im
@@ -4197,7 +4197,7 @@ module module_physics_driver
               enddo
             enddo
           endif
-        elseif (imp_physics == 11) then  ! GFDL MP - needs modify for condensation
+        elseif (imp_physics == Model%imp_physics_gfdl) then  ! GFDL MP - needs modify for condensation
           do k=1,levs
             do i=1,im
               clw(i,k,1) = Stateout%gq0(i,k,ntiw)                    ! ice
@@ -4271,7 +4271,7 @@ module module_physics_driver
 
 #ifdef CCPP
 ! DH*
-          write(0,*) "DH WARNING: shouldn't this test for imp_physics==10?"
+          write(0,*) "DH WARNING: shouldn't this test for imp_physics==Model%imp_physics_mg?"
           write(0,*) "DH WARNING: do we need Thompson with/without aerosol here as well?"
 ! *DH
 #endif
@@ -5494,7 +5494,7 @@ module module_physics_driver
             stop
         end if
 #else
-        if (imp_physics == 10) then
+        if (imp_physics == Model%imp_physics_mg) then
           skip_macro = Model%do_shoc
           do k=1,levs
             do i=1,im
@@ -5565,7 +5565,7 @@ module module_physics_driver
 
 #ifdef CCPP
 ! DH*
-        write(0,*) "DH WARNING: shouldn't this be testing for imp_physics=10?"
+        write(0,*) "DH WARNING: shouldn't this be testing for imp_physics=Model%imp_physics_mg?"
         write(0,*) "DH WARNING: do we need to do this for Thompson, too?"
 ! *DH
 #endif
@@ -5674,7 +5674,7 @@ module module_physics_driver
 
 !  for microphysics
         if (imp_physics == 99 .or. imp_physics == 98    &
-                               .or. imp_physics == 11) then
+                              .or. imp_physics == Model%imp_physics_gfdl) then
            Stateout%gq0(1:im,:,ntcw) = clw(1:im,:,1) + clw(1:im,:,2)
         elseif (ntiw > 0) then
           do k=1,levs
@@ -5683,7 +5683,7 @@ module module_physics_driver
               Stateout%gq0(i,k,ntcw) = clw(i,k,2)                     ! water
             enddo
           enddo
-          if (imp_physics == 8) then
+          if (imp_physics == Model%imp_physics_thompson) then
             if (Model%ltaerosol) then
               do k=1,levs
                 do i=1,im
@@ -5983,7 +5983,7 @@ module module_physics_driver
 
 !     if (lprnt) write(0,*) ' rain1=',rain1(ipr),' rainc=',rainc(ipr),' lat=',lat
 
-        elseif (imp_physics == 8) then      !  Thompson MP
+        elseif (imp_physics == Model%imp_physics_thompson) then      !  Thompson MP
                                             ! ------------
           ims = 1 ; ime = ix ; kms = 1 ; kme = levs ; its = 1 ; ite = ix ; kts = 1 ; kte = levs
 
@@ -6025,13 +6025,37 @@ module module_physics_driver
                Tbd%phy_f3d(:,:,1),Tbd%phy_f3d(:,:,2),Tbd%phy_f3d(:,:,3),me,Statein%phii)
           endif
 #else
-! DH* 20180629 temporarily remove Thompson scheme for making ccpp-physics public (until Greg has approved our port)
-#if 1
-          write(0,*) 'ERROR: HRRR Thompson MP currently not available in CCPP'
-          call sleep(5)
-          stop
-#else
-          if (Model%me==0) write(0,*) 'CCPP DEBUG: calling mp_thompson_hrrr through option B'
+          if (Model%me==0) write(0,*) 'CCPP DEBUG: calling mp_thompson_hrrr_pre_run through option B'
+          !Interstitial(nt)%im = im                             ! intent(in) - set in Interstitial(nt)%create()
+          !Model%levs                                           ! intent(in)
+          !Model%kdt                                            ! intent(in)
+          !con_g                                                ! intent(in)
+          !con_rd                                               ! intent(in)
+          !Model%ltaerosol                                      ! intent(in)
+          !Stateout%gq0(:,:,IPD_Control%ntwa)                   ! intent(inout)
+          !Stateout%gq0(:,:,IPD_Control%ntia)                   ! intent(inout)
+          !Coupling%nwfa2d                                      ! intent(inout)
+          !Coupling%nifa2d                                      ! intent(inout)
+          !Stateout%gt0                                         ! intent(in)
+          !Interstitial(nt)%save_t                              ! intent(  out)
+          !Statein%prsl                                         ! intent(in)
+          !Statein%phil                                         ! intent(in)
+          !Model%me                                             ! intent(in)
+          !Model%master                                         ! intent(in)
+          !Model%communicator                                   ! intent(in)
+          !cdata_block(nb,nt)%errmsg = errmsg                   ! intent(  out)
+          !cdata_block(nb,nt)%errflg = errflg                   ! intent(  out)
+          !
+          call ccpp_physics_run(cdata_block(nb,nt), scheme_name="mp_thompson_hrrr_pre", ierr=ierr)
+          ! Copy back intent(inout) and intent(out) interstitial variables to local variables in driver
+          errmsg = trim(cdata_block(nb,nt)%errmsg)
+          errflg = cdata_block(nb,nt)%errflg
+          !
+          if (errflg/=0) then
+              write(0,*) 'Error in call to mp_thompson_hrrr_mp_mp_thompson_hrrr_run: ' // trim(errmsg)
+              stop
+          end if
+          if (Model%me==0) write(0,*) 'CCPP DEBUG: calling mp_thompson_hrrr_run through option B'
           ! Copy local variables from driver to appropriate interstitial variables
           !Interstitial(nt)%im = im                             ! intent(in) - set in Interstitial(nt)%create()
           !Model%levs                                           ! intent(in)
@@ -6050,6 +6074,7 @@ module module_physics_driver
           !Stateout%gq0(:,:,Model%ntwa)                         ! intent(inout)
           !Stateout%gq0(:,:,Model%ntia)                         ! intent(inout)
           !Coupling%nwfa2d                                      ! intent(in)
+          !Coupling%nifa2d                                      ! intent(in)
           !Stateout%gt0                                         ! intent(inout)
           !Statein%prsl                                         ! intent(in)
           !Statein%phii                                         ! intent(in)
@@ -6062,12 +6087,11 @@ module module_physics_driver
           !Diag%ice                                             ! intent(inout)
           !Diag%graupel                                         ! intent(inout)
           !Diag%sr                                              ! intent(  out)
-          Interstitial(nt)%islmsk = islmsk                      ! intent(in   )
           !Diag%refl_10cm                                       ! intent(  out)
           !Model%lradar                                         ! intent(in   )
           ! DH* use Tbd%phy_f3d(:,:,1-3) directly? difficult, because
           ! these fields are used for different purposes depending on
-          ! the physics options used and as such require multiple
+          ! the physics options and as such would require multiple
           ! standard names. Alternative: create separate fields for
           ! each MP scheme, make sure they are treated in the same
           ! way as Tbd here and allocate them only if the scheme
@@ -6075,6 +6099,9 @@ module module_physics_driver
           Interstitial(nt)%clouds(:,:,3) = Tbd%phy_f3d(:,:,1)   ! intent(inout)
           Interstitial(nt)%clouds(:,:,5) = Tbd%phy_f3d(:,:,2)   ! intent(inout)
           Interstitial(nt)%clouds(:,:,9) = Tbd%phy_f3d(:,:,3)   ! intent(inout)
+          !Model%me                                             ! intent(in)
+          !Model%master                                         ! intent(in)
+          !Model%communicator                                   ! intent(in)
           !cdata_block(nb,nt)%errmsg = errmsg                   ! intent(  out)
           !cdata_block(nb,nt)%errflg = errflg                   ! intent(  out)
           !
@@ -6091,10 +6118,29 @@ module module_physics_driver
               write(0,*) 'Error in call to mp_thompson_hrrr: ' // trim(errmsg)
               stop
           end if
+          !
+          if (Model%me==0) write(0,*) 'CCPP DEBUG: calling mp_thompson_hrrr_post_run through option B'
+          ! Copy local variables from driver to appropriate interstitial variables
+          !Interstitial(nt)%im = im                             ! intent(in) - set in Interstitial(nt)%create()
+          !Model%levs                                           ! intent(in)
+          !Interstitial(nt)%save_t                              ! intent(in) - coming straight from mp_thompson_hrrr_pre_run
+          !Stateout%gt0                                         ! intent(inout)
+          !Statein%prslk                                        ! intent(in)
+          !Model%dtp                                            ! intent(in)
+          !cdata_block(nb,nt)%errmsg = errmsg                   ! intent(  out)
+          !cdata_block(nb,nt)%errflg = errflg                   ! intent(  out)
+          !
+          call ccpp_physics_run(cdata_block(nb,nt), scheme_name="mp_thompson_hrrr_post", ierr=ierr)
+          ! Copy back intent(inout) and intent(out) interstitial variables to local variables in driver
+          errmsg = trim(cdata_block(nb,nt)%errmsg)
+          errflg = cdata_block(nb,nt)%errflg
+          !
+          if (errflg/=0) then
+              write(0,*) 'Error in call to mp_thompson_hrrr_mp_mp_thompson_hrrr_post_run: ' // trim(errmsg)
+              stop
+          end if
 #endif
-! *DH 20180629
-#endif
-        elseif (imp_physics == 6) then      ! WSM6
+        elseif (imp_physics == Model%imp_physics_wsm6) then      ! WSM6
                                             ! -----
           ims = 1 ; ime = ix ; kms = 1 ; kme = levs ; its = 1 ; ite = ix ; kts = 1 ; kte = levs
 
@@ -6112,8 +6158,8 @@ module module_physics_driver
                                 ims,ime, kms,kme,                                               &
                                 its,ite, kts,kte)
 !
-      elseif (imp_physics == 10) then       ! MGB double-moment microphysics
-                                            ! ------------------------------
+      elseif (imp_physics == Model%imp_physics_mg) then       ! MGB double-moment microphysics
+                                                              ! ------------------------------
         kk = 1
         if (Model%fprcp >= 2) kk = 6
 
@@ -6349,7 +6395,7 @@ module module_physics_driver
 !       if (lprnt) write(0,*)' qglba',qgl(ipr,:),' kdt=',kdt
 !
 
-        elseif (imp_physics == 11) then      ! GFDL MP
+        elseif (imp_physics == Model%imp_physics_gfdl) then      ! GFDL MP
                                             ! -------
 #ifdef CCPP
           ! OPTION B - works with all compilers
@@ -6658,7 +6704,7 @@ module module_physics_driver
 !       end do
 !       HCHUANG: use new precipitation type to decide snow flag for LSM snow accumulation
 
-        if (Model%imp_physics /= 11) then
+        if (Model%imp_physics /= Model%imp_physics_gfdl) then
           do i=1,im
             Sfcprop%tprcp(i)  = max(0.0, Diag%rain(i) )
             if(doms(i) > 0.0 .or. domip(i) > 0.0) then
@@ -6717,7 +6763,7 @@ module module_physics_driver
         enddo
       enddo
 
-      if (Model%imp_physics == 11) then
+      if (Model%imp_physics == Model%imp_physics_gfdl) then
 ! determine convective rain/snow by surface temperature
 ! determine large-scale rain/snow by rain/snow coming out directly from MP
         do i = 1, im
@@ -7037,7 +7083,7 @@ module module_physics_driver
       deallocate (qlcn, qicn, w_upi, cf_upi, CNV_MFD, CNV_PRC3, &
                   CNV_DQLDT, clcn, cnv_fice, cnv_ndrop, cnv_nice)
 #ifndef CCPP
-      if (imp_physics == 11) then
+      if (imp_physics == Model%imp_physics_gfdl) then
         deallocate (delp,  dz,    uin,   vin,   pt,    qv1,   ql1, qr1,        &
                     qg1,   qa1,   qn1,   qi1,   qs1,   pt_dt, qa_dt, udt, vdt, &
                     w,     qv_dt, ql_dt, qr_dt, qi_dt, qs_dt, qg_dt)
