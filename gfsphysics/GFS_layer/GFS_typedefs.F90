@@ -586,7 +586,8 @@ module GFS_typedefs
 !! | IPD_Data(nb)%Coupling%dwn_mfi        | instantaneous_atmosphere_downdraft_convective_mass_flux_on_dynamics_timestep                   | (downdraft mass flux) * delt                           | kg m-2        |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Coupling%det_mfi        | instantaneous_atmosphere_detrainment_convective_mass_flux_on_dynamics_timestep                 | (detrainment mass flux) * delt                         | kg m-2        |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Coupling%cldcovi        |                                                                                                | instantaneous 3D cloud fraction                        |               |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Coupling%nwfa2d         | tendency_of_water_friendly_surface_aerosols_at_surface                                         | instantaneous sfc aerosol source                       | kg-1 s-1      |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Coupling%nwfa2d         | tendency_of_water_friendly_aerosols_at_surface                                                 | instantaneous water-friendly sfc aerosol source        | kg-1 s-1      |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Coupling%nifa2d         | tendency_of_ice_friendly_aerosols_at_surface                                                   | instantaneous ice-friendly sfc aerosol source          | kg-1 s-1      |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Coupling%ushfsfci       | instantaneous_upward_sensible_heat_flux                                                        | instantaneous upward sensible heat flux                | W m-2         |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Coupling%dkt            | instantaneous_atmosphere_heat_diffusivity                                                      | instantaneous atmospheric heat diffusivity             | m2 s-1        |    2 | real    | kind_phys | none   | F        |
 !!
@@ -690,7 +691,8 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: dwn_mfi (:,:)   => null()  !< instantaneous convective downdraft mass flux
     real (kind=kind_phys), pointer :: det_mfi (:,:)   => null()  !< instantaneous convective detrainment mass flux
     real (kind=kind_phys), pointer :: cldcovi (:,:)   => null()  !< instantaneous 3D cloud fraction
-    real (kind=kind_phys), pointer :: nwfa2d  (:)     => null()  !< instantaneous sfc aerosol source
+    real (kind=kind_phys), pointer :: nwfa2d  (:)     => null()  !< instantaneous water-friendly sfc aerosol source
+    real (kind=kind_phys), pointer :: nifa2d  (:)     => null()  !< instantaneous ice-friendly sfc aerosol source
 
     !--- instantaneous quantities for GSDCHEM coupling
     real (kind=kind_phys), pointer :: ushfsfci(:)     => null()  !< instantaneous upward sensible heat flux (w/m**2)
@@ -2758,7 +2760,9 @@ module GFS_typedefs
     !--- needed for Thompson's aerosol option
     if(Model%imp_physics == Model%imp_physics_thompson .and. Model%ltaerosol) then
       allocate (Coupling%nwfa2d (IM))
+      allocate (Coupling%nifa2d (IM))
       Coupling%nwfa2d   = clear_val
+      Coupling%nifa2d   = clear_val
     endif
 
   end subroutine coupling_create
@@ -4780,7 +4784,7 @@ module GFS_typedefs
     allocate (Interstitial%z01d       (IM))
     allocate (Interstitial%zt1d       (IM))
     ! Allocate arrays that are conditional on physics choices
-    if (Model%imp_physics == Model%imp_physics_gfdl) then
+    if (Model%imp_physics == Model%imp_physics_gfdl .or. Model%imp_physics == Model%imp_physics_thompson) then
        allocate (Interstitial%graupelmp  (IM))
        allocate (Interstitial%icemp      (IM))
        allocate (Interstitial%rainmp     (IM))
@@ -5067,7 +5071,7 @@ module GFS_typedefs
     Interstitial%z01d         = clear_val
     Interstitial%zt1d         = clear_val
     ! Reset fields that are conditional on physics choices
-    if (Model%imp_physics == Model%imp_physics_gfdl) then
+    if (Model%imp_physics == Model%imp_physics_gfdl .or. Model%imp_physics == Model%imp_physics_thompson) then
        Interstitial%graupelmp = clear_val
        Interstitial%icemp     = clear_val
        Interstitial%rainmp    = clear_val
@@ -5251,8 +5255,8 @@ module GFS_typedefs
     write (0,*) 'sum(Interstitial%z01d        ) = ', sum(Interstitial%z01d        )
     write (0,*) 'sum(Interstitial%zt1d        ) = ', sum(Interstitial%zt1d        )
     ! Print arrays that are conditional on physics choices
-    if (Model%imp_physics == Model%imp_physics_gfdl) then
-       write (0,*) 'Interstitial_print: values specific to GFDL microphysics'
+    if (Model%imp_physics == Model%imp_physics_gfdl .or. Model%imp_physics == Model%imp_physics_thompson) then
+       write (0,*) 'Interstitial_print: values specific to GFDL/Thompson microphysics'
        write (0,*) 'sum(Interstitial%graupelmp) = ', sum(Interstitial%graupelmp   )
        write (0,*) 'sum(Interstitial%icemp    ) = ', sum(Interstitial%icemp       )
        write (0,*) 'sum(Interstitial%rainmp   ) = ', sum(Interstitial%rainmp      )
