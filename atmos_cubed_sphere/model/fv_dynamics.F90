@@ -312,16 +312,6 @@ contains
       nq      = nq_tot - flagstruct%dnats
       rdg     = -rdgas * agrav
 
-      ! DH*
-      !if (mpp_pe()==mpp_root_pe()) then
-      !   write(0,*) "DH DEBUG fv_dynamics A: nq_tot, flagstruct%dnats, nq, ncnst, nwat / shape(q):", &
-      !            nq_tot, flagstruct%dnats, nq, ncnst, nwat, '/', shape(q)
-      !   do k=1,size(q,dim=4)
-      !      write(0,*) "DH DEBUG fv_dynamics A: k, min/avg/max(q(:,:,:,k)):", &
-      !              k, minval(q(:,:,:,k)), sum(q(:,:,:,k))/real(size(q(:,:,:,k))), maxval(q(:,:,:,k))
-      !   end do
-      !end if
-      ! *DH
 #ifdef CCPP
       if (flagstruct%do_sat_adj) then
          ! Manually set runtime parameters
@@ -416,22 +406,6 @@ contains
       endif
 
       theta_d = get_tracer_index (MODEL_ATMOS, 'theta_d')
-      ! DH*
-      !if (mpp_pe()==mpp_root_pe()) then
-      !   write(0,*) "DH DEBUG fv_dynamics: sphum   =", sphum  
-      !   write(0,*) "DH DEBUG fv_dynamics: liq_wat =", liq_wat
-      !   write(0,*) "DH DEBUG fv_dynamics: ice_wat =", ice_wat
-      !   write(0,*) "DH DEBUG fv_dynamics: rainwat =", rainwat
-      !   write(0,*) "DH DEBUG fv_dynamics: snowwat =", snowwat
-      !   write(0,*) "DH DEBUG fv_dynamics: graupel =", graupel
-      !   write(0,*) "DH DEBUG fv_dynamics: cld_amt =", cld_amt
-      !   write(0,*) "DH DEBUG fv_dynamics: theta_d =", theta_d
-      !   do k=1,size(q,dim=4)
-      !      write(0,*) "DH DEBUG fv_dynamics B: k, min/avg/max(q(:,:,:,k)):", &
-      !              k, minval(q(:,:,:,k)), sum(q(:,:,:,k))/real(size(q(:,:,:,k))), maxval(q(:,:,:,k))
-      !   end do
-      !end if
-      ! *DH
 
 #ifdef SW_DYNAMICS
       akap  = 1.
@@ -486,7 +460,7 @@ contains
                            ice_wat, snowwat, graupel, q, q_con(is:ie,j,k), cvm)
 #endif
              do i=is,ie
-               dp1(i,j,k) = zvir*q(i,j,k,sphum)
+                dp1(i,j,k) = zvir*q(i,j,k,sphum)
 #ifdef MOIST_CAPPA
                cappa(i,j,k) = rdgas/(rdgas + cvm(i)/(1.+dp1(i,j,k)))
                pkz(i,j,k) = exp(cappa(i,j,k)*log(rdg*delp(i,j,k)*pt(i,j,k)*    &
@@ -662,19 +636,6 @@ contains
                                            call timing_off('COMM_TOTAL')
 #endif
 
-! DH*
-!       if (mpp_pe()==mpp_root_pe()) then
-!          write(0,*) "DH DEBUG fv_dynamics: flagstruct%hord_tr    =", flagstruct%hord_tr   
-!          write(0,*) "DH DEBUG fv_dynamics: flagstruct%moist_phys =", flagstruct%moist_phys
-!          write(0,*) "DH DEBUG fv_dynamics: flagstruct%inline_q   =", flagstruct%inline_q  
-!          write(0,*) "DH DEBUG fv_dynamics: nq                    =", nq                   
-!          write(0,*) "DH DEBUG fv_dynamics: flagstruct%fv_debug   =", flagstruct%fv_debug
-!          do k=1,size(q,dim=4)
-!             write(0,*) "DH DEBUG fv_dynamics D: k, min/avg/max(q(:,:,:,k)):", &
-!                     k, minval(q(:,:,:,k)), sum(q(:,:,:,k))/real(size(q(:,:,:,k))), maxval(q(:,:,:,k))
-!          end do
-!       end if
-! *DH
                                            call timing_on('DYN_CORE')
       call dyn_core(npx, npy, npz, ng, sphum, nq, mdt, n_split, zvir, cp_air, akap, cappa, grav, hydrostatic, &
                     u, v, w, delz, pt, q, delp, pe, pk, phis, ws, omga, ptop, pfull, ua, va,           & 
@@ -683,19 +644,6 @@ contains
                     domain, n_map==1, i_pack, last_step, diss_est,time_total)
                                            call timing_off('DYN_CORE')
 
-! DH*
-!       if (mpp_pe()==mpp_root_pe()) then
-!          write(0,*) "DH DEBUG fv_dynamics: flagstruct%hord_tr    =", flagstruct%hord_tr   
-!          write(0,*) "DH DEBUG fv_dynamics: flagstruct%moist_phys =", flagstruct%moist_phys
-!          write(0,*) "DH DEBUG fv_dynamics: flagstruct%inline_q   =", flagstruct%inline_q  
-!          write(0,*) "DH DEBUG fv_dynamics: nq                    =", nq                   
-!          write(0,*) "DH DEBUG fv_dynamics: flagstruct%fv_debug   =", flagstruct%fv_debug
-!          do k=1,size(q,dim=4)
-!             write(0,*) "DH DEBUG fv_dynamics D: k, min/avg/max(q(:,:,:,k)):", &
-!                     k, minval(q(:,:,:,k)), sum(q(:,:,:,k))/real(size(q(:,:,:,k))), maxval(q(:,:,:,k))
-!          end do
-!       end if
-! *DH
 #ifdef SW_DYNAMICS
 !!$OMP parallel do default(none) shared(is,ie,js,je,ps,delp,agrav)
       do j=js,je
@@ -727,22 +675,7 @@ contains
          endif
        endif
                                              call timing_off('tracer_2d')
-! DH*
-!#ifdef FILL2D
-!       if (mpp_pe()==mpp_root_pe()) write(0,*) "DH DEBUG: FILL2D IS ON"
-!#endif
-!       if (mpp_pe()==mpp_root_pe()) then
-!          write(0,*) "DH DEBUG fv_dynamics: flagstruct%hord_tr    =", flagstruct%hord_tr   
-!          write(0,*) "DH DEBUG fv_dynamics: flagstruct%moist_phys =", flagstruct%moist_phys
-!          write(0,*) "DH DEBUG fv_dynamics: flagstruct%inline_q   =", flagstruct%inline_q  
-!          write(0,*) "DH DEBUG fv_dynamics: nq                    =", nq                   
-!          write(0,*) "DH DEBUG fv_dynamics: flagstruct%fv_debug   =", flagstruct%fv_debug
-!          do k=1,size(q,dim=4)
-!             write(0,*) "DH DEBUG fv_dynamics E: k, min/avg/max(q(:,:,:,k)):", &
-!                     k, minval(q(:,:,:,k)), sum(q(:,:,:,k))/real(size(q(:,:,:,k))), maxval(q(:,:,:,k))
-!          end do
-!       end if
-! *DH
+
 #ifdef FILL2D
      if ( flagstruct%hord_tr<8 .and. flagstruct%moist_phys ) then
                                                   call timing_on('Fill2D')
