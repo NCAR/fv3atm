@@ -605,17 +605,6 @@ contains
 
    do psc=1,abs(p_split)
      p_step = psc
-! DH*
-!     if (mpp_pe()==mpp_root_pe()) then
-!        write(0,*) "DH DEBUG atmosphere_dynamics BEFORE: n, p_split, psc:", n, p_split, psc
-!        write(0,*) "DH DEBUG atmosphere_dynamics BEFORE: shape(Atm(n)%q):", shape(Atm(n)%q)
-!        do k=1,size(Atm(n)%q,dim=4)
-!           write(0,*) "DH DEBUG atmosphere_dynamics BEFORE: k, min/avg/max(Atm(n)%q(:,:,:,k)):", &
-!           k, minval(Atm(n)%q(:,:,:,k)), sum(Atm(n)%q(:,:,:,k))/real(size(Atm(n)%q(:,:,:,k))), maxval(Atm(n)%q(:,:,:,k))
-!        end do
-!     end if
-!     call sleep(1)
-! *DH
      call timing_on('fv_dynamics')
 !uc/vc only need be same on coarse grid? However BCs do need to be the same
      call fv_dynamics(npx, npy, npz, nq, Atm(n)%ng, dt_atmos/real(abs(p_split)),&
@@ -638,17 +627,6 @@ contains
 
      call timing_off('fv_dynamics')
 
-! DH*
-!     if (mpp_pe()==mpp_root_pe()) then
-!        write(0,*) "DH DEBUG atmosphere_dynamics  AFTER: n, p_split, psc:", n, p_split, psc
-!        write(0,*) "DH DEBUG atmosphere_dynamics  AFTER: shape(Atm(n)%q):", shape(Atm(n)%q)
-!        do k=1,size(Atm(n)%q,dim=4)
-!           write(0,*) "DH DEBUG atmosphere_dynamics  AFTER: k, min/avg/max(Atm(n)%q(:,:,:,k)):", &
-!           k, minval(Atm(n)%q(:,:,:,k)), sum(Atm(n)%q(:,:,:,k))/real(size(Atm(n)%q(:,:,:,k))), maxval(Atm(n)%q(:,:,:,k))
-!        end do
-!     end if
-!     call sleep(1)
-! *DH
     if (ngrids > 1 .and. (psc < p_split .or. p_split < 0)) then
        call timing_on('TWOWAY_UPDATE')
        call twoway_nesting(Atm, ngrids, grids_on_this_pe, zvir)
