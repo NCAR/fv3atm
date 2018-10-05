@@ -91,9 +91,18 @@ module fv_mapz_mod
   use fv_arrays_mod,     only: fv_grid_type
   use fv_timing_mod,     only: timing_on, timing_off
   use fv_mp_mod,         only: is_master
+#ifndef CCPP
   use fv_cmp_mod,        only: qs_init, fv_sat_adj
-#ifdef CCPP
+#else
+#ifdef STATIC
+! For static builds, the ccpp_physics_{init,run,finalize} calls
+! are not pointing to code in the CCPP framework, but to auto-generated
+! ccpp_suite_cap and ccpp_group_*_cap modules behind a ccpp_static_api
+  use ccpp_api,          only: ccpp_initialized
+  use ccpp_static_api,   only: ccpp_physics_run
+#else
   use ccpp_api,          only: ccpp_initialized, ccpp_physics_run
+#endif
   use CCPP_data,         only: cdata => cdata_tile, CCPP_interstitial
 #endif
 
@@ -725,8 +734,8 @@ endif        ! end last_step check
     call timing_on('sat_adj2')
 #ifdef CCPP
     if (ccpp_initialized(cdata)) then
-      call ccpp_physics_run(cdata, scheme_name='fv_sat_adj', ierr=ierr)
-      if (ierr/=0) call mpp_error(FATAL, "Call to ccpp_physics_run for scheme 'fv_sat_adj' failed")
+      call ccpp_physics_run(cdata, group_name='fast_physics', ierr=ierr)
+      if (ierr/=0) call mpp_error(FATAL, "Call to ccpp_physics_run for group 'fast_physics' failed")
     else
       call mpp_error (FATAL, 'Lagrangian_to_Eulerian: can not call CCPP fast physics because cdata not initialized')
     endif

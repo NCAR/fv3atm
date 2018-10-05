@@ -1,22 +1,44 @@
 module IPD_typedefs
 
+!---------------------------------------------------------
+! Physics/Radiation types used to create various IPD types
+!---------------------------------------------------------
   use physics_abstraction_layer, only: IPD_control_type => control_type,     &
                                        IPD_init_type    => init_type,        &
                                        IPD_restart_type => restart_type,     &
                                        IPD_diag_type    => diagnostic_type,  &
-                                       IPD_kind_phys    => kind_phys,        &
-                                       statein_type,  stateout_type,         &
+                                       IPD_kind_phys    => kind_phys
+#ifdef CCPP
+  use physics_abstraction_layer, only: IPD_interstitial_type => interstitial_type
+#endif
+
+!---------------------------------------------------------
+! Physics/Radiation types used to create the IPD_data_type
+!---------------------------------------------------------
+  use physics_abstraction_layer, only: statein_type,  stateout_type,         &
                                        sfcprop_type,  coupling_type,         &
                                        grid_type,     tbd_type,              &
                                        cldprop_type,  radtend_type,          &
                                        intdiag_type
 #ifdef CCPP
-  use physics_abstraction_layer, only: IPD_interstitial_type => interstitial_type
+  use physics_abstraction_layer, only: IPD_data_type    => data_type
 #endif
 
-!--------------------
-!  IPD sub-containers
-!--------------------
+!-------------------------------------------------
+! Physics/Radiation routines to pass to IPD_driver
+!-------------------------------------------------
+  use physics_abstraction_layer,  only: initialize,          &
+                                        diagnostic_populate, &
+                                        restart_populate
+#ifdef CCPP
+  use physics_abstraction_layer,  only: finalize
+#endif
+
+#ifndef CCPP
+!-------------------------------------------------------
+!  IPD_data_type 
+!    container of physics data types that can be blocked
+!-------------------------------------------------------
   type IPD_data_type
     type(statein_type)  :: Statein
     type(stateout_type) :: Stateout
@@ -28,10 +50,13 @@ module IPD_typedefs
     type(radtend_type)  :: Radtend
     type(intdiag_type)  :: Intdiag
   end type IPD_data_type
+#endif
 
-!------------------------
-!  IPD function procedure
-!------------------------
+
+!------------------------------------------------------
+!  IPD function procedures 
+!    definitions for scalar(0d) and vector(1d) versions
+!------------------------------------------------------
   abstract interface
     subroutine IPD_func0d_proc (Control, Statein, Stateout,  &
                                 Sfcprop, Coupling, Grid,     &
@@ -63,6 +88,7 @@ module IPD_typedefs
       type(IPD_interstitial_type), intent(inout) :: Interstitial(:)
 #endif
     end subroutine IPD_func0d_proc
+
     subroutine IPD_func1d_proc (Control, Statein, Stateout,  &
                                 Sfcprop, Coupling, Grid,     &
                                 Tbd, Cldprop, Radtend,       &
@@ -96,28 +122,32 @@ module IPD_typedefs
   end interface
 
 
+!------------------------------------------------
+! SAMPLE var_subtype
+!   pointers to two and three dimensional objects
+!------------------------------------------------
 !  type var_subtype
 !    real(kind=kind_phys), pointer :: var2p(:)   => null()  !< 2D data saved in packed format [dim(ix)]
 !    real(kind=kind_phys), pointer :: var3p(:,:) => null()  !< 3D data saved in packed format [dim(ix,levs)]
 !  end type var_subtype
-    
-!-------------------------------------------
-! IPD_restart_type
+!   
+!--------------------------------------------------
+! SAMPLE restart_type to import as IPD_restart_type
 !   data necessary for reproducible restarts
-!-------------------------------------------
-!  type IPD_restart_type
+!--------------------------------------------------
+!  type restart_type
 !    integer           :: num2d                    !< current number of registered 2D restart variables
 !    integer           :: num3d                    !< current number of registered 3D restart variables
 !    character(len=32), allocatable :: name2d(:)   !< variable name as it will appear in the restart file
 !    character(len=32), allocatable :: name3d(:)   !< variable name as it will appear in the restart file
 !    type(var_subtype), allocatable :: data(:,:)   !< holds pointers to data in packed format (allocated to (nblks,max(2d/3dfields))
-!  end type IPD_restart_type
-
-!----------------------------------------
-! IPD_diag_type
+!  end type restart_type
+!
+!--------------------------------------------------
+! SAMPLE diagnostic_type to import as IPD_diag_type
 !   fields targetted as diagnostic output
-!----------------------------------------
-!  type IPD_diag_type
+!--------------------------------------------------
+!  type diag_type
 !    character(len=32)     :: name           !< variable name in source
 !    character(len=32)     :: output_name    !< output name for variable
 !    character(len=32)     :: mod_name       !< module name (e.g. physics, radiation, etc)
@@ -132,8 +162,12 @@ module IPD_typedefs
 !    real(kind=kind_phys)  :: zhour          !< forecast hour when bucket was last emptied for statistical processing
 !    real(kind=kind_phys)  :: fcst_hour      !< current forecast hour (same as fhour)
 !    type(var_subtype), allocatable :: data(:) !< holds pointers to data in packed format (allocated to nblks)
-!  end type IPD_diag_type
+!  end type diag_type
 
+
+!------------------------
+! IPD public declarations
+!------------------------
   public IPD_kind_phys
   public IPD_control_type
   public IPD_data_type
@@ -142,6 +176,16 @@ module IPD_typedefs
   public IPD_init_type
 #ifdef CCPP
   public IPD_interstitial_type
+#endif
+
+!-----------------------------------
+! public declarations for IPD_driver
+!-----------------------------------
+  public initialize
+  public diagnostic_populate
+  public restart_populate
+#ifdef CCPP
+  public finalize
 #endif
 
   CONTAINS

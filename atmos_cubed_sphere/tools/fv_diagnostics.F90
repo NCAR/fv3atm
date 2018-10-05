@@ -141,7 +141,9 @@ module fv_diagnostics_mod
  use sat_vapor_pres_mod, only: compute_qs, lookup_es
 
  use fv_arrays_mod, only: max_step 
+#ifndef GFS_PHYS
  use gfdl_cloud_microphys_mod, only: wqs1, qsmith_init
+#endif
 
  implicit none
  private
@@ -177,7 +179,7 @@ module fv_diagnostics_mod
 
  public :: fv_diag_init, fv_time, fv_diag, prt_mxm, prt_maxmin, range_check!, id_divg, id_te
  public :: prt_mass, prt_minmax, ppme, fv_diag_init_gn, z_sum, sphum_ll_fix, eqv_pot, qcly0, gn
- public :: prt_height, prt_gb_nh_sh, interpolate_vertical, rh_calc, get_height_field
+ public :: prt_height, prt_gb_nh_sh, interpolate_vertical, rh_calc, get_height_field, dbzcalc
 
  integer, parameter :: nplev = 31
  integer :: levs(nplev)

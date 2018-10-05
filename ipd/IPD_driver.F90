@@ -3,28 +3,20 @@ module IPD_driver
 ! DH* note - passing the interstitial data types to
 ! IPD_step (and the explicit interfaces behind it,
 ! time_vary_step, radiation_step1, physics_step1/2)
-! may be reverted once we no longer have to call
+! can be reverted once we no longer have to call
 ! ccpp_physics_run from gfs_*driver.F90 *DH
 
   use IPD_typedefs,               only: IPD_kind_phys,     IPD_init_type,    &
                                         IPD_control_type,  IPD_data_type,    &
                                         IPD_diag_type,     IPD_restart_type, &
-                                        IPD_func0d_proc,   IPD_func1d_proc
+                                        IPD_func0d_proc,   IPD_func1d_proc,  &
+                                        initialize,                          &
+                                        diagnostic_populate,                 &
+                                        restart_populate
 #ifdef CCPP
-  use IPD_typedefs,               only: IPD_interstitial_type
+  use IPD_typedefs,               only: IPD_interstitial_type, finalize
 #endif
 
-#ifdef CCPP
-  use physics_abstraction_layer,  only: initialize,          time_vary_step,   &
-                                        physics_step1,       physics_step2,    &
-                                        diagnostic_populate, restart_populate, &
-                                        finalize
-#else
-  use physics_abstraction_layer,  only: initialize,        time_vary_step,   &
-                                        radiation_step1,   physics_step1,    &
-                                        physics_step2,                       &
-                                        diagnostic_populate, restart_populate
-#endif
   implicit none
 
 !------------------------------------------------------!
@@ -42,10 +34,6 @@ module IPD_driver
 ! functions
   public IPD_initialize
   public IPD_step 
-!rab  public IPD_setup_step 
-!rab  public IPD_radiation_step
-!rab  public IPD_physics_step1
-!rab  public IPD_physics_step2
 #ifdef CCPP
   public IPD_finalize
 #endif
@@ -58,7 +46,10 @@ module IPD_driver
 !  IPD Initialize 
 !----------------
 #ifdef CCPP
-  subroutine IPD_initialize (IPD_Control, IPD_Data, IPD_Diag, IPD_Restart, IPD_Interstitial, IPD_init_parm)
+  subroutine IPD_initialize (IPD_Control, IPD_Data, IPD_Diag, IPD_Restart, &
+                             IPD_Interstitial, communicator, ntasks, IPD_init_parm)
+#elif MEMCHECK
+  subroutine IPD_initialize (IPD_Control, IPD_Data, IPD_Diag, IPD_Restart, communicator, IPD_init_parm)
 #else
   subroutine IPD_initialize (IPD_Control, IPD_Data, IPD_Diag, IPD_Restart, IPD_init_parm)
 #endif
@@ -68,6 +59,10 @@ module IPD_driver
     type(IPD_restart_type), intent(inout) :: IPD_Restart
 #ifdef CCPP
     type(IPD_interstitial_type), intent(inout) :: IPD_Interstitial(:)
+    integer, intent(in)                   :: communicator
+    integer, intent(in)                   :: ntasks
+#elif MEMCHECK
+    integer, intent(in)                   :: communicator
 #endif
     type(IPD_init_type),    intent(in)    :: IPD_init_parm
 
@@ -76,7 +71,10 @@ module IPD_driver
                      IPD_Data(:)%Sfcprop, IPD_Data(:)%Coupling, IPD_Data(:)%Grid, &
                      IPD_Data(:)%Tbd, IPD_Data(:)%Cldprop, IPD_Data(:)%Radtend,   &
 #ifdef CCPP
-                     IPD_Data(:)%Intdiag, IPD_Interstitial(:), IPD_init_parm)
+                     IPD_Data(:)%Intdiag, IPD_Interstitial(:), communicator,      &
+                     ntasks, IPD_init_parm)
+#elif MEMCHECK
+                     IPD_Data(:)%Intdiag, communicator, IPD_init_parm)
 #else
                      IPD_Data(:)%Intdiag, IPD_init_parm)
 #endif

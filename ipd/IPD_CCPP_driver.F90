@@ -5,6 +5,19 @@ module IPD_CCPP_driver
                                 IPD_diag_type,     IPD_restart_type, &
                                 IPD_interstitial_type
 
+#ifdef STATIC
+! For static builds, the ccpp_physics_{init,run,finalize} calls
+! are not pointing to code in the CCPP framework, but to auto-generated
+! ccpp_suite_cap and ccpp_group_*_cap modules behind a ccpp_static_api
+  use ccpp_api,           only: ccpp_t,                              &
+                                ccpp_init,                           &
+                                ccpp_finalize,                       &
+                                ccpp_field_add,                      &
+                                ccpp_initialized
+  use ccpp_static_api,    only: ccpp_physics_init,                   &
+                                ccpp_physics_run,                    &
+                                ccpp_physics_finalize
+#else
   use ccpp_api,           only: ccpp_t,                              &
                                 ccpp_init,                           &
                                 ccpp_finalize,                       &
@@ -13,6 +26,7 @@ module IPD_CCPP_driver
                                 ccpp_physics_finalize,               &
                                 ccpp_field_add,                      &
                                 ccpp_initialized
+#endif
 
   use CCPP_data,          only: cdata_tile,                          &
                                 cdata_domain,                        &
@@ -121,9 +135,9 @@ module IPD_CCPP_driver
         !    is already initialized, use its suite to avoid reading the
         !    SDF multiple times.
         if (ccpp_initialized(cdata_tile)) then
-          call ccpp_init(trim(ccpp_suite), cdata, ierr, cdata_target=cdata_tile)
+          call ccpp_init(trim(ccpp_suite), cdata, ierr=ierr, cdata_target=cdata_tile)
         else
-          call ccpp_init(trim(ccpp_suite), cdata, ierr)
+          call ccpp_init(trim(ccpp_suite), cdata, ierr=ierr)
         end if
         if (ierr/=0) then
           write(0,*) 'An error occurred in ccpp_init'
@@ -155,9 +169,9 @@ module IPD_CCPP_driver
             !    to avoid reading the SDF multiple times. If cdata_tile is initialized, use
             !    this version (since cdata_domain is just a copy), otherwise use cdata_domain
             if (ccpp_initialized(cdata_tile)) then
-              call ccpp_init(trim(ccpp_suite), cdata, ierr, cdata_target=cdata_tile)
+              call ccpp_init(trim(ccpp_suite), cdata, ierr=ierr, cdata_target=cdata_tile)
             else
-              call ccpp_init(trim(ccpp_suite), cdata, ierr, cdata_target=cdata_domain)
+              call ccpp_init(trim(ccpp_suite), cdata, ierr=ierr, cdata_target=cdata_domain)
             end if
             if (ierr/=0) then
               write(0,'(2(a,i4))') "An error occurred in ccpp_init for block ", nb, " and thread ", nt
@@ -178,16 +192,20 @@ module IPD_CCPP_driver
         return
       end if
 
-      if (.not.present(IPD_Control)) then
-        write(0,*) 'Optional argument IPD_Control required for IPD-CCPP physics_init step'
-        ierr = 1
-        return
-      end if
-
       ! Loop over blocks, don't use threading on the outside but allowing threading
       ! inside the initialization, because physics initialization code does a lot of
       ! reading/writing data from disk, allocating fields, etc.
-      CCPP_shared%nthreads = nthrds
+      CCPP_shared(:)%nthreads = nthrds
+
+      ! DH* TODO - I believe that they way this works in FV3, physics init can only
+      ! affect block- and thread-independent data - hence, it would be sufficient to
+      ! run physics_init once over cdata_domain?!? Update notes accordingly if true. *DH
+      ! If physics init affect block data, then changes must be made to parsing the
+      ! SDF (cannot use pointers to point to the central SDF, because a scheme will
+      ! be considered as initialized because of its CCPP-internal attribute after a
+      ! first call to it), and the is_initialized logic inside the scheme (independent)
+      ! of CCPP must be removed for those schemes that need to be initialized multiple
+      ! times once per block.
 
       ! Since physics init can only affect block- (and not thread-) dependent data
       ! structures, it is sufficient to run this over all blocks for one thread only
@@ -197,32 +215,54 @@ module IPD_CCPP_driver
         call ccpp_physics_init(cdata_block(nb,nt), ierr=ierr)
         if (ierr/=0) then
           write(0,'(2(a,i4))') "An error occurred in ccpp_physics_init for block ", nb, " and thread ", nt
-          if (ierr/=0) return
+          return
         end if
       end do
 
-      ! Reset number of threads available to physisc schemes to default value
-      CCPP_shared%nthreads = 1
+      ! Reset number of threads available to physics schemes to default value
+      CCPP_shared(:)%nthreads = 1
 
-!    else if (trim(step)=="fast_physics") then
-!
-!      call ccpp_physics_run(cdata_domain, group_name='fast_physics', ierr=ierr)
-!      if (ierr/=0) then
-!         write(0,'(a)') "An error occurred in ccpp_physics_run for group fast_physics"
-!         return
-!      end if
-
-    ! Radiation
-    else if (trim(step)=="radiation") then
+   else if (trim(step)=="time_vary") then
 
       if (.not.present(nblks)) then
-        write(0,*) 'Optional argument nblks required for IPD-CCPP radiation step'
+        write(0,*) 'Optional argument nblks required for IPD-CCPP time_vary step'
+        ierr = 1
+        return
+      end if
+
+      ! Loop over blocks, don't use threading on the outside but allowing threading
+      ! inside the time_vary routines. This is because the time_vary routines contain
+      ! calls to gcycle.f90 and sfcsub.F, which do a lot of I/O and are highly
+      !inefficient if executed nthread times.
+      CCPP_shared%nthreads = nthrds
+
+      ! Since the time_vary steps only use data structures for all blocks (except the
+      ! CCPP-internal variables ccpp_error_flag and ccpp_error_message, which are defined
+      ! for all cdata structures independently), we can use cdata_domain here.
+      call ccpp_physics_run(cdata_domain, group_name="time_vary", ierr=ierr)
+      if (ierr/=0) then
+        write(0,'(2(a,i4))') "An error occurred in ccpp_physics_run for group time_vary"
+        return
+      end if
+
+      ! Reset number of threads available to physics schemes to default value
+      CCPP_shared%nthreads = 1
+
+    ! Radiation and stochastic physics
+   else if (trim(step)=="radiation" .or. trim(step)=="physics" .or. trim(step)=="stochastics") then
+
+      if (.not.present(nblks)) then
+        write(0,*) 'Optional argument nblks required for IPD-CCPP ' // trim(step) // ' step'
         ierr = 1
         return
       end if
 
 !$OMP parallel do num_threads (nthrds) &
+#ifdef MEMCHECK
+!$OMP          schedule (static,nblks),&
+#else
 !$OMP          schedule (dynamic,1),   &
+#endif
 !$OMP          default (shared)        &
 !$OMP          private (nb,nt,ierr2)   &
 !$OMP          reduction (+:ierr)
@@ -233,17 +273,17 @@ module IPD_CCPP_driver
         nt = 1
 #endif
         !--- Call CCPP radiation group
-        call ccpp_physics_run(cdata_block(nb,nt), group_name="radiation", ierr=ierr2)
+        call ccpp_physics_run(cdata_block(nb,nt), group_name=trim(step), ierr=ierr2)
         if (ierr2/=0) then
-           write(0,'(a,i4,a,i4)') "An error occurred in ccpp_physics_run for group radiation, block ", nb, " and thread ", nt
+           write(0,'(a,i4,a,i4)') "An error occurred in ccpp_physics_run for group " // trim(step) // ", block ", nb, " and thread ", nt
            ierr = ierr + ierr2
         end if
       end do
 !$OMP end parallel do
       if (ierr/=0) return
 
-    ! Finalize
-    else if (trim(step)=="finalize") then
+   ! Finalize
+   else if (trim(step)=="finalize") then
 
       if (.not.present(nblks)) then
         write(0,*) 'Optional argument nblks required for IPD-CCPP finalize step'
@@ -251,14 +291,8 @@ module IPD_CCPP_driver
         return
       end if
 
-      ! Finalize fast physics first (must use cdata_tiles)
-      call ccpp_physics_finalize(cdata_tile, group_name="fast_physics", ierr=ierr)
-      if (ierr/=0) then
-        write(0,'(a)') "An error occurred in ccpp_physics_finalize for group fast_physics"
-        return
-      end if
-
-      ! Loop over all blocks and threads to finalize all other physics
+      ! Fast physics are finalized in atmosphere_end, loop over
+      ! all blocks and threads to finalize all other physics
       do nt=1,nthrds
         do nb=1,nblks
           !--- Finalize CCPP physics
@@ -268,7 +302,7 @@ module IPD_CCPP_driver
             return
           end if
           !--- Finalize CCPP framework for blocks/threads
-          call ccpp_finalize(cdata_block(nb,nt), ierr)
+          call ccpp_finalize(cdata_block(nb,nt), ierr=ierr)
           if (ierr/=0) then
             write(0,'(a,i4,a,i4)') "An error occurred in ccpp_finalize for block ", nb, " and thread ", nt
             return
@@ -280,7 +314,7 @@ module IPD_CCPP_driver
       deallocate(cdata_block)
 
       !--- Finalize CCPP framework for domain
-      call ccpp_finalize(cdata_domain, ierr)
+      call ccpp_finalize(cdata_domain, ierr=ierr)
       if (ierr/=0) then
          write(0,'(a)') "An error occurred in ccpp_finalize"
          return
@@ -295,6 +329,7 @@ module IPD_CCPP_driver
          end if
       end if
 
+      ! Deallocate shared CCPP data
       if (allocated(CCPP_shared)) deallocate(CCPP_shared)
 
     else

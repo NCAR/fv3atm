@@ -13,7 +13,8 @@ module physics_abstraction_layer
                              radtend_type     =>  GFS_radtend_type,  &
                              intdiag_type     =>  GFS_diag_type
 #ifdef CCPP
-  use GFS_typedefs,    only: interstitial_type=>  GFS_interstitial_type
+  use GFS_typedefs,    only: interstitial_type =>  GFS_interstitial_type, &
+                             data_type         =>  GFS_data_type
 #endif
 
 
@@ -25,9 +26,9 @@ module physics_abstraction_layer
 
 #ifdef CCPP
   use GFS_driver,      only: initialize       =>  GFS_initialize,       &
-                             time_vary_step   =>  GFS_time_vary_step,   &
+#ifdef HYBRID
                              physics_step1    =>  GFS_physics_driver,   &
-                             physics_step2    =>  GFS_stochastic_driver,&
+#endif
                              finalize         =>  GFS_finalize
 #else
   use GFS_driver,      only: initialize       =>  GFS_initialize,       &
@@ -37,8 +38,8 @@ module physics_abstraction_layer
                              physics_step2    =>  GFS_stochastic_driver
 #endif
 
-  integer :: num_time_vary_steps  = 1
 #ifndef CCPP
+  integer :: num_time_vary_steps  = 1
   integer :: num_rad_steps  = 1
 #endif
   integer :: num_phys_steps = 2
@@ -71,8 +72,8 @@ module physics_abstraction_layer
 !------------------
 !  public variables 
 !------------------
-  public  num_time_vary_steps
 #ifndef CCPP
+  public  num_time_vary_steps
   public  num_rad_steps
 #endif
   public  num_phys_steps
@@ -81,12 +82,14 @@ module physics_abstraction_layer
 !  public physics functions
 !--------------------------
   public  initialize
-  public  time_vary_step
 #ifndef CCPP
+  public  time_vary_step
   public  radiation_step1
 #endif
   public  physics_step1
+#ifndef CCPP
   public  physics_step2
+#endif
 
 CONTAINS
 
