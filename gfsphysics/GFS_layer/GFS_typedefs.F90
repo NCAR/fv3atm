@@ -364,7 +364,7 @@ module GFS_typedefs
 !! | IPD_Data(nb)%Sfcprop%uustar      | surface_friction_velocity                                              | boundary layer parameter                               | m s-1         |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%oro         | orography                                                              | orography                                              | m             |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%oro_uf      | orography_unfiltered                                                   | unfiltered orography                                   | m             |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%conv_act     | gf_memory_contor                                                      | gf_memory_contor                                       | none          |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%conv_act    | gf_memory_counter                                                      | Memory counter for GF                                  | none          |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%hice        | sea_ice_thickness                                                      | sea ice thickness                                      | m             |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%weasd       | water_equivalent_accumulated_snow_depth                                | water equiv of acc snow depth over land and sea ice    | mm            |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%canopy      | canopy_water_amount                                                    | canopy water amount                                    | kg m-2        |    1 | real    | kind_phys | none   | F        |
@@ -1410,7 +1410,6 @@ module GFS_typedefs
 !! \section arg_table_GFS_tbd_type
 !! | local_name                                      | standard_name                                                                                  | long_name                                               | units         | rank | type    |    kind   | intent | optional |
 !! |-------------------------------------------------|------------------------------------------------------------------------------------------------|---------------------------------------------------------|---------------|------|---------|-----------|--------|----------|
-!! | IPD_Data(nb)%Tbd%cactiv                         | conv_activity_counter                                                                          | convective activity memory                              | none          |    1 | integer |           | none   | F        |
 !! | IPD_Data(nb)%Tbd%icsdsw                         | seed_random_numbers_sw                                                                         | random seeds for sub-column cloud generators sw         | none          |    1 | integer |           | none   | F        |
 !! | IPD_Data(nb)%Tbd%icsdlw                         | seed_random_numbers_lw                                                                         | random seeds for sub-column cloud generators lw         | none          |    1 | integer |           | none   | F        |
 !! | IPD_Data(nb)%Tbd%ozpl                           | ozone_forcing                                                                                  | ozone forcing data                                      | various       |    3 | real    | kind_phys | none   | F        |
@@ -1434,8 +1433,8 @@ module GFS_typedefs
 !! | IPD_Data(nb)%Tbd%phy_f3d(:,:,2)                 | water_vapor_specific_humidity_two_time_steps_back                                              | water vapor specific humidity two time steps back       | kg kg-1       |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Tbd%phy_f3d(:,:,3)                 | air_temperature_at_previous_time_step                                                          | air temperature at previous time step                   | K             |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Tbd%phy_f3d(:,:,4)                 | water_vapor_specific_humidity_at_previous_time_step                                            | water vapor specific humidity at previous time step     | kg kg-1       |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Tbd%phy_f3d(:,:,IPD_Control%ncnvw)   | convective_cloud_water_mixing_ratio_in_phy_f3d                                                 | convective cloud water mixing ratio in the phy_f3d array| kg kg-1       |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Tbd%phy_f3d(:,:,IPD_Control%ncnvw+1) | convective_cloud_cover_in_phy_f3d                                                              | convective cloud cover in the phy_f3d array             | frac          |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Tbd%phy_f3d(:,:,IPD_Control%ncnvw)   | convective_cloud_water_mixing_ratio_in_phy_f3d                                               | convective cloud water mixing ratio in the phy_f3d array| kg kg-1       |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Tbd%phy_f3d(:,:,IPD_Control%ncnvw+1) | convective_cloud_cover_in_phy_f3d                                                            | convective cloud cover in the phy_f3d array             | frac          |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Tbd%phy_f3d(:,:,IPD_Control%ntot3d)  | kinematic_buoyancy_flux_from_shoc                                                            | upward kinematic buoyancy flux from the SHOC scheme     | K m s-1       |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Tbd%phy_f3d(:,:,IPD_Control%ntot3d-1)| atmosphere_heat_diffusivity_from_shoc                                                        | diffusivity for heat from the SHOC scheme               | m2 s-1        |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Tbd%phy_f3d(:,:,IPD_Control%ntot3d-2)| subgrid_scale_cloud_fraction_from_shoc                                                       | subgrid-scale cloud fraction from the SHOC scheme       | frac          |    2 | real    | kind_phys | none   | F        |
@@ -1444,15 +1443,15 @@ module GFS_typedefs
 !! | IPD_Data(nb)%Tbd%htlw0                          | tendency_of_air_temperature_due_to_longwave_heating_assuming_clear_sky_on_radiation_time_step  | clear sky heating rate due to longwave radiation        | K s-1         |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Tbd%htswc                          | tendency_of_air_temperature_due_to_shortwave_heating_on_radiation_time_step                    | total sky heating rate due to shortwave radiation       | K s-1         |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Tbd%htsw0                          | tendency_of_air_temperature_due_to_shortwave_heating_assuming_clear_sky_on_radiation_time_step | clear sky heating rates due to shortwave radiation      | K s-1         |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Tbd%forcet                         |  temperature_tendency_due_to_dynamics                                                          | temperature tendency due to dynamics only               | K s-1         |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Tbd%forceq                         |  moisture_tendency_due_to_dynamics                                                             | moisture tendency due to dynamics only                  | kg kg-1 s-1   |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Tbd%prevst                         |  temperature_from_previous_timestep                                                            | temperature from previous time step                     | K s-1         |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Tbd%vrevsq                         |  moisture_from_previous_timestep                                                               | moisture from previous time step                        | kg kg-1 s-1   |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Tbd%forcet                         | temperature_tendency_due_to_dynamics                                                           | temperature tendency due to dynamics only               | K s-1         |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Tbd%forceq                         | moisture_tendency_due_to_dynamics                                                              | moisture tendency due to dynamics only                  | kg kg-1 s-1   |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Tbd%prevst                         | temperature_from_previous_timestep                                                             | temperature from previous time step                     | K             |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Tbd%prevsq                         | moisture_from_previous_timestep                                                                | moisture from previous time step                        | kg kg-1       |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Tbd%cactiv                         | conv_activity_counter                                                                          | convective activity memory                              | none          |    1 | integer |           | none   | F        |
 !!
 #endif
   type GFS_tbd_type
 
-    integer,               pointer :: cactiv   (:)     => null()  !< (Grell-Freitas) convective activity memory contour
 !--- radiation random seeds
     integer,               pointer :: icsdsw   (:)     => null()  !< (rad. only) auxiliary cloud control arrays passed to main
     integer,               pointer :: icsdlw   (:)     => null()  !< (rad. only) radiations. if isubcsw/isubclw (input to init)
@@ -1497,6 +1496,7 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: forceq (:,:)     => null()  !<
     real (kind=kind_phys), pointer :: prevst (:,:)     => null()  !<
     real (kind=kind_phys), pointer :: prevsq (:,:)     => null()  !<
+    integer,               pointer :: cactiv   (:)     => null()  !< convective activity memory contour
 #endif
 
     contains
@@ -2447,7 +2447,6 @@ module GFS_typedefs
     Sfcprop%oro_uf  = clear_val
 
 !--- In/Out
-    allocate (Sfcprop%conv_act(IM)) ! hli
     allocate (Sfcprop%hice   (IM))
     allocate (Sfcprop%weasd  (IM))
     allocate (Sfcprop%sncovr (IM))
@@ -2461,7 +2460,6 @@ module GFS_typedefs
     allocate (Sfcprop%smc    (IM,Model%lsoil))
     allocate (Sfcprop%stc    (IM,Model%lsoil))
 
-    Sfcprop%conv_act   = zero ! hli
     Sfcprop%hice   = clear_val
     Sfcprop%weasd  = clear_val
     Sfcprop%sncovr = clear_val
@@ -2544,6 +2542,10 @@ module GFS_typedefs
        Sfcprop%flag_frsoil = clear_val
        Sfcprop%rhofr       = clear_val
        Sfcprop%tsnow       = clear_val
+    end if
+    if (Model%imfdeepcnv == 3) then
+        allocate (Sfcprop%conv_act(IM))
+        Sfcprop%conv_act = zero
     end if
 #endif
 
@@ -3677,6 +3679,20 @@ module GFS_typedefs
         print *,' nstf_name(5)=',Model%nstf_name(5)
       endif
       if (Model%do_deep) then
+#ifdef CCPP
+        ! Consistency check for GF convection: deep and shallow convection are bundled
+        ! and cannot be combined with any other deep or shallow convection scheme
+        if ( (Model%imfdeepcnv == 3 .or. Model%imfshalcnv == 3) .and. &
+            .not. (Model%imfdeepcnv == 3 .and. Model%imfshalcnv == 3) ) then
+            write(0,*) "Logic error: if GF deep convection is used, must also use GF shallow convection (and vice versa)"
+            stop
+        end if
+#else
+        if (Model%imfdeepcnv == 3 .or. Model%imfshalcnv == 3) then
+            write(0,*) "Error, GF convection scheme only available through CCPP"
+            stop
+        end if
+#endif
         if (.not. Model%cscnv) then
           if (Model%ras) then
             print *,' RAS Convection scheme used with ccwf=',Model%ccwf
@@ -4247,8 +4263,7 @@ module GFS_typedefs
     type(GFS_control_type), intent(in) :: Model
 
 !--- In
-    allocate (Tbd%cactiv (IM))
-    Tbd%cactiv  = 0
+
 !--- sub-grid cloud radiation
     if ( Model%isubc_lw == 2 .or. Model%isubc_sw == 2 ) then
       allocate (Tbd%icsdsw (IM))
@@ -4310,14 +4325,18 @@ module GFS_typedefs
     Tbd%htswc = clear_val
     Tbd%htsw0 = clear_val
 
-    allocate(Tbd%forcet(IM, Model%levs))
-    allocate(Tbd%forceq(IM, Model%levs))
-    allocate(Tbd%prevst(IM, Model%levs))
-    allocate(Tbd%prevsq(IM, Model%levs))
-    Tbd%forcet = clear_val
-    Tbd%forceq = clear_val
-    Tbd%prevst = clear_val
-    Tbd%prevsq = clear_val
+    if (Model%imfdeepcnv == 3) then
+       allocate(Tbd%forcet(IM, Model%levs))
+       allocate(Tbd%forceq(IM, Model%levs))
+       allocate(Tbd%prevst(IM, Model%levs))
+       allocate(Tbd%prevsq(IM, Model%levs))
+       allocate(Tbd%cactiv(IM))
+       Tbd%forcet = clear_val
+       Tbd%forceq = clear_val
+       Tbd%prevst = clear_val
+       Tbd%prevsq = clear_val
+       Tbd%cactiv = zero
+   end if
 #endif
 
   end subroutine tbd_create
