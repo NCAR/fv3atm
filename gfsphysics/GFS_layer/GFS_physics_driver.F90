@@ -2082,9 +2082,9 @@ module module_physics_driver
              write(0,*) 'Error in call to lsm_ruc: ' // trim(errmsg)
              stop
          end if
-#endif
 #else
         write (0,*) 'RUC LSM is available only in CCPP'
+        stop
 #endif
          end if
 
