@@ -226,7 +226,7 @@ module FV3GFS_io_mod
        temp2d(i,j,44) = IPD_Data(nb)%Sfcprop%stc(ix,2)
        temp2d(i,j,45) = IPD_Data(nb)%Sfcprop%stc(ix,3)
        temp2d(i,j,46) = IPD_Data(nb)%Sfcprop%stc(ix,4)
-     elseif (Model%lsm == Model%lsm_ruc) then
+     elseif ( Model%lsm == Model%lsm_ruc ) then
 #ifdef CCPP  
         write (0,*) 'RUC LSM is used'
        temp2d(i,j,35) = IPD_Data(nb)%Sfcprop%sh2o(ix,1)
@@ -483,10 +483,12 @@ else
       allocate(sfc_name2(nvar_s2m+nvar_s2o))
       allocate(sfc_name3(nvar_s3))
       allocate(sfc_var2(nx,ny,nvar_s2m+nvar_s2o))
-      allocate(sfc_var3(nx,ny,Model%lsoil,nvar_s3))
 #ifdef CCPP 
+    if  ( Model%lsm == Model%lsm_ruc ) then
+      allocate(sfc_var3(nx,ny,Model%lsoil,nvar_s3))
       allocate(sfc_var3_lsm(nx,ny,Model%lsoil_lsm,nvar_s3))
       sfc_var3_lsm  = -9999._kind_phys
+    endif
 #endif
       sfc_var2 = -9999._kind_phys
       sfc_var3 = -9999._kind_phys
@@ -831,13 +833,13 @@ else
       allocate(sfc_var2(nx,ny,nvar2m+nvar2o))
       allocate(sfc_var3(nx,ny,Model%lsoil,nvar3))
 #ifdef CCPP
+    if  ( Model%lsm == Model%lsm_ruc ) then
       allocate(sfc_var3_lsm(nx,ny,Model%lsoil_lsm,nvar3))
+      sfc_var3_lsm = -9999._kind_phys
+   endif
 #endif
       sfc_var2 = -9999._kind_phys
       sfc_var3 = -9999._kind_phys
-#ifdef CCPP
-      sfc_var3_lsm = -9999._kind_phys
-#endif
       !--- names of the 2D variables to save
       sfc_name2(1)  = 'slmsk'
       sfc_name2(2)  = 'tsea'    !tsfc
