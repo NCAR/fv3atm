@@ -2277,12 +2277,11 @@ module GFS_diagnostics
       ExtDiag(idx)%axes = 2
       ExtDiag(idx)%name = 'slc_'//trim(xtra)
       ExtDiag(idx)%desc = 'liquid soil mositure at layer-'//trim(xtra)
-      ExtDiag(idx)%unit = 'xxx'
+      ExtDiag(idx)%unit = 'm**3/m**3'
       ExtDiag(idx)%mod_name = 'gfs_sfc'
       allocate (ExtDiag(idx)%data(nblks))
       do nb = 1,nblks
-        ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%slc(:,num)
-!        ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%sh2o(:,num)
+        ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%sh2o(:,num)
       enddo
     enddo
   else
@@ -2292,7 +2291,7 @@ module GFS_diagnostics
       ExtDiag(idx)%axes = 2
       ExtDiag(idx)%name = 'slc_'//trim(xtra)
       ExtDiag(idx)%desc = 'liquid soil mositure at layer-'//trim(xtra)
-      ExtDiag(idx)%unit = 'xxx'
+      ExtDiag(idx)%unit = 'm**3/m**3'
       ExtDiag(idx)%mod_name = 'gfs_sfc'
       allocate (ExtDiag(idx)%data(nblks))
       do nb = 1,nblks
@@ -2326,8 +2325,7 @@ module GFS_diagnostics
     ExtDiag(idx)%mod_name = 'gfs_sfc'
     allocate (ExtDiag(idx)%data(nblks))
     do nb = 1,nblks
-!      ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%smois(:,1)
-      ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%smc(:,1)
+      ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%smois(:,1)
     enddo
   else
     idx = idx + 1
@@ -2364,11 +2362,9 @@ module GFS_diagnostics
     ExtDiag(idx)%mod_name = 'gfs_sfc'
     allocate (ExtDiag(idx)%data(nblks))
     do nb = 1,nblks
-!      ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%smois(:,2)
-      ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%smc(:,2)
+      ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%smois(:,2)
     enddo
   else
-  if (Model%lsm == Model%lsm_ruc) then
     idx = idx + 1
     ExtDiag(idx)%axes = 2
     ExtDiag(idx)%name = 'soilw2'
@@ -2403,8 +2399,7 @@ module GFS_diagnostics
     ExtDiag(idx)%mod_name = 'gfs_sfc'
     allocate (ExtDiag(idx)%data(nblks))
     do nb = 1,nblks
-!      ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%smois(:,3)
-      ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%smc(:,3)
+      ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%smois(:,3)
     enddo
   else
     idx = idx + 1
@@ -2441,8 +2436,7 @@ module GFS_diagnostics
     ExtDiag(idx)%mod_name = 'gfs_sfc'
     allocate (ExtDiag(idx)%data(nblks))
     do nb = 1,nblks
-!      ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%smois(:,4)
-      ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%smc(:,4)
+      ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%smois(:,4)
     enddo
   else
     idx = idx + 1
@@ -2479,8 +2473,7 @@ module GFS_diagnostics
     ExtDiag(idx)%mod_name = 'gfs_sfc'
     allocate (ExtDiag(idx)%data(nblks))
     do nb = 1,nblks
-      ! ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%tslb(:,1)
-      ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%stc(:,1)
+      ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%tslb(:,1)
     enddo
   else
     idx = idx + 1
@@ -2517,8 +2510,7 @@ module GFS_diagnostics
     ExtDiag(idx)%mod_name = 'gfs_sfc'
     allocate (ExtDiag(idx)%data(nblks))
     do nb = 1,nblks
-!      ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%tslb(:,2)
-      ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%stc(:,2)
+      ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%tslb(:,2)
     enddo
   else
     idx = idx + 1
@@ -2555,8 +2547,7 @@ module GFS_diagnostics
     ExtDiag(idx)%mod_name = 'gfs_sfc'
     allocate (ExtDiag(idx)%data(nblks))
     do nb = 1,nblks
-!      ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%tslb(:,3)
-      ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%stc(:,3)
+      ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%tslb(:,3)
     enddo
   else
     idx = idx + 1
@@ -2593,8 +2584,7 @@ module GFS_diagnostics
     ExtDiag(idx)%mod_name = 'gfs_sfc'
     allocate (ExtDiag(idx)%data(nblks))
     do nb = 1,nblks
-!      ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%tslb(:,4)
-      ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%stc(:,4)
+      ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%tslb(:,4)
     enddo
   else
     idx = idx + 1
