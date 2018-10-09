@@ -2338,6 +2338,7 @@ module GFS_typedefs
     Statein%slc   = clear_val
 
 #ifdef CCPP
+  if (Model%lsm == Model%lsm_ruc) then
     allocate (Statein%keepsmfr (IM,Model%lsoil_lsm))
     allocate (Statein%smois    (IM,Model%lsoil_lsm))
     allocate (Statein%tslb     (IM,Model%lsoil_lsm))
@@ -2347,6 +2348,7 @@ module GFS_typedefs
     Statein%smois    = clear_val
     Statein%tslb     = clear_val
     Statein%sh2o     = clear_val
+  endif
 #endif
 
   end subroutine statein_create
