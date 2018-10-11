@@ -491,13 +491,8 @@ module module_physics_driver
                  ntrw, ntsw, ntrnc, ntsnc, ntot3d, ntgl, ntgnc, ntclamt,&
                  ims, ime, kms, kme, its, ite, kts, kte, imp_physics,   &
                  ntwa, ntia
-#ifdef CCPP
-      integer :: lsoil_lsm
-      integer :: landcat, soilcat
-#endif
 
 #ifdef CCPP
-
       integer :: i, kk, ic, k, n, iter, levshcm, tracers,               &
                  tottracer, nsamftrac, num2, num3, ntk,                 &
                  nn, nncl!, seconds, k1, nshocm, nshoc
@@ -748,7 +743,6 @@ module module_physics_driver
       ix      = Interstitial(nt)%ix
       im      = Interstitial(nt)%im
       ipr     = Interstitial(nt)%ipr
-      lsoil_lsm = Model%lsoil_lsm
 #else
       ix      = size(Grid%xlon,1)
       im      = size(Grid%xlon,1)
@@ -756,10 +750,6 @@ module module_physics_driver
 #endif
       levs    = Model%levs
       lsoil   = Model%lsoil
-#ifdef CCPP
-      landcat   = Model%nlcat
-      soilcat   = Model%nscat
-#endif
       ntrac   = Model%ntrac
       dtf     = Model%dtf
       dtp     = Model%dtp
@@ -1114,19 +1104,6 @@ module module_physics_driver
           vegtype(i)  = int( Sfcprop%vtype(i)+0.5 )
           slopetyp(i) = int( Sfcprop%slope(i)+0.5 )    !! clu: slope -> slopetyp
         endif
-#ifdef CCPP
-          if (Model%isot == 1) then
-            soilcat = 19 ! stasgo
-          else
-            soilcat = 9  ! zobler
-          endif
-
-          if(Model%ivegsrc == 1) then
-            landcat = 20  ! IGBP - "MODI-RUC"
-          else
-            landcat = 13
-          endif
-#endif 
 
 !  --- ...  xw: transfer ice thickness & concentration from global to local variables
         zice(i) = Sfcprop%hice(i)
@@ -1881,7 +1858,7 @@ module module_physics_driver
 
 !  --- ...  surface energy balance over land
 !
-         if (Model%lsm == 1) then                          ! noah lsm call
+         if (Model%lsm == Model%lsm_noah) then                          ! noah lsm call
 
 !     if (lprnt) write(0,*)' tsead=',tsea(ipr),' tsurf=',tsurf(ipr),iter &
 !    &,' pgr=',pgr(ipr),' sfcemis=',sfcemis(ipr)
@@ -2025,8 +2002,6 @@ module module_physics_driver
               Interstitial(nt)%soiltype= soiltyp     ! intent(in)
               Interstitial(nt)%vegtype = vegtype     ! intent(in)
               Interstitial(nt)%sigmaf  = sigmaf      ! intent(in)
-              Interstitial(nt)%soilcat = soilcat     ! intent(in)
-              Interstitial(nt)%landcat = landcat     ! intent(in)
               !Radtend%semis                         ! intent(in)
               !Diag%dlwsfci                          ! intent(in)
               !Diag%dswsfci                          ! intent(in)
@@ -2137,7 +2112,7 @@ module module_physics_driver
 !       if (lprnt) write(0,*)' tseabeficemodel =',Sfcprop%tsfc(ipr),' me=',me   &
 !    &,   ' kdt=',kdt
 
-      if (Model%lsm == 1) then  ! Noah lsm
+      if (Model%lsm == Model%lsm_noah) then  ! DH* Not for RUC - just for Noah LSM? Should we implement a namelist option for this?
 !  --- ...  surface energy balance over seaice
 
          if (Model%cplflx) then
@@ -2240,7 +2215,7 @@ module module_physics_driver
 !  ---  outputs:
              qss, Diag%cmm, Diag%chh, evap, hflx)
          endif
-       endif ! lsm==1 for sea ice
+       endif ! lsm == lsm_noah for sea ice
 
 !  --- ...  lu: update flag_iter and flag_guess
 #ifdef CCPP
@@ -7097,39 +7072,41 @@ module module_physics_driver
       endif
 #endif
 
+      if (Model%lsm == Model%lsm_noah) then  ! DH* Not for RUC - just for Noah LSM? Should we implement a namelist option for this?
 !  --- ...  xw: return updated ice thickness & concentration to global array
 #ifdef CCPP
-      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling sfc_sice_post through option B'
-      ! Copy local variables from driver to appropriate interstitial variables
-      !Interstitial(nt)%im = im             ! intent(in) - set in Interstitial(nt)%create
-      Interstitial(nt)%islmsk = islmsk      ! intent(in)
-      !Sfcprop%tsfc                         ! intent(in)
-      !Sfcprop%fice                         ! intent(inout)
-      !Sfcprop%hice                         ! intent(inout)
-      !Sfcprop%tisfc                        ! intent(inout)
-      !cdata_block(nb,nt)%errmsg = errmsg   ! intent(out)
-      !cdata_block(nb,nt)%errflg = errflg   ! intent(out)
-      call ccpp_physics_run(cdata_block(nb,nt), scheme_name="sfc_sice_post", ierr=ierr)
-      ! Copy back intent(inout) interstitial variables to local variables in driver
-      errmsg = trim(cdata_block(nb,nt)%errmsg)
-      errflg = cdata_block(nb,nt)%errflg
-      if (errflg/=0) then
-        write(0,*) 'Error in call to sfc_sice_post: ' //trim(errmsg)
-        stop
-      end if
+        if (Model%me==0) write(0,*) 'CCPP DEBUG: calling sfc_sice_post through option B'
+        ! Copy local variables from driver to appropriate interstitial variables
+        !Interstitial(nt)%im = im             ! intent(in) - set in Interstitial(nt)%create
+        Interstitial(nt)%islmsk = islmsk      ! intent(in)
+        !Sfcprop%tsfc                         ! intent(in)
+        !Sfcprop%fice                         ! intent(inout)
+        !Sfcprop%hice                         ! intent(inout)
+        !Sfcprop%tisfc                        ! intent(inout)
+        !cdata_block(nb,nt)%errmsg = errmsg   ! intent(out)
+        !cdata_block(nb,nt)%errflg = errflg   ! intent(out)
+        call ccpp_physics_run(cdata_block(nb,nt), scheme_name="sfc_sice_post", ierr=ierr)
+        ! Copy back intent(inout) interstitial variables to local variables in driver
+        errmsg = trim(cdata_block(nb,nt)%errmsg)
+        errflg = cdata_block(nb,nt)%errflg
+        if (errflg/=0) then
+          write(0,*) 'Error in call to sfc_sice_post: ' //trim(errmsg)
+          stop
+        end if
 #else
-      do i = 1, im
-        if (islmsk(i) == 2) then
-          Sfcprop%hice(i)  = zice(i)
-          Sfcprop%fice(i)  = cice(i)
-          Sfcprop%tisfc(i) = tice(i)
-        else
-          Sfcprop%hice(i)  = 0.0
-          Sfcprop%fice(i)  = 0.0
-          Sfcprop%tisfc(i) = Sfcprop%tsfc(i)
-        endif
-      enddo
+        do i = 1, im
+          if (islmsk(i) == 2) then
+            Sfcprop%hice(i)  = zice(i)
+            Sfcprop%fice(i)  = cice(i)
+            Sfcprop%tisfc(i) = tice(i)
+          else
+            Sfcprop%hice(i)  = 0.0
+            Sfcprop%fice(i)  = 0.0
+            Sfcprop%tisfc(i) = Sfcprop%tsfc(i)
+          endif
+        enddo
 #endif
+       endif ! lsm == lsm_noah for sea ice
 
 #ifndef CCPP
 !!  --- ...  return updated smsoil and stsoil to global arrays
