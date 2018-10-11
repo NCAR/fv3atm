@@ -69,7 +69,7 @@ module FV3GFS_io_mod
   !--- GFDL FMS restart containers
   character(len=32),    allocatable,         dimension(:)       :: oro_name2, sfc_name2, sfc_name3
   real(kind=kind_phys), allocatable, target, dimension(:,:,:)   :: oro_var2, sfc_var2, phy_var2
-  real(kind=kind_phys), allocatable, target, dimension(:,:,:,:) :: sfc_var3, phy_var3, sfc_var3_lsm
+  real(kind=kind_phys), allocatable, target, dimension(:,:,:,:) :: sfc_var3, phy_var3
 
   real(kind=kind_phys) :: zhour
 !
@@ -213,7 +213,7 @@ module FV3GFS_io_mod
        temp2d(i,j,32) = IPD_Data(nb)%Sfcprop%f10m(ix)
        temp2d(i,j,33) = IPD_Data(nb)%Sfcprop%tprcp(ix)
        temp2d(i,j,34) = IPD_Data(nb)%Sfcprop%srflag(ix)
-     if (Model%lsm == 1) then                          ! noah lsm call
+     if (Model%lsm == Model%lsm_noah) then
        temp2d(i,j,35) = IPD_Data(nb)%Sfcprop%slc(ix,1)
        temp2d(i,j,36) = IPD_Data(nb)%Sfcprop%slc(ix,2)
        temp2d(i,j,37) = IPD_Data(nb)%Sfcprop%slc(ix,3)
@@ -226,7 +226,7 @@ module FV3GFS_io_mod
        temp2d(i,j,44) = IPD_Data(nb)%Sfcprop%stc(ix,2)
        temp2d(i,j,45) = IPD_Data(nb)%Sfcprop%stc(ix,3)
        temp2d(i,j,46) = IPD_Data(nb)%Sfcprop%stc(ix,4)
-     elseif ( Model%lsm == Model%lsm_ruc ) then
+     elseif (Model%lsm == Model%lsm_ruc) then
 #ifdef CCPP  
         write (0,*) 'RUC LSM is used'
        temp2d(i,j,35) = IPD_Data(nb)%Sfcprop%sh2o(ix,1)
@@ -243,6 +243,7 @@ module FV3GFS_io_mod
        temp2d(i,j,46) = IPD_Data(nb)%Sfcprop%tslb(ix,4)
 else
        write (0,*) 'RUC LSM is available only in CCPP'
+       stop
 #endif
      endif ! LSM choice
        temp2d(i,j,47) = IPD_Data(nb)%Sfcprop%t2m(ix)
@@ -386,9 +387,6 @@ else
     integer :: nvar_o2, nvar_s2m, nvar_s2o, nvar_s3
     real(kind=kind_phys), pointer, dimension(:,:)   :: var2_p => NULL()
     real(kind=kind_phys), pointer, dimension(:,:,:) :: var3_p => NULL()
-#ifdef CCPP
-    real(kind=kind_phys), pointer, dimension(:,:,:) :: var3_p_lsm => NULL()
-#endif
     !--- local variables for sncovr calculation
     integer :: vegtyp
     logical :: mand
@@ -483,13 +481,7 @@ else
       allocate(sfc_name2(nvar_s2m+nvar_s2o))
       allocate(sfc_name3(nvar_s3))
       allocate(sfc_var2(nx,ny,nvar_s2m+nvar_s2o))
-#ifdef CCPP 
-    if  ( Model%lsm == Model%lsm_ruc ) then
       allocate(sfc_var3(nx,ny,Model%lsoil,nvar_s3))
-      allocate(sfc_var3_lsm(nx,ny,Model%lsoil_lsm,nvar_s3))
-      sfc_var3_lsm  = -9999._kind_phys
-    endif
-#endif
       sfc_var2 = -9999._kind_phys
       sfc_var3 = -9999._kind_phys
  
@@ -567,41 +559,16 @@ else
       nullify(var2_p)
  
       !--- names of the 2D variables to save
-    
-!     if (Model%lsm == 1) then                          ! noah lsm 
       sfc_name3(1) = 'stc'
       sfc_name3(2) = 'smc'
       sfc_name3(3) = 'slc'
-!     elseif (Model%lsm == Model%lsm_ruc) then
-!#ifdef CCPP  
-!        write (0,*) 'RUC LSM soil names'
-!      sfc_name3(1) = 'tslb'
-!      sfc_name3(2) = 'smois'
-!      sfc_name3(3) = 'sh2o'
-!#else
-!        write (0,*) 'RUC LSM is available only in CCPP'
-!#endif
-!     endif
  
       !--- register the 3D fields
-!     if (Model%lsm == 1) then ! Noah lsm
       do num = 1,nvar_s3
         var3_p => sfc_var3(:,:,:,num)
         id_restart = register_restart_field(Sfc_restart, fn_srf, sfc_name3(num), var3_p, domain=fv_domain)
       enddo
       nullify(var3_p)
-!     elseif (Model%lsm == Model%lsm_ruc) then
-!#ifdef CCPP  
-!        write (0,*) 'read restart for RUC LSM'
-!      do num = 1,nvar_s3
-!        var3_p_lsm => sfc_var3_lsm(:,:,:,num)
-!        id_restart = register_restart_field(Sfc_restart, fn_srf, sfc_name3(num), var3_p_lsm, domain=fv_domain)
-!      enddo
-!      nullify(var3_p_lsm)
-!#else
-!        write (0,*) 'RUC LSM is available only in CCPP'
-!#endif
-!     endif ! LSM choice
     endif
  
     !--- read the surface restart/data
@@ -724,7 +691,7 @@ else
           Sfcprop(nb)%qrain(ix)   = sfc_var2(i,j,50)
         endif
 
-!     if (Model%lsm == 1) then                          ! noah lsm 
+        !--- 3D variables
         do lsoil = 1,Model%lsoil
             !--- stc
             Sfcprop(nb)%stc(ix,lsoil) = sfc_var3(i,j,lsoil,1)
@@ -733,22 +700,6 @@ else
             !--- slc
             Sfcprop(nb)%slc(ix,lsoil) = sfc_var3(i,j,lsoil,3)
         enddo
-!     elseif (Model%lsm == Model%lsm_ruc) then
-!#ifdef CCPP  
-!        write (0,*) 'RUC LSM is used'
-!        do lsoil = 1,Model%lsoil_lsm
-!            !--- tslb
-!            Sfcprop(nb)%tslb(ix,lsoil) = sfc_var3_lsm(i,j,lsoil,1)
-!            !--- smois
-!            Sfcprop(nb)%smois(ix,lsoil) = sfc_var3_lsm(i,j,lsoil,2)
-!            !--- sh2o
-!            Sfcprop(nb)%sh2o(ix,lsoil) = sfc_var3_lsm(i,j,lsoil,3)
-!        enddo
-!#else
-!        write (0,*) 'RUC LSM is available only in CCPP'
-!#endif
-!    endif
-
       enddo
     enddo
 
@@ -810,9 +761,6 @@ else
     character(len=32) :: fn_srf = 'sfc_data.nc'
     real(kind=kind_phys), pointer, dimension(:,:)   :: var2_p => NULL()
     real(kind=kind_phys), pointer, dimension(:,:,:) :: var3_p => NULL()
-#ifdef CCPP
-    real(kind=kind_phys), pointer, dimension(:,:,:) :: var3_p_lsm => NULL()
-#endif
 
     nvar2m = 32
     nvar2o = 18
@@ -832,14 +780,9 @@ else
       allocate(sfc_name3(nvar3))
       allocate(sfc_var2(nx,ny,nvar2m+nvar2o))
       allocate(sfc_var3(nx,ny,Model%lsoil,nvar3))
-#ifdef CCPP
-    if  ( Model%lsm == Model%lsm_ruc ) then
-      allocate(sfc_var3_lsm(nx,ny,Model%lsoil_lsm,nvar3))
-      sfc_var3_lsm = -9999._kind_phys
-   endif
-#endif
       sfc_var2 = -9999._kind_phys
       sfc_var3 = -9999._kind_phys
+
       !--- names of the 2D variables to save
       sfc_name2(1)  = 'slmsk'
       sfc_name2(2)  = 'tsea'    !tsfc
@@ -914,41 +857,17 @@ else
       nullify(var2_p)
  
       !--- names of the 2D variables to save
-!     if (Model%lsm == 1) then                          ! noah lsm 
       sfc_name3(1) = 'stc'
       sfc_name3(2) = 'smc'
       sfc_name3(3) = 'slc'
-!     elseif (Model%lsm == Model%lsm_ruc) then
-!#ifdef CCPP  
-!        write (0,*) 'RUC LSM names'
-!      sfc_name3(1) = 'tslb'
-!      sfc_name3(2) = 'smois'
-!      sfc_name3(3) = 'sh2o'
-!#else
-!        write (0,*) 'RUC LSM is available only in CCPP'
-!#endif
-     endif
-
-!     if (Model%lsm == 1) then                          ! noah lsm 
+ 
       !--- register the 3D fields
       do num = 1,nvar3
         var3_p => sfc_var3(:,:,:,num)
         id_restart = register_restart_field(Sfc_restart, fn_srf, sfc_name3(num), var3_p, domain=fv_domain)
       enddo
       nullify(var3_p)
-!     elseif (Model%lsm == Model%lsm_ruc) then
-!#ifdef CCPP  
-!      do num = 1,nvar3
-!        var3_p_lsm => sfc_var3_lsm(:,:,:,num)
-!        id_restart = register_restart_field(Sfc_restart, fn_srf, sfc_name3(num), var3_p_lsm, domain=fv_domain)
-!      enddo
-!      nullify(var3_p_lsm)
-!#else
-!        write (0,*) 'RUC LSM is available only in CCPP'
-!#endif
-!     endif
-
-!    endif
+    endif
    
     do nb = 1, Atm_block%nblks
       do ix = 1, Atm_block%blksz(nb)
@@ -1059,7 +978,6 @@ else
           sfc_var2(i,j,50) = Sfcprop(nb)%qrain(ix)
         endif
  
-!     if (Model%lsm == 1) then                          ! noah lsm 
         !--- 3D variables
         do lsoil = 1,Model%lsoil
           !--- stc
@@ -1069,21 +987,6 @@ else
           !--- slc
           sfc_var3(i,j,lsoil,3) = Sfcprop(nb)%slc(ix,lsoil)
         enddo
-!     elseif (Model%lsm == Model%lsm_ruc) then
-!#ifdef CCPP  
-!        do lsoil = 1,Model%lsoil_lsm
-!          !--- tslb
-!          sfc_var3_lsm(i,j,lsoil,1) = Sfcprop(nb)%tslb(ix,lsoil)
-!          !--- smois
-!          sfc_var3_lsm(i,j,lsoil,2) = Sfcprop(nb)%smois(ix,lsoil)
-!          !--- sh2o
-!          sfc_var3_lsm(i,j,lsoil,3) = Sfcprop(nb)%sh2o(ix,lsoil)
-!        enddo
-!#else
-!        write (0,*) 'RUC LSM is available only in CCPP'
-!#endif
-!     endif
-
       enddo
     enddo
 
