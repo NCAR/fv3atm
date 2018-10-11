@@ -250,10 +250,6 @@ module GFS_typedefs
 !! | IPD_Data(nb)%Statein%smc                        |                                                           | total soil moisture                                                                 | frac          |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Statein%stc                        |                                                           | soil temperature                                                                    | K             |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Statein%slc                        |                                                           | liquid soil moisture                                                                | frac          |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Statein%sh2o                       |                                                           | volume fraction of unfrozen soil moisture for lsm                                   | frac          |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Statein%keepsmfr                   |                                                           | volume fraction of frozen soil moisture for lsm                                     | frac          |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Statein%smois                      |                                                           | volumetric fraction of soil moisture for lsm                                        | frac          |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Statein%tslb                       |                                                           | soil temperature for land surface model                                             | K             |    2 | real    | kind_phys | none   | F        |
 !!
 #endif
   type GFS_statein_type
@@ -281,14 +277,6 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: smc (:,:)   => null()  !< soil moisture content
     real (kind=kind_phys), pointer :: stc (:,:)   => null()  !< soil temperature content
     real (kind=kind_phys), pointer :: slc (:,:)   => null()  !< soil liquid water content
-
-#ifdef CCPP
-! soil variables for other than Noah lsms
-    real (kind=kind_phys), pointer :: smois (:,:)      => null()  !< soil moisture content
-    real (kind=kind_phys), pointer :: tslb  (:,:)      => null()  !< soil temperature content
-    real (kind=kind_phys), pointer :: sh2o  (:,:)      => null()  !< soil liquid water content
-    real (kind=kind_phys), pointer :: keepsmfr (:,:)   => null()  !< soil frozen water content
-#endif
 
     contains
       procedure :: create  => statein_create  !<   allocate array data
@@ -843,12 +831,10 @@ module GFS_typedefs
 !! | IPD_Control%lradar                   | flag_for_radar_reflectivity                                                   | flag for radar reflectivity                             | flag          |    0 | logical   |           | none   | F        |
 !! | IPD_Control%lgfdlmprad               |                                                                               | flag for GFDL mp scheme and radiation consistency       |               |    0 | logical   |           | none   | F        |
 !! | IPD_Control%lsm                      | flag_for_land_surface_scheme                                                  | flag for land surface model                             | flag          |    0 | integer   |           | none   | F        |
+!! | IPD_Control%lsm_noah                 | flag_for_noah_land_surface_scheme                                             | flag for NOAH land surface model                        | flag          |    0 | integer   |           | none   | F        |
 !! | IPD_Control%lsm_ruc                  | flag_for_ruc_land_surface_scheme                                              | flag for RUC land surface model                         | flag          |    0 | integer   |           | none   | F        |
 !! | IPD_Control%lsoil                    | soil_vertical_dimension                                                       | number of soil layers                                   | count         |    0 | integer   |           | none   | F        |
 !! | IPD_Control%lsoil_lsm                | soil_vertical_dimension_for_land_surface_model                                | number of soil layers for land surface model            | count         |    0 | integer   |           | none   | F        |
-!! | IPD_Control%ivegsrc                  | vegetation_type                                                               | land use classification                                 | index         |    0 | integer   |           | none   | F        |
-!! | IPD_Control%nscat                    | number_of_soil_categories                                                     | number of soil categories                               | index         |    0 | integer   |           | none   | F        |
-!! | IPD_Control%nlcat                    | number_of_land_categories                                                     | number of landuse categories                            | index         |    0 | integer   |           | none   | F        |
 !! | IPD_Control%ivegsrc                  | vegetation_type_dataset_choice                                                | land use dataset choice                                 | index         |    0 | integer   |           | none   | F        |
 !! | IPD_Control%isot                     | soil_type_dataset_choice                                                      | soil type dataset choice                                | index         |    0 | integer   |           | none   | F        |
 !! | IPD_Control%mom4ice                  | flag_for_mom4_coupling                                                        | flag controls mom4 sea ice                              | flag          |    0 | logical   |           | none   | F        |
@@ -1159,12 +1145,11 @@ module GFS_typedefs
 
     !--- land/surface model parameters
     integer              :: lsm             !< flag for land surface model lsm=1 for noah lsm
+    integer              :: lsm_noah=1      !< flag for NOAH land surface model
     integer              :: lsm_ruc=2       !< flag for RUC land surface model
     integer              :: lsoil           !< number of soil layers
 #ifdef CCPP
     integer              :: lsoil_lsm       !< number of soil layers internal to land surface model
-    integer              :: nscat           !< number of soil categories
-    integer              :: nlcat           !< number of landuse categories
 #endif
     integer              :: ivegsrc         !< ivegsrc = 0   => USGS,
                                             !< ivegsrc = 1   => IGBP (20 category)
@@ -2069,8 +2054,6 @@ module GFS_typedefs
 !! | IPD_Interstitial(nt)%snohf                         | snow_freezing_rain_upward_latent_heat_flux                                                     | latent heat flux due to snow and frz rain                                           | W m-2         |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%snowmp                        | lwe_thickness_of_snow_amount                                                                   | explicit snow fall on physics timestep                                              | m             |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%snowmt                        | surface_snow_melt                                                                              | snow melt during timestep                                                           | m             |    1 | real        | kind_phys | none   | F        |
-!! | IPD_Interstitial(nt)%soilcat                       | number_of_soil_type                                                                            | number of soil types                                                                | index         |    0 | integer     |           | none   | F        |
-!! | IPD_Interstitial(nt)%landcat                       | number_of_vegetation_type                                                                      | number of vegetation types                                                          | index         |    0 | integer     |           | none   | F        |
 !! | IPD_Interstitial(nt)%soiltype                      | soil_type_classification                                                                       | soil type at each grid cell                                                         | index         |    1 | integer     |           | none   | F        |
 !! | IPD_Interstitial(nt)%stress                        | surface_wind_stress                                                                            | surface wind stress                                                                 | m2 s-2        |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%theta                         | angle_from_east_of_maximum_subgrid_orographic_variations                                       | angle with_respect to east of maximum subgrid orographic variations                 | degrees       |    1 | real        | kind_phys | none   | F        |
@@ -2121,7 +2104,6 @@ module GFS_typedefs
     real (kind=kind_phys), pointer      :: clouds(:,:,:)    => null()  !<
     real (kind=kind_phys), pointer      :: clw(:,:,:)       => null()  !<
     real (kind=kind_phys), pointer      :: clw_surf(:)      => null()  !<
-    real (kind=kind_phys), pointer      :: qwv_surf(:)      => null()  !<
     real (kind=kind_phys), pointer      :: clx(:,:)         => null()  !<
     real (kind=kind_phys), pointer      :: cndm_surf(:)     => null()  !<
     real (kind=kind_phys), pointer      :: cnvc(:,:)        => null()  !<
@@ -2250,8 +2232,6 @@ module GFS_typedefs
     real (kind=kind_phys), pointer      :: snowmp(:)        => null()  !<
     real (kind=kind_phys), pointer      :: snowmt(:)        => null()  !<
     integer, pointer                    :: soiltype(:)      => null()  !<
-    integer                             :: soilcat                     !<
-    integer                             :: landcat                     !<
     real (kind=kind_phys), pointer      :: stress(:)        => null()  !<
     real (kind=kind_phys), pointer      :: theta(:)         => null()  !<
     real (kind=kind_phys), pointer      :: tlvl(:,:)        => null()  !<
@@ -2264,7 +2244,6 @@ module GFS_typedefs
     real (kind=kind_phys), pointer      :: tsfa(:)          => null()  !<
     real (kind=kind_phys), pointer      :: tsfg(:)          => null()  !<
     real (kind=kind_phys), pointer      :: tsnow(:)         => null()  !<
-    real (kind=kind_phys), pointer      :: albedo(:)        => null()  !<
     real (kind=kind_phys), pointer      :: tsurf(:)         => null()  !<
     real (kind=kind_phys), pointer      :: ud_mf(:,:)       => null()  !<
     real (kind=kind_phys), pointer      :: ulwsfc_cice(:)   => null()  !<
@@ -2378,20 +2357,6 @@ module GFS_typedefs
     Statein%smc   = clear_val
     Statein%stc   = clear_val
     Statein%slc   = clear_val
-
-#ifdef CCPP
-  if (Model%lsm == Model%lsm_ruc) then
-    allocate (Statein%keepsmfr (IM,Model%lsoil_lsm))
-    allocate (Statein%smois    (IM,Model%lsoil_lsm))
-    allocate (Statein%tslb     (IM,Model%lsoil_lsm))
-    allocate (Statein%sh2o     (IM,Model%lsoil_lsm))
-
-    Statein%keepsmfr = clear_val
-    Statein%smois    = clear_val
-    Statein%tslb     = clear_val
-    Statein%sh2o     = clear_val
-  endif
-#endif
 
   end subroutine statein_create
 
@@ -3018,8 +2983,6 @@ module GFS_typedefs
     integer              :: lsoil          =  4              !< number of soil layers
 #ifdef CCPP
     integer              :: lsoil_lsm      =  -1             !< number of soil layers internal to land surface model; -1 use lsoil
-    integer              :: nscat          =  19 
-    integer              :: nlcat          =  20 
 #endif
     integer              :: ivegsrc        =  2              !< ivegsrc = 0   => USGS,
                                                              !< ivegsrc = 1   => IGBP (20 category)
@@ -3199,7 +3162,6 @@ module GFS_typedefs
                           !--- land/surface model control
 #ifdef CCPP
                                lsm, lsoil, lsoil_lsm, nmtvr, ivegsrc, mom4ice, use_ufo,     &
-                               nscat, nlcat,                                                &
 #else
                                lsm, lsoil, nmtvr, ivegsrc, mom4ice, use_ufo,                &
 #endif
@@ -3425,8 +3387,6 @@ module GFS_typedefs
     else
       Model%lsoil_lsm      = lsoil_lsm
     end if
-    Model%nscat            = nscat
-    Model%nlcat            = nlcat
 #endif
     Model%ivegsrc          = ivegsrc
     Model%isot             = isot
@@ -5175,8 +5135,6 @@ module GFS_typedefs
     Interstitial%snohf        = clear_val
     Interstitial%snowmt       = clear_val
     Interstitial%soiltype     = 0
-    Interstitial%soilcat      = 19
-    Interstitial%landcat      = 20
     Interstitial%stress       = clear_val
     Interstitial%theta        = clear_val
     Interstitial%trans        = clear_val
@@ -5307,8 +5265,6 @@ module GFS_typedefs
     write (0,*) 'sum(Interstitial%idxday      ) = ', sum(Interstitial%idxday      )
     write (0,*) 'sum(Interstitial%islmsk      ) = ', sum(Interstitial%islmsk      )
     write (0,*) 'Interstitial%iter              = ', Interstitial%iter
-    write (0,*) 'Interstitial%soilcat           = ', Interstitial%soilcat
-    write (0,*) 'Interstitial%landcat           = ', Interstitial%landcat
     write (0,*) 'Interstitial%kb                = ', Interstitial%kb
     write (0,*) 'sum(Interstitial%kbot        ) = ', sum(Interstitial%kbot        )
     write (0,*) 'sum(Interstitial%kcnv        ) = ', sum(Interstitial%kcnv        )
