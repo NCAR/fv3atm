@@ -485,7 +485,7 @@ module module_physics_driver
 
 !--- INTEGER VARIABLES
       integer :: me, ipr, ix, im, levs, ntrac, nvdiff, kdt,             &
-                 ntoz, ntcw, ntiw, ncld, ntke, ntlnc, ntinc, lsoil,     &
+                 ntoz, ntcw, ntiw, ncld,ntke,ntkev, ntlnc, ntinc, lsoil,&
                  ntrw, ntsw, ntrnc, ntsnc, ntot3d, ntgl, ntgnc, ntclamt,&
                  ims, ime, kms, kme, its, ite, kts, kte, imp_physics,   &
                  ntwa, ntia
@@ -760,9 +760,6 @@ module module_physics_driver
       ncld    = Model%ncld
       ntke    = Model%ntke
 !
-!  scal-aware TKE-based moist EDMF (satmedmfvdif) scheme is coded assuming
-!    ntke=ntrac. If ntrac > ntke, the code needs to be modified. (Jongil Han)
-!
       ntlnc   = Model%ntlnc
       ntinc   = Model%ntinc
       ntrw    = Model%ntrw
@@ -791,12 +788,20 @@ module module_physics_driver
         else
           nvdiff = 5
         endif
+        if (Model%satmedmf) then
+          nvdiff = nvdiff + 1
+        endif
         nncl = 5
       elseif (imp_physics == Model%imp_physics_wsm6) then
         nvdiff = ntrac -3
         nncl = 5
       elseif (ntclamt > 0) then             ! for GFDL MP don't diffuse cloud amount
         nvdiff = ntrac - 1
+      endif
+
+      ! DH* TODO MERGE 20181017 - WE NEED THIS FOR CCPP, WHERE DOES IT GO?
+      if (imp_physics == Model%imp_physics_gfdl) then
+        nncl = 5
       endif
 
       if (imp_physics == Model%imp_physics_mg) then
@@ -815,6 +820,8 @@ module module_physics_driver
       endif
 #endif
 
+      ntkev = nvdiff
+!
 !-------------------------------------------------------------------------------------------
 !     lprnt   = .false.
 
@@ -2718,7 +2725,7 @@ module module_physics_driver
 !  if (lprnt) write(0,*)'aftmonshocdtdt=',dtdt(ipr,1:10)
         else
           if (Model%satmedmf) then
-              call satmedmfvdif(ix, im, levs, nvdiff, ntcw, ntke,                   &
+              call satmedmfvdif(ix, im, levs, nvdiff, ntcw, ntiw, nncl, ntke,       &
                        dvdt, dudt, dtdt, dqdt,                                      &
                        Statein%ugrs, Statein%vgrs, Statein%tgrs, Statein%qgrs,      &
                        Radtend%htrsw, Radtend%htrlw, xmu, garea,                    &
@@ -2980,6 +2987,14 @@ module module_physics_driver
         endif
 #endif
 !
+        if (Model%satmedmf) then
+          do k=1,levs
+            do i=1,im
+              vdftra(i,k,ntkev) = Statein%qgrs(i,k,ntke)
+            enddo
+          enddo
+        endif
+!
         if (Model%do_shoc) then
 #ifdef CCPP
           if (Model%me==0) write(0,*) 'CCPP DEBUG: calling moninshoc through option B'
@@ -3068,7 +3083,18 @@ module module_physics_driver
                          Model%xkzm_m, Model%xkzm_h, Model%xkzm_s, lprnt, ipr, me)
 #endif
         else
-          if (Model%hybedmf) then
+          if (Model%satmedmf) then
+              call satmedmfvdif(ix, im, levs, nvdiff, ntcw, ntiw, nncl, ntkev,      &
+                       dvdt, dudt, dtdt, dqdt,                                      &
+                       Statein%ugrs, Statein%vgrs, Statein%tgrs, Statein%qgrs,      &
+                       Radtend%htrsw, Radtend%htrlw, xmu, garea,                    &
+                       Statein%prsik(1,1), rb, Sfcprop%zorl, Diag%u10m, Diag%v10m,  &
+                       Sfcprop%ffmm, Sfcprop%ffhh, Sfcprop%tsfc, hflx, evap,        &
+                       stress, wind, kpbl, Statein%prsi, del, Statein%prsl,         &
+                       Statein%prslk, Statein%phii, Statein%phil, dtp,              &
+                       Model%dspheat, dusfc1, dvsfc1, dtsfc1, dqsfc1, Diag%hpbl,    &
+                       kinver, Model%xkzm_m, Model%xkzm_h, Model%xkzm_s)
+          elseif (Model%hybedmf) then
 #ifdef CCPP
             if (Model%me==0) write(0,*) 'CCPP DEBUG: calling hedmf through option B'
             ! Copy local variables from driver to appropriate interstitial variables
@@ -3246,6 +3272,18 @@ module module_physics_driver
           enddo
         endif
 #endif
+!
+        ! DH* TODO MERGE 20181017 - THIS NEEDS TO GO INTO ONE OF THE INTERSTITIALS,
+        ! AND THE SECTION MOVED UP INTO THE #IFNDEF CCPP SECTION
+        if (Model%satmedmf) then
+          do k=1,levs
+            do i=1,im
+              dqdt(i,k,ntke)  = dvdftra(i,k,ntkev)
+            enddo
+          enddo
+        endif
+        ! *DH
+!
         deallocate(vdftra, dvdftra)
       endif
 
