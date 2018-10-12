@@ -350,8 +350,8 @@ module GFS_typedefs
 !! | IPD_Data(nb)%Sfcprop%snoalb      | upper_bound_on_max_albedo_over_deep_snow                               | maximum snow albedo                                    | frac          |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%alvsf       |                                                                        | mean vis albedo with strong cosz dependency            | frac          |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%alnsf       |                                                                        | mean nir albedo with strong cosz dependency            | frac          |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%alvwf       |                                                                        | mean vis albedo with weak cosz dependency              | frac          |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%alnwf       |                                                                        | mean nir albedo with weak cosz dependency              | frac          |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%alvwf       | mean_vis_albedo_with_weak_cosz_dependency                              | mean vis albedo with weak cosz dependency              | frac          |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%alnwf       | mean_nir_albedo_with_weak_cosz_dependency                              | mean nir albedo with weak cosz dependency              | frac          |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%facsf       |                                                                        | fractional coverage with strong cosz dependency        | frac          |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%facwf       |                                                                        | fractional coverage with weak cosz dependency          | frac          |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%slope       | surface_slope_classification_real                                      | sfc slope type for lsm                                 | index         |    1 | real    | kind_phys | none   | F        |
@@ -407,7 +407,6 @@ module GFS_typedefs
 !! | IPD_Data(nb)%Sfcprop%flag_frsoil | flag_for_frozen_soil_physics                                           | flag for frozen soil physics (RUC)                     | flag          |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%rhofr       | density_of_frozen_precipitation                                        | density of frozen precipitation                        | kg m-3        |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%tsnow       | snow_temperature_bottom_first_layer                                    | snow temperature at the bottom of the first snow layer | K             |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%albedo      | surface_albedo_including_snow_effect                                   | surface albedo including snow effect                   | frac          |    1 | real    | kind_phys | none   | F        |
 !!
 #endif
   type GFS_sfcprop_type
@@ -499,7 +498,6 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: flag_frsoil(:,:) => null()  !< RUC LSM: flag for frozen soil physics
     real (kind=kind_phys), pointer :: rhofr(:)         => null()  !< RUC LSM: density of frozen precipitation
     real (kind=kind_phys), pointer :: tsnow(:)         => null()  !< RUC LSM: snow temperature at the bottom of the first soil layer
-    real (kind=kind_phys), pointer :: albedo(:)        => null()  !< RUC LSM: surface sw albedo with snow effect
 #endif
 
     contains
@@ -2550,7 +2548,6 @@ module GFS_typedefs
        allocate (Sfcprop%flag_frsoil (IM,Model%lsoil_lsm))
        allocate (Sfcprop%rhofr       (IM))
        allocate (Sfcprop%tsnow       (IM))
-       allocate (Sfcprop%albedo      (IM))
        !
        Sfcprop%sh2o        = clear_val
        Sfcprop%keepsmfr    = clear_val
@@ -2563,7 +2560,6 @@ module GFS_typedefs
        Sfcprop%flag_frsoil = clear_val
        Sfcprop%rhofr       = clear_val
        Sfcprop%tsnow       = clear_val
-       Sfcprop%albedo      = clear_val
     end if
     if (Model%imfdeepcnv == 3) then
         allocate (Sfcprop%conv_act(IM))
