@@ -493,7 +493,6 @@ module module_physics_driver
                  ntwa, ntia
 
 #ifdef CCPP
-
       integer :: i, kk, ic, k, n, iter, levshcm, tracers,               &
                  tottracer, nsamftrac, num2, num3, ntk,                 &
                  nn, nncl!, seconds, k1, nshocm, nshoc
@@ -1859,7 +1858,7 @@ module module_physics_driver
 
 !  --- ...  surface energy balance over land
 !
-         if (Model%lsm == 1) then                          ! noah lsm call
+         if (Model%lsm == Model%lsm_noah) then                          ! noah lsm call
 
 !     if (lprnt) write(0,*)' tsead=',tsea(ipr),' tsurf=',tsurf(ipr),iter &
 !    &,' pgr=',pgr(ipr),' sfcemis=',sfcemis(ipr)
@@ -1983,11 +1982,139 @@ module module_physics_driver
 !     if (lprnt) write(0,*)' tseae=',tsea(ipr),' tsurf=',tsurf(ipr),iter &
 !    &,' phy_f2d=',phy_f2d(ipr,num_p2d)
 
+
+        elseif (Model%lsm == Model%lsm_ruc) then
+#ifdef CCPP  
+       if (Model%me==0) write(0,*) 'CCPP DEBUG: calling lsm_ruc_run through option B' 
+
+              Interstitial(nt)%iter = iter           ! intent(in)
+              !Model%me                              ! intent(in)
+              !Model%kdt                             ! intent(in)
+              ! Interstitial(nt)%im = im             ! intent(in)- set in Interstitial(nt)%create()
+              !Model%levs                            ! intent(in)
+              !Model%lsoil_lsm                       ! intent(in)
+              !Model%zs                              ! intent(in)
+              !Statein%ugrs(:,1,1)                   ! intent(in)
+              !Statein%vgrs(:,1,1)                   ! intent(in)
+              !Statein%tgrs(:,1,1)                   ! intent(in)
+              !Statein%qgrs(:,1,1)                   ! intent(in)
+              !Statein%qgrs(:,1,ntcw)                ! intent(in)
+              Interstitial(nt)%soiltype= soiltyp     ! intent(in)
+              Interstitial(nt)%vegtype = vegtype     ! intent(in)
+              Interstitial(nt)%sigmaf  = sigmaf      ! intent(in)
+              !Radtend%semis                         ! intent(in)
+              !Diag%dlwsfci                          ! intent(in)
+              !Diag%dswsfci                          ! intent(in)
+              !Diag%nswsfci                          ! intent(in)
+              !Model%dtf                             ! intent(in)
+              !Sfcprop%tg3                           ! intent(in)
+              Interstitial(nt)%cd = cd               ! intent(in)
+              Interstitial(nt)%cdq = cdq             ! intent(in)
+              !Statein%prsl(:,1)                     ! intent(in)
+              !Diag%zlvl                             ! intent(in)
+              Interstitial(nt)%islmsk = islmsk       ! intent(in)
+              !Sfcprop%shdmin                        ! intent(in)
+              !Sfcprop%shdmax                        ! intent(in)
+              !Sfcprop%albedo                        ! intent(inout)
+              !Sfcprop%snoalb                        ! intent(in)
+              !Radtend%sfalb                         ! intent(inout)
+              !Sfcprop%alvwf                         ! intent(in)
+              !Sfcprop%alnwf                         ! intent(in)
+              Interstitial(nt)%flag_iter = flag_iter ! intent(in)
+              Interstitial(nt)%flag_guess= flag_guess! intent(in)
+              !Model%isot                            ! intent(in)
+              !Model%ivegsrc                         ! intent(in)
+              !Model%fice                            ! intent(in)
+              !Model%lsm_ruc                         ! intent(in)
+              !Model%lsm                             ! intent(in)
+              !Interstitial(nt)%con_cp    = con_cp   ! intent(in)
+              !Interstitial(nt)%con_rv    = con_rv   ! intent(in)
+              !Interstitial(nt)%con_rd    = con_rd   ! intent(in)
+              !Interstitial(nt)%con_g     = con_g    ! intent(in)
+              !Interstitial(nt)%con_pi    = con_pi   ! intent(in)
+              !Interstitial(nt)%con_hvap  = con_hvap ! intent(in)
+              !Interstitial(nt)%con_fvirt = con_fvirt! intent(in)
+              !Sfcprop%tprcp                         ! intent(in)
+              !Diag%rain                             ! intent(in)
+              !Diag%rainc                            ! intent(in)
+              !Diag%snow                             ! intent(in)
+              !Diag%graupel                          ! intent(in)
+              !Sfcprop%srflag                        ! intent(in)
+              !Diag%sr                               ! intent(in)
+              !Sfcprop%smc                           ! intent(inout)
+              !Sfcprop%stc                           ! intent(inout)
+              !Sfcprop%slc                           ! intent(inout)
+              !Sfcprop%weasd                         ! intent(inout)
+              !Sfcprop%snowd                         ! intent(inout)
+              !Sfcprop%tsfc                          ! intent(inout)
+              !Sfcprop%smois                         ! intent(inout)
+              !Sfcprop%tslb                          ! intent(inout)
+              !Sfcprop%sh2o                          ! intent(inout)
+              !Sfcprop%flag_frsoil                   ! intent(inout)
+              !Sfcprop%keepsmfr                      ! intent(inout)
+              !Sfcprop%canopy                        ! intent(inout)
+              !Sfcprop%tsnow                         ! intent(inout)
+              !Sfcprop%zorl                          ! intent(inout)
+              !Sfcprop%clw_surf                      ! intent(inout)
+              !Sfcprop%qwv_surf                      ! intent(inout)
+              !Sfcprop%cndm_surf                     ! intent(out)
+              !Sfcprop%sncovr                        ! intent(out)
+              !Sfcprop%rhofr                         ! intent(out)
+              Interstitial(nt)%trans  = trans        ! intent(inout)
+              Interstitial(nt)%tsurf  = tsurf        ! intent(inout)
+              !Sfcprop%tisfc(i)                      ! intent(inout)
+              Interstitial(nt)%snowc  = snowc        ! intent(inout)
+              Interstitial(nt)%qss    = qss          ! intent(out)
+              Interstitial(nt)%gflx   = gflx         ! intent(out)
+              Interstitial(nt)%drain  = drain        ! intent(out)
+              Interstitial(nt)%evap   = evap         ! intent(out)
+              Interstitial(nt)%hflx   = hflx         ! intent(out)
+              Interstitial(nt)%runoff = runof        ! intent(out)
+              Interstitial(nt)%evbs   = evbs         ! intent(out)
+              Interstitial(nt)%evcw   = evcw         ! intent(out)
+              Interstitial(nt)%sbsno  = sbsno        ! intent(out)
+              Interstitial(nt)%snohf  = snohf        ! intent(out)
+              !Diag%runoff                           ! intent(inout)
+              !Diag%srunoff                          ! intent(inout)
+              !Diag%soilm                            ! intent(out)
+              !Diag%wet1                             ! intent(out)
+              !Diag%acsnow                           ! intent(out)
+              !Diag%snowfallac                       ! intent(out)
+              !cdata_block(nb,nt)%errmsg = errmsg    ! intent(out)
+              !cdata_block(nb,nt)%errflg = errflg    ! intent(out)
+
+              call ccpp_physics_run(cdata_block(nb,nt), scheme_name="lsm_ruc", ierr=ierr)
+
+              ! Copy back intent(inout) interstitial variables to local variables in driver
+              trans  = Interstitial(nt)%trans
+              tsurf  = Interstitial(nt)%tsurf
+              qss    = Interstitial(nt)%qss
+              gflx   = Interstitial(nt)%gflx
+              drain  = Interstitial(nt)%drain
+              runof  = Interstitial(nt)%runoff
+              evap   = Interstitial(nt)%evap
+              hflx   = Interstitial(nt)%hflx
+              evbs   = Interstitial(nt)%evbs
+              evcw   = Interstitial(nt)%evcw
+              sbsno  = Interstitial(nt)%sbsno
+              snowc  = Interstitial(nt)%snowc
+              snohf  = Interstitial(nt)%snohf
+              errmsg = trim(cdata_block(nb,nt)%errmsg)
+              errflg = cdata_block(nb,nt)%errflg
+         if (errflg/=0) then
+             write(0,*) 'Error in call to lsm_ruc: ' // trim(errmsg)
+             stop
+         end if
+#else
+        write (0,*) 'RUC LSM is available only in CCPP'
+        stop
+#endif
          end if
 
 !       if (lprnt) write(0,*)' tseabeficemodel =',Sfcprop%tsfc(ipr),' me=',me   &
 !    &,   ' kdt=',kdt
 
+      if (Model%lsm == Model%lsm_noah) then  ! DH* Not for RUC - just for Noah LSM? Should we implement a namelist option for this?
 !  --- ...  surface energy balance over seaice
 
          if (Model%cplflx) then
@@ -2090,6 +2217,7 @@ module module_physics_driver
 !  ---  outputs:
              qss, Diag%cmm, Diag%chh, evap, hflx)
          endif
+       endif ! lsm == lsm_noah for sea ice
 
 !  --- ...  lu: update flag_iter and flag_guess
 #ifdef CCPP
@@ -6946,39 +7074,41 @@ module module_physics_driver
       endif
 #endif
 
+      if (Model%lsm == Model%lsm_noah) then  ! DH* Not for RUC - just for Noah LSM? Should we implement a namelist option for this?
 !  --- ...  xw: return updated ice thickness & concentration to global array
 #ifdef CCPP
-      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling sfc_sice_post through option B'
-      ! Copy local variables from driver to appropriate interstitial variables
-      !Interstitial(nt)%im = im             ! intent(in) - set in Interstitial(nt)%create
-      Interstitial(nt)%islmsk = islmsk      ! intent(in)
-      !Sfcprop%tsfc                         ! intent(in)
-      !Sfcprop%fice                         ! intent(inout)
-      !Sfcprop%hice                         ! intent(inout)
-      !Sfcprop%tisfc                        ! intent(inout)
-      !cdata_block(nb,nt)%errmsg = errmsg   ! intent(out)
-      !cdata_block(nb,nt)%errflg = errflg   ! intent(out)
-      call ccpp_physics_run(cdata_block(nb,nt), scheme_name="sfc_sice_post", ierr=ierr)
-      ! Copy back intent(inout) interstitial variables to local variables in driver
-      errmsg = trim(cdata_block(nb,nt)%errmsg)
-      errflg = cdata_block(nb,nt)%errflg
-      if (errflg/=0) then
-        write(0,*) 'Error in call to sfc_sice_post: ' //trim(errmsg)
-        stop
-      end if
+        if (Model%me==0) write(0,*) 'CCPP DEBUG: calling sfc_sice_post through option B'
+        ! Copy local variables from driver to appropriate interstitial variables
+        !Interstitial(nt)%im = im             ! intent(in) - set in Interstitial(nt)%create
+        Interstitial(nt)%islmsk = islmsk      ! intent(in)
+        !Sfcprop%tsfc                         ! intent(in)
+        !Sfcprop%fice                         ! intent(inout)
+        !Sfcprop%hice                         ! intent(inout)
+        !Sfcprop%tisfc                        ! intent(inout)
+        !cdata_block(nb,nt)%errmsg = errmsg   ! intent(out)
+        !cdata_block(nb,nt)%errflg = errflg   ! intent(out)
+        call ccpp_physics_run(cdata_block(nb,nt), scheme_name="sfc_sice_post", ierr=ierr)
+        ! Copy back intent(inout) interstitial variables to local variables in driver
+        errmsg = trim(cdata_block(nb,nt)%errmsg)
+        errflg = cdata_block(nb,nt)%errflg
+        if (errflg/=0) then
+          write(0,*) 'Error in call to sfc_sice_post: ' //trim(errmsg)
+          stop
+        end if
 #else
-      do i = 1, im
-        if (islmsk(i) == 2) then
-          Sfcprop%hice(i)  = zice(i)
-          Sfcprop%fice(i)  = cice(i)
-          Sfcprop%tisfc(i) = tice(i)
-        else
-          Sfcprop%hice(i)  = 0.0
-          Sfcprop%fice(i)  = 0.0
-          Sfcprop%tisfc(i) = Sfcprop%tsfc(i)
-        endif
-      enddo
+        do i = 1, im
+          if (islmsk(i) == 2) then
+            Sfcprop%hice(i)  = zice(i)
+            Sfcprop%fice(i)  = cice(i)
+            Sfcprop%tisfc(i) = tice(i)
+          else
+            Sfcprop%hice(i)  = 0.0
+            Sfcprop%fice(i)  = 0.0
+            Sfcprop%tisfc(i) = Sfcprop%tsfc(i)
+          endif
+        enddo
 #endif
+       endif ! lsm == lsm_noah for sea ice
 
 #ifndef CCPP
 !!  --- ...  return updated smsoil and stsoil to global arrays

@@ -350,8 +350,8 @@ module GFS_typedefs
 !! | IPD_Data(nb)%Sfcprop%snoalb      | upper_bound_on_max_albedo_over_deep_snow                               | maximum snow albedo                                    | frac          |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%alvsf       |                                                                        | mean vis albedo with strong cosz dependency            | frac          |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%alnsf       |                                                                        | mean nir albedo with strong cosz dependency            | frac          |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%alvwf       |                                                                        | mean vis albedo with weak cosz dependency              | frac          |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%alnwf       |                                                                        | mean nir albedo with weak cosz dependency              | frac          |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%alvwf       | mean_vis_albedo_with_weak_cosz_dependency                              | mean vis albedo with weak cosz dependency              | frac          |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%alnwf       | mean_nir_albedo_with_weak_cosz_dependency                              | mean nir albedo with weak cosz dependency              | frac          |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%facsf       |                                                                        | fractional coverage with strong cosz dependency        | frac          |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%facwf       |                                                                        | fractional coverage with weak cosz dependency          | frac          |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%slope       | surface_slope_classification_real                                      | sfc slope type for lsm                                 | index         |    1 | real    | kind_phys | none   | F        |
@@ -397,14 +397,16 @@ module GFS_typedefs
 !! | IPD_Data(nb)%Sfcprop%dt_cool     | sub-layer_cooling_amount                                               | sub-layer cooling amount                               | K             |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%qrain       | sensible_heat_flux_due_to_rainfall                                     | sensible heat flux due to rainfall                     | W             |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%sh2o        | volume_fraction_of_unfrozen_soil_moisture_for_land_surface_model       | volume fraction of unfrozen soil moisture for lsm      | frac          |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%keepsmfr    | volume_fraction_of_frozen_soil_moisture_for_land_surface_model         | volume fraction of frozen soil moisture for lsm        | frac          |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%smois       | volume_fraction_of_soil_moisture_for_land_surface_model                | volumetric fraction of soil moisture for lsm           | frac          |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%tslb        | soil_temperature_for_land_surface_model                                | soil temperature for land surface model                | K             |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%zs          | depth_of_soil_levels_for_land_surface_model                            | depth of soil levels for land surface model            | m             |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%clw_surf    | cloud_condensed_water_mixing_ratio_at_surface                          | moist cloud water mixing ratio at surface              | kg kg-1       |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%qwv_surf    | water_vapor_mixing_ratio_at_surface                                    | water vapor mixing ratio at surface                    | kg kg-1       |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%cndm_surf   | surface_condensation_mass                                              | surface condensation mass                              | kg m-2        |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%flag_frsoil | flag_for_frozen_soil_physics                                           | flag for frozen soil physics (RUC)                     | flag          |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%rhofr       | density_of_frozen_precipitation                                        | density of frozen precipitation                        | kg m-3        |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%tsnow       | snow_temperature_bottom_first_layer                                    | snow temperature at the bottom of the first soil layer | K             |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%tsnow       | snow_temperature_bottom_first_layer                                    | snow temperature at the bottom of the first snow layer | K             |    1 | real    | kind_phys | none   | F        |
 !!
 #endif
   type GFS_sfcprop_type
@@ -485,11 +487,13 @@ module GFS_typedefs
 #ifdef CCPP
     ! Soil properties for land-surface model (if number of levels different from NOAH 4-layer model)
     real (kind=kind_phys), pointer :: sh2o(:,:)        => null()  !< volume fraction of unfrozen soil moisture for lsm
+    real (kind=kind_phys), pointer :: keepsmfr(:,:)    => null()  !< RUC LSM: frozen moisture in soil 
     real (kind=kind_phys), pointer :: smois(:,:)       => null()  !< volumetric fraction of soil moisture for lsm
     real (kind=kind_phys), pointer :: tslb(:,:)        => null()  !< soil temperature for land surface model
     real (kind=kind_phys), pointer :: zs(:)            => null()  !< depth of soil levels for land surface model
     !
     real (kind=kind_phys), pointer :: clw_surf(:)      => null()  !< RUC LSM: moist cloud water mixing ratio at surface
+    real (kind=kind_phys), pointer :: qwv_surf(:)      => null()  !< RUC LSM: water vapor mixing ratio at surface
     real (kind=kind_phys), pointer :: cndm_surf(:)     => null()  !< RUC LSM: surface condensation mass
     real (kind=kind_phys), pointer :: flag_frsoil(:,:) => null()  !< RUC LSM: flag for frozen soil physics
     real (kind=kind_phys), pointer :: rhofr(:)         => null()  !< RUC LSM: density of frozen precipitation
@@ -825,6 +829,7 @@ module GFS_typedefs
 !! | IPD_Control%lradar                   | flag_for_radar_reflectivity                                                   | flag for radar reflectivity                             | flag          |    0 | logical   |           | none   | F        |
 !! | IPD_Control%lgfdlmprad               |                                                                               | flag for GFDL mp scheme and radiation consistency       |               |    0 | logical   |           | none   | F        |
 !! | IPD_Control%lsm                      | flag_for_land_surface_scheme                                                  | flag for land surface model                             | flag          |    0 | integer   |           | none   | F        |
+!! | IPD_Control%lsm_noah                 | flag_for_noah_land_surface_scheme                                             | flag for NOAH land surface model                        | flag          |    0 | integer   |           | none   | F        |
 !! | IPD_Control%lsm_ruc                  | flag_for_ruc_land_surface_scheme                                              | flag for RUC land surface model                         | flag          |    0 | integer   |           | none   | F        |
 !! | IPD_Control%lsoil                    | soil_vertical_dimension                                                       | number of soil layers                                   | count         |    0 | integer   |           | none   | F        |
 !! | IPD_Control%lsoil_lsm                | soil_vertical_dimension_for_land_surface_model                                | number of soil layers for land surface model            | count         |    0 | integer   |           | none   | F        |
@@ -1138,6 +1143,7 @@ module GFS_typedefs
 
     !--- land/surface model parameters
     integer              :: lsm             !< flag for land surface model lsm=1 for noah lsm
+    integer              :: lsm_noah=1      !< flag for NOAH land surface model
     integer              :: lsm_ruc=2       !< flag for RUC land surface model
     integer              :: lsoil           !< number of soil layers
 #ifdef CCPP
@@ -1680,6 +1686,8 @@ module GFS_typedefs
 !! | IPD_Data(nb)%Intdiag%tdomzr               | dominant_freezing_rain_type                                             | dominant freezing rain type                                     | none          |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%tdomip               | dominant_sleet_type                                                     | dominant sleet type                                             | none          |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%tdoms                | dominant_snow_type                                                      | dominant snow type                                              | none          |    1 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%snowfallac           | total_accumulated_snowfall                                              | run-total snow accumulation on the ground                       | kg m-2        |    1 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%acsnow               | accumulated_water_equivalent_of_frozen_precip                           | snow water equivalent of run-total frozen precip                | kg m-2        |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%skebu_wts            | weights_for_stochastic_skeb_perturbation_of_x_wind_flipped              | weights for stochastic skeb perturbation of x wind, flipped     | none          |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%skebv_wts            | weights_for_stochastic_skeb_perturbation_of_y_wind_flipped              | weights for stochastic skeb perturbation of y wind, flipped     | none          |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%sppt_wts             | weights_for_stochastic_sppt_perturbation_flipped                        | weights for stochastic sppt perturbation, flipped               | none          |    2 | real        | kind_phys | none   | F        |
@@ -1740,6 +1748,10 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: transa (:)     => null()   !< noah lsm diagnostics
     real (kind=kind_phys), pointer :: sbsnoa (:)     => null()   !< noah lsm diagnostics
     real (kind=kind_phys), pointer :: snowca (:)     => null()   !< noah lsm diagnostics
+#ifdef CCPP
+    real (kind=kind_phys), pointer :: snowfallac (:) => null()   !< ruc lsm diagnostics
+    real (kind=kind_phys), pointer :: acsnow     (:) => null()   !< ruc lsm diagnostics
+#endif
     real (kind=kind_phys), pointer :: soilm  (:)     => null()   !< soil moisture
     real (kind=kind_phys), pointer :: tmpmin (:)     => null()   !< min temperature at 2m height (k)
     real (kind=kind_phys), pointer :: tmpmax (:)     => null()   !< max temperature at 2m height (k)
@@ -2526,20 +2538,24 @@ module GFS_typedefs
     if (Model%lsm == Model%lsm_ruc) then
        ! For land surface models with different numbers of levels than the four NOAH levels
        allocate (Sfcprop%sh2o        (IM,Model%lsoil_lsm))
+       allocate (Sfcprop%keepsmfr    (IM,Model%lsoil_lsm))
        allocate (Sfcprop%smois       (IM,Model%lsoil_lsm))
        allocate (Sfcprop%tslb        (IM,Model%lsoil_lsm))
        allocate (Sfcprop%zs          (Model%lsoil_lsm))
        allocate (Sfcprop%clw_surf    (IM))
+       allocate (Sfcprop%qwv_surf    (IM))
        allocate (Sfcprop%cndm_surf   (IM))
        allocate (Sfcprop%flag_frsoil (IM,Model%lsoil_lsm))
        allocate (Sfcprop%rhofr       (IM))
        allocate (Sfcprop%tsnow       (IM))
        !
        Sfcprop%sh2o        = clear_val
+       Sfcprop%keepsmfr    = clear_val
        Sfcprop%smois       = clear_val
        Sfcprop%tslb        = clear_val
        Sfcprop%zs          = clear_val
        Sfcprop%clw_surf    = clear_val
+       Sfcprop%qwv_surf    = clear_val
        Sfcprop%cndm_surf   = clear_val
        Sfcprop%flag_frsoil = clear_val
        Sfcprop%rhofr       = clear_val
@@ -4447,6 +4463,10 @@ module GFS_typedefs
     allocate (Diag%transa  (IM))
     allocate (Diag%sbsnoa  (IM))
     allocate (Diag%snowca  (IM))
+#ifdef CCPP
+    allocate (Diag%snowfallac  (IM))
+    allocate (Diag%acsnow      (IM))
+#endif
     allocate (Diag%soilm   (IM))
     allocate (Diag%tmpmin  (IM))
     allocate (Diag%tmpmax  (IM))
@@ -4590,6 +4610,10 @@ module GFS_typedefs
     Diag%transa     = zero
     Diag%sbsnoa     = zero
     Diag%snowca     = zero
+#ifdef CCPP
+    Diag%snowfallac = zero
+    Diag%acsnow     = zero
+#endif
     Diag%soilm      = zero
     Diag%tmpmin     = huge
     Diag%tmpmax     = zero

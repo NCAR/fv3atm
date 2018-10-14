@@ -213,6 +213,9 @@ module FV3GFS_io_mod
        temp2d(i,j,32) = IPD_Data(nb)%Sfcprop%f10m(ix)
        temp2d(i,j,33) = IPD_Data(nb)%Sfcprop%tprcp(ix)
        temp2d(i,j,34) = IPD_Data(nb)%Sfcprop%srflag(ix)
+#ifdef CCPP
+     if (Model%lsm == Model%lsm_noah) then
+#endif
        temp2d(i,j,35) = IPD_Data(nb)%Sfcprop%slc(ix,1)
        temp2d(i,j,36) = IPD_Data(nb)%Sfcprop%slc(ix,2)
        temp2d(i,j,37) = IPD_Data(nb)%Sfcprop%slc(ix,3)
@@ -225,6 +228,23 @@ module FV3GFS_io_mod
        temp2d(i,j,44) = IPD_Data(nb)%Sfcprop%stc(ix,2)
        temp2d(i,j,45) = IPD_Data(nb)%Sfcprop%stc(ix,3)
        temp2d(i,j,46) = IPD_Data(nb)%Sfcprop%stc(ix,4)
+#ifdef CCPP
+     elseif (Model%lsm == Model%lsm_ruc) then
+        write (0,*) 'RUC LSM is used'
+       temp2d(i,j,35) = IPD_Data(nb)%Sfcprop%sh2o(ix,1)
+       temp2d(i,j,36) = IPD_Data(nb)%Sfcprop%sh2o(ix,2)
+       temp2d(i,j,37) = IPD_Data(nb)%Sfcprop%sh2o(ix,3)
+       temp2d(i,j,38) = IPD_Data(nb)%Sfcprop%sh2o(ix,4)
+       temp2d(i,j,39) = IPD_Data(nb)%Sfcprop%smois(ix,1)
+       temp2d(i,j,40) = IPD_Data(nb)%Sfcprop%smois(ix,2)
+       temp2d(i,j,41) = IPD_Data(nb)%Sfcprop%smois(ix,3)
+       temp2d(i,j,42) = IPD_Data(nb)%Sfcprop%smois(ix,4)
+       temp2d(i,j,43) = IPD_Data(nb)%Sfcprop%tslb(ix,1)
+       temp2d(i,j,44) = IPD_Data(nb)%Sfcprop%tslb(ix,2)
+       temp2d(i,j,45) = IPD_Data(nb)%Sfcprop%tslb(ix,3)
+       temp2d(i,j,46) = IPD_Data(nb)%Sfcprop%tslb(ix,4)
+     endif ! LSM choice
+#endif
        temp2d(i,j,47) = IPD_Data(nb)%Sfcprop%t2m(ix)
        temp2d(i,j,48) = IPD_Data(nb)%Sfcprop%q2m(ix)
        temp2d(i,j,49) = IPD_Data(nb)%Coupling%nirbmdi(ix)
