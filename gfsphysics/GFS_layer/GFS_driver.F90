@@ -16,8 +16,6 @@ module GFS_driver
   use module_radiation_driver,  only: GFS_radiation_driver, radupdate
   use module_physics_driver,    only: GFS_physics_driver
 #endif
-  use module_radsw_parameters,  only: topfsw_type, sfcfsw_type
-  use module_radlw_parameters,  only: topflw_type, sfcflw_type
   use funcphys,                 only: gfuncphys
 #ifndef CCPP
   use gfdl_cloud_microphys_mod, only: gfdl_cloud_microphys_init
@@ -304,12 +302,12 @@ module GFS_driver
     si = (Init_parm%ak + Init_parm%bk * p_ref - Init_parm%ak(Model%levr+1)) &
              / (p_ref - Init_parm%ak(Model%levr+1))
 
-    call rad_initialize (si,   Model%levr,         Model%ictm,    Model%isol,     &
-           Model%ico2,         Model%iaer,         Model%ialb,    Model%iems,     &
-           Model%ntcw,         Model%num_p2d,      Model%num_p3d, Model%npdf3d,   &
-           Model%ntoz,         Model%iovr_sw,      Model%iovr_lw, Model%isubc_sw, &
-           Model%isubc_lw,     Model%crick_proof,  Model%ccnorm,                  &
-           Model%imp_physics,  Model%norad_precip, Model%idate,   Model%iflip,  Model%me)
+    call rad_initialize (si,  Model%levr,         Model%ictm,    Model%isol,      &
+           Model%ico2,        Model%iaer,         Model%ialb,    Model%iems,      &
+           Model%ntcw,        Model%num_p2d,      Model%num_p3d, Model%npdf3d,    &
+           Model%ntoz,        Model%iovr_sw,      Model%iovr_lw, Model%isubc_sw,  &
+           Model%isubc_lw,    Model%icliq_sw,     Model%crick_proof, Model%ccnorm,&
+           Model%imp_physics, Model%norad_precip, Model%idate,   Model%iflip,  Model%me)
     deallocate (si)
 #endif
 
