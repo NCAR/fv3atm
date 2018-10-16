@@ -8,9 +8,7 @@ module module_physics_driver
                                    con_cvap, con_t0c
 #ifndef CCPP
   use physcons,              only: rhc_max, dxmin, dxinv
-#endif
   use cs_conv,               only: cs_convr
-#ifndef CCPP
   use ozne_def,              only: levozp,  oz_coeff, oz_pres
   use h2o_def,               only: levh2o, h2o_coeff, h2o_pres
   use gfs_fv3_needs,         only: get_prs_fv3, get_phi_fv3
@@ -553,7 +551,6 @@ module module_physics_driver
            stress, t850, ep1d, gamt, gamq, sigmaf, oc, theta, gamma,    &
            sigma, elvmax, wind, work1, work2, runof, xmu, fm10, fh2,    &
            tsurf,  tx1, tx2, ctei_r, evbs, evcw, trans, sbsno, snowc,   &
-
 #ifdef CCPP
            frland,                                                      &
 #else
@@ -1675,7 +1672,7 @@ module module_physics_driver
             errmsg = trim(cdata_block(nb,nt)%errmsg)
             errflg = cdata_block(nb,nt)%errflg
             if (errflg/=0) then
-                write(0,*) 'Error in call to sfc_nst_pre_mp_sfc_nst_pre_run: ' // trim(errmsg)
+                write(0,*) 'Error in call to sfc_nst_pre: ' // trim(errmsg)
                 stop
             end if
             !
@@ -1733,10 +1730,9 @@ module module_physics_driver
             errmsg = trim(cdata_block(nb,nt)%errmsg)
             errflg = cdata_block(nb,nt)%errflg
             if (errflg/=0) then
-                write(0,*) 'Error in call to sfc_nst_post_mp_sfc_nst_post_run: ' // trim(errmsg)
+                write(0,*) 'Error in call to sfc_nst_post: ' // trim(errmsg)
                 stop
             end if
-! End of option B
 #else
             if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of sfc_nst'
             do i=1,im
@@ -1793,7 +1789,6 @@ module module_physics_driver
 !         if (lprnt) print *,' tseaz2=',Sfcprop%tsfc(ipr),' tref=',tref(ipr),   &
 !    &    ' dt_cool=',dt_cool(ipr),' dt_warm=',dt_warm(ipr),' kdt=',kdt
 
-! end of ifdef CCPP for sfc_nst
 #endif
 
          else
@@ -3373,7 +3368,6 @@ module module_physics_driver
       endif
 
 !  --- ...  ozone physics
-
       if (ntoz > 0 .and. ntrac >= ntoz) then
         if (oz_coeff > 4) then
 #ifdef CCPP
@@ -4161,7 +4155,7 @@ module module_physics_driver
             fswtr         = Interstitial(nt)%fswtr                    ! intent(out)
             fscav         = Interstitial(nt)%fscav                    ! intent(out)
             dqdt(:,:,1)   = Interstitial(nt)%save_q(:,:,1)            ! intent(out)
-            dqdt(:,:,2)   = Interstitial(nt)%save_q(:,:,ntcw)   
+            dqdt(:,:,2)   = Interstitial(nt)%save_q(:,:,ntcw)
             dqdt(:,:,3)   = Interstitial(nt)%save_q(:,:,ntiw)
             errmsg        = trim(cdata_block(nb,nt)%errmsg)
             errflg        = cdata_block(nb,nt)%errflg
@@ -4188,7 +4182,7 @@ module module_physics_driver
               enddo
             enddo
 
-#endif        
+#endif
 
 #ifdef CCPP
             if (Model%me==0) write(0,*) 'CCPP DEBUG: calling cs_conv through option B'
@@ -4196,37 +4190,39 @@ module module_physics_driver
             !Interstitial(nt)%ix       = ix                       ! intent(in) - set in Interstitial(nt)%create()
             !Interstitial(nt)%im       = im                       ! intent(in) - set in Interstitial(nt)%create()
             !Model%levs                                           ! intent(in)
-            Interstitial(nt)%ncstrac  = tottracer+3                       ! intent(in)
+            !Model%ntracp1 = Model%ntrac + 1                      ! intent(in) - set in Model%create()
+            !Interstitial(nt)%nn = nn                             ! intent(in) - set in Interstitial(nt)%create()
+            !Interstitial(nt)%ncstrac = tottracer+3               ! intent(in) - set in Interstitial(nt)%create()
             !Model%nctp                                           ! intent(in)
-            Interstitial(nt)%otspt = otspt   !     (1:ncstrac,1:2)  = otspt(1:ncstrac,1:2)      ! intent(in)
+            Interstitial(nt)%otspt = otspt                        ! intent(in)
             ! lat = 1                                             ! intent(in)
             !Model%kdt                                            ! intent(in)
             !Stateout%gt0                                         ! intent(inout)
             !Stateout%gq0(:,:,1:1)                                ! intent(inout)
             Interstitial(nt)%raincd    = rain1                    ! intent(out)
-            Interstitial(nt)%clw   = clw      !(:,:,1:ncstrac-1)      = clw(:,:,1:ncstrac-1)       ! intent(inout)
+            Interstitial(nt)%clw   = clw                          ! intent(inout)
             !Statein%phil                                         ! intent(in)
             !Statein%phii                                         ! intent(in)
             !Statein%prsl                                         ! intent(in)
             !Statein%prsi                                         ! intent(in)
             !Model%dtp                                            ! intent(in)
             !Model%dtf                                            ! intent(in)
-
+!!
 !! JLS NOTE:  The convective mass fluxes (dt_mf, dd_mf and ud_mf) passed in and out of cs_conv have not been multiplied by
 !!            the timestep (kg/m2/sec) as they are in all other convective schemes.  EMC is aware of this problem, 
 !!            and in the future will be fixing this discrepancy.  In the meantime, CCPP will use the same mass flux standard_name
 !!            and long_name as the other convective schemes, where the units are in kg/m2. (Aug 2018)
-
+!!
             Interstitial(nt)%ud_mf     = ud_mf                    ! intent(inout)
             Interstitial(nt)%dd_mf     = dd_mf                    ! intent(inout)
             Interstitial(nt)%dt_mf     = dt_mf                    ! intent(inout)
             !Stateout%gu0                                         ! intent(inout)
             !Stateout%gv0                                         ! intent(inout)
-            Interstitial(nt)%fscav = fscav       !(1:ncstrac)     = fscav(1:ncstrac)                    ! intent(in)
-            Interstitial(nt)%fswtr = fswtr       !(1:ncstrac)     = fswtr(1:ncstrac)                    ! intent(in)
+            Interstitial(nt)%fscav = fscav                        ! intent(in)
+            Interstitial(nt)%fswtr = fswtr                        ! intent(in)
             !Tbd%phy_fctd                                         ! intent(inout)
             !IPD_Control%me                                       ! intent(in)
-            Interstitial(nt)%wcbmax    = wcbmax                   ! intent(in)   !initialize in cs_conv_pre 
+            Interstitial(nt)%wcbmax    = wcbmax                   ! intent(in) - set in cs_conv_pre
             !Model%cs_parm(3)                                     ! intent(in)
             !Model%cs_parm(4)                                     ! intent(in)
             Interstitial(nt)%sigmatot = sigmatot                  ! intent(out)
@@ -4262,7 +4258,7 @@ module module_physics_driver
             call ccpp_physics_run(cdata_block(nb,nt), scheme_name="cs_conv", ierr=ierr)
             ! Copy intent(inout) and intent(out) interstitial variables to local variables in driver
             rain1     = Interstitial(nt)%raincd
-            clw       = Interstitial(nt)%clw     
+            clw       = Interstitial(nt)%clw
             ud_mf     = Interstitial(nt)%ud_mf
             dd_mf     = Interstitial(nt)%dd_mf
             dt_mf     = Interstitial(nt)%dt_mf
@@ -4303,8 +4299,9 @@ module module_physics_driver
 ! NOTE:  The variable rain1 output from cs_convr (called prec inside the subroutine) is a precipitation flux (kg/m2/sec),
 !         not meters LWE like the other schemes.  It is converted to m after the call to cs_convr.
               
-              call cs_convr (ix, im, levs, tottracer+3, Model%nctp,           &
-                             otspt(1:tottracer+3,1:2), 1,                     &
+              call cs_convr (ix, im, levs, Model%ntrac+1, nn,                 &
+                             tottracer+3, Model%nctp,                         &
+                             otspt(1:Model%ntrac+1,1:2), 1,                   &
                              kdt, Stateout%gt0, Stateout%gq0(:,:,1:1), rain1, &
                              clw, Statein%phil, Statein%phii, Statein%prsl,   &
                              Statein%prsi, dtp, dtf, ud_mf, dd_mf, dt_mf,     &
@@ -4325,11 +4322,7 @@ module module_physics_driver
 !            &,                    gq0(1,1,1),clw(1,1,2),clw(1,1,1),' cs_conv')
 
               rain1(:) = rain1(:) * (dtp*0.001)
-
-             
-
 #endif
-
 
 #ifdef CCPP
             if (Model%me==0) write(0,*) 'CCPP DEBUG: calling cs_conv_post through option B'
@@ -4352,8 +4345,6 @@ module module_physics_driver
                 write(0,*) 'Error in call to cs_conv_post_mp_cs_conv_post: ' // trim(errmsg)
                 stop
             end if
-
-
 #else
               if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of cs_conv_post'
               if (Model%do_aw) then
@@ -5014,7 +5005,7 @@ module module_physics_driver
             !physical constants                   ! intent(in) - physical constant in physcons.F90
             !Model%dtp                            ! intent(in)
             Interstitial(nt)%ntk = ntk            ! intent(in)
-            !Interstitial(nt)%nsamftrac = nsamftrac! intent(in)   ! zhang:
+            Interstitial(nt)%nsamftrac = nsamftrac! intent(in)
             Interstitial(nt)%del = del            ! intent(in)
             !Statein%prsl                         ! intent(in)
             !Statein%pgr                          ! intent(in)
