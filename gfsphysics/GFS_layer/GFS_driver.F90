@@ -229,11 +229,7 @@ module GFS_driver
       call Sfcprop  (nb)%create (ix, Model)
       call Coupling (nb)%create (ix, Model)
       call Grid     (nb)%create (ix, Model)
-#ifdef CCPP
       call Tbd      (nb)%create (ix, nb, Model)
-#else
-      call Tbd      (nb)%create (ix, Model)
-#endif
       call Cldprop  (nb)%create (ix, Model)
       call Radtend  (nb)%create (ix, Model)
 !--- internal representation of diagnostics
