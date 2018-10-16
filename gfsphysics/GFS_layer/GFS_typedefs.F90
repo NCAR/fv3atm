@@ -910,6 +910,7 @@ module GFS_typedefs
 !! | IPD_Control%pertvegf                 | magnitude_of_perturbation_of_vegetation_fraction                              | magnitude of perturbation of vegetation fraction                     | frac          |    1 | real      | kind_phys | none   | F        |
 !! | IPD_Control%tracer_names             |                                                                               | array of initialized tracers from dynamic core                       |               |    1 | character |           | none   | F        |
 !! | IPD_Control%ntrac                    | number_of_tracers                                                             | number of tracers                                                    | count         |    0 | integer   |           | none   | F        |
+!! | IPD_Control%ntracp1                  | number_of_tracers_plus_one                                                    | number of tracers plus one                                           | count         |    0 | integer   |           | none   | F        |
 !! | IPD_Control%ntoz                     | index_for_ozone                                                               | tracer index for ozone mixing ratio                                  | index         |    0 | integer   |           | none   | F        |
 !! | IPD_Control%ntcw                     | index_for_liquid_cloud_condensate                                             | tracer index for cloud condensate (or liquid water)                  | index         |    0 | integer   |           | none   | F        |
 !! | IPD_Control%ntiw                     | index_for_ice_cloud_condensate                                                | tracer index for  ice water                                          | index         |    0 | integer   |           | none   | F        |
@@ -1273,6 +1274,9 @@ module GFS_typedefs
 !--- tracer handling
     character(len=32), pointer :: tracer_names(:) !< array of initialized tracers from dynamic core
     integer              :: ntrac           !< number of tracers
+#ifdef CCPP
+    integer              :: ntracp1         !< number of tracers plus one
+#endif
     integer              :: ntoz            !< tracer index for ozone mixing ratio
     integer              :: ntcw            !< tracer index for cloud condensate (or liquid water)
     integer              :: ntiw            !< tracer index for ice water
@@ -1464,9 +1468,9 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: phy_f2d  (:,:)   => null()  !< 2d arrays saved for restart
     real (kind=kind_phys), pointer :: phy_f3d  (:,:,:) => null()  !< 3d arrays saved for restart
 
-#ifdef CCPP
     integer                        :: blkno                       !< for explicit data blocking: block number of this block
 
+#ifdef CCPP
     !--- radiation variables that need to be carried over from radiation to physics
     real (kind=kind_phys), pointer :: htlwc(:,:)       => null()  !<
     real (kind=kind_phys), pointer :: htlw0(:,:)       => null()  !<
@@ -1917,9 +1921,7 @@ module GFS_typedefs
 !! | IPD_Interstitial(nt)%frain                         | dynamics_to_physics_timestep_ratio                                                             | ratio of dynamics timestep to physics timestep                                      | none          |    0 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%frland                        | land_area_fraction                                                                             | land area fraction                                                                  | frac          |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%fscav                         | fraction_of_tracer_scavenged                                                                   | fraction of the tracer (aerosols) that is scavenged by convection                   | km-1          |    1 | real        | kind_phys | none   | F        |
-!! | IPD_Interstitial(nt)%fscav(1:IPD_Interstitial(nt)%ncstrac) | fraction_of_tracer_scavenged_for_CS                                                      | fraction of the tracer (aerosols) that is scavenged by convection for CS            | km-1          |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%fswtr                         | fraction_of_cloud_top_water_scavenged                                                          | fraction of the tracer (cloud top water) that is scavenged by convection            | km-1          |    1 | real        | kind_phys | none   | F        |
-!! | IPD_Interstitial(nt)%fswtr(1:IPD_Interstitial(nt)%ncstrac) | fraction_of_cloud_top_water_scavenged_for_CS                                             | fraction of the tracer (cloud top water) that is scavenged by convection for CS     | km-1          |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%gabsbdlw                      | surface_downwelling_longwave_flux_absorbed_by_ground                                           | total sky surface downward longwave flux absorbed by the ground                     | W m-2         |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%gamma                         | anisotropy_of_subgrid_orography                                                                | anisotropy of subgrid orography                                                     | none          |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%gamq                          | countergradient_mixing_term_for_water_vapor                                                    | countergradient mixing term for water vapor                                         | kg kg-1       |    1 | real        | kind_phys | none   | F        |
@@ -1979,7 +1981,6 @@ module GFS_typedefs
 !! | IPD_Interstitial(nt)%oc                            | convexity_of_subgrid_orography                                                                 | convexity of subgrid orography                                                      | none          |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%olyr                          | ozone_concentration_at_layer_for_radiation                                                     | ozone concentration layer                                                           | kg kg-1       |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%otspt                         | flag_convective_tracer_transport                                                               | flag to enable tracer transport by updrafts/downdrafts[(:,1)] or subsidence [(:,2)] | flag          |    2 | logical     |           | none   | F        |                          
-!! | IPD_Interstitial(nt)%otspt(1:IPD_Interstitial(nt)%ncstrac,2)                         | flag_convective_tracer_transport_CS                          | flag to enable tracer transport in CS scheme                                        | flag          |    2 | logical     |           | none   | F        |
 !! | IPD_Interstitial(nt)%oz_coeff                      | number_of_coefficients_in_ozone_forcing_data                                                   | number of coefficients in ozone forcing data                                        | index         |    0 | integer     |           | none   | F        |
 !! | IPD_Interstitial(nt)%oz_pres                       | natural_log_of_ozone_forcing_data_pressure_levels                                              | natural log of ozone forcing data pressure levels                                   | log(Pa)       |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%plvl                          | air_pressure_at_interface_for_radiation_in_hPa                                                 | air pressure at vertical interface for radiation calculation                        | hPa           |    2 | real        | kind_phys | none   | F        |
@@ -3480,6 +3481,9 @@ module GFS_typedefs
 
 !--- tracer handling
     Model%ntrac            = size(tracer_names)
+#ifdef CCPP
+    Model%ntracp1          = Model%ntrac + 1
+#endif
     allocate (Model%tracer_names(Model%ntrac))
     Model%tracer_names(:)  = tracer_names(:)
     Model%ntoz             = get_tracer_index(Model%tracer_names, 'o3mr',       Model%me, Model%master, Model%debug)
@@ -4203,19 +4207,13 @@ module GFS_typedefs
 !--------------------
 ! GFS_tbd_type%create
 !--------------------
-#ifdef CCPP
   subroutine tbd_create (Tbd, IM, BLKNO, Model)
-#else
-  subroutine tbd_create (Tbd, IM, Model)
-#endif
 
     implicit none
 
     class(GFS_tbd_type)                :: Tbd
     integer,                intent(in) :: IM
-#ifdef CCPP
     integer,                intent(in) :: BLKNO
-#endif
     type(GFS_control_type), intent(in) :: Model
 
 !--- In
@@ -4267,9 +4265,9 @@ module GFS_typedefs
 !   if (Model%do_shoc) Tbd%phy_f3d(:,1,Model%ntot3d-1) = 3.0
 !   if (Model%do_shoc) Tbd%phy_f3d(:,:,Model%ntot3d-1) = 1.0
 
-#ifdef CCPP
     Tbd%blkno = BLKNO
 
+#ifdef CCPP
     allocate (Tbd%htlwc (IM,Model%levr+LTP))
     allocate (Tbd%htlw0 (IM,Model%levr+LTP))
     allocate (Tbd%htswc (IM,Model%levr+LTP))
@@ -4641,7 +4639,7 @@ module GFS_typedefs
     integer,                intent(in) :: IM
     type(GFS_control_type), intent(in) :: Model
 
-    allocate (Interstitial%otspt      (Model%ntrac+1,2))
+    allocate (Interstitial%otspt      (Model%ntracp1,2))
     ! Set up numbers of tracers for PBL, convection, etc: sets
     ! Interstitial%{nncl,nvdiff,mg3_as_mg2,nn,tracers_total,ntk,otspt,nsamftrac,ncstrac}
     call interstitial_setup_tracers(Interstitial, Model)
