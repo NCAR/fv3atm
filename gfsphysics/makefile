@@ -62,6 +62,8 @@ else
 	   ./physics/ozinterp.f90
     PHYSICS_SRCS_F90 = \
 	   ./physics/gfdl_cloud_microphys.F90                                        \
+	   ./physics/cs_conv.F90                                                     \
+	   ./physics/GFS_debug.F90                                                   \
 	   ./GFS_layer/GFS_physics_driver.F90
     RADIATION_SRCS_f = \
 	   ./physics/radiation_aerosols.f                                            \
@@ -149,7 +151,6 @@ SRCS_f   =  \
 
 SRCS_f90 = \
 	   $(PHYSICS_SRCS_f90)                                                       \
-	   ./physics/cs_conv.f90                                                     \
 	   ./physics/funcphys.f90                                                    \
 	   ./physics/gcm_shoc.f90                                                    \
 	   ./physics/m_micro_driver.f90                                              \
