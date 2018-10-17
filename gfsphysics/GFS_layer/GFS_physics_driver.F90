@@ -4641,7 +4641,9 @@ module module_physics_driver
 
         else        ! ras or cscnv
 ! cs_conv_pre and ras_pre
-!          fscav(:) = 0.0
+#ifndef CCPP
+          fscav(:) = 0.0
+#endif
           if (Model%cscnv) then    ! Chikira-Sugiyama  convection scheme (via CSU)
 #ifdef CCPP
 ! OPTION B - works with all compilers
@@ -4649,7 +4651,7 @@ module module_physics_driver
             ! Copy local variables from driver to appropriate interstitial variables
             !Interstitial(nt)%im              = im                ! intent(in) - set in Interstitial(nt)%create()
             !Model%levs                                           ! intent(in)
-            !IPD_Contral%ntrac    
+            !IPD_Contral%ntrac
             !Stateout%gq0(:,:,1)
             Interstitial(nt)%clw(:,:,1)                = clw(:,:,1)        ! intent(in)
             Interstitial(nt)%clw(:,:,2)                = clw(:,:,2)        ! intent(in)
