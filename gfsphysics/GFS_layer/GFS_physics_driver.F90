@@ -493,7 +493,7 @@ module module_physics_driver
 #ifdef CCPP
       integer :: i, kk, ic, k, n, iter, levshcm, tracers,               &
                  tottracer, nsamftrac, num2, num3, ntk,                 &
-                 nn, nncl,ncstrac !, seconds, k1, nshocm, nshoc
+                 nn, nncl
 #else
       integer :: i, kk, ic, k1, k, n, iter, levshcm, tracers,           &
                  tottracer, nsamftrac, num2, num3, nshocm, nshoc, ntk,  &
@@ -779,6 +779,7 @@ module module_physics_driver
       nncl = Interstitial(nt)%nncl
       nvdiff = Interstitial(nt)%nvdiff
       mg3_as_mg2 = Interstitial(nt)%mg3_as_mg2
+      ntkev = Interstitial(nt)%ntkev
 #else
       nncl = ncld
 
@@ -799,7 +800,6 @@ module module_physics_driver
         nvdiff = ntrac - 1
       endif
 
-      ! DH* TODO MERGE 20181017 - WE NEED THIS FOR CCPP, WHERE DOES IT GO?
       if (imp_physics == Model%imp_physics_gfdl) then
         nncl = 5
       endif
@@ -818,9 +818,10 @@ module module_physics_driver
           endif
         endif
       endif
-#endif
 
       ntkev = nvdiff
+#endif
+
 !
 !-------------------------------------------------------------------------------------------
 !     lprnt   = .false.
@@ -1135,8 +1136,6 @@ module module_physics_driver
         dlength(i) = sqrt( tem1*tem1+tem2*tem2 )
         cldf(i)    = Model%cgwf(1)    * work1(i) + Model%cgwf(2)    * work2(i)
 #endif
-!zhang:cs_conv_pre
-!        wcbmax(i)  = Model%cs_parm(1) * work1(i) + Model%cs_parm(2) * work2(i)
       enddo
 !
       if (Model%cplflx) then
@@ -2985,8 +2984,7 @@ module module_physics_driver
             enddo
           enddo
         endif
-#endif
-!
+
         if (Model%satmedmf) then
           do k=1,levs
             do i=1,im
@@ -2994,6 +2992,8 @@ module module_physics_driver
             enddo
           enddo
         endif
+
+#endif
 !
         if (Model%do_shoc) then
 #ifdef CCPP
@@ -3271,10 +3271,7 @@ module module_physics_driver
             enddo
           enddo
         endif
-#endif
-!
-        ! DH* TODO MERGE 20181017 - THIS NEEDS TO GO INTO ONE OF THE INTERSTITIALS,
-        ! AND THE SECTION MOVED UP INTO THE #IFNDEF CCPP SECTION
+
         if (Model%satmedmf) then
           do k=1,levs
             do i=1,im
@@ -3282,8 +3279,8 @@ module module_physics_driver
             enddo
           enddo
         endif
-        ! *DH
-!
+
+#endif
         deallocate(vdftra, dvdftra)
       endif
 
@@ -4084,8 +4081,6 @@ module module_physics_driver
       tottracer = Interstitial(nt)%tracers_total
       otspt = Interstitial(nt)%otspt
       nsamftrac = Interstitial(nt)%nsamftrac
-      !zhang: for CS only
-      ncstrac = Interstitial(nt)%ncstrac
       !*GF
       !GF* The following variables are initialized in GFS_typedefs/interstitial_phys_reset; the are copied to local vars here,
       !    but are not used in GFS_suite_interstitial_3
@@ -4802,15 +4797,6 @@ module module_physics_driver
             !Model%imp_physics                                    ! intent(in)
             !cdata_block(nb,nt)%errmsg = errmsg                   ! intent(out)
             !cdata_block(nb,nt)%errflg = errflg                   ! intent(out)
-!zhang
-!            if (Model%me==0) write(0,*) 'cs_conv_run: ntrac+1, tottracer+3  =', ntrac+1, tottracer+3 
-!            if (Model%me==0) write(0,*) 'cs_conv_run: ncstrac, Interstitial(nt)%ncstrac =', ncstrac, Interstitial(nt)%ncstrac
-!            if (Model%me==0) write(0,*) 'cs_conv_run: Model%nctp  =', Model%nctp
-!            if (Model%me==0) write(0,*) 'cs_conv_run: shape(Interstitial(nt)%otspt)  =',shape(Interstitial(nt)%otspt)
-!            if (Model%me==0) write(0,*) 'cs_conv_run: otspt(1:ncstrac,1:2)  =', otspt(1:ncstrac,1:2)
-!            if (Model%me==0) write(0,*) 'cs_conv_run: shape(Interstitial(nt)%clw)  =',shape(Interstitial(nt)%clw)
-!            if (Model%me==0) write(0,*) 'cs_conv_run: shape(fscav)  =', shape(fscav)
-!            if (Model%me==0) write(0,*) 'cs_conv_run: shape(fscav(1:ncstrac))  =', shape(fscav(1:ncstrac))
             call ccpp_physics_run(cdata_block(nb,nt), scheme_name="cs_conv", ierr=ierr)
             ! Copy intent(inout) and intent(out) interstitial variables to local variables in driver
             rain1     = Interstitial(nt)%raincd
@@ -4842,15 +4828,6 @@ module module_physics_driver
             if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of cs_convr'
 
              if (lprnt) write(0,*)'befcsgt0=',Stateout%gt0(ipr,:)
-
-!zhang
-!          if (me == 0) then
-!            write(0,*) 'cs_convr: tottracer+3 = ', tottracer+3
-!            write(0,*) 'cs_convr: Model%nctp  = ', Model%nctp
-!            write(0,*) 'cs_convr: shape(otspt)  = ', shape(otspt)
-!            write(0,*) 'cs_convr: shape(clw)  = ', shape(clw)
-!            write(0,*) 'cs_convr: shape(fscav), shape(fswtr)  = ', shape(fscav), shape(fswtr)
-!          endif
 
 ! NOTE:  The variable rain1 output from cs_convr (called prec inside the subroutine) is a precipitation flux (kg/m2/sec),
 !         not meters LWE like the other schemes.  It is converted to m after the call to cs_convr.
@@ -5552,8 +5529,6 @@ module module_physics_driver
 #endif
 #ifdef CCPP
             if (Model%me==0) write(0,*) 'CCPP DEBUG: calling samfshalcnv through option B'
-            if (Model%me==0) write(0,*) 'CCPP samfshalcnv: nsamftrac = ',nsamftrac
-            if (Model%me==0) write(0,*) 'CCPP samfshalcnv: Interstitial(nt)%nn = ',Interstitial(nt)%nn
             ! Copy local variables from driver to appropriate interstitial variables
             !Interstitial(nt)%im = im             ! intent(in) - set in Interstitial(nt)%create()
             !Interstitial(nt)%ix = ix             ! intent(in) - set in Interstitial(nt)%create()
@@ -7372,7 +7347,7 @@ module module_physics_driver
       if (Model%imfdeepcnv == 3) then
         if (Model%me==0) write(0,*) 'CCPP DEBUG: calling gf_driver_post through option B'
         ! Copy local variables from driver to appropriate interstitial variables
-        !Interstitial(nt)%im               ! intent(in) - set in Interstitial%create
+        !Interstitial(nt)%im               ! intent(in) - set in Interstitial(nt)%create
         !Stateout(nb)%gt0                  ! intent(in)
         !Stateout(nb)%gq0(:,:,1)           ! intent(in)
         !Tbd(nb)%prevst                    ! intent(out)
