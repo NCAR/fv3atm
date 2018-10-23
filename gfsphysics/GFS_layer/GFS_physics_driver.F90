@@ -2735,6 +2735,14 @@ module module_physics_driver
             !Model%ntiw                           ! intent(in)
             Interstitial(nt)%nncl = nncl          ! intent(in)
             Interstitial(nt)%ntkev = ntkev        ! intent(in)
+            !con_g
+            !con_rd
+            !con_cp
+            !con_rv
+            !con_hvap
+            !con_fvirt
+            !con_eps
+            !con_epsm1
             Interstitial(nt)%dvdt = dvdt          ! intent(inout)
             Interstitial(nt)%dudt = dudt          ! intent(inout)
             Interstitial(nt)%dtdt = dtdt          ! intent(inout)
