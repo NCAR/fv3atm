@@ -4684,7 +4684,6 @@ module module_physics_driver
             if (Model%me==0) write(0,*) 'CCPP DEBUG: calling gf_driver through option B'
             ! Copy local variables from driver to appropriate interstitial variables
             Interstitial(nt)%tracers_total=tottracer        ! intent(in) 
-            Interstitial(nt)%nvdiff = ntrac                 ! intent(in)
             !Grid%area                                      ! intent(in)
             Interstitial(nt)%im = im                        ! intent(in)
             Interstitial(nt)%ix = ix                        ! intent(in)
