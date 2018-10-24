@@ -2724,6 +2724,89 @@ module module_physics_driver
 !  if (lprnt) write(0,*)'aftmonshocdtdt=',dtdt(ipr,1:10)
         else
           if (Model%satmedmf) then
+#ifdef CCPP
+            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling satmedmfvdif through option B'
+            ! Copy local variables from driver to appropriate interstitial variables
+            !Interstitial(nt)%im = im             ! intent(in) - set in Interstitial(nt)%create()
+            !Interstitial(nt)%ix = ix             ! intent(in) - set in Interstitial(nt)%create()
+            !Model%levs                           ! intent(in)
+            Interstitial(nt)%nvdiff = nvdiff      ! intent(in)
+            !Model%ntcw                           ! intent(in)
+            !Model%ntiw                           ! intent(in)
+            Interstitial(nt)%nncl = nncl          ! intent(in)
+            Interstitial(nt)%ntkev = ntkev        ! intent(in)
+            !con_g
+            !con_rd
+            !con_cp
+            !con_rv
+            !con_hvap
+            !con_fvirt
+            !con_eps
+            !con_epsm1
+            Interstitial(nt)%dvdt = dvdt          ! intent(inout)
+            Interstitial(nt)%dudt = dudt          ! intent(inout)
+            Interstitial(nt)%dtdt = dtdt          ! intent(inout)
+            Interstitial(nt)%dqdt = dqdt          ! intent(inout)
+            !Statein%ugrs                         ! intent(in)
+            !Statein%vgrs                         ! intent(in)
+            !Statein%tgrs                         ! intent(in)
+            !Statein%qgrs                         ! intent(in)
+            !Radtend%htrsw                        ! intent(in)
+            !Radtend%htrlw                        ! intent(in)
+            Interstitial(nt)%xmu = xmu            ! intent(in)
+            !Grid%area = garea                    ! intent(in)
+            !Statein%prsik(1,1)                   ! intent(in)
+            Interstitial(nt)%rb = rb              ! intent(in)
+            !Sfcprop%zorl                         ! intent(in)
+            !Diag%u10m                            ! intent(in)
+            !Diag%v10m                            ! intent(in)
+            !Sfcprop%ffmm                         ! intent(in)
+            !Sfcprop%ffhh                         ! intent(in)
+            !Sfcprop%tsfc                         ! intent(in)
+            Interstitial(nt)%hflx = hflx          ! intent(in)
+            Interstitial(nt)%evap = evap          ! intent(in)
+            Interstitial(nt)%stress = stress      ! intent(in)
+            Interstitial(nt)%wind = wind          ! intent(in)
+            Interstitial(nt)%kpbl = kpbl          ! intent(out)
+            !Statein%prsi                         ! intent(in)
+            Interstitial(nt)%del = del            ! intent(in)
+            !Statein%prsl                         ! intent(in)
+            !Statein%prslk                        ! intent(in)
+            !Statein%phii                         ! intent(in)
+            !Statein%phil                         ! intent(in)
+            !Model%dtp                            ! intent(in)
+            !Model%dspheat                        ! intent(in)
+            Interstitial(nt)%dusfc1 = dusfc1      ! intent(out)
+            Interstitial(nt)%dvsfc1 = dvsfc1      ! intent(out)
+            Interstitial(nt)%dtsfc1 = dtsfc1      ! intent(out)
+            Interstitial(nt)%dqsfc1 = dqsfc1      ! intent(out)
+            !Diag%hpbl                            ! intent(out)
+            Interstitial(nt)%kinver = kinver      ! intent(in)
+            !Model%xkzm_m                         ! intent(in)
+            !Model%xkzm_h                         ! intent(in)
+            !Model%xkzm_s                         ! intent(in)
+            !cdata_block(nb,nt)%errmsg = errmsg   ! intent(out)
+            !cdata_block(nb,nt)%errflg = errflg   ! intent(out)
+            call ccpp_physics_run(cdata_block(nb,nt), scheme_name="satmedmfvdif", ierr=ierr)
+            ! Copy back intent(inout) interstitial variables to local variables in driver
+            dvdt   = Interstitial(nt)%dvdt
+            dudt   = Interstitial(nt)%dudt
+            dtdt   = Interstitial(nt)%dtdt
+            dqdt   = Interstitial(nt)%dqdt
+            kpbl   = Interstitial(nt)%kpbl
+            dusfc1 = Interstitial(nt)%dusfc1
+            dvsfc1 = Interstitial(nt)%dvsfc1
+            dtsfc1 = Interstitial(nt)%dtsfc1
+            dqsfc1 = Interstitial(nt)%dqsfc1
+            errmsg = trim(cdata_block(nb,nt)%errmsg)
+            errflg = cdata_block(nb,nt)%errflg
+            if (errflg/=0) then
+                write(0,*) 'Error in call to satmedmfvdif: ' // trim(errmsg)
+                stop
+            end if
+
+#else
+              if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP satmedmfvdif'
               call satmedmfvdif(ix, im, levs, nvdiff, ntcw, ntiw, nncl, ntke,       &
                        dvdt, dudt, dtdt, dqdt,                                      &
                        Statein%ugrs, Statein%vgrs, Statein%tgrs, Statein%qgrs,      &
@@ -2734,6 +2817,7 @@ module module_physics_driver
                        Statein%prslk, Statein%phii, Statein%phil, dtp,              &
                        Model%dspheat, dusfc1, dvsfc1, dtsfc1, dqsfc1, Diag%hpbl,    &
                        kinver, Model%xkzm_m, Model%xkzm_h, Model%xkzm_s)
+#endif
           elseif (Model%hybedmf) then
 #ifdef CCPP
             if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_PBL_generic_pre through option B'
