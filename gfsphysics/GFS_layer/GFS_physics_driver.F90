@@ -4684,7 +4684,6 @@ module module_physics_driver
             if (Model%me==0) write(0,*) 'CCPP DEBUG: calling gf_driver through option B'
             ! Copy local variables from driver to appropriate interstitial variables
             Interstitial(nt)%tracers_total=tottracer        ! intent(in) 
-            Interstitial(nt)%nvdiff = ntrac                 ! intent(in)
             !Grid%area                                      ! intent(in)
             Interstitial(nt)%im = im                        ! intent(in)
             Interstitial(nt)%ix = ix                        ! intent(in)
@@ -5738,8 +5737,8 @@ module module_physics_driver
             endif
 #endif
 
-         !elseif (Model%imfshalcnv == 3) then
-         !   write(0,*) "hli: the shallow convection of GF is called in gf_driver"
+          !elseif (Model%imfshalcnv == 3) then
+          !if (Model%me==0) write(0,*) "CCPP DEBUG: hli- the shallow convection of GF is called in gf_driver"
 
           elseif (Model%imfshalcnv == 0) then    ! modified Tiedtke Shallow convecton
                                                  !-----------------------------------
