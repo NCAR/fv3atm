@@ -3260,7 +3260,6 @@ module GFS_typedefs
     integer :: ncnvcld3d = 0       !< number of convective 3d clouds fields
 
 !--- read in the namelist
-    !--- read in the namelist
 #ifdef INTERNAL_FILE_NML
     Model%input_nml_file => input_nml_file
     read(Model%input_nml_file, nml=gfs_physics_nml)
@@ -3395,7 +3394,7 @@ module GFS_typedefs
     Model%prautco          = prautco
     Model%evpco            = evpco
     Model%wminco           = wminco
-!--- Morroson-Gettelman MP parameters
+!--- Morrison-Gettelman MP parameters
     Model%fprcp            = fprcp
     Model%mg_dcs           = mg_dcs
     Model%mg_qcvar         = mg_qcvar
@@ -3462,8 +3461,8 @@ module GFS_typedefs
     Model%shoc_cld         = shoc_cld
 #ifdef CCPP
     if (oz_phys .and. oz_phys_2015) then
-        write(*,*) 'Logic error: can only use one ozone physics option, not both'
-        stop
+       write(*,*) 'Logic error: can only use one ozone physics option (oz_phys or oz_phys_2015), not both. Exiting.'
+       stop
     end if
     Model%oz_phys          = oz_phys
     Model%oz_phys_2015     = oz_phys_2015
@@ -4772,7 +4771,7 @@ module GFS_typedefs
     class(GFS_interstitial_type)       :: Interstitial
     integer,                intent(in) :: IM
     type(GFS_control_type), intent(in) :: Model
-
+    !
     allocate (Interstitial%otspt      (Model%ntracp1,2))
     ! Set up numbers of tracers for PBL, convection, etc: sets
     ! Interstitial%{nncl,nvdiff,mg3_as_mg2,nn,tracers_total,ntk,ntkev,otspt,nsamftrac,ncstrac}
