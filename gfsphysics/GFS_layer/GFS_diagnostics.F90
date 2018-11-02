@@ -2812,8 +2812,63 @@ module GFS_diagnostics
     do nb = 1,nblks
       ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%qrain(:)
     enddo
-!--------------------------nsst variables
+
   endif
+
+!--------------------------nsst variables
+
+!--------------------------aerosols
+#ifdef CCPP
+    if (Model%ntwa>0) then
+      idx = idx + 1
+      ExtDiag(idx)%axes = 3
+      ExtDiag(idx)%name = 'nwfa'
+      ExtDiag(idx)%desc = 'number concentration of water-friendly aerosols'
+      ExtDiag(idx)%unit = 'kg-1'
+      ExtDiag(idx)%mod_name = 'gfs_phys'
+      allocate (ExtDiag(idx)%data(nblks))
+      do nb = 1,nblks
+        ExtDiag(idx)%data(nb)%var3 => Statein(nb)%qgrs(:,:,Model%ntwa)
+      enddo
+
+      idx = idx + 1
+      ExtDiag(idx)%axes = 2
+      ExtDiag(idx)%name = 'nwfa2d'
+      ExtDiag(idx)%desc = 'water-friendly surface aerosol source'
+      ExtDiag(idx)%unit = 'kg-1 s-1'
+      ExtDiag(idx)%mod_name = 'gfs_sfc'
+      allocate (ExtDiag(idx)%data(nblks))
+      do nb = 1,nblks
+        ExtDiag(idx)%data(nb)%var2 => Coupling(nb)%nwfa2d
+      enddo
+    endif
+
+    if (Model%ntia>0) then
+      idx = idx + 1
+      ExtDiag(idx)%axes = 3
+      ExtDiag(idx)%name = 'nifa'
+      ExtDiag(idx)%desc = 'number concentration of ice-friendly aerosols'
+      ExtDiag(idx)%unit = 'kg-1'
+      ExtDiag(idx)%mod_name = 'gfs_phys'
+      allocate (ExtDiag(idx)%data(nblks))
+      do nb = 1,nblks
+        ExtDiag(idx)%data(nb)%var3 => Statein(nb)%qgrs(:,:,Model%ntia)
+      enddo
+
+      idx = idx + 1
+      ExtDiag(idx)%axes = 2
+      ExtDiag(idx)%name = 'nifa2d'
+      ExtDiag(idx)%desc = 'ice-friendly surface aerosol source'
+      ExtDiag(idx)%unit = 'kg-1 s-1'
+      ExtDiag(idx)%mod_name = 'gfs_sfc'
+      allocate (ExtDiag(idx)%data(nblks))
+      do nb = 1,nblks
+        ExtDiag(idx)%data(nb)%var2 => Coupling(nb)%nifa2d
+      enddo
+    endif
+
+#endif
+
 !  print *,'in gfdl_diag_register,af all extdiag, idx=',idx
 
 !--- prognostic variable tendencies (t, u, v, sph, clwmr, o3)
