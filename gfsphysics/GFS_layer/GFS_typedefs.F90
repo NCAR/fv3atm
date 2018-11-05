@@ -416,8 +416,10 @@ module GFS_typedefs
 !! | IPD_Data(nb)%Sfcprop%flhc        | surface_exchange_coefficient_for_heat                                  | surface exchange coefficient for heat                  | W/m-2 K-1     |    1 | real    | kind_phys | none   | F        |                   
 !! | IPD_Data(nb)%Sfcprop%flqc        | surface_exchange_coefficient_for_moisture                              | surface exchange coefficient for moisture              | kg m-2 s-1    |    1 | real    | kind_phys | none   | F        |                   
 !! | IPD_Data(nb)%Sfcprop%chs2        | surface_exchange_coefficient_for_heat_at_2m                            | exchange coefficient for heat at 2 meters              | m s-1         |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%cqs2        | surface_exchange_coefficient_for_moisture_at_2m                        | exchange coefficient for moisture at 2 meters          | m s-1         |    1 | real    | kind_phys | inout  | F        |
+!! | IPD_Data(nb)%Sfcprop%cqs2        | surface_exchange_coefficient_for_moisture_at_2m                        | exchange coefficient for moisture at 2 meters          | m s-1         |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%lh          | surface_latent_heat                                                    | latent heating at the surface (pos = up)               | W m-2         |    1 | real    | kind_phys | none   | F        |
 !!
+
 #endif
   type GFS_sfcprop_type
 
@@ -518,6 +520,7 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: flqc(:)       => null()  !drag coeff for moisture
     real (kind=kind_phys), pointer :: chs2(:)       => null()  !exch coeff for heat at 2m
     real (kind=kind_phys), pointer :: cqs2(:)       => null()  !exch coeff for moisture at 2m
+    real (kind=kind_phys), pointer :: lh(:)         => null()  !latent heating at the surface
 #endif
 
     contains
@@ -2638,10 +2641,12 @@ module GFS_typedefs
 
 !--- Out
     allocate (Sfcprop%t2m (IM))
+    allocate (Sfcprop%th2m(IM))
     allocate (Sfcprop%q2m (IM))
 
-    Sfcprop%t2m = clear_val
-    Sfcprop%q2m = clear_val
+    Sfcprop%t2m  = clear_val
+    Sfcprop%th2m = clear_val
+    Sfcprop%q2m  = clear_val
 
     if (Model%nstf_name(1) > 0) then
       allocate (Sfcprop%tref   (IM))
@@ -2721,6 +2726,7 @@ module GFS_typedefs
        allocate (Sfcprop%flqc   (IM ))
        allocate (Sfcprop%chs2   (IM ))
        allocate (Sfcprop%cqs2   (IM ))
+       allocate (Sfcprop%lh     (IM ))
        !
       print*,"Initializing all MYNN-SfcLay variables with ",clear_val
        Sfcprop%ustm        = clear_val
@@ -2731,6 +2737,7 @@ module GFS_typedefs
        Sfcprop%flqc        = clear_val
        Sfcprop%chs2        = clear_val
        Sfcprop%cqs2        = clear_val
+       Sfcprop%lh          = clear_val
     end if
     if (Model%imfdeepcnv == 3) then
         allocate (Sfcprop%conv_act(IM))
