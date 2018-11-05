@@ -1004,21 +1004,21 @@ module GFS_typedefs
 !! | IPD_Control%dxinv                    | inverse_scaling_factor_for_critical_relative_humidity                         | inverse scaling factor for critical relative humidity                | rad2 m-2      |    0 | real      | kind_phys | none   | F        |
 !! | IPD_Control%dxmax                    | maximum_scaling_factor_for_critical_relative_humidity                         | maximum scaling factor for critical relative humidity                | m2 rad-2      |    0 | real      | kind_phys | none   | F        |
 !! | IPD_Control%dxmin                    | minimum_scaling_factor_for_critical_relative_humidity                         | minimum scaling factor for critical relative humidity                | m2 rad-2      |    0 | real      | kind_phys | none   | F        |
-!! | IPD_Control%rhcmax                   | maximum_critical_relative_humidity                                            | maximum critical relative humidity                                   | frac          |    0 | real      | kind_phys | none   | F        |
-!! | IPD_Control%do_mynnedmf              | do_mynnedmf                                                                   | switch to activate MYNN-EDMF                                         | switch        |    0 | logical   |           | none   | F        |
-!! | IPD_Control%do_mynnsfclay            | do_mynnsfclay                                                                 | switch to activate MYNN surface layer                                | switch        |    0 | logical   |           | none   | F        |
-!! | IPD_Control%grav_settling            | grav_settling                                                                 | switch to activate gravitational setting of fog                      | switch        |    0 | integer   |           | none   | F        |                   
-!! | IPD_Control%bl_mynn_tkebudget        | tke_budget                                                                    | switch for activating TKE budget                                     | switch        |    0 | integer   |           | none   | F        |                   
-!! | IPD_Control%bl_mynn_tkeadvect        | tke_advect                                                                    | switch for activating TKE advection                                  | switch        |    0 | logical   |           | none   | F        |                   
-!! | IPD_Control%bl_mynn_cloudpdf         | cloudpdf                                                                      | switch to determine which cloud PDF to use                           | switch        |    0 | integer   |           | none   | F        |                   
-!! | IPD_Control%bl_mynn_mixlength        | mixing_length_switch                                                          | switch to determine which mixing length form to use                  | switch        |    0 | integer   |           | none   | F        |                   
-!! | IPD_Control%bl_mynn_edmf             | edmf_switch                                                                   | switch to activate the mass-flux scheme                              | switch        |    0 | integer   |           | none   | F        |                   
-!! | IPD_Control%bl_mynn_edmf_mom         | edmf_momentum_transport_switch                                                | switch to activate the transport of momentum                         | switch        |    0 | integer   |           | none   | F        |                   
-!! | IPD_Control%bl_mynn_edmf_tke         | edmf_tke_transport_switch                                                     | switch to activate the transport of TKE                              | switch        |    0 | integer   |           | none   | F        |                   
-!! | IPD_Control%bl_mynn_edmf_part        | edmf_partition_switch                                                         | switch to partitioning og the MF and ED areas                        | switch        |    0 | integer   |           | none   | F        |                   
-!! | IPD_Control%bl_mynn_cloudmix         | cloud_specie_mix_switch                                                       | switch to activate mixing of cloud species                           | switch        |    0 | integer   |           | none   | F        |                   
-!! | IPD_Control%bl_mynn_mixqt            | mix_total_water_switch                                                        | switch to mix total water or individual species                      | switch        |    0 | integer   |           | none   | F        |                   
-!! | IPD_Control%icloud_bl                | couple_sgs_clouds_to_radiation_switch                                         | switch for coupling sgs clouds to radiation                          | switch        |    0 | integer   |           | none   | F        | 
+!! | IPD_Control%rhcmax                   | maximum_critical_relative_humidity                                            | Maximum critical relative humidity                                   | frac          |    0 | real      | kind_phys | none   | F        |
+!! | IPD_Control%do_mynnedmf              | do_mynnedmf                                                                   | flag to activate MYNN-EDMF                                           | flag          |    0 | logical   |           | none   | F        |
+!! | IPD_Control%do_mynnsfclay            | do_mynnsfclay                                                                 | flag to activate MYNN surface layer                                  | flag          |    0 | logical   |           | none   | F        |
+!! | IPD_Control%grav_settling            | grav_settling                                                                 | flag to activate gravitational setting of fog                        | flag          |    0 | integer   |           | none   | F        |                   
+!! | IPD_Control%bl_mynn_tkebudget        | tke_budget                                                                    | flag for activating TKE budget                                       | flag          |    0 | integer   |           | none   | F        |                   
+!! | IPD_Control%bl_mynn_tkeadvect        | tke_advect                                                                    | flag for activating TKE advection                                    | flag          |    0 | logical   |           | none   | F        |                   
+!! | IPD_Control%bl_mynn_cloudpdf         | cloudpdf                                                                      | flag to determine which cloud PDF to use                             | flag          |    0 | integer   |           | none   | F        |                   
+!! | IPD_Control%bl_mynn_mixlength        | mixing_length_flag                                                            | flag to determine which mixing length form to use                    | flag          |    0 | integer   |           | none   | F        |                   
+!! | IPD_Control%bl_mynn_edmf             | edmf_flag                                                                     | flag to activate the mass-flux scheme                                | flag          |    0 | integer   |           | none   | F        |                   
+!! | IPD_Control%bl_mynn_edmf_mom         | edmf_momentum_transport_flag                                                  | flag to activate the transport of momentum                           | flag          |    0 | integer   |           | none   | F        |                   
+!! | IPD_Control%bl_mynn_edmf_tke         | edmf_tke_transport_flag                                                       | flag to activate the transport of TKE                                | flag          |    0 | integer   |           | none   | F        |                   
+!! | IPD_Control%bl_mynn_edmf_part        | edmf_partition_flag                                                           | flag to partitioning og the MF and ED areas                          | flag          |    0 | integer   |           | none   | F        |                   
+!! | IPD_Control%bl_mynn_cloudmix         | cloud_specie_mix_flag                                                         | flag to activate mixing of cloud species                             | flag          |    0 | integer   |           | none   | F        |                   
+!! | IPD_Control%bl_mynn_mixqt            | mix_total_water_flag                                                          | flag to mix total water or individual species                        | flag          |    0 | integer   |           | none   | F        |                   
+!! | IPD_Control%icloud_bl                | couple_sgs_clouds_to_radiation_flag                                           | flag for coupling sgs clouds to radiation                            | flag          |    0 | integer   |           | none   | F        | 
 !!
 #endif
   type GFS_control_type
@@ -1270,17 +1270,17 @@ module GFS_typedefs
     logical              :: do_mynnedmf
     logical              :: do_mynnsfclay
     integer              :: grav_settling      !< flag for initalizing fist time step
-    integer              :: bl_mynn_tkebudget  !< switch for activating TKE budget
+    integer              :: bl_mynn_tkebudget  !< flag for activating TKE budget
     logical              :: bl_mynn_tkeadvect  !< activate computation of TKE advection (not yet in use for FV3)
-    integer              :: bl_mynn_cloudpdf   !< switch to determine which cloud PDF to use
-    integer              :: bl_mynn_mixlength  !< switch for different version of mixing length formulation
-    integer              :: bl_mynn_edmf       !< switch to activate the mass-flux scheme
-    integer              :: bl_mynn_edmf_mom   !< switch to activate the transport of momentum
-    integer              :: bl_mynn_edmf_tke   !< witch to activate the transport of TKE
-    integer              :: bl_mynn_edmf_part  !< switch to partitioning og the MF and ED areas
-    integer              :: bl_mynn_cloudmix   !< switch to activate mixing of cloud species
-    integer              :: bl_mynn_mixqt      !< switch to mix total water or individual species
-    integer              :: icloud_bl          !< switch for coupling sgs clouds to radiation
+    integer              :: bl_mynn_cloudpdf   !< flag to determine which cloud PDF to use
+    integer              :: bl_mynn_mixlength  !< flag for different version of mixing length formulation
+    integer              :: bl_mynn_edmf       !< flag to activate the mass-flux scheme
+    integer              :: bl_mynn_edmf_mom   !< flag to activate the transport of momentum
+    integer              :: bl_mynn_edmf_tke   !< flag to activate the transport of TKE
+    integer              :: bl_mynn_edmf_part  !< flag to partitioning og the MF and ED areas
+    integer              :: bl_mynn_cloudmix   !< flag to activate mixing of cloud species
+    integer              :: bl_mynn_mixqt      !< flag to mix total water or individual species
+    integer              :: icloud_bl          !< flag for coupling sgs clouds to radiation
 #endif
 
 !--- Rayleigh friction
