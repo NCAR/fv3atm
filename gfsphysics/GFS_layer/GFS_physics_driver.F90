@@ -59,8 +59,8 @@ module module_physics_driver
   real(kind=kind_phys), parameter :: epsq    = 1.e-20
   real(kind=kind_phys), parameter :: hsub    = con_hvap+con_hfus
   real(kind=kind_phys), parameter :: czmin   = 0.0001      ! cos(89.994)
-  real(kind=kind_phys), parameter :: one     = 1.0d0, onebg = one/con_g
 #ifndef CCPP
+  real(kind=kind_phys), parameter :: one     = 1.0d0, onebg = one/con_g
   real(kind=kind_phys), parameter :: albdf   = 0.06
 #endif
   real(kind=kind_phys), parameter :: tf=258.16, tcr=273.16, tcrf=1.0/(tcr-tf) !GF - once MG is CCPP-compliant, wrap this in #ifndef CCPP since moved to GFS_typedefs
@@ -519,7 +519,7 @@ module module_physics_driver
 !--- REAL VARIABLES
 #ifdef CCPP
       real(kind=kind_phys) ::                                           &
-           dtf, dtp, rhbbot, rhbtop, rhpbl, frain, tem, tem1, tem2,     &
+           dtf, dtp, rhbbot, rhbtop, rhpbl, frain, tem, tem1,           &
            dpshc!,                                                      &
 !--- experimental for shoc sub-stepping
 !           dtshoc
@@ -557,7 +557,7 @@ module module_physics_driver
            adjnirdfd, adjvisbmd, adjvisdfd, gabsbdlw, xcosz, tseal,     &
            snohf, dlqfac, work3, ctei_rml, cldf,                        &
 #ifdef CCPP
-           psautco_l, prautco_l, dtzm, temrain1,                        &
+           psautco_l, prautco_l, dtzm,                                  &
 #else
            psautco_l, prautco_l, ocalnirbm_cpl, ocalnirdf_cpl,          &
            ocalvisbm_cpl, ocalvisdf_cpl, dtzm, temrain1,                &
@@ -673,6 +673,7 @@ module module_physics_driver
 #else
       nt = 1
 #endif
+#endif
 
       ! Initialize local variables (mainly for debugging purposes, because the
       ! corresponding variables Interstitial(nt)%... are reset to zero every time);
@@ -681,7 +682,10 @@ module module_physics_driver
       snowmt = 0.
       gamq   = 0.
       gamt   = 0.
+      gflx   = 0.
+      hflx   = 0.
 
+#ifdef CCPP
       ! Associate construct to replace local variables with CCPP variables wrapping the entire driver routine
       associate_ccpp_vars: associate(adjsfcdsw => Diag%dswsfci,               &
                                      adjsfcnsw => Diag%nswsfci,               &
@@ -959,7 +963,10 @@ module module_physics_driver
             ncgl(i,k) = 0.0
           enddo
         enddo
-!
+        do i=1,im
+          cn_prc(i) = 0.0
+          cn_snr(i) = 0.0
+        enddo
       else
         allocate (qlcn(1,1),    qicn(1,1),     w_upi(1,1),    cf_upi(1,1),  &
                   CNV_MFD(1,1), CNV_PRC3(1,1), CNV_DQLDT(1,1),              &
@@ -4779,8 +4786,8 @@ module module_physics_driver
             Interstitial(nt)%fswtr                     = fswtr             ! intent(out)
             Interstitial(nt)%fscav                     = fscav             ! intent(out)
             Interstitial(nt)%save_q(:,:,1)             = dqdt(:,:,1)       ! intent(out)
-            Interstitial(nt)%save_q(:,:,ntcw)    = dqdt(:,:,2)       ! intent(out)  ntcw=2 
-            Interstitial(nt)%save_q(:,:,ntiw)    = dqdt(:,:,3)       ! intent(out)  ntiw=3 
+            Interstitial(nt)%save_q(:,:,ntcw)          = dqdt(:,:,2)       ! intent(out) ntcw=2
+            Interstitial(nt)%save_q(:,:,ntiw)          = dqdt(:,:,3)       ! intent(out) ntiw=3
             !cdata_block(nb,nt)%errmsg        = errmsg            ! intent(out)
             !cdata_block(nb,nt)%errflg        = errflg            ! intent(out)
             call ccpp_physics_run(cdata_block(nb,nt), scheme_name="cs_conv_pre", ierr=ierr)
@@ -6575,6 +6582,66 @@ module module_physics_driver
 !
       elseif (imp_physics == Model%imp_physics_mg) then       ! MGB double-moment microphysics
                                                               ! ------------------------------
+#ifdef CCPP
+        if (Model%me==0) write(0,*) 'CCPP DEBUG: calling m_micro_pre_run through option B'
+        !Interstitial(nt)%im = im                             ! intent(in) - set in Interstitial(nt)%create()
+        !Model%levs                                           ! intent(in)
+        !Model%do_shoc                                        ! intent(in)
+        !Model%fprcp                                          ! intent(in)
+        !Model%mg3_as_mg2                                     ! intent(in)
+        !Model%imfdeepcnv                                     ! intent(in)
+        !Model%imfshalcnv                                     ! intent(in)
+        !Stateout%gq0(:,:,ntiw)                               ! intent(in)
+        !Stateout%gq0(:,:,ntcw)                               ! intent(in)
+        !Stateout%gq0(:,:,ntrw)                               ! intent(in)
+        !Stateout%gq0(:,:,ntsw)                               ! intent(in)
+        !Stateout%gq0(:,:,ntgl)                               ! intent(in)
+        !Stateout%gq0(:,:,ntrnc)                              ! intent(in)
+        !Stateout%gq0(:,:,ntsnc)                              ! intent(in)
+        !Stateout%gq0(:,:,ntgnc)                              ! intent(in)
+        !Tbd%phy_f3d(:,:,ntot3d-2)                            ! intent(in)
+        if (allocated(cnvc) .and. allocated(cnvw)) then
+          Interstitial(nt)%cnvc = cnvc                        ! intent(in)
+          Interstitial(nt)%cnvw = cnvw                        ! intent(in)
+        end if
+        !Model%tcr                                            ! intent(in)
+        !Model%tcrf                                           ! intent(in)
+        !Stateout%gt0                                         ! intent(in)
+        Interstitial(nt)%qrn = qrn                            ! intent(inout)
+        Interstitial(nt)%qsnw = qsnw                          ! intent(inout)
+        Interstitial(nt)%qgl = qgl                            ! intent(inout)
+        Interstitial(nt)%ncpr = ncpr                          ! intent(inout)
+        Interstitial(nt)%ncps = ncps                          ! intent(inout)
+        Interstitial(nt)%ncgl = ncgl                          ! intent(inout)
+        !Tbd%phy_f3d(:,:,1)                                   ! intent(inout)
+        Interstitial(nt)%qlcn = qlcn                          ! intent(inout)
+        Interstitial(nt)%qicn = qicn                          ! intent(inout)
+        Interstitial(nt)%cf_upi = cf_upi                      ! intent(inout)
+        !Interstitial(nt)%clw(:,:,2)                          ! intent(out)
+        !Interstitial(nt)%clw(:,:,1)                          ! intent(out)
+        !cdata_block(nb,nt)%errmsg = errmsg                   ! intent(  out)
+        !cdata_block(nb,nt)%errflg = errflg                   ! intent(  out)
+        call ccpp_physics_run(cdata_block(nb,nt), scheme_name="m_micro_pre", ierr=ierr)
+        ! Copy back intent(inout) and intent(out) interstitial variables to local variables in driver
+        qrn = Interstitial(nt)%qrn
+        qsnw = Interstitial(nt)%qsnw
+        qgl = Interstitial(nt)%qgl
+        ncpr = Interstitial(nt)%ncpr
+        ncps = Interstitial(nt)%ncps
+        ncgl = Interstitial(nt)%ncgl
+        qlcn = Interstitial(nt)%qlcn
+        qicn = Interstitial(nt)%qicn
+        cf_upi = Interstitial(nt)%cf_upi
+        clw(:,:,2) = Interstitial(nt)%clw(:,:,2)
+        clw(:,:,1) = Interstitial(nt)%clw(:,:,1)
+        errmsg = trim(cdata_block(nb,nt)%errmsg)
+        errflg = cdata_block(nb,nt)%errflg
+        if (errflg/=0) then
+            write(0,*) 'Error in call to m_micro_pre_run: ' // trim(errmsg)
+            stop
+        end if
+#else
+
         kk = 1
         if (Model%fprcp >= 2) kk = 6
 
@@ -6711,6 +6778,9 @@ module module_physics_driver
             enddo
           endif
         endif
+
+#endif
+
 !       notice clw ix instead of im
 !       call m_micro_driver(im,ix,levs,flipv,del,dtp,prsl,prsi,
 !    &    prslk,prsik,pgr,vvl,clw(1,1,2), QLCN, clw(1,1,1),QICN,
@@ -6732,6 +6802,95 @@ module module_physics_driver
 !       write(1000+me,*)' maxwatncb=',maxval(Stateout%gq0(1:im,k,ntlnc)),' k=',k,' kdt',kdt
 !       enddo
 
+#ifdef CCPP
+        if (Model%me==0) write(0,*) 'CCPP DEBUG: calling m_micro_run through option B'
+        !Interstitial(nt)%im = im                             ! intent(in) - set in Interstitial(nt)%create()
+        !Interstitial(nt)%ix = ix                             ! intent(in) - set in Interstitial(nt)%create()
+        !Model%levs                                           ! intent(in)
+        !Model%flipv                                          ! intent(in)
+        !Model%dtp                                            ! intent(in)
+        !Statein%prsl                                         ! intent(in)
+        !Statein%prsi                                         ! intent(in)
+        !Statein%phil                                         ! intent(in)
+        !Statein%phii                                         ! intent(in)
+        !Statein%vvl                                          ! intent(in)
+        Interstitial(nt)%clw(:,:,2) = clw(:,:,2)              ! intent(in)
+        Interstitial(nt)%qlcn = qlcn                          ! intent(in)
+        Interstitial(nt)%clw(:,:,1) = clw(:,:,1)              ! intent(in)
+        Interstitial(nt)%qicn = qicn                          ! intent(in)
+        !Radtend%htrlw                                        ! intent(in)
+        !Radtend%htrsw                                        ! intent(in)
+        Interstitial(nt)%w_upi = w_upi                        ! intent(in)
+        Interstitial(nt)%cf_upi = cf_upi                      ! intent(in)
+        Interstitial(nt)%frland = frland                      ! intent(in)
+        !Diag%hpbl                                            ! intent(in)
+        Interstitial(nt)%cnv_mfd = cnv_mfd                    ! intent(in)
+        Interstitial(nt)%cnv_prc3 = cnv_prc3                  ! intent(in)
+        Interstitial(nt)%cnv_dqldt = cnv_dqldt                ! intent(in)
+        Interstitial(nt)%clcn = clcn                          ! intent(in)
+        !Stateout%gu0                                         ! intent(in)
+        !Stateout%gv0                                         ! intent(in)
+        !Diag%dusfc                                           ! intent(in)
+        !Diag%dvsfc                                           ! intent(in)
+        Interstitial(nt)%dusfc1 = dusfc1                      ! intent(in)
+        Interstitial(nt)%dvsfc1 = dvsfc1                      ! intent(in)
+        Interstitial(nt)%cnv_fice = cnv_fice                  ! intent(in)
+        Interstitial(nt)%cnv_ndrop = cnv_ndrop                ! intent(in)
+        Interstitial(nt)%cnv_nice = cnv_nice                  ! intent(in)
+        !Stateout%gq0(:,:,1)                                  ! intent(inout)
+        !Stateout%gq0(:,:,ntcw)                               ! intent(out)
+        !Stateout%gq0(:,:,ntiw)                               ! intent(out)
+        !Stateout%gt0                                         ! intent(inout)
+        !Interstitial(nt)%prcpmp                              ! intent(out)
+        !Diag%sr                                              ! intent(out)
+        !Stateout%gq0(:,:,ntlnc)                              ! intent(inout)
+        !Stateout%gq0(:,:,ntinc)                              ! intent(inout)
+        !Model%fprcp                                          ! intent(in)
+        Interstitial(nt)%qrn = qrn                            ! intent(inout)
+        Interstitial(nt)%qsnw = qsnw                          ! intent(inout)
+        Interstitial(nt)%qgl = qgl                            ! intent(inout)
+        Interstitial(nt)%ncpr = ncpr                          ! intent(inout)
+        Interstitial(nt)%ncps = ncps                          ! intent(inout)
+        Interstitial(nt)%ncgl = ncgl                          ! intent(inout)
+        !Tbd%phy_f3d(1,1,1)                                   ! intent(inout)
+        Interstitial(nt)%kbot = kbot                          ! intent(inout)
+        !Tbd%phy_f3d(1,1,2)                                   ! intent(out)
+        !Tbd%phy_f3d(1,1,3)                                   ! intent(out)
+        !Tbd%phy_f3d(1,1,4)                                   ! intent(out)
+        !Tbd%phy_f3d(1,1,5)                                   ! intent(out)
+        !Tbd%phy_f3d(1,1,Model%ngreffr)                       ! intent(out)
+        !Model%aero_in                                        ! intent(in)
+        Interstitial(nt)%skip_macro = skip_macro              ! intent(in)
+        !Interstitial(nt)%cn_prc                              ! intent(out)
+        !Interstitial(nt)%cn_snr                              ! intent(out)
+        !Model%lprnt                                          ! intent(in)
+        Interstitial(nt)%ipr = ipr                            ! intent(in)
+        !Model%kdt                                            ! intent(in)
+        !Grid%xlat                                            ! intent(in)
+        !Grid%xlon                                            ! intent(in)
+        Interstitial(nt)%rhc = rhc                            ! intent(in)
+        !cdata_block(nb,nt)%errmsg = errmsg                   ! intent(  out)
+        !cdata_block(nb,nt)%errflg = errflg                   ! intent(  out)
+        call ccpp_physics_run(cdata_block(nb,nt), scheme_name="m_micro", ierr=ierr)
+        ! Copy back intent(inout) and intent(out) interstitial variables to local variables in driver
+        rain1 = Interstitial(nt)%prcpmp
+        qrn = Interstitial(nt)%qrn
+        qsnw = Interstitial(nt)%qsnw
+        qgl = Interstitial(nt)%qgl
+        ncpr = Interstitial(nt)%ncpr
+        ncps = Interstitial(nt)%ncps
+        ncgl = Interstitial(nt)%ncgl
+        kbot = Interstitial(nt)%kbot
+        cn_prc = Interstitial(nt)%cn_prc
+        cn_snr = Interstitial(nt)%cn_snr
+        errmsg = trim(cdata_block(nb,nt)%errmsg)
+        errflg = cdata_block(nb,nt)%errflg
+        if (errflg/=0) then
+            write(0,*) 'Error in call to m_micro_run: ' // trim(errmsg)
+            stop
+        end if
+#else
+
         call m_micro_driver (im, ix, levs, Model%flipv, dtp,  Statein%prsl,      &
                              Statein%prsi, Statein%phil, Statein%phii,           &
                              Statein%vvl, clw(1,1,2), QLCN, clw(1,1,1), QICN,    &
@@ -6752,6 +6911,8 @@ module module_physics_driver
                              Model%aero_in, skip_macro, cn_prc, cn_snr, lprnt,   &
 !                            ipr, kdt, Grid%xlat, Grid%xlon)
                              ipr, kdt, Grid%xlat, Grid%xlon, rhc)
+#endif
+
 !     do k=1,levs
 !     write(1000+me,*)' maxwatnca=',maxval(Stateout%gq0(1:im,k,ntlnc)),' k=',k,' kdt=',kdt
 !     enddo
@@ -6775,6 +6936,38 @@ module module_physics_driver
 !       if (lprnt) write(0,*)' qsnwa=',qsnw(ipr,:),' kdt=',kdt
 !       if (lprnt) write(0,*)' qglba',qgl(ipr,:),' kdt=',kdt
 
+#ifdef CCPP
+        if (Model%me==0) write(0,*) 'CCPP DEBUG: calling m_micro_post_run through option B'
+        !Interstitial(nt)%im = im                             ! intent(in) - set in Interstitial(nt)%create()
+        !Model%levs                                           ! intent(in)
+        !Model%fprcp                                          ! intent(in)
+        !Model%mg3_as_mg2                                     ! intent(in)
+        Interstitial(nt)%ncpr = ncpr                          ! intent(in)
+        Interstitial(nt)%ncps = ncps                          ! intent(in)
+        Interstitial(nt)%ncgl = ncgl                          ! intent(in)
+        Interstitial(nt)%qrn = qrn                            ! intent(inout)
+        Interstitial(nt)%qsnw = qsnw                          ! intent(inout)
+        Interstitial(nt)%qgl = qgl                            ! intent(inout)
+        !Stateout%gq0(:,:,ntrw)                               ! intent(out)
+        !Stateout%gq0(:,:,ntsw)                               ! intent(out)
+        !Stateout%gq0(:,:,ntgl)                               ! intent(out)
+        !Stateout%gq0(:,:,ntrnc)                              ! intent(out)
+        !Stateout%gq0(:,:,ntsnc)                              ! intent(out)
+        !Stateout%gq0(:,:,ntgnc)                              ! intent(out)
+        !cdata_block(nb,nt)%errmsg = errmsg                   ! intent(  out)
+        !cdata_block(nb,nt)%errflg = errflg                   ! intent(  out)
+        call ccpp_physics_run(cdata_block(nb,nt), scheme_name="m_micro_post", ierr=ierr)
+        ! Copy back intent(inout) and intent(out) interstitial variables to local variables in driver
+        qrn = Interstitial(nt)%qrn
+        qsnw = Interstitial(nt)%qsnw
+        qgl = Interstitial(nt)%qgl
+        errmsg = trim(cdata_block(nb,nt)%errmsg)
+        errflg = cdata_block(nb,nt)%errflg
+        if (errflg/=0) then
+            write(0,*) 'Error in call to m_micro_post_run: ' // trim(errmsg)
+            stop
+        end if
+#else
         if (abs(Model%fprcp) == 1 .or. mg3_as_mg2) then
           do k=1,levs
             do i=1,im
@@ -6802,6 +6995,7 @@ module module_physics_driver
           enddo
 
         endif
+#endif
 
 !       if (lprnt) write(0,*)' cloudsm=',tbd%phy_f3d(ipr,:,1)*100,' kdt=',kdt
 !       if (lprnt) write(0,*)' clw2aft=',stateout%gq0(ipr,:,ntcw),' kdt=',kdt
@@ -6961,6 +7155,43 @@ module module_physics_driver
 
 !     if (lprnt) write(0,*)' rain1 after ls=',rain1(ipr)
 !
+#ifdef CCPP
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling cs_conv_aw_adj through option B'
+      ! Copy local variables from driver to appropriate interstitial variables
+      !Interstitial(nt)%im                         ! intent(in) - set in Interstitial(nt)%create
+      !Model%levs                                  ! intent(in)
+      !Model%cscnv                                 ! intent(in)
+      !Model%do_aw                                 ! intent(in)
+      !Model%do_shoc                               ! intent(in)
+      !Model%ntrac                                 ! intent(in)
+      !Model%ncld                                  ! intent(in)
+      !Model%ntcw                                  ! intent(in)
+      !Model%ntclamt                               ! intent(in)
+      !Interstitial(nt)%nncl                       ! intent(in) - set in Interstitial(nt)%create
+      !con_g                                       ! intent(in) - physical constant in physcons.F90
+      Interstitial(nt)%sigmafrac = sigmafrac       ! intent(in)
+      !Stateout%gt0                                ! intent(inout)
+      !Stateout%gq0                                ! intent(inout)
+      Interstitial(nt)%save_t = dtdt               ! intent(in)
+      Interstitial(nt)%save_q = dqdt               ! intent(in)
+      !Statein(nb)%prsi                            ! intent(in)
+      !Tbd(nb)%phy_f3d(:,:,1)                      ! intent(inout)
+      !Tbd(nb)%phy_f3d(:,:,IPD_Control%ntot3d-2)   ! intent(inout)
+      Interstitial(nt)%prcpmp = rain1              ! intent(inout)
+      !cdata_block(nb,nt)%errmsg = errmsg          ! intent(out)
+      !cdata_block(nb,nt)%errflg = errflg          ! intent(out)
+      !
+      call ccpp_physics_run(cdata_block(nb,nt), scheme_name="cs_conv_aw_adj", ierr=ierr)
+      ! Copy back intent(inout) interstitial variables to local variables
+      rain1  = Interstitial(nt)%prcpmp
+      errmsg = trim(cdata_block(nb,nt)%errmsg)
+      errflg = cdata_block(nb,nt)%errflg
+      !
+      if (errflg/=0) then
+          write(0,*) 'Error in call to cs_conv_aw_adj: ' // trim(errmsg)
+          stop
+      end if
+#else
       if (Model%cscnv .and. Model%do_aw) then
 !  Arakawa-Wu adjustment of large-scale microphysics tendencies:
 !  reduce by factor of (1-sigma)
@@ -7017,6 +7248,7 @@ module module_physics_driver
           rain1(i) = max(rain1(i) - temrain1(i)*0.001, 0.0_kind_phys)
         enddo
       endif
+#endif
 
 #ifdef CCPP
       ! OPTION B - works with all compilers
