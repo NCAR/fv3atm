@@ -379,6 +379,7 @@ module GFS_typedefs
 !! | IPD_Data(nb)%Sfcprop%smc         | volume_fraction_of_soil_moisture                                       | total soil moisture                                    | frac          |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%stc         | soil_temperature                                                       | soil temperature                                       | K             |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%t2m         | temperature_at_2m                                                      | 2 meter temperature                                    | K             |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%th2m        | potential_temperature_at_2m                                            | 2 meter potential temperature                          | K             |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%q2m         | specific_humidity_at_2m                                                | 2 meter specific humidity                              | kg kg-1       |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%tref        | sea_surface_reference_temperature                                      | sea surface reference temperature                      | K             |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%z_c         | sub-layer_cooling_thickness                                            | sub-layer cooling thickness                            | m             |    1 | real    | kind_phys | none   | F        |
@@ -409,6 +410,15 @@ module GFS_typedefs
 !! | IPD_Data(nb)%Sfcprop%flag_frsoil | flag_for_frozen_soil_physics                                           | flag for frozen soil physics (RUC)                     | flag          |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%rhofr       | density_of_frozen_precipitation                                        | density of frozen precipitation                        | kg m-3        |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%tsnow       | snow_temperature_bottom_first_layer                                    | snow temperature at the bottom of the first snow layer | K             |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%ustm        | surface_friction_velocity_drag                                         | friction velocity isolated for momentum only           | m s-1         |    1 | real    | kind_phys | none   | F        |                   
+!! | IPD_Data(nb)%Sfcprop%zol         | surface_stability_parameter                                            | monin obukhov surface stability parameter              | none          |    1 | real    | kind_phys | none   | F        |                   
+!! | IPD_Data(nb)%Sfcprop%mol         | theta_star                                                             | temperature flux divided by ustar (temperature scale)  | K             |    1 | real    | kind_phys | none   | F        |                   
+!! | IPD_Data(nb)%Sfcprop%rmol        | reciprocal_of_obukhov_length                                           | one over obukhov length                                | m-1           |    1 | real    | kind_phys | none   | F        |                   
+!! | IPD_Data(nb)%Sfcprop%flhc        | surface_exchange_coefficient_for_heat                                  | surface exchange coefficient for heat                  | W m-2 K-1     |    1 | real    | kind_phys | none   | F        |                   
+!! | IPD_Data(nb)%Sfcprop%flqc        | surface_exchange_coefficient_for_moisture                              | surface exchange coefficient for moisture              | kg m-2 s-1    |    1 | real    | kind_phys | none   | F        |                   
+!! | IPD_Data(nb)%Sfcprop%chs2        | surface_exchange_coefficient_for_heat_at_2m                            | exchange coefficient for heat at 2 meters              | m s-1         |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%cqs2        | surface_exchange_coefficient_for_moisture_at_2m                        | exchange coefficient for moisture at 2 meters          | m s-1         |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%lh          | surface_latent_heat                                                    | latent heating at the surface (pos = up)               | W m-2         |    1 | real    | kind_phys | none   | F        |
 !!
 #endif
   type GFS_sfcprop_type
@@ -464,6 +474,9 @@ module GFS_typedefs
 
 !--- Out
     real (kind=kind_phys), pointer :: t2m    (:)   => null()  !< 2 meter temperature
+#ifdef CCPP
+    real (kind=kind_phys), pointer :: th2m   (:)   => null()  !< 2 meter potential temperature
+#endif
     real (kind=kind_phys), pointer :: q2m    (:)   => null()  !< 2 meter humidity
 
 !--- NSSTM variables  (only allocated when [Model%nstf_name(1) > 0])
@@ -500,6 +513,16 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: flag_frsoil(:,:) => null()  !< RUC LSM: flag for frozen soil physics
     real (kind=kind_phys), pointer :: rhofr(:)         => null()  !< RUC LSM: density of frozen precipitation
     real (kind=kind_phys), pointer :: tsnow(:)         => null()  !< RUC LSM: snow temperature at the bottom of the first soil layer
+    !  MYNN surface layer
+    real (kind=kind_phys), pointer :: ustm (:)      => null()  !u* including drag
+    real (kind=kind_phys), pointer :: zol(:)        => null()  !surface stability parameter
+    real (kind=kind_phys), pointer :: mol(:)        => null()  !theta star
+    real (kind=kind_phys), pointer :: rmol(:)       => null()  !reciprocal of obukhov length
+    real (kind=kind_phys), pointer :: flhc(:)       => null()  !drag coeff for heat
+    real (kind=kind_phys), pointer :: flqc(:)       => null()  !drag coeff for moisture
+    real (kind=kind_phys), pointer :: chs2(:)       => null()  !exch coeff for heat at 2m
+    real (kind=kind_phys), pointer :: cqs2(:)       => null()  !exch coeff for moisture at 2m
+    real (kind=kind_phys), pointer :: lh(:)         => null()  !latent heating at the surface
 #endif
 
     contains
@@ -986,6 +1009,20 @@ module GFS_typedefs
 !! | IPD_Control%dxmax                    | maximum_scaling_factor_for_critical_relative_humidity                         | maximum scaling factor for critical relative humidity                | m2 rad-2      |    0 | real      | kind_phys | none   | F        |
 !! | IPD_Control%dxmin                    | minimum_scaling_factor_for_critical_relative_humidity                         | minimum scaling factor for critical relative humidity                | m2 rad-2      |    0 | real      | kind_phys | none   | F        |
 !! | IPD_Control%rhcmax                   | maximum_critical_relative_humidity                                            | maximum critical relative humidity                                   | frac          |    0 | real      | kind_phys | none   | F        |
+!! | IPD_Control%do_mynnedmf              | do_mynnedmf                                                                   | flag to activate MYNN-EDMF                                           | flag          |    0 | logical   |           | none   | F        |
+!! | IPD_Control%do_mynnsfclay            | do_mynnsfclay                                                                 | flag to activate MYNN surface layer                                  | flag          |    0 | logical   |           | none   | F        |
+!! | IPD_Control%grav_settling            | grav_settling                                                                 | flag to activate gravitational setting of fog                        | flag          |    0 | integer   |           | none   | F        |                   
+!! | IPD_Control%bl_mynn_tkebudget        | tke_budget                                                                    | flag for activating TKE budget                                       | flag          |    0 | integer   |           | none   | F        |                   
+!! | IPD_Control%bl_mynn_tkeadvect        | tke_advect                                                                    | flag for activating TKE advection                                    | flag          |    0 | logical   |           | none   | F        |                   
+!! | IPD_Control%bl_mynn_cloudpdf         | cloudpdf                                                                      | flag to determine which cloud PDF to use                             | flag          |    0 | integer   |           | none   | F        |                   
+!! | IPD_Control%bl_mynn_mixlength        | mixing_length_flag                                                            | flag to determine which mixing length form to use                    | flag          |    0 | integer   |           | none   | F        |                   
+!! | IPD_Control%bl_mynn_edmf             | edmf_flag                                                                     | flag to activate the mass-flux scheme                                | flag          |    0 | integer   |           | none   | F        |                   
+!! | IPD_Control%bl_mynn_edmf_mom         | edmf_momentum_transport_flag                                                  | flag to activate the transport of momentum                           | flag          |    0 | integer   |           | none   | F        |                   
+!! | IPD_Control%bl_mynn_edmf_tke         | edmf_tke_transport_flag                                                       | flag to activate the transport of TKE                                | flag          |    0 | integer   |           | none   | F        |                   
+!! | IPD_Control%bl_mynn_edmf_part        | edmf_partition_flag                                                           | flag to partitioning og the MF and ED areas                          | flag          |    0 | integer   |           | none   | F        |                   
+!! | IPD_Control%bl_mynn_cloudmix         | cloud_specie_mix_flag                                                         | flag to activate mixing of cloud species                             | flag          |    0 | integer   |           | none   | F        |                   
+!! | IPD_Control%bl_mynn_mixqt            | mix_total_water_flag                                                          | flag to mix total water or individual species                        | flag          |    0 | integer   |           | none   | F        |                   
+!! | IPD_Control%icloud_bl                | couple_sgs_clouds_to_radiation_flag                                           | flag for coupling sgs clouds to radiation                            | flag          |    0 | integer   |           | none   | F        | 
 !!
 #endif
   type GFS_control_type
@@ -1233,6 +1270,23 @@ module GFS_typedefs
     integer              :: seed0           !< random seed for radiation
 
     real(kind=kind_phys) :: rbcr            !< Critical Richardson Number in the PBL scheme
+#ifdef CCPP
+    !--- MYNN parameters/switches
+    logical              :: do_mynnedmf
+    logical              :: do_mynnsfclay
+    integer              :: grav_settling      !< flag for initalizing fist time step
+    integer              :: bl_mynn_tkebudget  !< flag for activating TKE budget
+    logical              :: bl_mynn_tkeadvect  !< activate computation of TKE advection (not yet in use for FV3)
+    integer              :: bl_mynn_cloudpdf   !< flag to determine which cloud PDF to use
+    integer              :: bl_mynn_mixlength  !< flag for different version of mixing length formulation
+    integer              :: bl_mynn_edmf       !< flag to activate the mass-flux scheme
+    integer              :: bl_mynn_edmf_mom   !< flag to activate the transport of momentum
+    integer              :: bl_mynn_edmf_tke   !< flag to activate the transport of TKE
+    integer              :: bl_mynn_edmf_part  !< flag to partitioning og the MF and ED areas
+    integer              :: bl_mynn_cloudmix   !< flag to activate mixing of cloud species
+    integer              :: bl_mynn_mixqt      !< flag to mix total water or individual species
+    integer              :: icloud_bl          !< flag for coupling sgs clouds to radiation
+#endif
 
 !--- Rayleigh friction
     real(kind=kind_phys) :: prslrd0         !< pressure level from which Rayleigh Damping is applied
@@ -1747,6 +1801,24 @@ module GFS_typedefs
 !! | IPD_Data(nb)%Intdiag%det_mf               | cumulative_atmosphere_detrainment_convective_mass_flux                    | cumulative detrainment mass flux                                       | Pa            |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%cldcov               |                                                                           | instantaneous 3D cloud fraction                                        |               |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%refl_10cm            | radar_reflectivity_10cm                                                   | instantaneous refl_10cm                                                | dBZ           |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%CLDFRA_BL            | subgrid_cloud_fraction_pbl                                                | subgrid cloud fraction from PBL scheme                                 | frac          |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%QC_BL                | subgrid_cloud_mixing ratio_pbl                                            | subgrid cloud cloud mixing ratio from PBL scheme                       | kg kg-1       |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%el_pbl               | mixing_length                                                             | mixing length in meters                                                | m             |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%Sh3D                 | stability_function_for_heat                                               | stability function for heat                                            | none          |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%qke                  | tke_at_mass_points                                                        | 2 x tke at mass points                                                 | m2 s-2        |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%qke_adv              | tke_at_mass_points_advected                                               | 2 x tke at mass points advected                                        | m2 s-2        |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%tsq                  | t_prime_squared                                                           | temperature fluctuation squared                                        | K2            |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%qsq                  | q_prime_squared                                                           | water vapor fluctuation squared                                        | kg2 kg-2      |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%cov                  | t_prime_q_prime                                                           | covariance of temperature and moisture                                 | K kg kg-1     |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%edmf_a               | emdf_updraft_area                                                         | updraft area from mass flux scheme                                     | frac          |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%edmf_w               | emdf_updraft_vertical_velocity                                            | updraft vertical velocity from mass flux scheme                        | m s-1         |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%edmf_qt              | emdf_updraft_total_water                                                  | updraft total water from mass flux scheme                              | kg kg-1       |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%edmf_thl             | emdf_updraft_theta_l                                                      | updraft theta-l from mass flux scheme                                  | K             |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%edmf_ent             | emdf_updraft_entrainment_rate                                             | updraft entranment rate from mass flux scheme                          | s-1           |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%edmf_qc              | emdf_updraft_cloud_water                                                  | updraft cloud water from mass flux scheme                              | kg kg-1       |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%nupdraft             | number_of_plumes                                                          | number of plumes per grid column                                       | count         |    1 | integer     |           | none   | F        |
+!! | IPD_Data(nb)%Intdiag%maxMF                | maximum_mass_flux                                                         | maximum mass flux within a column                                      | m s-1         |    1 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%ktop_shallow         | k_level_of_highest_reaching_plume                                         | k-level of highest reaching plume                                      | count         |    1 | integer     |           | none   | F        |
 !!
 #endif
   type GFS_diag_type
@@ -1811,6 +1883,28 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: toticeb(:)     => null()   !< accumulated ice precipitation in bucket (kg/m2)
     real (kind=kind_phys), pointer :: totsnwb(:)     => null()   !< accumulated snow precipitation in bucket (kg/m2)
     real (kind=kind_phys), pointer :: totgrpb(:)     => null()   !< accumulated graupel precipitation in bucket (kg/m2)
+
+#ifdef CCPP
+    !--- MYNN variables                                              
+    real (kind=kind_phys), pointer :: CLDFRA_BL  (:,:)   => null()  !
+    real (kind=kind_phys), pointer :: QC_BL      (:,:)   => null()  !
+    real (kind=kind_phys), pointer :: el_pbl     (:,:)   => null()  !
+    real (kind=kind_phys), pointer :: Sh3D       (:,:)   => null()  !
+    real (kind=kind_phys), pointer :: qke        (:,:)   => null()  !
+    real (kind=kind_phys), pointer :: qke_adv    (:,:)   => null()  !
+    real (kind=kind_phys), pointer :: tsq        (:,:)   => null()  !
+    real (kind=kind_phys), pointer :: qsq        (:,:)   => null()  !
+    real (kind=kind_phys), pointer :: cov        (:,:)   => null()  !
+    real (kind=kind_phys), pointer :: edmf_a     (:,:)   => null()  !
+    real (kind=kind_phys), pointer :: edmf_w     (:,:)   => null()  !
+    real (kind=kind_phys), pointer :: edmf_qt    (:,:)   => null()  !
+    real (kind=kind_phys), pointer :: edmf_thl   (:,:)   => null()  !
+    real (kind=kind_phys), pointer :: edmf_ent   (:,:)   => null()  !
+    real (kind=kind_phys), pointer :: edmf_qc    (:,:)   => null()  !
+    real (kind=kind_phys), pointer :: maxMF       (:)    => null()  !
+    integer, pointer               :: nupdraft    (:)    => null()  !
+    integer, pointer               :: ktop_shallow (:)   => null()  !
+#endif
 
 ! Output - only in physics
     real (kind=kind_phys), pointer :: u10m   (:)     => null()   !< 10 meter u/v wind speed
@@ -2570,10 +2664,16 @@ module GFS_typedefs
 
 !--- Out
     allocate (Sfcprop%t2m (IM))
+#ifdef CCPP
+    allocate (Sfcprop%th2m(IM))
+#endif
     allocate (Sfcprop%q2m (IM))
 
-    Sfcprop%t2m = clear_val
-    Sfcprop%q2m = clear_val
+    Sfcprop%t2m  = clear_val
+#ifdef CCPP
+    Sfcprop%th2m = clear_val
+#endif
+    Sfcprop%q2m  = clear_val
 
     if (Model%nstf_name(1) > 0) then
       allocate (Sfcprop%tref   (IM))
@@ -2641,6 +2741,30 @@ module GFS_typedefs
        Sfcprop%flag_frsoil = clear_val
        Sfcprop%rhofr       = clear_val
        Sfcprop%tsnow       = clear_val
+    end if
+    if (Model%do_mynnsfclay) then
+    ! For MYNN surface layer scheme
+      print*,"Allocating all MYNN-sfclay variables"
+       allocate (Sfcprop%ustm   (IM ))
+       allocate (Sfcprop%zol    (IM ))
+       allocate (Sfcprop%mol    (IM ))
+       allocate (Sfcprop%rmol   (IM ))
+       allocate (Sfcprop%flhc   (IM ))
+       allocate (Sfcprop%flqc   (IM ))
+       allocate (Sfcprop%chs2   (IM ))
+       allocate (Sfcprop%cqs2   (IM ))
+       allocate (Sfcprop%lh     (IM ))
+       !
+      print*,"Initializing all MYNN-SfcLay variables with ",clear_val
+       Sfcprop%ustm        = clear_val
+       Sfcprop%zol         = clear_val
+       Sfcprop%mol         = clear_val
+       Sfcprop%rmol        = clear_val
+       Sfcprop%flhc        = clear_val
+       Sfcprop%flqc        = clear_val
+       Sfcprop%chs2        = clear_val
+       Sfcprop%cqs2        = clear_val
+       Sfcprop%lh          = clear_val
     end if
     if (Model%imfdeepcnv == 3) then
         allocate (Sfcprop%conv_act(IM))
@@ -3114,6 +3238,22 @@ module GFS_typedefs
                                                                       !<           current operational version as of 2016
                                                                       !<     2: scale- & aerosol-aware mass-flux deep conv scheme (2017)
     logical              :: do_deep        = .true.                   !< whether to do deep convection
+#ifdef CCPP
+    logical              :: do_mynnedmf       = .false.               !< flag for MYNN-EDMF
+    logical              :: do_mynnsfclay     = .false.               !< flag for MYNN Surface Layer Scheme
+    integer              :: grav_settling     = 0
+    integer              :: bl_mynn_tkebudget = 0
+    logical              :: bl_mynn_tkeadvect = .false.
+    integer              :: bl_mynn_cloudpdf  = 2
+    integer              :: bl_mynn_mixlength = 2
+    integer              :: bl_mynn_edmf      = 1
+    integer              :: bl_mynn_edmf_mom  = 1
+    integer              :: bl_mynn_edmf_tke  = 0
+    integer              :: bl_mynn_edmf_part = 0
+    integer              :: bl_mynn_cloudmix  = 1
+    integer              :: bl_mynn_mixqt     = 0
+    integer              :: icloud_bl         = 1
+#endif
     integer              :: nmtvr          = 14                       !< number of topographic variables such as variance etc
                                                                       !< used in the GWD parameterization
     integer              :: jcap           =  1              !< number of spectral wave trancation used only by sascnv shalcnv
@@ -3249,6 +3389,10 @@ module GFS_typedefs
                                cscnv, cal_pre, do_aw, do_shoc, shocaftcnv, shoc_cld,        &
 #ifdef CCPP
                                oz_phys, oz_phys_2015,                                       &
+                               do_mynnedmf, do_mynnsfclay,                                  &
+                               bl_mynn_cloudpdf, bl_mynn_edmf, bl_mynn_edmf_mom,            &
+                               bl_mynn_edmf_tke, bl_mynn_edmf_part, bl_mynn_cloudmix,       &
+                               bl_mynn_mixqt, icloud_bl,                                    &
 #endif
                                h2o_phys, pdfcld, shcnvcw, redrag, hybedmf, satmedmf,        &
                                dspheat, cnvcld,                                             &
@@ -3534,7 +3678,20 @@ module GFS_typedefs
     Model%crtrh            = crtrh
     Model%dlqf             = dlqf
     Model%rbcr             = rbcr
-
+#ifdef CCPP
+    Model%do_mynnedmf       = do_mynnedmf
+    Model%do_mynnsfclay     = do_mynnsfclay
+    Model%bl_mynn_cloudpdf  = bl_mynn_cloudpdf
+    Model%bl_mynn_mixlength = bl_mynn_mixlength
+    Model%bl_mynn_edmf      = bl_mynn_edmf
+    Model%bl_mynn_edmf_mom  = bl_mynn_edmf_mom
+    Model%bl_mynn_edmf_tke  = bl_mynn_edmf_tke
+    Model%bl_mynn_cloudmix  = bl_mynn_cloudmix
+    Model%bl_mynn_mixqt     = bl_mynn_mixqt
+    Model%bl_mynn_edmf_part = bl_mynn_edmf_part
+    Model%bl_mynn_tkeadvect = bl_mynn_tkeadvect
+    Model%grav_settling     = grav_settling
+#endif
 
 !--- Rayleigh friction
     Model%prslrd0          = prslrd0
@@ -3747,6 +3904,22 @@ module GFS_typedefs
                                             ' ntke=',Model%ntke,' shoc_parm=',shoc_parm
     endif
 
+#ifdef CCPP
+    !--- mynn-edmf scheme
+    if (do_mynnedmf) then
+      Model%do_shoc    = .false.
+      Model%shal_cnv   = .false.
+      Model%imfshalcnv = -1
+      Model%hybedmf    = .false.
+      Model%satmedmf   = .false.
+      if (Model%me == Model%master) print *,' MYNN-EDMF scheme is used for both',                &
+                                            ' boundary layer turbulence and shallow convection', &
+                                            ' bl_mynn_cloudpdf=',Model%bl_mynn_cloudpdf,         &
+                                            ' bl_mynn_mixlength=',Model%bl_mynn_mixlength,       &
+                                            ' bl_mynn_edmf=',Model%bl_mynn_edmf
+    endif
+#endif
+
 !--- set number of cloud types
     if (Model%cscnv) then
       Model%nctp = nint(Model%cs_parm(5))
@@ -3827,7 +4000,11 @@ module GFS_typedefs
       else
         print*, ' Deep convection scheme disabled'
       endif
+#ifdef CPPP
+      if (.not. Model%old_monin .and. .not. Model%do_shoc .and. .not. Model%do_mynnedmf) print *,' New PBL scheme used'
+#else
       if (.not. Model%old_monin .and. .not. Model%do_shoc) print *,' New PBL scheme used'
+#endif
       if (.not. Model%shal_cnv) then
         Model%imfshalcnv = -1
         print *,' No shallow convection used'
@@ -3969,7 +4146,11 @@ module GFS_typedefs
     endif
 
     if(Model%ras     .or. Model%cscnv)  Model%cnvcld = .false.
+#ifdef CCPP
+    if(Model%do_shoc .or. Model%pdfcld .or. Model%do_mynnedmf) Model%cnvcld = .false.
+#else
     if(Model%do_shoc .or. Model%pdfcld) Model%cnvcld = .false.
+#endif
     if(Model%cnvcld) Model%ncnvcld3d = 1
 
 !--- get cnvw index in phy_f3d
@@ -4199,6 +4380,10 @@ module GFS_typedefs
       print *, ' dlqf              : ', Model%dlqf
       print *, ' seed0             : ', Model%seed0
       print *, ' rbcr              : ', Model%rbcr
+#ifdef CCPP
+      print *, ' do_mynnedmf       : ', Model%do_mynnedmf
+      print *, ' do_mynnsfclay     : ', Model%do_mynnsfclay
+#endif
       print *, ' '
       print *, 'Rayleigh friction'
       print *, ' prslrd0           : ', Model%prslrd0
@@ -4643,6 +4828,50 @@ module GFS_typedefs
     if(Model%lradar) then
       allocate (Diag%refl_10cm(IM,Model%levs))
     endif
+
+#ifdef CCPP
+    !--- MYNN variables:
+    if (Model%do_mynnedmf) then
+      print*,"Allocating all MYNN-EDMF variables:"
+      allocate (Diag%cldfra_bl (IM,Model%levs))
+      allocate (Diag%qc_bl     (IM,Model%levs))
+      allocate (Diag%el_pbl    (IM,Model%levs))
+      allocate (Diag%sh3d      (IM,Model%levs))
+      allocate (Diag%qke       (IM,Model%levs))
+      allocate (Diag%qke_adv   (IM,Model%levs))
+      allocate (Diag%tsq       (IM,Model%levs))
+      allocate (Diag%qsq       (IM,Model%levs))
+      allocate (Diag%cov       (IM,Model%levs))
+      allocate (Diag%edmf_a    (IM,Model%levs))
+      allocate (Diag%edmf_w    (IM,Model%levs))
+      allocate (Diag%edmf_qt   (IM,Model%levs))
+      allocate (Diag%edmf_thl  (IM,Model%levs))
+      allocate (Diag%edmf_ent  (IM,Model%levs))
+      allocate (Diag%edmf_qc   (IM,Model%levs))
+      allocate (Diag%nupdraft  (IM))
+      allocate (Diag%maxmf     (IM))
+      allocate (Diag%ktop_shallow(IM))
+      print*,"Initializing all MYNN-EDMF variables with ",clear_val
+      Diag%cldfra_bl     = clear_val
+      Diag%qc_bl         = clear_val
+      Diag%el_pbl        = clear_val
+      Diag%sh3d          = clear_val
+      Diag%qke           = zero
+      Diag%qke_adv       = clear_val
+      Diag%tsq           = clear_val
+      Diag%qsq           = clear_val
+      Diag%cov           = clear_val
+      Diag%edmf_a        = clear_val
+      Diag%edmf_w        = clear_val
+      Diag%edmf_qt       = clear_val
+      Diag%edmf_thl      = clear_val
+      Diag%edmf_ent      = clear_val
+      Diag%edmf_qc       = clear_val
+      Diag%nupdraft      = 0
+      Diag%maxmf         = clear_val
+      Diag%ktop_shallow  = 0
+    endif
+#endif
 
     call Diag%rad_zero  (Model)
 !    print *,'in diag_create, call phys_zero'
