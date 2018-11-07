@@ -29,6 +29,7 @@ ifneq (,$(findstring CCPP,$(CPPDEFS)))
     PHYSICS_SRCS_f90 =
 ifneq (,$(findstring HYBRID,$(CPPDEFS)))
     PHYSICS_SRCS_F90 = \
+	   ./physics/GFS_debug.F90                                                   \
 	   ./GFS_layer/GFS_physics_driver.F90
 else
     PHYSICS_SRCS_F90 =
@@ -53,6 +54,7 @@ else
 	   ./physics/sfc_diag.f                                                      \
 	   ./physics/sfc_diff.f                                                      \
 	   ./physics/sfc_drv.f                                                       \
+	   ./physics/sfc_nst.f                                                       \
 	   ./physics/sfc_sice.f                                                      \
 	   ./physics/sflx.f
     PHYSICS_SRCS_f90 = \
@@ -60,8 +62,17 @@ else
 	   ./physics/get_prs_fv3.f90                                                 \
 	   ./physics/h2ointerp.f90                                                   \
 	   ./physics/ozinterp.f90
+    PHYSICS_SRCS_F = \
+	   ./physics/cldwat2m_micro.F                                                \
+	   ./physics/aer_cloud.F                                                     \
+	   ./physics/cldmacro.F                                                      \
+	   ./physics/wv_saturation.F
     PHYSICS_SRCS_F90 = \
 	   ./physics/gfdl_cloud_microphys.F90                                        \
+	   ./physics/micro_mg_utils.F90                                              \
+	   ./physics/micro_mg2_0.F90                                                 \
+	   ./physics/micro_mg3_0.F90                                                 \
+	   ./physics/m_micro_driver.F90                                              \
 	   ./physics/cs_conv.F90                                                     \
 	   ./physics/GFS_debug.F90                                                   \
 	   ./GFS_layer/GFS_physics_driver.F90
@@ -139,7 +150,6 @@ SRCS_f   =  \
 	   ./physics/set_soilveg.f                                                   \
 	   ./physics/sfc_cice.f                                                      \
 	   ./physics/sfc_land.f                                                      \
-	   ./physics/sfc_nst.f                                                       \
 	   ./physics/sfc_ocean.f                                                     \
 	   ./physics/shalcnv.f                                                       \
 	   ./physics/shalcv.f                                                        \
@@ -153,28 +163,21 @@ SRCS_f90 = \
 	   $(PHYSICS_SRCS_f90)                                                       \
 	   ./physics/funcphys.f90                                                    \
 	   ./physics/gcm_shoc.f90                                                    \
-	   ./physics/m_micro_driver.f90                                              \
 	   ./physics/module_nst_model.f90                                            \
 	   ./physics/module_nst_parameters.f90                                       \
 	   ./physics/module_nst_water_prop.f90                                       \
 	   ./physics/wam_f107_kp_mod.f90
 
 SRCS_F = \
-	   ./physics/aer_cloud.F                                                     \
-	   ./physics/cldmacro.F                                                      \
-	   ./physics/cldwat2m_micro.F                                                \
+	   $(PHYSICS_SRCS_F)                                                         \
 	   ./physics/machine.F                                                       \
 	   ./physics/num_parthds.F                                                   \
-	   ./physics/sfcsub.F                                                        \
-	   ./physics/wv_saturation.F
+	   ./physics/sfcsub.F
 
 SRCS_F90 = \
 	   $(PHYSICS_SRCS_F90)                                                       \
 	   ./physics/GFDL_parse_tracers.F90                                          \
 	   ./physics/gcycle.F90                                                      \
-	   ./physics/micro_mg_utils.F90                                              \
-	   ./physics/micro_mg2_0.F90                                                 \
-	   ./physics/micro_mg3_0.F90                                                 \
 	   ./physics/module_mp_radar.F90                                             \
 	   ./physics/module_mp_thompson_gfs.F90                                      \
 	   ./physics/module_mp_wsm6_fv3.F90                                          \
@@ -215,7 +218,7 @@ FFLAGS_LOPT=$(subst xCORE-AVX2,xCORE-AVX-I,$(FFLAGS))
 ./physics/radiation_aerosols.o : ./physics/radiation_aerosols.f
 	$(FC) $(FFLAGS_LOPT) $(OTHER_FFLAGS) -c $< -o $@
 else ifneq (,$(findstring xHOST,$(FFLAGS)))
-FFLAGS_LOPT=$(subst xHost,xCORE-AVX-I,$(FFLAGS))
+FFLAGS_LOPT=$(subst xHOST,xCORE-AVX-I,$(FFLAGS))
 ./physics/radiation_aerosols.o : ./physics/radiation_aerosols.f
 	$(FC) $(FFLAGS_LOPT) $(OTHER_FFLAGS) -c $< -o $@
 else
@@ -227,19 +230,33 @@ endif
 ./GFS_layer/GFS_diagnostics.o : ./GFS_layer/GFS_diagnostics.F90
 	$(FC) $(FFLAGS) $(OTHER_FFLAGS) -O0 -c $< -o $@
 
+# Force consistent results of math calculations for MG microphysics
+# in DEBUG or REPRO mode; without this flag, the results of the intrinsic
+# gamma function differ for the non-CCPP and CCPP version (Theia/Intel 18).
+# Note this is only required with dynamic CCPP builds (hybrid, standalone),
+# not with static CCPP builds.
+ifneq (,$(findstring DEBUG,$(CPPDEFS)))
+FFLAGS_LOPT2=$(subst -fp-model,-fimf-arch-consistency=true -fp-model,$(FFLAGS))
+./physics/micro_mg2_0.o : ./physics/micro_mg2_0.F90
+	$(FC) $(FFLAGS_LOPT2) $(OTHER_FFLAGS) -c $< -o $@
+./physics/micro_mg3_0.o : ./physics/micro_mg3_0.F90
+	$(FC) $(FFLAGS_LOPT2) $(OTHER_FFLAGS) -c $< -o $@
+else ifneq (,$(findstring REPRO,$(CPPDEFS)))
+FFLAGS_LOPT2=$(subst -fp-model,-fimf-arch-consistency=true -fp-model,$(FFLAGS))
+./physics/micro_mg2_0.o : ./physics/micro_mg2_0.F90
+	$(FC) $(FFLAGS_LOPT2) $(OTHER_FFLAGS) -c $< -o $@
+./physics/micro_mg3_0.o : ./physics/micro_mg3_0.F90
+	$(FC) $(FFLAGS_LOPT2) $(OTHER_FFLAGS) -c $< -o $@
+endif
+
 # Do preprocessing of the GFS driver and GFS physics driver in two
 # steps to be able to look at the actual .f90 file that is compiled
-ifneq (,$(findstring CCPP,$(CPPDEFS)))
 ./GFS_layer/GFS_driver.o: ./GFS_layer/GFS_driver.F90
 	$(CPP) $(CPPDEFS) $(CPPFLAGS) $< > $*.tmp.f90
 	$(FC) $(FFLAGS) $(OTHER_FFLAGS) -c $*.tmp.f90 -o $@
-endif
-#ifneq (,$(findstring CCPP,$(CPPDEFS)))
 ./GFS_layer/GFS_physics_driver.o: ./GFS_layer/GFS_physics_driver.F90
 	$(CPP) $(CPPDEFS) $(CPPFLAGS) $< > $*.tmp.f90
 	$(FC) $(FFLAGS) $(OTHER_FFLAGS) -c $*.tmp.f90 -o $@
-#endif
-
 
 .PHONY: clean
 clean:
