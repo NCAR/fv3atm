@@ -1998,8 +1998,6 @@ module module_physics_driver
         elseif (Model%lsm == Model%lsm_ruc) then
 #ifdef CCPP  
        if (Model%me==0) write(0,*) 'CCPP DEBUG: calling lsm_ruc_run through option B' 
-
-              Interstitial(nt)%iter = iter           ! intent(in)
               !Model%me                              ! intent(in)
               !Model%kdt                             ! intent(in)
               ! Interstitial(nt)%im = im             ! intent(in)- set in Interstitial(nt)%create()
@@ -2236,7 +2234,7 @@ module module_physics_driver
          if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_surface_loop_control_part2 through option B'
          ! Copy local variables from driver to appropriate interstitial variables
          !Interstitial(nt)%im = im                    ! intent(in) - set in Interstitial(nt)%create()
-         cdata_block(nb,nt)%loop_cnt     = iter       ! intent(in)
+         cdata_block(nb,nt)%loop_cnt = iter           ! intent(in)
          Interstitial(nt)%wind       = wind           ! intent(in)
          Interstitial(nt)%flag_guess = flag_guess     ! intent(inout)
          Interstitial(nt)%flag_iter  = flag_iter      ! intent(inout)
