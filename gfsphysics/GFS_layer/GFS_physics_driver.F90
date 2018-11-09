@@ -7154,40 +7154,42 @@ module module_physics_driver
 !     if (lprnt) write(0,*)' rain1 after ls=',rain1(ipr)
 !
 #ifdef CCPP
-      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling cs_conv_aw_adj through option B'
-      ! Copy local variables from driver to appropriate interstitial variables
-      !Interstitial(nt)%im                         ! intent(in) - set in Interstitial(nt)%create
-      !Model%levs                                  ! intent(in)
-      !Model%cscnv                                 ! intent(in)
-      !Model%do_aw                                 ! intent(in)
-      !Model%do_shoc                               ! intent(in)
-      !Model%ntrac                                 ! intent(in)
-      !Model%ncld                                  ! intent(in)
-      !Model%ntcw                                  ! intent(in)
-      !Model%ntclamt                               ! intent(in)
-      !Interstitial(nt)%nncl                       ! intent(in) - set in Interstitial(nt)%create
-      !con_g                                       ! intent(in) - physical constant in physcons.F90
-      Interstitial(nt)%sigmafrac = sigmafrac       ! intent(in)
-      !Stateout%gt0                                ! intent(inout)
-      !Stateout%gq0                                ! intent(inout)
-      Interstitial(nt)%save_t = dtdt               ! intent(in)
-      Interstitial(nt)%save_q = dqdt               ! intent(in)
-      !Statein(nb)%prsi                            ! intent(in)
-      !Tbd(nb)%phy_f3d(:,:,1)                      ! intent(inout)
-      !Tbd(nb)%phy_f3d(:,:,IPD_Control%ntot3d-2)   ! intent(inout)
-      Interstitial(nt)%prcpmp = rain1              ! intent(inout)
-      !cdata_block(nb,nt)%errmsg = errmsg          ! intent(out)
-      !cdata_block(nb,nt)%errflg = errflg          ! intent(out)
-      !
-      call ccpp_physics_run(cdata_block(nb,nt), scheme_name="cs_conv_aw_adj", ierr=ierr)
-      ! Copy back intent(inout) interstitial variables to local variables
-      rain1  = Interstitial(nt)%prcpmp
-      errmsg = trim(cdata_block(nb,nt)%errmsg)
-      errflg = cdata_block(nb,nt)%errflg
-      !
-      if (errflg/=0) then
-          write(0,*) 'Error in call to cs_conv_aw_adj: ' // trim(errmsg)
-          stop
+      if (Model%cscnv .and. Model%do_aw) then
+         if (Model%me==0) write(0,*) 'CCPP DEBUG: calling cs_conv_aw_adj through option B'
+         ! Copy local variables from driver to appropriate interstitial variables
+         !Interstitial(nt)%im                         ! intent(in) - set in Interstitial(nt)%create
+         !Model%levs                                  ! intent(in)
+         !Model%cscnv                                 ! intent(in)
+         !Model%do_aw                                 ! intent(in)
+         !Model%do_shoc                               ! intent(in)
+         !Model%ntrac                                 ! intent(in)
+         !Model%ncld                                  ! intent(in)
+         !Model%ntcw                                  ! intent(in)
+         !Model%ntclamt                               ! intent(in)
+         !Interstitial(nt)%nncl                       ! intent(in) - set in Interstitial(nt)%create
+         !con_g                                       ! intent(in) - physical constant in physcons.F90
+         Interstitial(nt)%sigmafrac = sigmafrac       ! intent(in)
+         !Stateout%gt0                                ! intent(inout)
+         !Stateout%gq0                                ! intent(inout)
+         Interstitial(nt)%save_t = dtdt               ! intent(in)
+         Interstitial(nt)%save_q = dqdt               ! intent(in)
+         !Statein(nb)%prsi                            ! intent(in)
+         !Tbd(nb)%phy_f3d(:,:,1)                      ! intent(inout)
+         !Tbd(nb)%phy_f3d(:,:,IPD_Control%ntot3d-2)   ! intent(inout)
+         Interstitial(nt)%prcpmp = rain1              ! intent(inout)
+         !cdata_block(nb,nt)%errmsg = errmsg          ! intent(out)
+         !cdata_block(nb,nt)%errflg = errflg          ! intent(out)
+         !
+         call ccpp_physics_run(cdata_block(nb,nt), scheme_name="cs_conv_aw_adj", ierr=ierr)
+         ! Copy back intent(inout) interstitial variables to local variables
+         rain1  = Interstitial(nt)%prcpmp
+         errmsg = trim(cdata_block(nb,nt)%errmsg)
+         errflg = cdata_block(nb,nt)%errflg
+         !
+         if (errflg/=0) then
+            write(0,*) 'Error in call to cs_conv_aw_adj: ' // trim(errmsg)
+            stop
+         end if
       end if
 #else
       if (Model%cscnv .and. Model%do_aw) then
