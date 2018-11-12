@@ -3907,9 +3907,7 @@ module GFS_typedefs
     if (do_mynnedmf) then
       Model%do_shoc    = .false.
       Model%shal_cnv   = .false.
-      if (Model%imfdeepcnv/=3) then
-          Model%imfshalcnv = -1
-      end if
+      Model%imfshalcnv = -1
       Model%hybedmf    = .false.
       Model%satmedmf   = .false.
       if (Model%me == Model%master) print *,' MYNN-EDMF scheme is used for both',                &
@@ -3961,10 +3959,17 @@ module GFS_typedefs
       if (Model%do_deep) then
 #ifdef CCPP
         ! Consistency check for GF convection: deep and shallow convection are bundled
-        ! and cannot be combined with any other deep or shallow convection scheme
-        if ( (Model%imfdeepcnv == 3 .or. Model%imfshalcnv == 3) .and. &
-            .not. (Model%imfdeepcnv == 3 .and. Model%imfshalcnv == 3) ) then
-            write(0,*) "Logic error: if GF deep convection is used, must also use GF shallow convection (and vice versa)"
+        ! and cannot be combined with any other deep or shallow convection scheme.
+        ! Exception: if MYNN is used, can switch off GF shallow convection; DH* TODO:
+        ! test that MYNN is on instead of Model%imfshalcnv == -1 *DH
+        if (Model%imfdeepcnv == 3) then
+            if (.not. (Model%imfshalcnv == 3 .or. Model%imfshalcnv == -1)) then
+                write(0,*) "Logic error: if GF deep convection is used, can only use GF shallow convection or no shallow convection scheme"
+                stop
+            end if
+        else if (Model%imfshalcnv == 3) then
+            ! passing the first if test means that Model%imfdeepcnv /= 3
+            write(0,*) "Logic error: if GF shallow convection is used, must also use GF deep convection"
             stop
         end if
 #else
