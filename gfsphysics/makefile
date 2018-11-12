@@ -17,7 +17,7 @@ endif
 
 LIBRARY  = libgfsphys.a
 
-FFLAGS   += -I$(FMS_DIR) -I../cpl
+FFLAGS   += -I$(FMS_DIR) -I../cpl -I.
 
 CPPDEFS += -DNEW_TAUCTMAX -DSMALL_PE -DNEMS_GSM -DINTERNAL_FILE_NML
 

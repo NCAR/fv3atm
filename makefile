@@ -19,6 +19,10 @@ endif
 
 FFLAGS   += -I$(FMS_DIR) -I$(PHYSP)physics -Iipd -Icpl -Iio -Iatmos_cubed_sphere
 
+ifeq (,$(findstring 32BIT,$(CPPDEFS)))
+  DYN32 = Y
+endif
+
 FV3_EXE  = fv3.exe
 FV3CAP_LIB  = libfv3cap.a
 
@@ -33,7 +37,7 @@ nems: libs
 ifneq (,$(findstring CCPP,$(CPPDEFS)))
 libs:
 	$(MAKE) -C cpl                 $(MAKEFLAGS) FMS_DIR=$(FMS_DIR)
-	$(MAKE) -C $(PHYSP)physics     $(MAKEFLAGS) FMS_DIR=$(FMS_DIR) 32BIT=N  # force gfs physics to 64bit
+	$(MAKE) -C $(PHYSP)physics     $(MAKEFLAGS) FMS_DIR=$(FMS_DIR) 32BIT=N  DYN_32=$(DYN32) # force gfs physics to 64bit
 	$(MAKE) -C ipd                 $(MAKEFLAGS) FMS_DIR=$(FMS_DIR) 32BIT=N  # force gfs physics to 64bit
 	$(MAKE) -C io                  $(MAKEFLAGS) FMS_DIR=$(FMS_DIR)
 	$(MAKE) -C atmos_cubed_sphere  $(MAKEFLAGS) FMS_DIR=$(FMS_DIR)
