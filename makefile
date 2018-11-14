@@ -19,8 +19,10 @@ endif
 
 FFLAGS   += -I$(FMS_DIR) -I$(PHYSP)physics -Iipd -Icpl -Iio -Iatmos_cubed_sphere
 
-ifeq (,$(findstring 32BIT,$(CPPDEFS)))
+ifneq (,$(findstring 32BIT,$(CPPDEFS)))
   DYN32 = Y
+else
+  DYN32 = N
 endif
 
 FV3_EXE  = fv3.exe
