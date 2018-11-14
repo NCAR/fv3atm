@@ -13,7 +13,7 @@
 !                                                                      !
 !       'cld_init'           --- initialization routine                !
 !          inputs:                                                     !
-!           ( si, NLAY, imp_physics,  me )                                           !
+!           ( si, NLAY, imp_physics,  me )                             !
 !          outputs:                                                    !
 !           ( none )                                                   !
 !                                                                      !
@@ -182,8 +182,8 @@
 !!  - progcld5()           --- thompson/wsm6 cloud microphysics
 !!  - progclduni()         --- unified clouds with MG microphys
 !!
-!!  and one internally accessable only subroutines:                             
-!!  - gethml()             --- get diagnostic hi, mid, low,total,BL clouds    
+!!  and one internally accessable only subroutines:
+!!  - gethml()             --- get diagnostic hi, mid, low,total,BL clouds
 !!
 !> \section gen_al  General Algorithm
 !! @{
@@ -281,23 +281,23 @@
       real (kind=kind_phys), parameter :: ovcst  = 1.0 - 1.0e-8
 
 !> default liq radius to 10 micron
-      real (kind=kind_phys), parameter :: reliq_def = 10.0    
+      real (kind=kind_phys), parameter :: reliq_def = 10.0
 !> default ice radius to 50 micron
-      real (kind=kind_phys), parameter :: reice_def = 50.0   
+      real (kind=kind_phys), parameter :: reice_def = 50.0
 !> default rain radius to 1000 micron
-      real (kind=kind_phys), parameter :: rrain_def = 1000.0 
+      real (kind=kind_phys), parameter :: rrain_def = 1000.0
 !> default snow radius to 250 micron
-      real (kind=kind_phys), parameter :: rsnow_def = 250.0 
+      real (kind=kind_phys), parameter :: rsnow_def = 250.0
 
 !> default cld single scat albedo
-      real (kind=kind_phys), parameter :: cldssa_def = 0.99  
+      real (kind=kind_phys), parameter :: cldssa_def = 0.99
 !> default cld asymmetry factor
-      real (kind=kind_phys), parameter :: cldasy_def = 0.84 
+      real (kind=kind_phys), parameter :: cldasy_def = 0.84
 
 !> upper limit of boundary layer clouds
-      integer  :: llyr   = 2          
+      integer  :: llyr   = 2
 !> maximum-random cloud overlapping method
-      integer  :: iovr   = 1           
+      integer  :: iovr   = 1
 
       public progcld1, progcld2, progcld3, progcld4, progclduni,        &
      &                 cld_init, progcld5, progcld4o
@@ -409,7 +409,7 @@
         endif
       endif
 
-!> -# Compute the top of BL cld (llyr), which is the topmost non 
+!> -# Compute the top of BL cld (llyr), which is the topmost non
 !!    cld(low) layer for stratiform (at or above lowest 0.1 of the
 !!     atmosphere).
 
@@ -880,7 +880,7 @@
 !!\param f_rain  (IX,NLAY), fraction of layer rain water (ferrier micro-phys)
 !!\param r_rime  (IX,NLAY), mass ratio of total ice to unrimed ice (>=1)
 !!\param flgmin  (IX), minimum large ice fraction
-!!\param xlat    (IX), grid latitude in radians, default to pi/2 -> 
+!!\param xlat    (IX), grid latitude in radians, default to pi/2 ->
 !!               -pi/2 range, otherwise see in-line comment
 !!\param xlon    (IX), grid longitude in radians  (not used)
 !!\param slmsk   (IX), sea/land mask array (sea:0,land:1,sea-ice:2)
@@ -1116,7 +1116,7 @@
 
 !> -# Call module_microphysics::rsipath2(), in Ferrier's scheme, to
 !! compute layer's cloud liquid, ice, rain, and snow water condensate
-!! path and the partical effective radius for liquid droplet, rain drop, 
+!! path and the partical effective radius for liquid droplet, rain drop,
 !! and snow flake.
       call  rsipath2                                                    &
 !  ---  inputs:
@@ -1310,7 +1310,7 @@
 !-----------------------------------
 !> @}
 
-!> This subroutine computes cloud related quantities using 
+!> This subroutine computes cloud related quantities using
 !! zhao/moorthi's prognostic cloud microphysics scheme + pdfcld.
 !!\param plyr       (ix,nlay), model layer mean pressure in mb (100pa)
 !!\param plvl       (ix,nlp1), model level pressure in mb (100pa)
@@ -2644,7 +2644,7 @@
 !!\param qlyr    (IX,NLAY), layer specific humidity in gm/gm
 !!\param clw     (IX,NLAY), layer cloud liquid water amount
 !!\param ciw     (IX,NLAY), layer cloud ice water amount
-!!\param xlat    (IX), grid latitude in radians, default to pi/2 -> 
+!!\param xlat    (IX), grid latitude in radians, default to pi/2 ->
 !!               -pi/2 range, otherwise see in-line comment
 !!\param xlon    (IX), grid longitude in radians  (not used)
 !!\param slmsk   (IX), sea/land mask array (sea:0,land:1,sea-ice:2)
@@ -2929,7 +2929,7 @@
         enddo
       endif
 
-!> -# Compute effective ice cloud droplet radius following Heymsfield 
+!> -# Compute effective ice cloud droplet radius following Heymsfield
 !!    and McFarquhar (1996) \cite heymsfield_and_mcfarquhar_1996.
 
       if(.not. effr_in) then
@@ -3012,7 +3012,7 @@
 !! fractions and cloud top/bottom layer indices for model diagnostic
 !! output. The three cloud domain boundaries are defined by ptopc. The
 !! cloud overlapping method is defined by control flag 'iovr', which is
-!! also used by LW and SW radiation programs.                          
+!! also used by LW and SW radiation programs.
 !> \param plyr    (IX,NLAY), model layer mean pressure in mb (100Pa)
 !> \param ptop1   (IX,4), pressure limits of cloud domain interfaces
 !!                    (sfc,low,mid,high) in mb (100Pa)
@@ -3022,8 +3022,8 @@
 !> \param de_lgth (IX),  clouds decorrelation length (km)
 !> \param IX      horizontal dimension
 !> \param NLAY    vertical layer dimensions
-!> \param clds   (IX,5), fraction of clouds for low, mid, hi, tot, bl 
-!> \param mtop   (IX,3),vertical indices for low, mid, hi cloud tops 
+!> \param clds   (IX,5), fraction of clouds for low, mid, hi, tot, bl
+!> \param mtop   (IX,3),vertical indices for low, mid, hi cloud tops
 !> \param mbot   (IX,3),vertical indices for low, mid, hi cloud bases
 !!
 !>\section detail Detailed Algorithm
