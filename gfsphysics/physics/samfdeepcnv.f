@@ -93,21 +93,21 @@
       use physcons, grav => con_g,  cp    => con_cp,    hvap => con_hvap
      &,             rv   => con_rv, fv    => con_fvirt, t0c  => con_t0c
      &,             rd   => con_rd, cvap  => con_cvap,  cliq => con_cliq
-     &,             eps  => con_eps,epsm1 => con_epsm1, rgas => con_rd
+     &,             eps  => con_eps,epsm1 => con_epsm1
       implicit none
 !
       integer, intent(in)  :: im, ix,  km, ntk, ntr, ncloud
       integer, intent(in)  :: islimsk(im)
       real(kind=kind_phys), intent(in) ::  delt
-      real(kind=kind_phys), intent(in) :: psp(im), delp(ix,km), 
-     &   prslp(ix,km),  garea(im), dot(ix,km), phil(ix,km) 
+      real(kind=kind_phys), intent(in) :: psp(im), delp(ix,km),
+     &   prslp(ix,km),  garea(im), dot(ix,km), phil(ix,km)
 
-      integer, intent(inout)  :: kcnv(im)        
+      integer, intent(inout)  :: kcnv(im)
       real(kind=kind_phys), intent(inout) ::   qtr(ix,km,ntr+2),
      &   q1(ix,km), t1(ix,km),   u1(ix,km), v1(ix,km)
 
-      integer, intent(out) :: kbot(im), ktop(im) 
-      real(kind=kind_phys), intent(out) :: cldwrk(im), 
+      integer, intent(out) :: kbot(im), ktop(im)
+      real(kind=kind_phys), intent(out) :: cldwrk(im),
      &   rn(im),      cnvw(ix,km),  cnvc(ix,km),
      &   ud_mf(im,km),dd_mf(im,km), dt_mf(im,km)
 
@@ -130,8 +130,8 @@
      &                     dellat,  delta,   desdt,   dg,
      &                     dh,      dhh,     dp,
      &                     dq,      dqsdp,   dqsdt,   dt,
-     &                     dt2,     dtmax,   dtmin,   
-     &                     dxcrtas, dxcrtuf, 
+     &                     dt2,     dtmax,   dtmin,
+     &                     dxcrtas, dxcrtuf,
      &                     dv1h,    dv2h,    dv3h,
      &                     dv1q,    dv2q,    dv3q,
      &                     dz,      dz1,     e1,      edtmax,
@@ -165,7 +165,7 @@
      &                     delqbar(im), delqev(im), deltbar(im),
      &                     deltv(im),   dtconv(im), edt(im),
      &                     edto(im),    edtx(im),   fld(im),
-     &                     hcdo(im,km), hmax(im),   hmin(im), 
+     &                     hcdo(im,km), hmax(im),   hmin(im),
      &                     ucdo(im,km), vcdo(im,km),aa2(im),
      &                     ecdo(im,km,ntr),
      &                     pdot(im),    po(im,km),
@@ -228,7 +228,7 @@ c  physical parameters
 c  cloud water
 !     real(kind=kind_phys) tvo(im,km)
       real(kind=kind_phys) qlko_ktcon(im), dellal(im,km), tvo(im,km),
-     &                     dbyo(im,km),    zo(im,km),     
+     &                     dbyo(im,km),    zo(im,km),
      &                     xlamue(im,km),  xlamud(im,km),
      &                     fent1(im,km),   fent2(im,km),  frh(im,km),
      &                     heo(im,km),     heso(im,km),
@@ -2742,7 +2742,7 @@ c
             QLCN(i,k)     = qtr(i,k,2) - qlcn(i,k)
             QICN(i,k)     = qtr(i,k,1) - qicn(i,k)
             cf_upi(i,k)   = cnvc(i,k)
-            w_upi(i,k)    = ud_mf(i,k)*t1(i,k)*rgas /
+            w_upi(i,k)    = ud_mf(i,k)*t1(i,k)*rd /
      &                     (dt2*max(sigmagfm(i),1.e-12)*prslp(i,k))
             CNV_MFD(i,k)  = ud_mf(i,k)/dt2
             CLCN(i,k)     = cnvc(i,k)
