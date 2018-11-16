@@ -19,7 +19,8 @@ endif
 
 FFLAGS   += -I$(FMS_DIR) -I$(PHYSP)physics -Iipd -Icpl -Iio -Iatmos_cubed_sphere
 
-ifneq (,$(findstring 32BIT,$(CPPDEFS)))
+$(info    CPPDEFS is $(CPPDEFS))
+ifeq ($(32BIT),Y)
   DYN32 = Y
 else
   DYN32 = N
@@ -39,7 +40,7 @@ nems: libs
 ifneq (,$(findstring CCPP,$(CPPDEFS)))
 libs:
 	$(MAKE) -C cpl                 $(MAKEFLAGS) FMS_DIR=$(FMS_DIR)
-	$(MAKE) -C $(PHYSP)physics     $(MAKEFLAGS) FMS_DIR=$(FMS_DIR) 32BIT=N  DYN_32=$(DYN32) # force gfs physics to 64bit
+	$(MAKE) -C $(PHYSP)physics     $(MAKEFLAGS) FMS_DIR=$(FMS_DIR) 32BIT=N  DYN32=$(DYN32) # force gfs physics to 64bit, flag to CCPP build for 32bit dynamics
 	$(MAKE) -C ipd                 $(MAKEFLAGS) FMS_DIR=$(FMS_DIR) 32BIT=N  # force gfs physics to 64bit
 	$(MAKE) -C io                  $(MAKEFLAGS) FMS_DIR=$(FMS_DIR)
 	$(MAKE) -C atmos_cubed_sphere  $(MAKEFLAGS) FMS_DIR=$(FMS_DIR)
