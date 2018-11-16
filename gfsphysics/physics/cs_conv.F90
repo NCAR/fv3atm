@@ -161,10 +161,10 @@ module cs_conv
 ! input arguments
 !
    INTEGER, INTENT(IN)     :: IM,IJSDIM, KMAX, ntracp1, NN, NTR, mype, nctp, mp_phys, kdt, lat !! DD, for GFS, pass in
-   logical, intent(in)     :: otspt(ntracp1,2)   ! otspt(:,1) - on/off switch for tracer transport by updraft and
-                                                 !              downdraft. should not include subgrid PDF and turbulence
-                                                 ! otspt(:,2) - on/off switch for tracer transport by subsidence
-                                                 !              should include subgrid PDF and turbulence
+   logical, intent(in)     :: otspt(1:ntracp1,1:2)   ! otspt(:,1) - on/off switch for tracer transport by updraft and
+                                                     !              downdraft. should not include subgrid PDF and turbulence
+                                                     ! otspt(:,2) - on/off switch for tracer transport by subsidence
+                                                     !              should include subgrid PDF and turbulence
 
    real(r8), intent(inout) :: t(IM,KMAX)          ! temperature at mid-layer (K)
    real(r8), intent(inout) :: q(IM,KMAX)          ! water vapor array including moisture (kg/kg)
