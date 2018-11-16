@@ -13,15 +13,16 @@ module GFS_typedefs
        use module_radlw_parameters,  only: topflw_type, sfcflw_type
        use ozne_def,                 only: levozp, oz_coeff
        use h2o_def,                  only: levh2o, h2o_coeff
-#endif
        use aerclm_def,               only: ntrcaer, ntrcaerm
+#endif
+
 
        implicit none
 
 #ifdef CCPP
       ! To ensure that these values match what's in the physics,
       ! array sizes are compared during model init in GFS_rrtmg_setup_init()
-      private :: NF_AESW, NF_AELW, NSPC, NSPC1, NF_CLDS, NF_VGAS, NF_ALBD
+      private :: NF_AESW, NF_AELW, NSPC, NSPC1, NF_CLDS, NF_VGAS, NF_ALBD, ntrcaerm
       ! from module_radiation_aerosols
       integer, parameter :: NF_AESW = 3
       integer, parameter :: NF_AELW = 3
@@ -33,11 +34,13 @@ module GFS_typedefs
       integer, parameter :: NF_VGAS = 10
       ! from module_radiation_surface
       integer, parameter :: NF_ALBD = 4
+      ! from aerclm_def
+      integer, parameter :: ntrcaerm = 15
 
       ! These will be set later in IPD_Control%initialize,
-      ! since they depend on the runtime config (e.g. Model%ntoz, Model%h2o_phys)
-      private :: levozp, oz_coeff, levh2o, h2o_coeff
-      integer :: levozp, oz_coeff, levh2o, h2o_coeff
+      ! since they depend on the runtime config (e.g. Model%ntoz, Model%h2o_phys, Model%aero_in)
+      private :: levozp, oz_coeff, levh2o, h2o_coeff, ntrcaer
+      integer :: levozp, oz_coeff, levh2o, h2o_coeff, ntrcaer
 #endif
 
 #if 0
@@ -874,7 +877,7 @@ module GFS_typedefs
 !! | IPD_Control%isot                     | soil_type_dataset_choice                                                      | soil type dataset choice                                | index         |    0 | integer   |           | none   | F        |
 !! | IPD_Control%mom4ice                  | flag_for_mom4_coupling                                                        | flag controls mom4 sea ice                              | flag          |    0 | logical   |           | none   | F        |
 !! | IPD_Control%use_ufo                  |                                                                               | flag for gcycle surface option                          |               |    0 | logical   |           | none   | F        |
-!! | IPD_Control%ras                      |                                                                               | flag for ras convection scheme                          |               |    0 | logical   |           | none   | F        |
+!! | IPD_Control%ras                      | flag_for_ras_deep_convection                                                  | flag for ras convection scheme                          | flag          |    0 | logical   |           | none   | F        |
 !! | IPD_Control%flipv                    | flag_flip                                                                     | vertical flip logical                                   | flag          |    0 | logical   |           | none   | F        |
 !! | IPD_Control%trans_trac               | flag_for_convective_transport_of_tracers                                      | flag for convective transport of tracers                | flag          |    0 | logical   |           | none   | F        |
 !! | IPD_Control%old_monin                | flag_for_old_PBL_scheme                                                       | flag for using old PBL schemes                          | flag          |    0 | logical   |           | none   | F        |
@@ -910,8 +913,9 @@ module GFS_typedefs
 !! | IPD_Control%cs_parm                  |                                                                               | tunable parameters for Chikira-Sugiyama convection      |               |    1 | real      | kind_phys | none   | F        |
 !! | IPD_Control%cs_parm(1)               | updraft_velocity_tunable_parameter_1_CS                                       | tunable parameter 1 for Chikira-Sugiyama convection     | m s-1         |    0 | real      | kind_phys | none   | F        |
 !! | IPD_Control%cs_parm(2)               | updraft_velocity_tunable_parameter_2_CS                                       | tunable parameter 2 for Chikira-Sugiyama convection     | m s-1         |    0 | real      | kind_phys | none   | F        |
-!! | IPD_Control%cs_parm(3)               | detrainment_and_precipitation_tunable_pararameter_3_CS                        | partition water between detrainment and precipitation (decrease for more precipitation)   | m       |    0 | real      | kind_phys | none   | F        |
-!! | IPD_Control%cs_parm(4)               | detrainment_and_precipitation_tunable_pararameter_4_CS                        | partition water between detrainment and precipitation (decrease for more precipitation)   | m       |    0 | real      | kind_phys | none   | F        |
+!! | IPD_Control%cs_parm(3)               | detrainment_and_precipitation_tunable_parameter_3_CS   | partition water between detrainment and precipitation (decrease for more precipitation) | m    |    0 | real      | kind_phys | none   | F        |
+!! | IPD_Control%cs_parm(4)               | detrainment_and_precipitation_tunable_parameter_4_CS   | partition water between detrainment and precipitation (decrease for more precipitation) | m    |    0 | real      | kind_phys | none   | F        |
+!! | IPD_Control%cs_parm(9)               | entrainment_efficiency_tunable_parameter_9_CS                                 | entrainment efficiency                                  | none          |    0 | real      | kind_phys | none   | F        |
 !! | IPD_Control%flgmin                   |                                                                               | [in] ice fraction bounds                                |               |    1 | real      | kind_phys | none   | F        |
 !! | IPD_Control%cgwf                     | multiplication_factors_for_convective_gravity_wave_drag                       | multiplication factor for convective GWD                | none          |    1 | real      | kind_phys | none   | F        |
 !! | IPD_Control%ccwf                     |                                                                               | multiplication factor for critical cloud workfunction   | none          |    1 | real      | kind_phys | none   | F        |
@@ -996,6 +1000,7 @@ module GFS_typedefs
 !! | IPD_Control%npdf3d                   | number_of_3d_arrays_associated_with_pdf-based_clouds                          | number of 3d arrays associated with pdf based clouds/mp              | count         |    0 | integer   |           | none   | F        |
 !! | IPD_Control%nctp                     | number_of_cloud_types_CS                                                      | number of cloud types in Chikira-Sugiyama scheme                     | count         |    0 | integer   |           | none   | F        |
 !! | IPD_Control%ncnvw                    |                                                                               | the index of cnvw in phy_f3d                                         |               |    0 | integer   |           | none   | F        |
+!! | IPD_Control%ncnvc                    |                                                                               | the index of cnvc in phy_f3d                                         |               |    0 | integer   |           | none   | F        |
 !! | IPD_Control%ngreffr                  | index_for_graupel_effective_radius                                            | the index of graupel effective radius in phy_f3d                     |               |    0 | integer   |           | none   | F        |
 !! | IPD_Control%debug                    |                                                                               | debug flag                                                           |               |    0 | logical   |           | none   | F        |
 !! | IPD_Control%pre_rad                  |                                                                               | flag for testing purpose                                             |               |    0 | logical   |           | none   | F        |
@@ -1418,6 +1423,7 @@ module GFS_typedefs
     integer              :: npdf3d          !< number of 3d arrays associated with pdf based clouds/microphysics
     integer              :: nctp            !< number of cloud types in Chikira-Sugiyama scheme
     integer              :: ncnvw           !< the index of cnvw in phy_f3d
+    integer              :: ncnvc           !< the index of cnvc in phy_f3d
     integer              :: ngreffr         !< the index of graupel effective radius in phy_f3d
 
 !--- debug flag
@@ -1540,9 +1546,9 @@ module GFS_typedefs
 !! | IPD_Data(nb)%Tbd%icsdlw                           | seed_random_numbers_lw                                                                         | random seeds for sub-column cloud generators lw         | none          |    1 | integer |           | none   | F        |
 !! | IPD_Data(nb)%Tbd%ozpl                             | ozone_forcing                                                                                  | ozone forcing data                                      | various       |    3 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Tbd%h2opl                            | h2o_forcing                                                                                    | water forcing data                                      | various       |    3 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Tbd%in_nm                            | in_number_concentration                                                                        | IN number concentration                                 | ???           |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Tbd%ccn_nm                           | ccn_number_concentration                                                                       | CCN number concentration                                | ???           |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Tbd%aer_nm                           | aerosol_number_concentration_from_gocart_aerosol_climatology                                   | GOCART aerosol climatology number concentration         | ???           |    3 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Tbd%in_nm                            | in_number_concentration                                                                        | IN number concentration                                 | kg-1?         |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Tbd%ccn_nm                           | ccn_number_concentration                                                                       | CCN number concentration                                | kg-1?         |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Tbd%aer_nm                           | aerosol_number_concentration_from_gocart_aerosol_climatology                                   | GOCART aerosol climatology number concentration         | kg-1?         |    3 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Tbd%rann                             | random_number_array                                                                            | random number array (0-1)                               | none          |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Tbd%acv                              | accumulated_lwe_thickness_of_convective_precipitation_amount_cnvc90                            | accumulated convective rainfall amount for cnvc90 only  | m             |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Tbd%acvb                             | smallest_cloud_base_vertical_index_encountered_thus_far                                        | smallest cloud base vertical index encountered thus far | index         |    1 | real    | kind_phys | none   | F        |
@@ -1568,7 +1574,7 @@ module GFS_typedefs
 !! | IPD_Data(nb)%Tbd%phy_f3d(:,:,4)                   | effective_radius_of_stratiform_cloud_rain_particle_in_um                                       | effective radius of cloud rain particle in micrometers  | um            |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Tbd%phy_f3d(:,:,5)                   | effective_radius_of_stratiform_cloud_snow_particle_in_um                                       | effective radius of cloud snow particle in micrometers  | um            |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Tbd%phy_f3d(:,:,IPD_Control%ncnvw)   | convective_cloud_water_mixing_ratio_in_phy_f3d                                                 | convective cloud water mixing ratio in the phy_f3d array| kg kg-1       |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Tbd%phy_f3d(:,:,IPD_Control%ncnvw+1) | convective_cloud_cover_in_phy_f3d                                                              | convective cloud cover in the phy_f3d array             | frac          |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Tbd%phy_f3d(:,:,IPD_Control%ncnvc)   | convective_cloud_cover_in_phy_f3d                                                              | convective cloud cover in the phy_f3d array             | frac          |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Tbd%phy_f3d(:,:,IPD_Control%ntot3d)  | kinematic_buoyancy_flux_from_shoc                                                              | upward kinematic buoyancy flux from the SHOC scheme     | K m s-1       |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Tbd%phy_f3d(:,:,IPD_Control%ntot3d-1)| atmosphere_heat_diffusivity_from_shoc                                                          | diffusivity for heat from the SHOC scheme               | m2 s-1        |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Tbd%phy_f3d(:,:,IPD_Control%ntot3d-2)| subgrid_scale_cloud_fraction_from_shoc                                                         | subgrid-scale cloud fraction from the SHOC scheme       | frac          |    2 | real    | kind_phys | none   | F        |
@@ -2068,14 +2074,11 @@ module GFS_typedefs
 !! | IPD_Interstitial(nt)%clw(:,:,2)                    | cloud_condensed_water_mixing_ratio_convective_transport_tracer | moist (dry+vapor, no condensates) mixing ratio of cloud water (condensate) in the convectively transported tracer array | kg kg-1   |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%clw(:,:,IPD_Interstitial(nt)%ntk) | turbulent_kinetic_energy_convective_transport_tracer                                       | turbulent kinetic energy in the convectively transported tracer array               | m2 s-2        |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%clx                           | fraction_of_grid_box_with_subgrid_orography_higher_than_critical_height                        | frac. of grid box with by subgrid orography higher than critical height             | frac          |    2 | real        | kind_phys | none   | F        |
-!! | IPD_Interstitial(nt)%cn_prc                        | rain_rate_from_MG_cloud_macrophysics                                                           | rain rate from cloud macrophysics in Morrison-Gettelman microphysics                | mm s-1?       |    1 | real        | kind_phys | none   | F        |
-!! | IPD_Interstitial(nt)%cn_snr                        | snow_rate_from_MG_cloud_macrophysics                                                           | snow rate from cloud macrophysics in Morrison-Gettelman microphysics                | mm s-1?       |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%cnv_dqldt                     | tendency_of_cloud_water_due_to_convective_microphysics                                         | tendency of cloud water due to convective microphysics                              | kg m-2 s-1    |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%cnv_fice                      | ice_fraction_in_convective_tower                                                               | ice fraction in convective tower                                                    | frac          |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%cnv_mfd                       | detrained_mass_flux                                                                            | detrained mass flux                                                                 | kg m-2 s-1    |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%cnv_ndrop                     | number_concentration_of_cloud_liquid_water_particles_for_detrainment                           | droplet number concentration in convective detrainment                              | m-3           |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%cnv_nice                      | number_concentration_of_ice_crystals_for_detrainment                                           | crystal number concentration in convective detrainment                              | m-3           |    2 | real        | kind_phys | none   | F        |
-!! | IPD_Interstitial(nt)%cnv_prc3                      | convective_precipitation_flux                                                                  | convective precipitation flux                                                       | kg m-2 s-1    |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%cnvc                          | convective_cloud_cover                                                                         | convective cloud cover                                                              | frac          |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%cnvw                          | convective_cloud_water_mixing_ratio                                                            | moist convective cloud water mixing ratio                                           | kg kg-1       |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%ctei_r                        | cloud_top_entrainment_instability_value                                                        | cloud top entrainment instability value                                             | none          |    1 | real        | kind_phys | none   | F        |
@@ -2191,8 +2194,11 @@ module GFS_typedefs
 !! | IPD_Interstitial(nt)%nncl                          | number_of_tracers_for_cloud_condensate                                                         | number of tracers for cloud condensate                                              | count         |    0 | integer     |           | none   | F        |
 !! | IPD_Interstitial(nt)%nsamftrac                     | number_of_tracers_for_samf                                                                     | number of tracers for scale-aware mass flux schemes                                 | count         |    0 | integer     |           | none   | F        |
 !! | IPD_Interstitial(nt)%ncgl                          | local_graupel_number_concentration                                                             | number concentration of graupel local to physics                                    | kg-1          |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Interstitial(nt)%ncpi                          | local_ice_number_concentration                                                                 | number concentration of ice local to physics                                        | kg-1          |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Interstitial(nt)%ncpl                          | local_condesed_water_number_concentration                                                      | number concentration of condensed water local to physics                            | kg-1          |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%ncpr                          | local_rain_number_concentration                                                                | number concentration of rain local to physics                                       | kg-1          |    2 | real        | kind_phys | none   | F        |
 !! | IPD_Interstitial(nt)%ncps                          | local_snow_number_concentration                                                                | number concentration of snow local to physics                                       | kg-1          |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Interstitial(nt)%ntiwx                         | index_for_ntiwx_dh_todo_find_better_name                                                       | index for ntiwx DH* todo find better name                                           | index         |    0 | integer     |           | none   | F        |
 !! | IPD_Interstitial(nt)%ntk                           | index_for_turbulent_kinetic_energy_convective_transport_tracer                                 | index for turbulent kinetic energy in the convectively transported tracer array     | index         |    0 | integer     |           | none   | F        |
 !! | IPD_Interstitial(nt)%ntkev                         | index_for_turbulent_kinetic_energy_vertical_diffusion_tracer                                   | index for turbulent kinetic energy in the vertically diffused tracer array          | index         |    0 | integer     |           | none   | F        |
 !! | IPD_Interstitial(nt)%nvdiff                        | number_of_vertical_diffusion_tracers                                                           | number of tracers to diffuse vertically                                             | count         |    0 | integer     |           | none   | F        |
@@ -2306,15 +2312,12 @@ module GFS_typedefs
     real (kind=kind_phys), pointer      :: clw(:,:,:)       => null()  !<
     real (kind=kind_phys), pointer      :: clw_surf(:)      => null()  !<
     real (kind=kind_phys), pointer      :: clx(:,:)         => null()  !<
-    real (kind=kind_phys), pointer      :: cn_prc(:)        => null()  !<
-    real (kind=kind_phys), pointer      :: cn_snr(:)        => null()  !<
     real (kind=kind_phys), pointer      :: cndm_surf(:)     => null()  !<
     real (kind=kind_phys), pointer      :: cnv_dqldt(:,:)   => null()  !<
     real (kind=kind_phys), pointer      :: cnv_fice(:,:)    => null()  !<
     real (kind=kind_phys), pointer      :: cnv_mfd(:,:)     => null()  !<
     real (kind=kind_phys), pointer      :: cnv_ndrop(:,:)   => null()  !<
     real (kind=kind_phys), pointer      :: cnv_nice(:,:)    => null()  !<
-    real (kind=kind_phys), pointer      :: cnv_prc3(:,:)    => null()  !<
     real (kind=kind_phys), pointer      :: cnvc(:,:)        => null()  !<
     real (kind=kind_phys), pointer      :: cnvw(:,:)        => null()  !<
     real (kind=kind_phys), pointer      :: ctei_r(:)        => null()  !<
@@ -2398,6 +2401,8 @@ module GFS_typedefs
     logical                             :: mg3_as_mg2                  !<
     integer,               pointer      :: mtopa(:,:)       => null()  !<
     real (kind=kind_phys), pointer      :: ncgl(:,:)        => null()  !<
+    real (kind=kind_phys), pointer      :: ncpi(:,:)        => null()  !<
+    real (kind=kind_phys), pointer      :: ncpl(:,:)        => null()  !<
     real (kind=kind_phys), pointer      :: ncpr(:,:)        => null()  !<
     real (kind=kind_phys), pointer      :: ncps(:,:)        => null()  !<
     integer                             :: ncstrac                     !<
@@ -2405,6 +2410,7 @@ module GFS_typedefs
     integer                             :: nn                          !<
     integer                             :: nncl                        !<
     integer                             :: nsamftrac                   !<
+    integer                             :: ntiwx                       !<
     integer                             :: ntk                         !<
     integer                             :: ntkev                       !<
     integer                             :: nvdiff                      !<
@@ -3205,7 +3211,9 @@ module GFS_typedefs
     real(kind=kind_phys) :: mg_dcs            = 200.0              !< Morrison-Gettelman microphysics parameters
     real(kind=kind_phys) :: mg_qcvar          = 1.0
     real(kind=kind_phys) :: mg_ts_auto_ice(2) = (/180.0,180.0/)    !< ice auto conversion time scale
+#ifdef CCPP
     real(kind=kind_phys) :: mg_rhmini         = 1.01               !< relative humidity threshold parameter for nucleating ice
+#endif
     real(kind=kind_phys) :: mg_ncnst          = 100.e6             !< constant droplet num concentration (m-3)
     real(kind=kind_phys) :: mg_ninst          = 0.15e6             !< constant ice num concentration (m-3)
     real(kind=kind_phys) :: mg_ngnst          = 0.10e6             !< constant graupel/hail num concentration (m-3) = 0.1e6_r8
@@ -3218,7 +3226,7 @@ module GFS_typedefs
     real(kind=kind_phys) :: tcr             = 273.16
 #endif
 !
-    logical              :: effr_in         = .false.              !< flag to use effective radii of cloud species in radiation
+    logical              :: effr_in         = .false.           !< flag to use effective radii of cloud species in radiation
     logical              :: microp_uniform  = .true.
     logical              :: do_cldliq       = .true.
     logical              :: do_cldice       = .true.
@@ -3232,7 +3240,6 @@ module GFS_typedefs
     logical              :: mg_do_hail      = .false.           !< set .true. to turn on prognostic hail (with fprcp=2)
     logical              :: mg_do_ice_gmao  = .false.           !< set .true. to turn on gmao ice formulation
     logical              :: mg_do_liq_liu   = .true.            !< set .true. to turn on liu liquid treatment  
-
 
     !--- Thompson microphysical parameters
     logical              :: ltaerosol      = .false.            !< flag for aerosol version
@@ -3649,7 +3656,9 @@ module GFS_typedefs
     Model%mg_dcs           = mg_dcs
     Model%mg_qcvar         = mg_qcvar
     Model%mg_ts_auto_ice   = mg_ts_auto_ice
+#ifdef CCPP
     Model%mg_rhmini        = mg_rhmini
+#endif
     Model%mg_alf           = mg_alf
     Model%mg_qcmin         = mg_qcmin
     Model%effr_in          = effr_in
@@ -4137,7 +4146,7 @@ module GFS_typedefs
     endif
 
 !--- set up cloud schemes and tracer elements
-    Model%ngreffr = 1
+    Model%ngreffr = 5
     if (Model%imp_physics == Model%imp_physics_zhao_carr) then
       Model%npdf3d  = 0
       Model%num_p3d = 4
@@ -4237,10 +4246,12 @@ module GFS_typedefs
 #endif
     if(Model%cnvcld) Model%ncnvcld3d = 1
 
-!--- get cnvw index in phy_f3d
+!--- get cnvw and cnvc indices in phy_f3d
     Model%ncnvw = -999
+    Model%ncnvc = -999
     if ((Model%npdf3d == 3) .and. (Model%num_p3d == 4)) then
       Model%ncnvw = Model%num_p3d + 2
+      Model%ncnvc = Model%ncnvw + 1
     elseif ((Model%npdf3d == 0) .and. (Model%ncnvcld3d == 1)) then
       Model%ncnvw = Model%num_p3d + 1
     endif
@@ -4271,7 +4282,8 @@ module GFS_typedefs
                  ' uni_cld=',   Model%uni_cld,                                  &
                  ' ntot3d=',    Model%ntot3d,    ' ntot2d=',   Model%ntot2d,    &
                  ' shocaftcnv=',Model%shocaftcnv,' indcld=',   Model%indcld,    &
-                 ' shoc_parm=', Model%shoc_parm, ' ncnvw=',    Model%ncnvw
+                 ' shoc_parm=', Model%shoc_parm,                                &
+                 ' ncnvw=',     Model%ncnvw,     ' ncnvc=',     Model%ncnvc
 
 !--- END CODE FROM COMPNS_PHYSICS
 
@@ -5180,7 +5192,7 @@ module GFS_typedefs
     !
     allocate (Interstitial%otspt      (Model%ntracp1,2))
     ! Set up numbers of tracers for PBL, convection, etc: sets
-    ! Interstitial%{nncl,nvdiff,mg3_as_mg2,nn,tracers_total,ntk,ntkev,otspt,nsamftrac,ncstrac}
+    ! Interstitial%{nncl,nvdiff,mg3_as_mg2,nn,tracers_total,ntiwx,ntk,ntkev,otspt,nsamftrac,ncstrac}
     call interstitial_setup_tracers(Interstitial, Model)
     ! Allocate arrays
     allocate (Interstitial%adjnirbmd  (IM))
@@ -5211,7 +5223,6 @@ module GFS_typedefs
     allocate (Interstitial%cnv_mfd    (IM,Model%levs))
     allocate (Interstitial%cnv_ndrop  (IM,Model%levs))
     allocate (Interstitial%cnv_nice   (IM,Model%levs))
-    allocate (Interstitial%cnv_prc3   (IM,Model%levs))
     allocate (Interstitial%cnvc       (IM,Model%levs))
     allocate (Interstitial%cnvw       (IM,Model%levs))
     allocate (Interstitial%ctei_r     (IM))
@@ -5342,14 +5353,19 @@ module GFS_typedefs
        allocate (Interstitial%rainmp     (IM))
        allocate (Interstitial%snowmp     (IM))
     else if (Model%imp_physics == Model%imp_physics_mg) then
-       allocate (Interstitial%cn_prc     (IM))
-       allocate (Interstitial%cn_snr     (IM))
        allocate (Interstitial%ncgl       (IM,Model%levs))
        allocate (Interstitial%ncpr       (IM,Model%levs))
        allocate (Interstitial%ncps       (IM,Model%levs))
        allocate (Interstitial%qgl        (IM,Model%levs))
        allocate (Interstitial%qrn        (IM,Model%levs))
        allocate (Interstitial%qsnw       (IM,Model%levs))
+    end if
+    if (Model%do_shoc) then
+       if (.not. associated(Interstitial%qrn))  allocate (Interstitial%qrn  (IM,Model%levs))
+       if (.not. associated(Interstitial%qsnw)) allocate (Interstitial%qsnw (IM,Model%levs))
+       if (.not. associated(Interstitial%qgl))  allocate (Interstitial%qgl  (IM,Model%levs))
+       allocate (Interstitial%ncpi (IM,Model%levs))
+       allocate (Interstitial%ncpl (IM,Model%levs))
     end if
     ! Set components that do not change
     Interstitial%h2o_coeff    = h2o_coeff
@@ -5432,6 +5448,24 @@ module GFS_typedefs
         endif
       endif
     endif
+
+    if (Interstitial%nvdiff == Model%ntrac) then
+      Interstitial%ntiwx = -999
+    else
+      if (Model%imp_physics == Model%imp_physics_wsm6) then
+        Interstitial%ntiwx = 3
+      elseif (Model%imp_physics == Model%imp_physics_thompson) then
+        if(Model%ltaerosol) then
+          Interstitial%ntiwx = 3
+        else
+          Interstitial%ntiwx = 3
+        endif
+      elseif (Model%imp_physics == Model%imp_physics_gfdl) then
+        Interstitial%ntiwx = 3
+      else
+        Interstitial%ntiwx = 0
+      endif
+    end if
 
     Interstitial%ntkev = Interstitial%nvdiff
 
@@ -5551,7 +5585,6 @@ module GFS_typedefs
     Interstitial%cnv_mfd      = clear_val
     Interstitial%cnv_ndrop    = clear_val
     Interstitial%cnv_nice     = clear_val
-    Interstitial%cnv_prc3     = clear_val
     Interstitial%cnvc         = clear_val
     Interstitial%cnvw         = clear_val
     Interstitial%ctei_r       = clear_val
@@ -5665,14 +5698,19 @@ module GFS_typedefs
        Interstitial%rainmp    = clear_val
        Interstitial%snowmp    = clear_val
     else if (Model%imp_physics == Model%imp_physics_mg) then
-       Interstitial%cn_prc    = clear_val
-       Interstitial%cn_snr    = clear_val
        Interstitial%ncgl      = clear_val
        Interstitial%ncpr      = clear_val
        Interstitial%ncps      = clear_val
        Interstitial%qgl       = clear_val
        Interstitial%qrn       = clear_val
        Interstitial%qsnw      = clear_val
+    end if
+    if (Model%do_shoc) then
+       Interstitial%qrn       = clear_val
+       Interstitial%qsnw      = clear_val
+       Interstitial%qgl       = clear_val
+       Interstitial%ncpi      = clear_val
+       Interstitial%ncpl      = clear_val
     end if
     !
   end subroutine interstitial_phys_reset
@@ -5701,6 +5739,7 @@ module GFS_typedefs
     write (0,*) 'Interstitial%lmk           = ', Interstitial%lmk
     write (0,*) 'Interstitial%lmp           = ', Interstitial%lmp
     write (0,*) 'Interstitial%nsamftrac     = ', Interstitial%nsamftrac
+    write (0,*) 'Interstitial%ntiwx         = ', Interstitial%ntiwx
     write (0,*) 'Interstitial%nvdiff        = ', Interstitial%nvdiff
     write (0,*) 'Interstitial%oz_coeff      = ', Interstitial%oz_coeff
     write (0,*) 'sum(Interstitial%oz_pres)  = ', sum(Interstitial%oz_pres)
@@ -5735,7 +5774,6 @@ module GFS_typedefs
     write (0,*) 'sum(Interstitial%cnv_mfd     ) = ', sum(Interstitial%cnv_mfd     )
     write (0,*) 'sum(Interstitial%cnv_ndrop   ) = ', sum(Interstitial%cnv_ndrop   )
     write (0,*) 'sum(Interstitial%cnv_nice    ) = ', sum(Interstitial%cnv_nice    )
-    write (0,*) 'sum(Interstitial%cnv_prc3    ) = ', sum(Interstitial%cnv_prc3    )
     write (0,*) 'sum(Interstitial%cnvc        ) = ', sum(Interstitial%cnvc        )
     write (0,*) 'sum(Interstitial%cnvw        ) = ', sum(Interstitial%cnvw        )
     write (0,*) 'sum(Interstitial%ctei_r      ) = ', sum(Interstitial%ctei_r      )
@@ -5880,14 +5918,21 @@ module GFS_typedefs
        write (0,*) 'sum(Interstitial%snowmp   ) = ', sum(Interstitial%snowmp      )
     else if (Model%imp_physics == Model%imp_physics_mg) then
        write (0,*) 'Interstitial_print: values specific to MG microphysics'
-       write (0,*) 'sum(Interstitial%cn_prc   ) = ', sum(Interstitial%cn_prc      )
-       write (0,*) 'sum(Interstitial%cn_snr   ) = ', sum(Interstitial%cn_snr      )
        write (0,*) 'sum(Interstitial%ncgl     ) = ', sum(Interstitial%ncgl        )
        write (0,*) 'sum(Interstitial%ncpr     ) = ', sum(Interstitial%ncpr        )
        write (0,*) 'sum(Interstitial%ncps     ) = ', sum(Interstitial%ncps        )
        write (0,*) 'sum(Interstitial%qgl      ) = ', sum(Interstitial%qgl         )
        write (0,*) 'sum(Interstitial%qrn      ) = ', sum(Interstitial%qrn         )
        write (0,*) 'sum(Interstitial%qsnw     ) = ', sum(Interstitial%qsnw        )
+    end if
+    if (Model%do_shoc) then
+       write (0,*) 'Interstitial_print: values specific to SHOC'
+       write (0,*) 'sum(Interstitial%ncgl     ) = ', sum(Interstitial%ncgl        )
+       write (0,*) 'sum(Interstitial%qrn      ) = ', sum(Interstitial%qrn         )
+       write (0,*) 'sum(Interstitial%qsnw     ) = ', sum(Interstitial%qsnw        )
+       write (0,*) 'sum(Interstitial%qgl      ) = ', sum(Interstitial%qgl         )
+       write (0,*) 'sum(Interstitial%ncpi     ) = ', sum(Interstitial%ncpi        )
+       write (0,*) 'sum(Interstitial%ncpl     ) = ', sum(Interstitial%ncpl        )
     end if
     write (0,*) 'Interstitial_print: end'
     !
