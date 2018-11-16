@@ -1790,7 +1790,7 @@ module FV3GFS_io_mod
 !      'bdl_intplmethod=',trim(bdl_intplmethod(ibdl))
 
      call ESMF_AttributeAdd(phys_bundle(ibdl), convention="NetCDF", purpose="FV3", &
-       attrList=(/"fhzero", "ncld", "nsoil", "imp_physics", "dtp"/), rc=rc)
+       attrList=(/"fhzero     ", "ncld       ", "nsoil      ", "imp_physics", "dtp        "/), rc=rc)
 
      if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
        line=__LINE__, file=__FILE__)) return  ! bail out
