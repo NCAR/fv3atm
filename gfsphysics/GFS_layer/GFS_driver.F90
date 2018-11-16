@@ -212,15 +212,13 @@ module GFS_driver
 #ifndef CCPP
     call read_o3data  (Model%ntoz, Model%me, Model%master)
     call read_h2odata (Model%h2o_phys, Model%me, Model%master)
-#endif
-
-! DH* TODO - add these to GFS_phys_time_vary? or rad_time_vary?
     if (Model%aero_in) then
       call read_aerdata (Model%me,Model%master,Model%iflip,Model%idate)
     endif
     if (Model%iccn) then
       call read_cidata  ( Model%me, Model%master)
     endif
+#endif
 
 ! For CCPP,  stochastic_physics_init is called automatically as part of CCPP physics init
 #ifndef CCPP
@@ -308,27 +306,6 @@ module GFS_driver
                          Grid(nb)%jindx2_h, Grid(nb)%ddy_h)
       enddo
     endif
-! DH* TEMPORARY UNTIL IN GFS_PHYS_TIME_VARY
-#else
-    !--- read in and initialize IN and CCN
-    if (Model%iccn) then
-      do nb = 1, nblks
-        call setindxci (Init_parm%blksz(nb), Grid(nb)%xlat_d, Grid(nb)%jindx1_ci, &
-                        Grid(nb)%jindx2_ci, Grid(nb)%ddy_ci, Grid(nb)%xlon_d,     &
-                        Grid(nb)%iindx1_ci,Grid(nb)%iindx2_ci,Grid(nb)%ddx_ci)
-      enddo
-    endif
-
-    !--- read in and initialize aerosols
-    if (Model%aero_in) then
-      do nb = 1, nblks
-        call setindxaer (Init_parm%blksz(nb),Grid(nb)%xlat_d,Grid(nb)%jindx1_aer, &
-                        Grid(nb)%jindx2_aer, Grid(nb)%ddy_aer, Grid(nb)%xlon_d,   &
-                        Grid(nb)%iindx1_aer,Grid(nb)%iindx2_aer,Grid(nb)%ddx_aer, &
-                        Init_parm%me, Init_parm%master )
-      enddo
-    endif
-! *DH END TEMPORARY
 #endif
 
 ! DH* Even though this gets called through CCPP in GFS_time_vary_pre_init, we also
