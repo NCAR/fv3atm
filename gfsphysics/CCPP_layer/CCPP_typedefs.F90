@@ -12,7 +12,13 @@ module CCPP_typedefs
 
     private
 
-    public CCPP_shared_type, CCPP_interstitial_type
+    public CCPP_shared_type, CCPP_interstitial_type, kind_dyn
+
+#ifdef OVERLOAD_R4
+    integer, parameter :: kind_dyn  = 4
+#else
+    integer, parameter :: kind_dyn  = 8
+#endif
 
 #if 0
 !! \section arg_table_CCPP_shared_type
@@ -41,39 +47,39 @@ module CCPP_typedefs
 !! \section arg_table_CCPP_interstitial_type
 !! | local_name                                         | standard_name                                                 | long_name                                                                           | units   | rank | type        |    kind   | intent | optional |
 !! |----------------------------------------------------|---------------------------------------------------------------|-------------------------------------------------------------------------------------|---------|------|-------------|-----------|--------|----------|
-!! | CCPP_interstitial%akap                             | kappa_dry_for_fast_physics                                    | modified kappa for fast physics                                                     | none    |    0 | real        |           | none   | F        |
+!! | CCPP_interstitial%akap                             | kappa_dry_for_fast_physics                                    | modified kappa for fast physics                                                     | none    |    0 | real        | kind_dyn  | none   | F        |
 !! | CCPP_interstitial%bdt                              |                                                               | large time step for dynamics                                                        | s       |    0 | real        |           | none   | F        |
-!! | CCPP_interstitial%cappa                            | cappa_moist_gas_constant_at_Lagrangian_surface                | cappa(i,j,k) = rdgas / ( rdgas +  cvm(i)/(1.+r_vir*q(i,j,k,sphum)) )                | none    |    3 | real        |           | none   | F        |
-!! | CCPP_interstitial%dtdt                             | tendency_of_air_temperature_at_Lagrangian_surface             | air temperature tendency due to fast physics at Lagrangian surface                  | K s-1   |    3 | real        |           | none   | F        |
+!! | CCPP_interstitial%cappa                            | cappa_moist_gas_constant_at_Lagrangian_surface                | cappa(i,j,k) = rdgas / ( rdgas +  cvm(i)/(1.+r_vir*q(i,j,k,sphum)) )                | none    |    3 | real        | kind_dyn  | none   | F        |
+!! | CCPP_interstitial%dtdt                             | tendency_of_air_temperature_at_Lagrangian_surface             | air temperature tendency due to fast physics at Lagrangian surface                  | K s-1   |    3 | real        | kind_dyn  | none   | F        |
 !! | CCPP_interstitial%do_qa                            | flag_for_inline_cloud_fraction_calculation                    | flag for the inline cloud fraction calculation                                      | flag    |    0 | logical     |           | none   | F        |
 !! | CCPP_interstitial%fast_mp_consv                    | flag_for_fast_microphysics_energy_conservation                | flag for fast microphysics energy conservation                                      | flag    |    0 | logical     |           | none   | F        |
 !! | CCPP_interstitial%kmp                              | top_layer_index_for_fast_physics                              | top_layer_inder_for_gfdl_mp                                                         | index   |    0 | integer     |           | none   | F        |
 !! | CCPP_interstitial%last_step                        | flag_for_the_last_step_of_k_split_remapping                   | flag for the last step of k-split remapping                                         | flag    |    0 | logical     |           | none   | F        |
-!! | CCPP_interstitial%mdt                              | time_step_for_remapping_for_fast_physics                      | remapping time step                                                                 | s       |    0 | real        |           | none   | F        |
+!! | CCPP_interstitial%mdt                              | time_step_for_remapping_for_fast_physics                      | remapping time step                                                                 | s       |    0 | real        | kind_dyn  | none   | F        |
 !! | CCPP_interstitial%npzdelz                          | vertical_dimension_for_thickness_at_Lagrangian_surface        | vertical dimension for thickness at Lagrangian surface                              | count   |    0 | integer     |           | none   | F        |
 !! | CCPP_interstitial%out_dt                           | flag_for_tendency_of_air_temperature_at_Lagrangian_surface    | flag for calculating tendency of air temperature due to fast physics                | flag    |    0 | logical     |           | none   | F        |
-!! | CCPP_interstitial%te0_2d                           | atmosphere_energy_content_in_column                           | atmosphere total energy in columns                                                  | J m-2   |    2 | real        |           | none   | F        |
-!! | CCPP_interstitial%te0                              | atmosphere_energy_content_at_Lagrangian_surface               | atmosphere total energy at Lagrangian surface                                       | J m-2   |    3 | real        |           | none   | F        |
-!! | CCPP_interstitial%zvir                             | ratio_of_vapor_to_dry_air_gas_constants_minus_one_default_kind| zvir=rv/rd-1.0                                                                      | none    |    0 | real        |           | none   | F        |
+!! | CCPP_interstitial%te0_2d                           | atmosphere_energy_content_in_column                           | atmosphere total energy in columns                                                  | J m-2   |    2 | real        | kind_dyn  | none   | F        |
+!! | CCPP_interstitial%te0                              | atmosphere_energy_content_at_Lagrangian_surface               | atmosphere total energy at Lagrangian surface                                       | J m-2   |    3 | real        | kind_dyn  | none   | F        |
+!! | CCPP_interstitial%zvir                             | ratio_of_vapor_to_dry_air_gas_constants_minus_one_default_kind| zvir=rv/rd-1.0                                                                      | none    |    0 | real        | kind_dyn  | none   | F        |
 !!
 #endif
   type CCPP_interstitial_type
 
-     real                                :: akap
-     real                                :: bdt
-     real, pointer                       :: cappa(:,:,:)
+     real(kind_dyn)                      :: akap
+     real(kind_dyn)                      :: bdt
+     real(kind_dyn), pointer             :: cappa(:,:,:)
      logical                             :: do_qa
-     real, pointer                       :: dtdt(:,:,:)
+     real(kind_dyn), pointer             :: dtdt(:,:,:)
      logical                             :: fast_mp_consv
      integer                             :: kmp
      logical                             :: last_step
-     real                                :: mdt
+     real(kind_dyn)                      :: mdt
      integer                             :: npzdelz
      logical                             :: out_dt
-     real, pointer                       :: pfull(:)
-     real, pointer                       :: te0_2d(:,:) ! called te_2d in fv_dynamics, te0_2d in Lagrangian_to_Eulerian, te0_2d in fv_sat_adj
-     real, pointer                       :: te0(:,:,:)  ! called dp1 in fv_dynamics, te in Lagrangian_to_Eulerian, te0 in fv_sat_adj
-     real                                :: zvir
+     real(kind_dyn), pointer             :: pfull(:)
+     real(kind_dyn), pointer             :: te0_2d(:,:) ! called te_2d in fv_dynamics, te0_2d in Lagrangian_to_Eulerian, te0_2d in fv_sat_adj
+     real(kind_dyn), pointer             :: te0(:,:,:)  ! called dp1 in fv_dynamics, te in Lagrangian_to_Eulerian, te0 in fv_sat_adj
+     real(kind_dyn)                      :: zvir
 
   contains
 
@@ -151,15 +157,15 @@ contains
     integer, intent(in) :: jsd
     integer, intent(in) :: jed
     integer, intent(in) :: npz
-    real,    intent(in) :: dt_atmos
+    real(kind_dyn),    intent(in) :: dt_atmos
     integer, intent(in) :: p_split
     integer, intent(in) :: k_split
-    real,    intent(in) :: zvir
-    real,    intent(in) :: p_ref
-    real,    intent(in) :: ak(:)
-    real,    intent(in) :: bk(:)
+    real(kind_dyn),    intent(in) :: zvir
+    real(kind_dyn),    intent(in) :: p_ref
+    real(kind_dyn),    intent(in) :: ak(:)
+    real(kind_dyn),    intent(in) :: bk(:)
     logical, intent(in) :: do_qa
-    real,    intent(in) :: kappa
+    real(kind_dyn),    intent(in) :: kappa
     logical, intent(in) :: hydrostatic
     !
 #ifdef MOIST_CAPPA
@@ -202,12 +208,12 @@ contains
 
      class(CCPP_interstitial_type)       :: Interstitial
      integer, intent(in) :: npz
-     real, intent(in) :: p_ref
-     real, intent(in) :: ak(:)
-     real, intent(in) :: bk(:)
+     real(kind_dyn), intent(in) :: p_ref
+     real(kind_dyn), intent(in) :: ak(:)
+     real(kind_dyn), intent(in) :: bk(:)
 
-     real :: ph1
-     real :: ph2
+     real(kind_dyn) :: ph1
+     real(kind_dyn) :: ph2
      integer :: k
 
 #ifdef SW_DYNAMICS
