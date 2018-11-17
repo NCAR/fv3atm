@@ -1,6 +1,5 @@
 module CCPP_typedefs
 
-    use machine, only: kind_dyn
     implicit none
 
 #if 0
@@ -13,7 +12,13 @@ module CCPP_typedefs
 
     private
 
-    public CCPP_shared_type, CCPP_interstitial_type
+    public CCPP_shared_type, CCPP_interstitial_type, kind_dyn
+
+#ifdef OVERLOAD_R4
+    integer, parameter :: kind_dyn  = 4
+#else
+    integer, parameter :: kind_dyn  = 8
+#endif
 
 #if 0
 !! \section arg_table_CCPP_shared_type
@@ -71,7 +76,7 @@ module CCPP_typedefs
      real(kind_dyn)                      :: mdt
      integer                             :: npzdelz
      logical                             :: out_dt
-     real(kind_dyn), pointer                       :: pfull(:)
+     real(kind_dyn), pointer             :: pfull(:)
      real(kind_dyn), pointer             :: te0_2d(:,:) ! called te_2d in fv_dynamics, te0_2d in Lagrangian_to_Eulerian, te0_2d in fv_sat_adj
      real(kind_dyn), pointer             :: te0(:,:,:)  ! called dp1 in fv_dynamics, te in Lagrangian_to_Eulerian, te0 in fv_sat_adj
      real(kind_dyn)                      :: zvir
