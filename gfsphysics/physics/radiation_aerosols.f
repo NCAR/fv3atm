@@ -46,7 +46,7 @@
 !                                                                      !
 !       aerolw(IMAX,NLAY,NBDLW,1) - aerosols optical depth for lw      !
 !       aerolw(IMAX,NLAY,NBDLW,2) - aerosols single scattering albedo  !
-!       aerolw(IMAX,NLAY,NBDLW,3) - aerosols asymetry parameter        !
+!       aerolw(IMAX,NLAY,NBDLW,3) - aerosols asymmetry parameter       !
 !                                                                      !
 !                                                                      !
 !   program history:                                                   !
@@ -4366,7 +4366,7 @@
       real (kind=kind_io8), Dimension( NP2 ) :: Angle, Cos_Angle,       &
      &                                          Cos_Weight
       real (kind=kind_io8), Dimension(n_p,nAero) :: RH, rm, reff
-      real (kind=kind_io8), Dimension(nWave,n_p,nAero) ::               & 
+      real (kind=kind_io8), Dimension(nWave,n_p,nAero) ::               &
      &                      ext0, sca0, asy0
       real (kind=kind_io8), Dimension(NP2,n_p,nWave,nAero) :: ph0
       real (kind=kind_io8) :: wavelength(nWave), density(nAero),        &
@@ -4388,7 +4388,7 @@
 !!  0.1399  0.2399  0.4499 0.8000 1.3994  2.3964 4.4964  7.9887 <-- reff
       data indx_dust/4, 8, 12, 18, 21, 24, 30, 36/
 
-      PI = acos(-1.d0)
+!     PI = acos(-1.d0)
 
 ! -- allocate aerosol optical data
       if ( .not. allocated( iendwv_grt ) ) then
@@ -4502,7 +4502,7 @@
 !-----------------------------------
 !                                                                      !
 !> This subroutine computes mean aerosols optical properties over each
-!! SW/LW radiation spectral band for each of the species components. 
+!! SW/LW radiation spectral band for each of the species components.
 !! This program follows GFDL's approach for thick cloud optical property
 !! in SW radiation scheme (2000).
 !-----------------------------
