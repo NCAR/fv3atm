@@ -1,6 +1,5 @@
 module CCPP_typedefs
 
-    use machine, only: kind_dyn
     implicit none
 
 #if 0
@@ -13,7 +12,13 @@ module CCPP_typedefs
 
     private
 
-    public CCPP_shared_type, CCPP_interstitial_type
+    public CCPP_shared_type, CCPP_interstitial_type, kind_dyn
+
+#ifdef OVERLOAD_R4
+    integer, parameter :: kind_dyn  = 4
+#else
+    integer, parameter :: kind_dyn  = 8
+#endif
 
 #if 0
 !! \section arg_table_CCPP_shared_type
@@ -43,7 +48,7 @@ module CCPP_typedefs
 !! | local_name                                         | standard_name                                                 | long_name                                                                           | units   | rank | type        |    kind   | intent | optional |
 !! |----------------------------------------------------|---------------------------------------------------------------|-------------------------------------------------------------------------------------|---------|------|-------------|-----------|--------|----------|
 !! | CCPP_interstitial%akap                             | kappa_dry_for_fast_physics                                    | modified kappa for fast physics                                                     | none    |    0 | real        | kind_dyn  | none   | F        |
-!! | CCPP_interstitial%bdt                              |                                                               | large time step for dynamics                                                        | s       |    0 | real        |           | none   | F        |
+!! | CCPP_interstitial%bdt                              |                                                               | large time step for dynamics                                                        | s       |    0 | real        | kind_dyn  | none   | F        |
 !! | CCPP_interstitial%cappa                            | cappa_moist_gas_constant_at_Lagrangian_surface                | cappa(i,j,k) = rdgas / ( rdgas +  cvm(i)/(1.+r_vir*q(i,j,k,sphum)) )                | none    |    3 | real        | kind_dyn  | none   | F        |
 !! | CCPP_interstitial%dtdt                             | tendency_of_air_temperature_at_Lagrangian_surface             | air temperature tendency due to fast physics at Lagrangian surface                  | K s-1   |    3 | real        | kind_dyn  | none   | F        |
 !! | CCPP_interstitial%do_qa                            | flag_for_inline_cloud_fraction_calculation                    | flag for the inline cloud fraction calculation                                      | flag    |    0 | logical     |           | none   | F        |
@@ -71,7 +76,7 @@ module CCPP_typedefs
      real(kind_dyn)                      :: mdt
      integer                             :: npzdelz
      logical                             :: out_dt
-     real(kind_dyn), pointer                       :: pfull(:)
+     real(kind_dyn), pointer             :: pfull(:)
      real(kind_dyn), pointer             :: te0_2d(:,:) ! called te_2d in fv_dynamics, te0_2d in Lagrangian_to_Eulerian, te0_2d in fv_sat_adj
      real(kind_dyn), pointer             :: te0(:,:,:)  ! called dp1 in fv_dynamics, te in Lagrangian_to_Eulerian, te0 in fv_sat_adj
      real(kind_dyn)                      :: zvir
@@ -97,7 +102,7 @@ contains
     logical, intent(in) :: hydrostatic
     logical, intent(in) :: phys_hydrostatic
     !
-    Shared%hydrostatic      = hydrostatic
+    Shared%hydrostatic = hydrostatic
     ! Number of OpenMP threads available for schemes, default only one
     Shared%nthreads = 1
     ! DH*

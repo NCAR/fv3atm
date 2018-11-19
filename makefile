@@ -19,7 +19,7 @@ endif
 
 FFLAGS   += -I$(FMS_DIR) -I$(PHYSP)physics -Iipd -Icpl -Iio -Iatmos_cubed_sphere
 
-$(info    CPPDEFS is $(CPPDEFS))
+# Flag to CCPP build for 32bit dynamics
 ifeq ($(32BIT),Y)
   DYN32 = Y
 else
