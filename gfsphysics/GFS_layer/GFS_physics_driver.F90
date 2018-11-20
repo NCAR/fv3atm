@@ -6571,12 +6571,11 @@ module module_physics_driver
           !Statein%phii                                         ! intent(in)
           !Statein%vvl                                          ! intent(in)
           !Model%dtp                                            ! intent(in)
-          !Model%kdt                                            ! intent(in)
-          !Diag%rain                                            ! DH* REMOVE
-          !Interstitial(nt)%prcpmp                              ! intent(inout), should be zero on entry - DH* fix dynamics/physics timestep inconsistencies
-          !Diag%snow                                            ! intent(inout)
-          !Diag%ice                                             ! intent(inout)
-          !Diag%graupel                                         ! intent(inout)
+          !Interstitial(nt)%prcpmp                              ! intent(  out)
+          !Interstitial(nt)%rainmp                              ! intent(  out)
+          !Interstitial(nt)%graupelmp                           ! intent(  out)
+          !Interstitial(nt)%icemp                               ! intent(  out)
+          !Interstitial(nt)%snowmp                              ! intent(  out)
           !Diag%sr                                              ! intent(  out)
           !Diag%refl_10cm                                       ! intent(  out)
           !Model%lradar                                         ! intent(in   )
@@ -6598,7 +6597,7 @@ module module_physics_driver
           !
           call ccpp_physics_run(cdata_block(nb,nt), scheme_name="mp_thompson_hrrr", ierr=ierr)
           ! Copy back intent(inout) and intent(out) interstitial variables to local variables in driver
-          rain1 = Interstitial(nt)%prcpmp ! DH* fix
+          rain1 = Interstitial(nt)%prcpmp
           Tbd%phy_f3d(:,:,1) = Interstitial(nt)%clouds(:,:,3)
           Tbd%phy_f3d(:,:,2) = Interstitial(nt)%clouds(:,:,5)
           Tbd%phy_f3d(:,:,3) = Interstitial(nt)%clouds(:,:,9)
@@ -7279,6 +7278,7 @@ module module_physics_driver
       !Model%ntrac                                ! intent(in)
       !Model%imp_physics                          ! intent(in)
       !Model%imp_physics_gfdl                     ! intent(in)
+      !Model%imp_physics_thompson                 ! intent(in)
       !Model%cal_pre                              ! intent(in)
       !Model%lssav                                ! intent(in)
       !Model%ldiag3d                              ! intent(in)
