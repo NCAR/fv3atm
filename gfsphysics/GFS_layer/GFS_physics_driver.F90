@@ -596,6 +596,10 @@ module module_physics_driver
           ud_mf, dd_mf, dt_mf, prnum, dkt, sigmatot, sigmafrac
 #endif
 
+!--- for isppt_deep
+      real(kind=kind_phys), dimension(size(Grid%xlon,1),Model%levs) ::  &
+          savet,saveq,saveu,savev
+
 !--- GFDL modification for FV3
       real(kind=kind_phys), dimension(size(Grid%xlon,1),Model%levs+1) ::&
            del_gz
@@ -4853,6 +4857,22 @@ module module_physics_driver
 !  --- ...  calling convective parameterization
 !           -----------------------------------
       if (Model%do_deep) then
+ 
+         if(Model%do_ca == .true.)then                                                                                                                                                         
+           do k=1,levs                                                                                                                                                                          
+            do i=1,im                                                                                                                                                                           
+             Stateout%gq0(i,k,1) = Stateout%gq0(i,k,1)*(1.0 + Coupling%ca_deep(i)/500.)                                                                                                         
+            enddo                                                                                                                                                                               
+           enddo                                                                                                                                                                                
+         endif   
+ 
+        if(Model%isppt_deep == .true.)then
+           savet = Stateout%gt0
+           saveq = Stateout%gq0(:,:,1)
+           saveu = Stateout%gu0
+           savev = Stateout%gv0
+        endif
+
         if (.not. Model%ras .and. .not. Model%cscnv) then
 
           if (Model%imfdeepcnv == 1) then             ! no random cloud top
@@ -4966,8 +4986,9 @@ module module_physics_driver
             call samfdeepcnv(im, ix, levs, dtp, ntk, nsamftrac, del,             &
                              Statein%prsl, Statein%pgr, Statein%phil, clw,       &
                              Stateout%gq0(:,:,1), Stateout%gt0,                  &
-                             Stateout%gu0, Stateout%gv0,                         &
-                             cld1d, rain1, kbot, ktop, kcnv, islmsk, garea,      &
+                             Stateout%gu0, Stateout%gv0, Model%do_ca,            &
+                             Coupling%ca_deep, cld1d, rain1, kbot, ktop, kcnv,   &
+                             islmsk, garea,                                      &
                              Statein%vvl, ncld, ud_mf, dd_mf, dt_mf, cnvw, cnvc, &
                              QLCN, QICN, w_upi,cf_upi, CNV_MFD,                  &
                              CNV_DQLDT,CLCN,CNV_FICE,CNV_NDROP,CNV_NICE,         &
@@ -5159,6 +5180,11 @@ module module_physics_driver
                          CNV_DQLDT,CLCN,CNV_FICE,CNV_NDROP,CNV_NICE,imp_physics )
 !           if (lprnt) print *,' rain1=',rain1(ipr),' rann=',rann(ipr,1)
           endif
+
+
+        if(Model%do_ca) then
+        Coupling%cape(:)=cld1d(:)
+        endif
 
 !
 #ifndef CCPP
@@ -5519,6 +5545,14 @@ module module_physics_driver
           endif ! if (lgocart)
 
         endif   ! end if_not_ras
+
+        if(Model%isppt_deep)then
+           Coupling%tconvtend = Stateout%gt0 - savet
+           Coupling%qconvtend = Stateout%gq0(:,:,1) - saveq
+           Coupling%uconvtend = Stateout%gu0 - saveu
+           Coupling%vconvtend = Stateout%gv0 - savev
+        endif
+
       else      ! no parameterized deep convection
         cld1d = 0.
         rain1 = 0.
