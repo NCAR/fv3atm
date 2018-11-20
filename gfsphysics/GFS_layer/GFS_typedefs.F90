@@ -1589,6 +1589,11 @@ module GFS_typedefs
 !! | IPD_Data(nb)%Tbd%prevst                           | temperature_from_previous_timestep                                                             | temperature from previous time step                     | K             |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Tbd%prevsq                           | moisture_from_previous_timestep                                                                | moisture from previous time step                        | kg kg-1       |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Tbd%cactiv                           | conv_activity_counter                                                                          | convective activity memory                              | none          |    1 | integer |           | none   | F        |
+!! | IPD_Data(nb)%Tbd%raincprv                         | lwe_thickness_of_explicit_rainfall_amount_from_previous_timestep                               | explicit rainfall from previous timestep                | m             |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Tbd%rainncprv                        | lwe_thickness_of_convective_precipitation_amount_from_previous_timestep                        | convective_precipitation_amount from previous timestep  | m             |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Tbd%iceprv                           | lwe_thickness_of_ice_amount_from_previous_timestep                                             | ice amount from previous timestep                       | m             |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Tbd%snowprv                          | lwe_thickness_of_snow_amount_from_previous_timestep                                            | snow amount from previous timestep                      | m             |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Tbd%graupelprv                       | lwe_thickness_of_graupel_amount_from_previous_timestep                                         | graupel amount from previous timestep                   | m             |    1 | real    | kind_phys | none   | F        |
 !!
 #endif
   type GFS_tbd_type
@@ -1642,6 +1647,13 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: prevst (:,:)     => null()  !<
     real (kind=kind_phys), pointer :: prevsq (:,:)     => null()  !<
     integer,               pointer :: cactiv   (:)     => null()  !< convective activity memory contour
+    
+    !---- precipitation amounts from previous time step for RUC LSM
+    real (kind=kind_phys), pointer :: raincprv  (:)    => null()  !< explicit rainfall from previous timestep
+    real (kind=kind_phys), pointer :: rainncprv (:)    => null()  !< convective_precipitation_amount from previous timestep
+    real (kind=kind_phys), pointer :: iceprv    (:)    => null()  !< ice amount from previous timestep
+    real (kind=kind_phys), pointer :: snowprv   (:)    => null()  !< snow amount from previous timestep
+    real (kind=kind_phys), pointer :: graupelprv(:)    => null()  !< graupel amount from previous timestep
 #endif
 
     contains
@@ -4783,6 +4795,19 @@ module GFS_typedefs
        Tbd%prevsq = clear_val
        Tbd%cactiv = zero
    end if
+
+   if (Model%lsm == Model%lsm_ruc) then
+       allocate(Tbd%raincprv  (IM))
+       allocate(Tbd%rainncprv (IM))
+       allocate(Tbd%iceprv    (IM))
+       allocate(Tbd%snowprv   (IM))
+       allocate(Tbd%graupelprv(IM))
+       Tbd%raincprv   = clear_val
+       Tbd%rainncprv  = clear_val
+       Tbd%iceprv     = clear_val
+       Tbd%snowprv    = clear_val
+       Tbd%graupelprv = clear_val
+    end if
 #endif
 
   end subroutine tbd_create
