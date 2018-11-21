@@ -222,7 +222,6 @@ FFLAGS_LOPT=$(subst xCORE-AVX2,xCORE-AVX-I,$(FFLAGS))
 	$(FC) $(FFLAGS_LOPT) $(OTHER_FFLAGS) -c $< -o $@
 else ifneq (,$(findstring axSSE4.2,AVX,CORE-AVX2,$(FFLAGS)))
 FFLAGS_LOPT=$(subst CORE-AVX2,CORE-AVX-I,$(FFLAGS))
-	$(FC) $(FFLAGS_LOPT) $(OTHER_FFLAGS) -c $< -o $@
 ./physics/radiation_aerosols.o : ./physics/radiation_aerosols.f
 	$(FC) $(FFLAGS_LOPT) $(OTHER_FFLAGS) -c $< -o $@
 else ifneq (,$(findstring xHOST,$(FFLAGS)))
