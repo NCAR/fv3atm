@@ -219,23 +219,23 @@ $(LIBRARY): $(OBJS)
 ifneq (,$(findstring xCORE-AVX2,$(FFLAGS)))
 FFLAGS_LOPT=$(subst xCORE-AVX2,xCORE-AVX-I,$(FFLAGS))
 ./physics/radiation_aerosols.o : ./physics/radiation_aerosols.f
-	$(FC) $(FFLAGS_LOPT) $(OTHER_FFLAGS) -c $< -o $@
+	$(FC) $(CPPDEFS) $(FFLAGS_LOPT) $(OTHER_FFLAGS) -c $< -o $@
 else ifneq (,$(findstring axSSE4.2,AVX,CORE-AVX2,$(FFLAGS)))
 FFLAGS_LOPT=$(subst CORE-AVX2,CORE-AVX-I,$(FFLAGS))
 ./physics/radiation_aerosols.o : ./physics/radiation_aerosols.f
-	$(FC) $(FFLAGS_LOPT) $(OTHER_FFLAGS) -c $< -o $@
+	$(FC) $(CPPDEFS) $(FFLAGS_LOPT) $(OTHER_FFLAGS) -c $< -o $@
 else ifneq (,$(findstring xHOST,$(FFLAGS)))
 FFLAGS_LOPT=$(subst xHOST,xCORE-AVX-I,$(FFLAGS))
 ./physics/radiation_aerosols.o : ./physics/radiation_aerosols.f
-	$(FC) $(FFLAGS_LOPT) $(OTHER_FFLAGS) -c $< -o $@
+	$(FC) $(CPPDEFS) $(FFLAGS_LOPT) $(OTHER_FFLAGS) -c $< -o $@
 else
 ./physics/radiation_aerosols.o : ./physics/radiation_aerosols.f
-	$(FC) $(FFLAGS) $(OTHER_FFLAGS) -c $< -o $@
+	$(FC) $(CPPDEFS) $(FFLAGS) $(OTHER_FFLAGS) -c $< -o $@
 endif
 
 # Reduce optimization (add -O0) for GFS_diagnsostics.F90
 ./GFS_layer/GFS_diagnostics.o : ./GFS_layer/GFS_diagnostics.F90
-	$(FC) $(FFLAGS) $(OTHER_FFLAGS) -O0 -c $< -o $@
+	$(FC) $(CPPDEFS) $(FFLAGS) $(OTHER_FFLAGS) -O0 -c $< -o $@
 
 # Force consistent results of math calculations for MG microphysics
 # in DEBUG or REPRO mode; without this flag, the results of the intrinsic
@@ -245,15 +245,15 @@ endif
 ifneq (,$(findstring DEBUG,$(CPPDEFS)))
 FFLAGS_LOPT2=$(subst -fp-model,-fimf-arch-consistency=true -fp-model,$(FFLAGS))
 ./physics/micro_mg2_0.o : ./physics/micro_mg2_0.F90
-	$(FC) $(FFLAGS_LOPT2) $(OTHER_FFLAGS) -c $< -o $@
+	$(FC) $(CPPDEFS) $(FFLAGS_LOPT2) $(OTHER_FFLAGS) -c $< -o $@
 ./physics/micro_mg3_0.o : ./physics/micro_mg3_0.F90
-	$(FC) $(FFLAGS_LOPT2) $(OTHER_FFLAGS) -c $< -o $@
+	$(FC) $(CPPDEFS) $(FFLAGS_LOPT2) $(OTHER_FFLAGS) -c $< -o $@
 else ifneq (,$(findstring REPRO,$(CPPDEFS)))
 FFLAGS_LOPT2=$(subst -fp-model,-fimf-arch-consistency=true -fp-model,$(FFLAGS))
 ./physics/micro_mg2_0.o : ./physics/micro_mg2_0.F90
-	$(FC) $(FFLAGS_LOPT2) $(OTHER_FFLAGS) -c $< -o $@
+	$(FC) $(CPPDEFS) $(FFLAGS_LOPT2) $(OTHER_FFLAGS) -c $< -o $@
 ./physics/micro_mg3_0.o : ./physics/micro_mg3_0.F90
-	$(FC) $(FFLAGS_LOPT2) $(OTHER_FFLAGS) -c $< -o $@
+	$(FC) $(CPPDEFS) $(FFLAGS_LOPT2) $(OTHER_FFLAGS) -c $< -o $@
 endif
 
 # Do preprocessing of the GFS driver and GFS physics driver in two
