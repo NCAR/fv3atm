@@ -6579,16 +6579,9 @@ module module_physics_driver
           !Diag%sr                                              ! intent(  out)
           !Diag%refl_10cm                                       ! intent(  out)
           !Model%lradar                                         ! intent(in   )
-          ! DH* use Tbd%phy_f3d(:,:,1-3) directly? difficult, because
-          ! these fields are used for different purposes depending on
-          ! the physics options and as such would require multiple
-          ! standard names. Alternative: create separate fields for
-          ! each MP scheme, make sure they are treated in the same
-          ! way as Tbd here and allocate them only if the scheme
-          ! is active. *DH
-          Interstitial(nt)%clouds(:,:,3) = Tbd%phy_f3d(:,:,1)   ! intent(inout)
-          Interstitial(nt)%clouds(:,:,5) = Tbd%phy_f3d(:,:,2)   ! intent(inout)
-          Interstitial(nt)%clouds(:,:,9) = Tbd%phy_f3d(:,:,3)   ! intent(inout)
+          !Tbd%phy_f3d(:,:,IPD_Control%nleffr)                  ! intent(inout)
+          !Tbd%phy_f3d(:,:,IPD_Control%nieffr)                  ! intent(inout)
+          !Tbd%phy_f3d(:,:,IPD_Control%nseffr)                  ! intent(inout)
           !Model%me                                             ! intent(in)
           !Model%master                                         ! intent(in)
           !Model%communicator                                   ! intent(in)
@@ -6598,9 +6591,6 @@ module module_physics_driver
           call ccpp_physics_run(cdata_block(nb,nt), scheme_name="mp_thompson_hrrr", ierr=ierr)
           ! Copy back intent(inout) and intent(out) interstitial variables to local variables in driver
           rain1 = Interstitial(nt)%prcpmp
-          Tbd%phy_f3d(:,:,1) = Interstitial(nt)%clouds(:,:,3)
-          Tbd%phy_f3d(:,:,2) = Interstitial(nt)%clouds(:,:,5)
-          Tbd%phy_f3d(:,:,3) = Interstitial(nt)%clouds(:,:,9)
           errmsg = trim(cdata_block(nb,nt)%errmsg)
           errflg = cdata_block(nb,nt)%errflg
           !
@@ -6878,7 +6868,7 @@ module module_physics_driver
         !Tbd%phy_f3d(1,1,3)                                   ! intent(out)
         !Tbd%phy_f3d(1,1,4)                                   ! intent(out)
         !Tbd%phy_f3d(1,1,5)                                   ! intent(out)
-        !Tbd%phy_f3d(1,1,Model%ngreffr)                       ! intent(out)
+        !Tbd%phy_f3d(1,1,Model%ngeffr)                        ! intent(out)
         !Tbd%aer_nm                                           ! intent(in)
         !Model%aero_in                                        ! intent(in)
         !Tbd%in_nm                                            ! intent(in)
