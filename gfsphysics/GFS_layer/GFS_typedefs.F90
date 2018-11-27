@@ -1215,7 +1215,7 @@ module GFS_typedefs
     integer              :: ncnd            !< number of cloud condensate types
 
     !--- Thompson's microphysical paramters
-    logical              :: ltaerosol       !< flag for aerosol version, currently not working yet
+    logical              :: ltaerosol       !< flag for aerosol version
     logical              :: lradar          !< flag for radar reflectivity
 
     !--- GFDL microphysical paramters
@@ -4195,11 +4195,9 @@ module GFS_typedefs
       Model%pdfcld  = .false.
       Model%shcnvcw = .false.
       Model%ncnd    = 5
-      ! DH*
       Model%nleffr = 1
       Model%nieffr = 2
       Model%nseffr = 3
-      ! *DH
       if (Model%me == Model%master) print *,' Using wsm6 microphysics'
 
     elseif (Model%imp_physics == Model%imp_physics_thompson) then !Thompson microphysics
@@ -4209,18 +4207,9 @@ module GFS_typedefs
       Model%pdfcld  = .false.
       Model%shcnvcw = .false.
       Model%ncnd    = 5
-      ! DH*
       Model%nleffr = 1
       Model%nieffr = 2
       Model%nseffr = 3
-      ! *DH
-#ifndef CCPP
-!      if(Model%ltaerosol) then
-!         Model%ltaerosol=.false.
-!         if (Model%me == Model%master) print *, &
-!           'ltaerosol currently only works with CCPP version of Thompson MP, resetting ltaerosol to false'
-!      endif
-#endif
       if (Model%me == Model%master) print *,' Using Thompson double moment', &
                                           ' microphysics',' ltaerosol = ',Model%ltaerosol, &
                                           ' lradar =',Model%lradar,Model%num_p3d,Model%num_p2d
@@ -4232,15 +4221,13 @@ module GFS_typedefs
       Model%pdfcld  = .false.
       Model%shcnvcw = .false.
       Model%ncnd    = 2
-      ! DH*
       Model%nleffr = 2
       Model%nieffr = 3
       Model%nreffr = 4
       Model%nseffr = 5
-      ! *DH
       if (abs(Model%fprcp) == 1) then
         Model%ncnd = 4
-        ! DH*
+        ! DH* TO TEST DOES THIS WORK WITHOUT CRASHING?
         !Model%ngeffr = 5
         ! *DH
       elseif (Model%fprcp >= 2) then
