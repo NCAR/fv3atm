@@ -1940,7 +1940,7 @@ module FV3GFS_io_mod
            call add_field_to_phybundle(trim(output_name),trim(Diag(idx)%desc),trim(Diag(idx)%unit), "time: point", &
              axes(1:Diag(idx)%axes), fcst_grid, nstt(idx),phys_bundle(ibdl), outputfile(ibdl),   &
              bdl_intplmethod(ibdl), rcd=rc)
-!           if( mpp_root_pe()==0) print *,'phys, add field,',trim(Diag(idx)%name),'idx=',idx,'ibdl=',ibdl
+!           if( mpp_pe() == mpp_root_pe()) print *,'phys, add field,',trim(Diag(idx)%name),'idx=',idx,'ibdl=',ibdl
 !
            if( index(trim(Diag(idx)%intpl_method), "vector") > 0) then
              l2dvector = .true.
@@ -1950,7 +1950,7 @@ module FV3GFS_io_mod
                call add_field_to_phybundle(trim(output_name),trim(Diag(idx)%desc),trim(Diag(idx)%unit), "time: point", &
                  axes(1:Diag(idx)%axes), fcst_grid, nstt_vctbl(idx),phys_bundle(ibdl), outputfile1, &
                  bdl_intplmethod(ibdl),l2dvector=l2dvector,  rcd=rc)
-!               if( mpp_root_pe()==0) print *,'in phys, add vector field,',trim(Diag(idx)%name),' idx=',idx,' ibdl=',ibdl
+!               if( mpp_pe() == mpp_root_pe()) print *,'in phys, add vector field,',trim(Diag(idx)%name),' idx=',idx,' ibdl=',ibdl
              endif
            endif
 
@@ -1958,7 +1958,7 @@ module FV3GFS_io_mod
        endif
      enddo
      if( .not. lput2physbdl ) then
-         if( mpp_root_pe()==0) print *,'WARNING: not matching interpolation method, field ',trim(Diag(idx)%name), &
+         if( mpp_pe() == mpp_root_pe()) print *,'WARNING: not matching interpolation method, field ',trim(Diag(idx)%name), &
            ' is not added to phys bundle '
      endif
 
@@ -2052,7 +2052,7 @@ module FV3GFS_io_mod
        if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU,       &
          line=__LINE__, file=__FILE__)) call ESMF_Finalize(endflag=ESMF_END_ABORT)
 
-     if( mpp_root_pe() == 0) print *,'add 3D field to after nearest_stod, fld=', trim(var_name)
+     if( mpp_pe() == mpp_root_pe()) print *,'add 3D field to after nearest_stod, fld=', trim(var_name)
      endif
    else if( trim(intpl_method) == 'bilinear' ) then
      if(size(axes) == 2) then
@@ -2067,7 +2067,7 @@ module FV3GFS_io_mod
                             name=var_name, indexFlag=ESMF_INDEX_DELOCAL, rc=rc)
        if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU,       &
          line=__LINE__, file=__FILE__)) call ESMF_Finalize(endflag=ESMF_END_ABORT)
-       if( mpp_root_pe() == 0) print *,'add field to after bilinear, fld=', trim(var_name)
+       if( mpp_pe() == mpp_root_pe()) print *,'add field to after bilinear, fld=', trim(var_name)
      endif
    endif
 !
