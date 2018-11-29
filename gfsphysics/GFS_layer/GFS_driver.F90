@@ -202,12 +202,11 @@ module GFS_driver
                      Init_parm%input_nml_file, Init_parm%tile_num  &
 #ifdef CCPP
                     ,Init_parm%ak, Init_parm%bk, Init_parm%blksz,  &
-                     Init_parm%restart, communicator, ntasks)
+                     Init_parm%restart, communicator, ntasks
 #elif MEMCHECK
-                    ,communicator)
-#else
-                     )
+                    ,communicator
 #endif
+                     )
 
 ! For CCPP,  these are called automatically in GFS_phys_time_vary_init as part of CCPP physics init.
 ! The reason why these are in GFS_phys_time_vary_init and not in ozphys/h2ophys is that the ozone

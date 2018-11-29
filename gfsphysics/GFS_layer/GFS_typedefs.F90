@@ -140,6 +140,7 @@ module GFS_typedefs
 !! |----------------|--------------------------------------------------------|---------------------------------------------------------|---------------|------|----------|-----------|--------|----------|
 !! | me             |                                                        | current MPI-rank                                        | none          |    0 | integer  |           | none   | F        |
 !! | master         |                                                        | master MPI-rank                                         | none          |    0 | integer  |           | none   | F        |
+!! | tile_num       |                                                        | tile number                                             | none          |    0 | integer  |           | none   | F        |
 !! | isc            |                                                        | starting i-index for this MPI-domain                    | index         |    0 | integer  |           | none   | F        |
 !! | jsc            |                                                        | starting j-index for this MPI-domain                    | index         |    0 | integer  |           | none   | F        |
 !! | nx             |                                                        | number of points in i-dir for this MPI rank             | count         |    0 | integer  |           | none   | F        |
@@ -170,6 +171,7 @@ module GFS_typedefs
   type GFS_init_type
     integer :: me                                !< my MPI-rank
     integer :: master                            !< master MPI-rank
+    integer :: tile_num                          !< tile number for this MPI rank
     integer :: isc                               !< starting i-index for this MPI-domain
     integer :: jsc                               !< starting j-index for this MPI-domain
     integer :: nx                                !< number of points in i-dir for this MPI rank
@@ -614,6 +616,17 @@ module GFS_typedefs
 !! | GFS_Data(cdata%blk_no)%Coupling%psurfi_cpl     | instantaneous_surface_air_pressure_for_coupling                                                | instantaneous sfc pressure                             | Pa            |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Coupling%oro_cpl        |                                                                                                | orography                                              |               |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Coupling%slmsk_cpl      |                                                                                                | land/sea/ice mask                                      |               |    1 | real    | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Coupling%tconvtend      |                                                                                                |                                                        |               |    2 | real    | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Coupling%qconvtend      |                                                                                                |                                                        |               |    2 | real    | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Coupling%uconvtend      |                                                                                                |                                                        |               |    2 | real    | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Coupling%vconvtend      |                                                                                                |                                                        |               |    2 | real    | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Coupling%ca_out         |                                                                                                |                                                        |               |    1 | real    | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Coupling%ca_deep        |                                                                                                |                                                        |               |    1 | real    | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Coupling%ca_turb        |                                                                                                |                                                        |               |    1 | real    | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Coupling%ca_shal        |                                                                                                |                                                        |               |    1 | real    | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Coupling%ca_rad         |                                                                                                |                                                        |               |    1 | real    | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Coupling%ca_micro       |                                                                                                |                                                        |               |    1 | real    | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Coupling%cape           |                                                                                                |                                                        |               |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Coupling%shum_wts       | weights_for_stochastic_shum_perturbation                                                       | weights for stochastic shum perturbation               | none          |    2 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Coupling%sppt_wts       | weights_for_stochastic_sppt_perturbation                                                       | weights for stochastic sppt perturbation               | none          |    2 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Coupling%skebu_wts      | weights_for_stochastic_skeb_perturbation_of_x_wind                                             | weights for stochastic skeb perturbation of x wind     | none          |    2 | real    | kind_phys | none   | F        |
@@ -798,6 +811,7 @@ module GFS_typedefs
 !! | GFS_Control%blksz                    | horizontal_block_size                                                         | for explicit data blocking: block sizes of all blocks   | count         |    1 | integer   |           | none   | F        |
 !! | GFS_Control%blksz(cdata%blk_no)      | horizontal_loop_extent                                                        | horizontal loop extent                                  | count         |    0 | integer   |           | none   | F        |
 !! | GFS_Control%blksz(cdata%blk_no)      | horizontal_dimension                                                          | horizontal dimension                                    | count         |    0 | integer   |           | none   | F        |
+!! | GFS_Control%tile_num                 | number_of_tile                                                                | tile number                                             | none          |    0 | integer   |           | none   | F        |
 !! | GFS_Control%cplflx                   | flag_for_flux_coupling                                                        | flag controlling cplflx collection (default off)        | flag          |    0 | logical   |           | none   | F        |
 !! | GFS_Control%cplwav                   |                                                                               | flag controlling cplwav collection (default off)        | flag          |    0 | logical   |           | none   | F        |
 !! | GFS_Control%cplchm                   | flag_for_chemistry_coupling                                                   | flag controlling cplchm collection (default off)        | flag          |    0 | logical   |           | none   | F        |
@@ -979,6 +993,19 @@ module GFS_typedefs
 !! | GFS_Control%nstf_name(5)             | vertical_temperature_average_range_upper_bound                                | zsea2 in mm                                                          | mm            |    0 | integer   |           | none   | F        |
 !! | GFS_Control%xkzminv                  | atmosphere_heat_diffusivity_background_maximum                                | maximum background value of heat diffusivity                         | m2 s-1        |    0 | real      | kind_phys | none   | F        |
 !! | GFS_Control%moninq_fac               | atmosphere_diffusivity_coefficient_factor                                     | multiplicative constant for atmospheric diffusivities                | none          |    0 | real      | kind_phys | none   | F        |
+!! | GFS_Control%nca                      |                                                                               | number of independent cellular automata                              |               |    0 | integer   |           | none   | F        |
+!! | GFS_Control%nlives                   |                                                                               | cellular automata lifetime                                           |               |    0 | integer   |           | none   | F        |
+!! | GFS_Control%ncells                   |                                                                               | cellular automata finer grid                                         |               |    0 | integer   |           | none   | F        |
+!! | GFS_Control%nfracseed                |                                                                               | cellular automata seed probability                                   |               |    0 | real      | kind_phys | none   | F        |
+!! | GFS_Control%nseed                    |                                                                               | cellular automata seed frequency                                     |               |    0 | integer   |           | none   | F        |
+!! | GFS_Control%do_ca                    |                                                                               | cellular automata main switch                                        |               |    0 | logical   |           | none   | F        |
+!! | GFS_Control%ca_sgs                   |                                                                               | switch for sgs ca                                                    |               |    0 | logical   |           | none   | F        |
+!! | GFS_Control%ca_global                |                                                                               | switch for global ca                                                 |               |    0 | logical   |           | none   | F        |
+!! | GFS_Control%ca_smooth                |                                                                               | switch for gaussian spatial filter                                   |               |    0 | logical   |           | none   | F        |
+!! | GFS_Control%isppt_deep               |                                                                               | switch for combination with isppt_deep.                              |               |    0 | logical   |           | none   | F        |
+!! | GFS_Control%iseed_ca                 |                                                                               | seed for random number generation in ca scheme                       |               |    0 | integer   |           | none   | F        |
+!! | GFS_Control%nspinup                  |                                                                               | number of iterations to spin up the ca                               |               |    0 | integer   |           | none   | F        |
+!! | GFS_Control%nthresh                  |                                                                               | threshold used for perturbed vertical velocity                       |               |    0 | real      | kind_phys | none   | F        |
 !! | GFS_Control%do_sppt                  | flag_for_stochastic_surface_physics_perturbations                             | flag for stochastic surface physics perturbations                    | flag          |    0 | logical   |           | none   | F        |
 !! | GFS_Control%use_zmtnblck             | flag_for_mountain_blocking                                                    | flag for mountain blocking                                           | flag          |    0 | logical   |           | none   | F        |
 !! | GFS_Control%do_shum                  | flag_for_stochastic_shum_option                                               | flag for stochastic shum option                                      | flag          |    0 | logical   |           | none   | F        |
@@ -1117,6 +1144,7 @@ module GFS_typedefs
     integer              :: cny             !< number of points in the j-dir for this cubed-sphere face
     integer              :: lonr            !< number of global points in x-dir (i) along the equator
     integer              :: latr            !< number of global points in y-dir (j) along any meridian
+    integer              :: tile_num
 #ifdef CCPP
     integer,     pointer :: blksz(:)        !< for explicit data blocking: block sizes of all blocks
 #endif
@@ -1917,6 +1945,12 @@ module GFS_typedefs
 !! | GFS_Data(cdata%blk_no)%Intdiag%tdoms                | dominant_snow_type                                                      | dominant snow type                                              | none          |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Intdiag%snowfallac           | total_accumulated_snowfall                                              | run-total snow accumulation on the ground                       | kg m-2        |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Intdiag%acsnow               | accumulated_water_equivalent_of_frozen_precip                           | snow water equivalent of run-total frozen precip                | kg m-2        |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Intdiag%ca_out               |                                                                         | cellular automata fraction                                      |               |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Intdiag%ca_deep              |                                                                         | cellular automata fraction                                      |               |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Intdiag%ca_turb              |                                                                         | cellular automata fraction                                      |               |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Intdiag%ca_shal              |                                                                         | cellular automata fraction                                      |               |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Intdiag%ca_rad               |                                                                         | cellular automata fraction                                      |               |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Intdiag%ca_micro             |                                                                         | cellular automata fraction                                      |               |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Intdiag%skebu_wts            | weights_for_stochastic_skeb_perturbation_of_x_wind_flipped              | weights for stochastic skeb perturbation of x wind, flipped     | none          |    2 | real        | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Intdiag%skebv_wts            | weights_for_stochastic_skeb_perturbation_of_y_wind_flipped              | weights for stochastic skeb perturbation of y wind, flipped     | none          |    2 | real        | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Intdiag%sppt_wts             | weights_for_stochastic_sppt_perturbation_flipped                        | weights for stochastic sppt perturbation, flipped               | none          |    2 | real        | kind_phys | none   | F        |
@@ -3182,14 +3216,14 @@ module GFS_typedefs
                                  logunit, isc, jsc, nx, ny, levs,   &
                                  cnx, cny, gnx, gny, dt_dycore,     &
                                  dt_phys, idat, jdat, tracer_names, &
+                                 input_nml_file, tile_num           &
 #ifdef CCPP
-                                 input_nml_file, ak, bk, blksz,     &
-                                 restart, communicator, ntasks)
+                                ,ak, bk, blksz,                     &
+                                 restart, communicator, ntasks
 #elif MEMCHECK
-                                 input_nml_file, communicator)
-#else
-                                 input_nml_file)
+                                ,communicator
 #endif
+                                 )
 
 !--- modules
 #ifdef CCPP
@@ -3215,6 +3249,7 @@ module GFS_typedefs
     integer,                intent(in) :: me
     integer,                intent(in) :: master
     integer,                intent(in) :: logunit
+    integer,                intent(in) :: tile_num
     integer,                intent(in) :: isc
     integer,                intent(in) :: jsc
     integer,                intent(in) :: nx
@@ -3695,6 +3730,7 @@ module GFS_typedefs
     Model%gen_coord_hybrid = gen_coord_hybrid
 
     !--- set some grid extent parameters
+    Model%tile_num         = tile_num
     Model%isc              = isc
     Model%jsc              = jsc
     Model%nx               = nx
