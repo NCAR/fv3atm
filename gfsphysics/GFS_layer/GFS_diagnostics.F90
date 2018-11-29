@@ -1760,16 +1760,18 @@ module GFS_diagnostics
       ExtDiag(idx)%data(nb)%var2 => IntDiag(nb)%tdomip(:)
     enddo
 
-    idx = idx + 1
-    ExtDiag(idx)%axes = 3
-    ExtDiag(idx)%name = 'refl_10cm'
-    ExtDiag(idx)%desc = 'Radar reflectivity'
-    ExtDiag(idx)%unit = 'dBz'
-    ExtDiag(idx)%mod_name = 'gfs_phys'
-    allocate (ExtDiag(idx)%data(nblks))
-    do nb = 1,nblks
-      ExtDiag(idx)%data(nb)%var3 => IntDiag(nb)%refl_10cm(:,:)
-    enddo
+    if(Model%lradar) then
+      idx = idx + 1
+      ExtDiag(idx)%axes = 3
+      ExtDiag(idx)%name = 'refl_10cm'
+      ExtDiag(idx)%desc = 'Radar reflectivity'
+      ExtDiag(idx)%unit = 'dBz'
+      ExtDiag(idx)%mod_name = 'gfs_phys'
+      allocate (ExtDiag(idx)%data(nblks))
+      do nb = 1,nblks
+        ExtDiag(idx)%data(nb)%var3 => IntDiag(nb)%refl_10cm(:,:)
+      enddo
+    endif
 
     idx = idx + 1
     ExtDiag(idx)%axes = 3
