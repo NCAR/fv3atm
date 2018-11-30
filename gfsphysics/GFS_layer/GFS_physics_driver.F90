@@ -2541,6 +2541,13 @@ module module_physics_driver
           stop
       end if
 #else
+      if (Model%cplflx .or. Model%cplwav) then
+        do i=1,im
+          Coupling%u10mi_cpl   (i) = Diag%u10m(i)
+          Coupling%v10mi_cpl   (i) = Diag%v10m(i)
+        enddo
+      endif 
+
       if (Model%cplflx) then
         do i=1,im
           Coupling%dlwsfci_cpl (i) = adjsfcdlw(i)
@@ -2559,8 +2566,6 @@ module module_physics_driver
           Coupling%nlwsfc_cpl  (i) = Coupling%nlwsfc_cpl(i) + Coupling%nlwsfci_cpl(i)*dtf
           Coupling%t2mi_cpl    (i) = Sfcprop%t2m(i)
           Coupling%q2mi_cpl    (i) = Sfcprop%q2m(i)
-          Coupling%u10mi_cpl   (i) = Diag%u10m(i)
-          Coupling%v10mi_cpl   (i) = Diag%v10m(i)
           Coupling%tsfci_cpl   (i) = Sfcprop%tsfc(i)
           Coupling%psurfi_cpl  (i) = Statein%pgr(i)
         enddo
