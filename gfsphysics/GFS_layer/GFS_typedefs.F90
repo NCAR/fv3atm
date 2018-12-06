@@ -5304,10 +5304,8 @@ module GFS_typedefs
 #ifndef CCPP
     endif
 #endif
-    !--- 3D diagnostics for Thompson MP
-    if(Model%lradar) then
-      allocate (Diag%refl_10cm(IM,Model%levs))
-    endif
+    !--- 3D diagnostics for Thompson MP / GFDL MP
+    allocate (Diag%refl_10cm(IM,Model%levs))
 
 #ifdef CCPP
     !--- MYNN variables:
@@ -5457,12 +5455,12 @@ module GFS_typedefs
     Diag%toticeb    = zero
     Diag%totsnwb    = zero
     Diag%totgrpb    = zero
-    Diag%ca_out  = zero
-    Diag%ca_deep  = zero
-    Diag%ca_turb  = zero
-    Diag%ca_shal = zero
-    Diag%ca_rad  = zero
-    Diag%ca_micro = zero
+    Diag%ca_out     = zero
+    Diag%ca_deep    = zero
+    Diag%ca_turb    = zero
+    Diag%ca_shal    = zero
+    Diag%ca_rad     = zero
+    Diag%ca_micro   = zero
 !    if(Model%me == Model%master) print *,'in diag_phys_zero, totprcpb set to 0,kdt=',Model%kdt
 
     if (Model%ldiag3d) then
@@ -5475,9 +5473,7 @@ module GFS_typedefs
       Diag%det_mf  = zero
     endif
 
-    if (Model%lradar) then
-      Diag%refl_10cm = zero
-    endif
+    Diag%refl_10cm = zero
 
     if (present(linit)) then
       if (linit) then
