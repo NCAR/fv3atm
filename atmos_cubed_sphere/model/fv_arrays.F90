@@ -242,6 +242,15 @@ module fv_arrays_mod
 
   end type fv_grid_type
 
+
+
+#if 0
+!! \section arg_table_fv_flags_type Argument Table
+!! | local_name                         | standard_name                                                 | long_name                                                       | units     | rank | type      | kind      | intent | optional |
+!! |------------------------------------|---------------------------------------------------------------|-----------------------------------------------------------------|-----------|------|-----------|-----------|--------|----------|
+!! | Atm(mytile)%flagstruct%do_sat_adj  | flag_for_saturation_adjustment_for_microphysics_in_dynamics   | flag for saturation adjustment for microphysics in dynamics     | none      |    0 | logical   |           | none   | F        |
+!!
+#endif
   type fv_flags_type
 
      !! FOR EACH VARIABLE IN FV_FLAGS:
