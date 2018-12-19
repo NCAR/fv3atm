@@ -2207,6 +2207,7 @@ module module_physics_driver
              stop
          end if
 #else
+         if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of sfc_sice'
          call sfc_sice                                                     &
 !  ---  inputs:
               (im, lsoil, Statein%pgr, Statein%ugrs, Statein%vgrs,         &
@@ -2728,6 +2729,7 @@ module module_physics_driver
               stop
           end if
 #else
+          if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of moninshoc'
           call moninshoc(ix, im, levs, nvdiff, ntcw, nncl, dvdt, dudt, dtdt, dqdt, &
                          Statein%ugrs, Statein%vgrs, Statein%tgrs, Statein%qgrs,   &
                          Tbd%phy_f3d(1,1,ntot3d-1), prnum, ntke,                   &
@@ -2963,6 +2965,7 @@ module module_physics_driver
 !     if (lprnt)  write(0,*)' dqdtm=',(dqdt(ipr,k,1),k=1,15)
 #endif
           elseif (.not. Model%old_monin) then
+            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of moninq'
             call moninq(ix, im, levs, nvdiff, ntcw, dvdt, dudt, dtdt, dqdt,         &
                         Statein%ugrs, Statein%vgrs, Statein%tgrs, Statein%qgrs,     &
                         Radtend%htrsw, Radtend%htrlw, xmu, Statein%prsik(1,1), rb,  &
@@ -2975,6 +2978,7 @@ module module_physics_driver
                         Model%xkzminv, Model%moninq_fac, Model%rbcr)
           else
             if (Model%mstrat) then
+              if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of moninp1'
               call moninp1(ix, im, levs, nvdiff, dvdt, dudt, dtdt, dqdt,            &
                            Statein%ugrs, Statein%vgrs, Statein%tgrs, Statein%qgrs,  &
                            Statein%prsik(1,1), rb, Sfcprop%ffmm, Sfcprop%ffhh,      &
@@ -2984,6 +2988,7 @@ module module_physics_driver
                            dtsfc1, dqsfc1, Diag%hpbl, gamt, gamq, dkt, kinver,      &
                            Model%xkzm_m, Model%xkzm_h)
             else
+              if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of moninp'
               call moninp(ix, im, levs, nvdiff, dvdt, dudt, dtdt, dqdt,             &
                            Statein%ugrs, Statein%vgrs, Statein%tgrs, Statein%qgrs,  &
                            Statein%prsik(1,1), rb, Sfcprop%ffmm, Sfcprop%ffhh,      &
@@ -3184,6 +3189,7 @@ module module_physics_driver
               stop
           end if
 #else
+          if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of moninshoc'
           call moninshoc(ix, im, levs, nvdiff, ntcw, nncl, dvdt, dudt, dtdt, dvdftra, &
                          Statein%ugrs, Statein%vgrs, Statein%tgrs, vdftra,            &
                          Tbd%phy_f3d(1,1,ntot3d-1), prnum, ntke,                      &
@@ -3295,6 +3301,7 @@ module module_physics_driver
                 stop
             end if
 #else
+            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of moninedmf'
             call moninedmf(ix, im, levs, nvdiff, ntcw, dvdt, dudt, dtdt, dvdftra,     &
                            Statein%ugrs, Statein%vgrs, Statein%tgrs, vdftra,          &
                            Radtend%htrsw, Radtend%htrlw, xmu, Statein%prsik(1,1),     &
@@ -3308,6 +3315,7 @@ module module_physics_driver
                            Model%xkzminv, Model%moninq_fac)
 #endif
           elseif (.not. Model%old_monin) then
+            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of moninq'
             call moninq(ix, im, levs, nvdiff, ntcw, dvdt, dudt, dtdt, dvdftra,        &
                         Statein%ugrs, Statein%vgrs, Statein%tgrs, vdftra,             &
                         Radtend%htrsw, Radtend%htrlw, xmu, Statein%prsik(1,1), rb,    &
@@ -3320,6 +3328,7 @@ module module_physics_driver
                         Model%xkzminv, Model%moninq_fac, Model%rbcr)
           else
             if (Model%mstrat) then
+              if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of moninp1'
               call moninp1(ix, im, levs, nvdiff, dvdt, dudt, dtdt, dvdftra,           &
                            Statein%ugrs, Statein%vgrs, Statein%tgrs, vdftra,          &
                            Statein%prsik(1,1), rb, Sfcprop%ffmm, Sfcprop%ffhh,        &
@@ -3329,6 +3338,7 @@ module module_physics_driver
                            dtsfc1, dqsfc1, Diag%hpbl, gamt, gamq, dkt, kinver,        &
                            Model%xkzm_m, Model%xkzm_h)
             else
+              if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of moninp'
               call moninp(ix, im, levs, nvdiff, dvdt, dudt, dtdt, dvdftra,            &
                           Statein%ugrs, Statein%vgrs, Statein%tgrs, vdftra,           &
                           Statein%prsik(1,1), rb, Sfcprop%ffmm, Sfcprop%ffhh,         &
