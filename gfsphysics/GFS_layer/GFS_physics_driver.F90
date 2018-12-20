@@ -1962,7 +1962,7 @@ module module_physics_driver
          Interstitial(nt)%snohf  = snohf        ! intent(out)
          !Diag%smcwlt2                          ! intent(out)
          !Diag%smcref2                          ! intent(out)
-         !Diag%wet1                             ! intent(out)
+         !Sfcprop%wet1                          ! intent(out)
          !cdata_block(nb,nt)%errmsg = errmsg    ! intent(out)
          !cdata_block(nb,nt)%errflg = errflg    ! intent(out)
          ! Call NOAH LSM through CCPP
@@ -2008,7 +2008,7 @@ module module_physics_driver
 !  ---  outputs:
              Sfcprop%sncovr, qss, gflx, drain, evap, hflx, ep1d, runof, &
              Diag%cmm, Diag%chh, evbs, evcw, sbsno, snowc, Diag%soilm,  &
-             snohf, Diag%smcwlt2, Diag%smcref2, Diag%wet1)
+             snohf, Diag%smcwlt2, Diag%smcref2, Sfcprop%wet1)
 #endif
 !     if (lprnt) write(0,*)' tseae=',tsea(ipr),' tsurf=',tsurf(ipr),iter &
 !    &,' phy_f2d=',phy_f2d(ipr,num_p2d)
@@ -2106,7 +2106,7 @@ module module_physics_driver
               !Diag%runoff                           ! intent(inout)
               !Diag%srunoff                          ! intent(inout)
               !Diag%soilm                            ! intent(out)
-              !Diag%wet1                             ! intent(out)
+              !Sfcprop%wet1                          ! intent(out)
               !Diag%acsnow                           ! intent(out)
               !Diag%snowfallac                       ! intent(out)
               !cdata_block(nb,nt)%errmsg = errmsg    ! intent(out)
