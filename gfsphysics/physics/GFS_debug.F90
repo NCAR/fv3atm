@@ -10,8 +10,13 @@
 
       public print_my_stuff, chksum_int, chksum_real
 
+! Calculating the checksum leads to segmentation faults on MacOSX (bug in malloc?),
+! thus print the sum of the array instead of the checksum.
+#ifdef MACOSX
+#define PRINT_SUM
+#else
 #define PRINT_CHKSUM
-!#define PRINT_SUM
+#endif
 
       interface print_var
         module procedure print_logic_0d
