@@ -1689,7 +1689,7 @@ module GFS_diagnostics
     ExtDiag(idx)%mod_name = 'gfs_phys'
     allocate (ExtDiag(idx)%data(nblks))
     do nb = 1,nblks
-      ExtDiag(idx)%data(nb)%var2 => IntDiag(nb)%wet1(:)
+      ExtDiag(idx)%data(nb)%var2 => Sfcprop(nb)%wet1(:)
     enddo
 
     idx = idx + 1
@@ -1786,61 +1786,68 @@ module GFS_diagnostics
       enddo
     endif
 
-    idx = idx + 1
-    ExtDiag(idx)%axes = 3
-    ExtDiag(idx)%name = 'skebu_wts'
-    ExtDiag(idx)%desc = 'perturbation velocity'
-    ExtDiag(idx)%unit = 'm/s'
-    ExtDiag(idx)%mod_name = 'gfs_phys'
-    allocate (ExtDiag(idx)%data(nblks))
-    do nb = 1,nblks
-      ExtDiag(idx)%data(nb)%var3 => IntDiag(nb)%skebu_wts(:,:)
-    enddo
+    if (Model%do_skeb) then
+      idx = idx + 1
+      ExtDiag(idx)%axes = 3
+      ExtDiag(idx)%name = 'skebu_wts'
+      ExtDiag(idx)%desc = 'perturbation velocity'
+      ExtDiag(idx)%unit = 'm/s'
+      ExtDiag(idx)%mod_name = 'gfs_phys'
+      allocate (ExtDiag(idx)%data(nblks))
+      do nb = 1,nblks
+        ExtDiag(idx)%data(nb)%var3 => IntDiag(nb)%skebu_wts(:,:)
+      enddo
 
-    idx = idx + 1
-    ExtDiag(idx)%axes = 3
-    ExtDiag(idx)%name = 'skebv_wts'
-    ExtDiag(idx)%desc = 'perturbation velocity'
-    ExtDiag(idx)%unit = 'm/s'
-    ExtDiag(idx)%mod_name = 'gfs_phys'
-    allocate (ExtDiag(idx)%data(nblks))
-    do nb = 1,nblks
-      ExtDiag(idx)%data(nb)%var3 => IntDiag(nb)%skebv_wts(:,:)
-    enddo
+      idx = idx + 1
+      ExtDiag(idx)%axes = 3
+      ExtDiag(idx)%name = 'skebv_wts'
+      ExtDiag(idx)%desc = 'perturbation velocity'
+      ExtDiag(idx)%unit = 'm/s'
+      ExtDiag(idx)%mod_name = 'gfs_phys'
+      allocate (ExtDiag(idx)%data(nblks))
+      do nb = 1,nblks
+        ExtDiag(idx)%data(nb)%var3 => IntDiag(nb)%skebv_wts(:,:)
+      enddo
+    endif
 
-    idx = idx + 1
-    ExtDiag(idx)%axes = 2
-    ExtDiag(idx)%name = 'zmtnblck'
-    ExtDiag(idx)%desc = 'level of dividing streamline'
-    ExtDiag(idx)%unit = 'm/s'
-    ExtDiag(idx)%mod_name = 'gfs_phys'
-    allocate (ExtDiag(idx)%data(nblks))
-    do nb = 1,nblks
-      ExtDiag(idx)%data(nb)%var2 => IntDiag(nb)%zmtnblck(:)
-    enddo
+    if (Model%use_zmtnblck) then
+      idx = idx + 1
+      ExtDiag(idx)%axes = 2
+      ExtDiag(idx)%name = 'zmtnblck'
+      ExtDiag(idx)%desc = 'level of dividing streamline'
+      ExtDiag(idx)%unit = 'm/s'
+      ExtDiag(idx)%mod_name = 'gfs_phys'
+      allocate (ExtDiag(idx)%data(nblks))
+      do nb = 1,nblks
+        ExtDiag(idx)%data(nb)%var2 => IntDiag(nb)%zmtnblck(:)
+      enddo
+    endif
 
-    idx = idx + 1
-    ExtDiag(idx)%axes = 3
-    ExtDiag(idx)%name = 'sppt_wts'
-    ExtDiag(idx)%desc = 'perturbation velocity'
-    ExtDiag(idx)%unit = 'm/s'
-    ExtDiag(idx)%mod_name = 'gfs_phys'
-    allocate (ExtDiag(idx)%data(nblks))
-    do nb = 1,nblks
-      ExtDiag(idx)%data(nb)%var3 => IntDiag(nb)%sppt_wts(:,:)
-    enddo
+    if (Model%do_sppt) then
+      idx = idx + 1
+      ExtDiag(idx)%axes = 3
+      ExtDiag(idx)%name = 'sppt_wts'
+      ExtDiag(idx)%desc = 'perturbation velocity'
+      ExtDiag(idx)%unit = 'm/s'
+      ExtDiag(idx)%mod_name = 'gfs_phys'
+      allocate (ExtDiag(idx)%data(nblks))
+      do nb = 1,nblks
+        ExtDiag(idx)%data(nb)%var3 => IntDiag(nb)%sppt_wts(:,:)
+      enddo
+    endif
 
-    idx = idx + 1
-    ExtDiag(idx)%axes = 3
-    ExtDiag(idx)%name = 'shum_wts'
-    ExtDiag(idx)%desc = 'perturbation velocity'
-    ExtDiag(idx)%unit = 'm/s'
-    ExtDiag(idx)%mod_name = 'gfs_phys'
-    allocate (ExtDiag(idx)%data(nblks))
-    do nb = 1,nblks
-      ExtDiag(idx)%data(nb)%var3 => IntDiag(nb)%shum_wts(:,:)
-    enddo
-!    if(mpp_pe()==mpp_root_pe())print *,'in gfdl_diag_register,af shum_wts,idx=',idx
+    if (Model%do_shum) then
+      idx = idx + 1
+      ExtDiag(idx)%axes = 3
+      ExtDiag(idx)%name = 'shum_wts'
+      ExtDiag(idx)%desc = 'perturbation velocity'
+      ExtDiag(idx)%unit = 'm/s'
+      ExtDiag(idx)%mod_name = 'gfs_phys'
+      allocate (ExtDiag(idx)%data(nblks))
+      do nb = 1,nblks
+        ExtDiag(idx)%data(nb)%var3 => IntDiag(nb)%shum_wts(:,:)
+      enddo
+    endif
 
 !--- three-dimensional variables that need to be handled special when writing 
     diag3d_output: if (Model%ldiag3d) then
