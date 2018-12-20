@@ -382,6 +382,7 @@ module GFS_typedefs
 !! | IPD_Data(nb)%Sfcprop%slc         | volume_fraction_of_unfrozen_soil_moisture                              | liquid soil moisture                                   | frac          |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%smc         | volume_fraction_of_soil_moisture                                       | total soil moisture                                    | frac          |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%stc         | soil_temperature                                                       | soil temperature                                       | K             |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%wet1        | normalized_soil_wetness                                                | normalized soil wetness                                | frac          |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%t2m         | temperature_at_2m                                                      | 2 meter temperature                                    | K             |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%th2m        | potential_temperature_at_2m                                            | 2 meter potential temperature                          | K             |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%q2m         | specific_humidity_at_2m                                                | 2 meter specific humidity                              | kg kg-1       |    1 | real    | kind_phys | none   | F        |
@@ -414,12 +415,12 @@ module GFS_typedefs
 !! | IPD_Data(nb)%Sfcprop%flag_frsoil | flag_for_frozen_soil_physics                                           | flag for frozen soil physics (RUC)                     | flag          |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%rhofr       | density_of_frozen_precipitation                                        | density of frozen precipitation                        | kg m-3        |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%tsnow       | snow_temperature_bottom_first_layer                                    | snow temperature at the bottom of the first snow layer | K             |    1 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Sfcprop%ustm        | surface_friction_velocity_drag                                         | friction velocity isolated for momentum only           | m s-1         |    1 | real    | kind_phys | none   | F        |                   
-!! | IPD_Data(nb)%Sfcprop%zol         | surface_stability_parameter                                            | monin obukhov surface stability parameter              | none          |    1 | real    | kind_phys | none   | F        |                   
-!! | IPD_Data(nb)%Sfcprop%mol         | theta_star                                                             | temperature flux divided by ustar (temperature scale)  | K             |    1 | real    | kind_phys | none   | F        |                   
-!! | IPD_Data(nb)%Sfcprop%rmol        | reciprocal_of_obukhov_length                                           | one over obukhov length                                | m-1           |    1 | real    | kind_phys | none   | F        |                   
-!! | IPD_Data(nb)%Sfcprop%flhc        | surface_exchange_coefficient_for_heat                                  | surface exchange coefficient for heat                  | W m-2 K-1     |    1 | real    | kind_phys | none   | F        |                   
-!! | IPD_Data(nb)%Sfcprop%flqc        | surface_exchange_coefficient_for_moisture                              | surface exchange coefficient for moisture              | kg m-2 s-1    |    1 | real    | kind_phys | none   | F        |                   
+!! | IPD_Data(nb)%Sfcprop%ustm        | surface_friction_velocity_drag                                         | friction velocity isolated for momentum only           | m s-1         |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%zol         | surface_stability_parameter                                            | monin obukhov surface stability parameter              | none          |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%mol         | theta_star                                                             | temperature flux divided by ustar (temperature scale)  | K             |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%rmol        | reciprocal_of_obukhov_length                                           | one over obukhov length                                | m-1           |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%flhc        | surface_exchange_coefficient_for_heat                                  | surface exchange coefficient for heat                  | W m-2 K-1     |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%flqc        | surface_exchange_coefficient_for_moisture                              | surface exchange coefficient for moisture              | kg m-2 s-1    |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%chs2        | surface_exchange_coefficient_for_heat_at_2m                            | exchange coefficient for heat at 2 meters              | m s-1         |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%cqs2        | surface_exchange_coefficient_for_moisture_at_2m                        | exchange coefficient for moisture at 2 meters          | m s-1         |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%lh          | surface_latent_heat                                                    | latent heating at the surface (pos = up)               | W m-2         |    1 | real    | kind_phys | none   | F        |
@@ -477,6 +478,7 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: slc    (:,:) => null()  !< liquid soil moisture
     real (kind=kind_phys), pointer :: smc    (:,:) => null()  !< total soil moisture
     real (kind=kind_phys), pointer :: stc    (:,:) => null()  !< soil temperature
+    real (kind=kind_phys), pointer :: wet1   (:)   => null()  !< normalized soil wetness
 
 !--- Out
     real (kind=kind_phys), pointer :: t2m    (:)   => null()  !< 2 meter temperature
@@ -511,24 +513,24 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: keepsmfr(:,:)    => null()  !< RUC LSM: frozen moisture in soil
     real (kind=kind_phys), pointer :: smois(:,:)       => null()  !< volumetric fraction of soil moisture for lsm
     real (kind=kind_phys), pointer :: tslb(:,:)        => null()  !< soil temperature for land surface model
-    real (kind=kind_phys), pointer :: zs(:)            => null()  !< depth of soil levels for land surface model
+    real (kind=kind_phys), pointer :: flag_frsoil(:,:) => null()  !< RUC LSM: flag for frozen soil physics
     !
+    real (kind=kind_phys), pointer :: zs(:)            => null()  !< depth of soil levels for land surface model
     real (kind=kind_phys), pointer :: clw_surf(:)      => null()  !< RUC LSM: moist cloud water mixing ratio at surface
     real (kind=kind_phys), pointer :: qwv_surf(:)      => null()  !< RUC LSM: water vapor mixing ratio at surface
     real (kind=kind_phys), pointer :: cndm_surf(:)     => null()  !< RUC LSM: surface condensation mass
-    real (kind=kind_phys), pointer :: flag_frsoil(:,:) => null()  !< RUC LSM: flag for frozen soil physics
     real (kind=kind_phys), pointer :: rhofr(:)         => null()  !< RUC LSM: density of frozen precipitation
     real (kind=kind_phys), pointer :: tsnow(:)         => null()  !< RUC LSM: snow temperature at the bottom of the first soil layer
     !  MYNN surface layer
-    real (kind=kind_phys), pointer :: ustm (:)      => null()  !u* including drag
-    real (kind=kind_phys), pointer :: zol(:)        => null()  !surface stability parameter
-    real (kind=kind_phys), pointer :: mol(:)        => null()  !theta star
-    real (kind=kind_phys), pointer :: rmol(:)       => null()  !reciprocal of obukhov length
-    real (kind=kind_phys), pointer :: flhc(:)       => null()  !drag coeff for heat
-    real (kind=kind_phys), pointer :: flqc(:)       => null()  !drag coeff for moisture
-    real (kind=kind_phys), pointer :: chs2(:)       => null()  !exch coeff for heat at 2m
-    real (kind=kind_phys), pointer :: cqs2(:)       => null()  !exch coeff for moisture at 2m
-    real (kind=kind_phys), pointer :: lh(:)         => null()  !latent heating at the surface
+    real (kind=kind_phys), pointer :: ustm (:)         => null()  !u* including drag
+    real (kind=kind_phys), pointer :: zol(:)           => null()  !surface stability parameter
+    real (kind=kind_phys), pointer :: mol(:)           => null()  !theta star
+    real (kind=kind_phys), pointer :: rmol(:)          => null()  !reciprocal of obukhov length
+    real (kind=kind_phys), pointer :: flhc(:)          => null()  !drag coeff for heat
+    real (kind=kind_phys), pointer :: flqc(:)          => null()  !drag coeff for moisture
+    real (kind=kind_phys), pointer :: chs2(:)          => null()  !exch coeff for heat at 2m
+    real (kind=kind_phys), pointer :: cqs2(:)          => null()  !exch coeff for moisture at 2m
+    real (kind=kind_phys), pointer :: lh(:)            => null()  !latent heating at the surface
 #endif
 
     contains
@@ -1609,7 +1611,6 @@ module GFS_typedefs
 !! | IPD_Data(nb)%Tbd%el_pbl                           | mixing_length                                                                                  | mixing length in meters                                 | m             |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Tbd%Sh3D                             | stability_function_for_heat                                                                    | stability function for heat                             | none          |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Tbd%qke                              | tke_at_mass_points                                                                             | 2 x tke at mass points                                  | m2 s-2        |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Tbd%qke_adv                          | tke_at_mass_points_advected                                                                    | 2 x tke at mass points advected                         | m2 s-2        |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Tbd%tsq                              | t_prime_squared                                                                                | temperature fluctuation squared                         | K2            |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Tbd%qsq                              | q_prime_squared                                                                                | water vapor fluctuation squared                         | kg2 kg-2      |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Tbd%cov                              | t_prime_q_prime                                                                                | covariance of temperature and moisture                  | K kg kg-1     |    2 | real    | kind_phys | none   | F        |
@@ -1680,7 +1681,6 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: el_pbl     (:,:)   => null()  !
     real (kind=kind_phys), pointer :: Sh3D       (:,:)   => null()  !
     real (kind=kind_phys), pointer :: qke        (:,:)   => null()  !
-    real (kind=kind_phys), pointer :: qke_adv    (:,:)   => null()  !
     real (kind=kind_phys), pointer :: tsq        (:,:)   => null()  !
     real (kind=kind_phys), pointer :: qsq        (:,:)   => null()  !
     real (kind=kind_phys), pointer :: cov        (:,:)   => null()  !
@@ -1859,7 +1859,6 @@ module GFS_typedefs
 !! | IPD_Data(nb)%Intdiag%epi                  | instantaneous_surface_potential_evaporation                             | instantaneous sfc potential evaporation                         | W m-2         |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%smcwlt2              | volume_fraction_of_condensed_water_in_soil_at_wilting_point             | wilting point (volumetric)                                      | frac          |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%smcref2              | threshold_volume_fraction_of_condensed_water_in_soil                    | soil moisture threshold (volumetric)                            | frac          |    1 | real        | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Intdiag%wet1                 | normalized_soil_wetness                                                 | normalized soil wetness                                         | frac          |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%sr                   | ratio_of_snowfall_to_rainfall                                           | snow ratio: ratio of snow to total precipitation                | frac          |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%tdomr                | dominant_rain_type                                                      | dominant rain type                                              | none          |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%tdomzr               | dominant_freezing_rain_type                                             | dominant freezing rain type                                     | none          |    1 | real        | kind_phys | none   | F        |
@@ -1913,6 +1912,8 @@ module GFS_typedefs
 !! | IPD_Data(nb)%Intdiag%nupdraft             | number_of_plumes                                                          | number of plumes per grid column                                       | count         |    1 | integer     |           | none   | F        |
 !! | IPD_Data(nb)%Intdiag%maxMF                | maximum_mass_flux                                                         | maximum mass flux within a column                                      | m s-1         |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%ktop_shallow         | k_level_of_highest_reaching_plume                                         | k-level of highest reaching plume                                      | count         |    1 | integer     |           | none   | F        |
+!! | IPD_Data(nb)%Intdiag%exch_h               | atmosphere_heat_diffusivity_for_mynnpbl                                   | diffusivity for heat for MYNN PBL (defined for all mass levels)        | m2 s-1        |    2 | real        | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Intdiag%exch_m               | atmosphere_momentum_diffusivity_for_mynnpbl                               | diffusivity for momentum for MYNN PBL (defined for all mass levels)    | m2 s-1        |    2 | real        | kind_phys | none   | F        |
 !!
 #endif
   type GFS_diag_type
@@ -1989,6 +1990,8 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: maxMF       (:)    => null()  !
     integer, pointer               :: nupdraft    (:)    => null()  !
     integer, pointer               :: ktop_shallow (:)   => null()  !
+    real (kind=kind_phys), pointer :: exch_h     (:,:)   => null()  !
+    real (kind=kind_phys), pointer :: exch_m     (:,:)   => null()  !
 #endif
 
 ! Output - only in physics
@@ -2020,7 +2023,6 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: epi    (:)     => null()   !< instantaneous sfc potential evaporation
     real (kind=kind_phys), pointer :: smcwlt2(:)     => null()   !< wilting point (volumetric)
     real (kind=kind_phys), pointer :: smcref2(:)     => null()   !< soil moisture threshold (volumetric)
-    real (kind=kind_phys), pointer :: wet1   (:)     => null()   !< normalized soil wetness
     real (kind=kind_phys), pointer :: sr     (:)     => null()   !< snow ratio : ratio of snow to total precipitation
     real (kind=kind_phys), pointer :: tdomr  (:)     => null()   !< dominant accumulated rain type
     real (kind=kind_phys), pointer :: tdomzr (:)     => null()   !< dominant accumulated freezing rain type
@@ -2381,7 +2383,6 @@ module GFS_typedefs
     logical,               pointer      :: flag_cice(:)     => null()  !<
     logical,               pointer      :: flag_guess(:)    => null()  !<
     logical,               pointer      :: flag_iter(:)     => null()  !<
-    real (kind=kind_phys), pointer      :: flag_frsoil(:)   => null()  !<
     real (kind=kind_phys), pointer      :: fm10(:)          => null()  !<
     real (kind=kind_phys)               :: frain                       !<
     real (kind=kind_phys), pointer      :: frland(:)        => null()  !<
@@ -2466,7 +2467,6 @@ module GFS_typedefs
     real (kind=kind_phys)               :: rhcbot                      !<
     real (kind=kind_phys)               :: rhcpbl                      !<
     real (kind=kind_phys)               :: rhctop                      !<
-    real (kind=kind_phys), pointer      :: rhofr(:)         => null()  !<
     real (kind=kind_phys), pointer      :: runoff(:)        => null()  !<
     real (kind=kind_phys), pointer      :: save_q(:,:,:)    => null()  !<
     real (kind=kind_phys), pointer      :: save_t(:,:)      => null()  !<
@@ -2731,6 +2731,7 @@ module GFS_typedefs
     allocate (Sfcprop%slc    (IM,Model%lsoil))
     allocate (Sfcprop%smc    (IM,Model%lsoil))
     allocate (Sfcprop%stc    (IM,Model%lsoil))
+    allocate (Sfcprop%wet1   (IM))
 
     Sfcprop%hice   = clear_val
     Sfcprop%weasd  = clear_val
@@ -2744,6 +2745,7 @@ module GFS_typedefs
     Sfcprop%slc    = clear_val
     Sfcprop%smc    = clear_val
     Sfcprop%stc    = clear_val
+    Sfcprop%wet1   = clear_val
 
 !--- Out
     allocate (Sfcprop%t2m (IM))
@@ -2805,11 +2807,11 @@ module GFS_typedefs
        allocate (Sfcprop%keepsmfr    (IM,Model%lsoil_lsm))
        allocate (Sfcprop%smois       (IM,Model%lsoil_lsm))
        allocate (Sfcprop%tslb        (IM,Model%lsoil_lsm))
+       allocate (Sfcprop%flag_frsoil (IM,Model%lsoil_lsm))
        allocate (Sfcprop%zs          (Model%lsoil_lsm))
        allocate (Sfcprop%clw_surf    (IM))
        allocate (Sfcprop%qwv_surf    (IM))
        allocate (Sfcprop%cndm_surf   (IM))
-       allocate (Sfcprop%flag_frsoil (IM,Model%lsoil_lsm))
        allocate (Sfcprop%rhofr       (IM))
        allocate (Sfcprop%tsnow       (IM))
        !
@@ -4833,7 +4835,6 @@ module GFS_typedefs
        allocate (Tbd%el_pbl    (IM,Model%levs))
        allocate (Tbd%sh3d      (IM,Model%levs))
        allocate (Tbd%qke       (IM,Model%levs))
-       allocate (Tbd%qke_adv   (IM,Model%levs))
        allocate (Tbd%tsq       (IM,Model%levs))
        allocate (Tbd%qsq       (IM,Model%levs))
        allocate (Tbd%cov       (IM,Model%levs))
@@ -4843,7 +4844,6 @@ module GFS_typedefs
        Tbd%el_pbl        = clear_val
        Tbd%sh3d          = clear_val
        Tbd%qke           = zero
-       Tbd%qke_adv       = clear_val
        Tbd%tsq           = clear_val
        Tbd%qsq           = clear_val
        Tbd%cov           = clear_val
@@ -5023,7 +5023,6 @@ module GFS_typedefs
     allocate (Diag%epi     (IM))
     allocate (Diag%smcwlt2 (IM))
     allocate (Diag%smcref2 (IM))
-    allocate (Diag%wet1    (IM))
     allocate (Diag%sr      (IM))
     allocate (Diag%tdomr   (IM))
     allocate (Diag%tdomzr  (IM))
@@ -5071,6 +5070,8 @@ module GFS_typedefs
       allocate (Diag%nupdraft  (IM))
       allocate (Diag%maxmf     (IM))
       allocate (Diag%ktop_shallow(IM))
+      allocate (Diag%exch_h    (IM,Model%levs))
+      allocate (Diag%exch_m    (IM,Model%levs))
       !print*,"Initializing all MYNN-EDMF variables with ",clear_val
       Diag%edmf_a        = clear_val
       Diag%edmf_w        = clear_val
@@ -5081,6 +5082,8 @@ module GFS_typedefs
       Diag%nupdraft      = 0
       Diag%maxmf         = clear_val
       Diag%ktop_shallow  = 0
+      Diag%exch_h        = clear_val
+      Diag%exch_m        = clear_val
     endif
 #endif
 
@@ -5188,7 +5191,6 @@ module GFS_typedefs
     Diag%epi        = zero
     Diag%smcwlt2    = zero
     Diag%smcref2    = zero
-    Diag%wet1       = zero
     Diag%sr         = zero
     Diag%tdomr      = zero
     Diag%tdomzr     = zero
