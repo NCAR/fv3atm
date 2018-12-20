@@ -602,7 +602,11 @@ subroutine atmos_model_init (Atmos, Time_init, Time, Time_step)
 
    call atmosphere_nggps_diag (Time, init=.true.)
    call FV3GFS_diag_register (IPD_Diag, Time, Atm_block, IPD_Control, Atmos%lon, Atmos%lat, Atmos%axes)
+#ifdef CCPP
+   call FV3GFS_restart_read (IPD_Data, IPD_Restart, Atm_block, IPD_Control, Atmos%domain, Atm(mytile)%flagstruct%warm_start)
+#else
    call FV3GFS_restart_read (IPD_Data, IPD_Restart, Atm_block, IPD_Control, Atmos%domain)
+#endif
 
    !--- set the initial diagnostic timestamp
    diag_time = Time
