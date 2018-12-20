@@ -38,6 +38,9 @@ module FV3GFS_io_mod
 !rab  use GFS_typedefs,       only: GFS_sfcprop_type, GFS_diag_type, &
 !rab                                GFS_cldprop_type, GFS_grid_type
   use GFS_typedefs,       only: GFS_sfcprop_type
+#ifdef CCPP
+  use GFS_typedefs,       only: GFS_coupling_type
+#endif
 !
 !--- IPD typdefs
   use IPD_typedefs,       only: IPD_control_type, IPD_data_type, &
@@ -112,16 +115,27 @@ module FV3GFS_io_mod
 !--------------------
 ! FV3GFS_restart_read
 !--------------------
+#ifdef CCPP
+  subroutine FV3GFS_restart_read (IPD_Data, IPD_Restart, Atm_block, Model, fv_domain, warm_start)
+#else
   subroutine FV3GFS_restart_read (IPD_Data, IPD_Restart, Atm_block, Model, fv_domain)
+#endif
     type(IPD_data_type),      intent(inout) :: IPD_Data(:)
     type(IPD_restart_type),   intent(inout) :: IPD_Restart
     type(block_control_type), intent(in)    :: Atm_block
     type(IPD_control_type),   intent(in)    :: Model
     type(domain2d),           intent(in)    :: fv_domain
+#ifdef CCPP
+    logical,                  intent(in)    :: warm_start
+#endif
  
     !--- read in surface data from chgres 
+#ifdef CCPP
+    call sfc_prop_restart_read (IPD_Data%Sfcprop, IPD_Data%Coupling, Atm_block, Model, fv_domain, warm_start)
+#else
     call sfc_prop_restart_read (IPD_Data%Sfcprop, Atm_block, Model, fv_domain)
- 
+#endif
+
     !--- read in physics restart data
     call phys_restart_read (IPD_Restart, Atm_block, Model, fv_domain)
 
@@ -138,9 +152,13 @@ module FV3GFS_io_mod
     type(domain2d),              intent(in)    :: fv_domain
     character(len=32), optional, intent(in)    :: timestamp
  
-    !--- read in surface data from chgres 
+    !--- read in surface data from chgres
+#ifdef CCPP
+    call sfc_prop_restart_write (IPD_Data%Sfcprop, IPD_Data%Coupling, Atm_block, Model, fv_domain, timestamp)
+#else
     call sfc_prop_restart_write (IPD_Data%Sfcprop, Atm_block, Model, fv_domain, timestamp)
- 
+#endif
+
     !--- read in physics restart data
     call phys_restart_write (IPD_Restart, Atm_block, Model, fv_domain, timestamp)
 
@@ -230,19 +248,21 @@ module FV3GFS_io_mod
        temp2d(i,j,46) = IPD_Data(nb)%Sfcprop%stc(ix,4)
 #ifdef CCPP
      elseif (Model%lsm == Model%lsm_ruc) then
-        write (0,*) 'RUC LSM is used'
        temp2d(i,j,35) = IPD_Data(nb)%Sfcprop%sh2o(ix,1)
        temp2d(i,j,36) = IPD_Data(nb)%Sfcprop%sh2o(ix,2)
        temp2d(i,j,37) = IPD_Data(nb)%Sfcprop%sh2o(ix,3)
-       temp2d(i,j,38) = IPD_Data(nb)%Sfcprop%sh2o(ix,4)
+       ! Combine levels 4 to lsoil_lsm (9 for RUC) into one
+       temp2d(i,j,38) = sum(IPD_Data(nb)%Sfcprop%sh2o(ix,4:Model%lsoil_lsm))
        temp2d(i,j,39) = IPD_Data(nb)%Sfcprop%smois(ix,1)
        temp2d(i,j,40) = IPD_Data(nb)%Sfcprop%smois(ix,2)
        temp2d(i,j,41) = IPD_Data(nb)%Sfcprop%smois(ix,3)
-       temp2d(i,j,42) = IPD_Data(nb)%Sfcprop%smois(ix,4)
+       ! Combine levels 4 to lsoil_lsm (9 for RUC) into one
+       temp2d(i,j,42) = sum(IPD_Data(nb)%Sfcprop%smois(ix,4:Model%lsoil_lsm))
        temp2d(i,j,43) = IPD_Data(nb)%Sfcprop%tslb(ix,1)
        temp2d(i,j,44) = IPD_Data(nb)%Sfcprop%tslb(ix,2)
        temp2d(i,j,45) = IPD_Data(nb)%Sfcprop%tslb(ix,3)
-       temp2d(i,j,46) = IPD_Data(nb)%Sfcprop%tslb(ix,4)
+       ! Combine levels 4 to lsoil_lsm (9 for RUC) into one
+       temp2d(i,j,46) = sum(IPD_Data(nb)%Sfcprop%tslb(ix,4:Model%lsoil_lsm))
      endif ! LSM choice
 #endif
        temp2d(i,j,47) = IPD_Data(nb)%Sfcprop%t2m(ix)
@@ -373,17 +393,30 @@ module FV3GFS_io_mod
 !    opens:  oro_data.tile?.nc, sfc_data.tile?.nc
 !   
 !----------------------------------------------------------------------      
+#ifdef CCPP
+  subroutine sfc_prop_restart_read (Sfcprop, Coupling, Atm_block, Model, fv_domain, warm_start)
+#else
   subroutine sfc_prop_restart_read (Sfcprop, Atm_block, Model, fv_domain)
+#endif
     !--- interface variable definitions
     type(GFS_sfcprop_type),    intent(inout) :: Sfcprop(:)
+#ifdef CCPP
+    type(GFS_coupling_type),   intent(inout) :: Coupling(:)
+#endif
     type (block_control_type), intent(in)    :: Atm_block
     type(IPD_control_type),    intent(in)    :: Model
     type (domain2d),           intent(in)    :: fv_domain
+#ifdef CCPP
+    logical,                   intent(in)    :: warm_start
+#endif
     !--- local variables
     integer :: i, j, k, ix, lsoil, num, nb
     integer :: isc, iec, jsc, jec, npz, nx, ny
     integer :: id_restart
     integer :: nvar_o2, nvar_s2m, nvar_s2o, nvar_s3
+#ifdef CCPP
+    integer :: nvar_s2r, nvar_s2t
+#endif
     real(kind=kind_phys), pointer, dimension(:,:)   :: var2_p => NULL()
     real(kind=kind_phys), pointer, dimension(:,:,:) :: var3_p => NULL()
     !--- local variables for sncovr calculation
@@ -394,7 +427,17 @@ module FV3GFS_io_mod
     nvar_o2  = 17
     nvar_s2m = 32
     nvar_s2o = 18
+#ifdef CCPP
+    nvar_s2r = 1
+    nvar_s2t = 2
+    if (Model%lsm == Model%lsm_ruc .and. warm_start) then
+      nvar_s3  = 5
+    else
+      nvar_s3  = 3
+    endif
+#else
     nvar_s3  = 3
+#endif
 
     isc = Atm_block%isc
     iec = Atm_block%iec
@@ -473,14 +516,25 @@ module FV3GFS_io_mod
     !--- deallocate containers and free restart container
     deallocate(oro_name2, oro_var2)
     call free_restart_type(Oro_restart)
- 
+
     !--- SURFACE FILE
     if (.not. allocated(sfc_name2)) then
       !--- allocate the various containers needed for restarts
+#ifdef CCPP
+      allocate(sfc_name2(nvar_s2m+nvar_s2o+nvar_s2r+nvar_s2t))
+      allocate(sfc_name3(nvar_s3))
+      allocate(sfc_var2(nx,ny,nvar_s2m+nvar_s2o+nvar_s2r+nvar_s2t))
+      if (Model%lsm == Model%lsm_noah .or. (.not.warm_start)) then
+        allocate(sfc_var3(nx,ny,Model%lsoil,nvar_s3))
+      else if (Model%lsm == Model%lsm_ruc) then
+        allocate(sfc_var3(nx,ny,Model%lsoil_lsm,nvar_s3))
+      end if
+#else
       allocate(sfc_name2(nvar_s2m+nvar_s2o))
       allocate(sfc_name3(nvar_s3))
       allocate(sfc_var2(nx,ny,nvar_s2m+nvar_s2o))
       allocate(sfc_var3(nx,ny,Model%lsoil,nvar_s3))
+#endif
       sfc_var2 = -9999._kind_phys
       sfc_var3 = -9999._kind_phys
  
@@ -537,7 +591,12 @@ module FV3GFS_io_mod
       sfc_name2(48) = 'ifd'
       sfc_name2(49) = 'dt_cool'
       sfc_name2(50) = 'qrain'
- 
+#ifdef CCPP
+      sfc_name2(51) = 'wet1'
+      sfc_name2(52) = 'nwfa2d'
+      sfc_name2(53) = 'nifa2d'
+#endif
+
       !--- register the 2D fields
       do num = 1,nvar_s2m
         var2_p => sfc_var2(:,:,num)
@@ -555,13 +614,48 @@ module FV3GFS_io_mod
           id_restart = register_restart_field(Sfc_restart, fn_srf, sfc_name2(num), var2_p, domain=fv_domain, mandatory=mand)
         enddo
       endif
+#ifdef CCPP
+      if (Model%lsm == Model%lsm_ruc .and. warm_start) then
+        do num = nvar_s2m+nvar_s2o+1, nvar_s2m+nvar_s2o+nvar_s2r
+          var2_p => sfc_var2(:,:,num)
+          id_restart = register_restart_field(Sfc_restart, fn_srf, sfc_name2(num), var2_p, domain=fv_domain)
+        enddo
+      endif
+      if (Model%imp_physics == Model%imp_physics_thompson .and. Model%ltaerosol) then
+        if (warm_start) then
+            mand = .true.
+        else
+            mand = .false.
+        endif
+        do num = nvar_s2m+nvar_s2o+nvar_s2r+1, nvar_s2m+nvar_s2o+nvar_s2r+nvar_s2t
+          var2_p => sfc_var2(:,:,num)
+          id_restart = register_restart_field(Sfc_restart, fn_srf, sfc_name2(num), var2_p, domain=fv_domain, mandatory=mand)
+        enddo
+      endif
+#endif
       nullify(var2_p)
  
+#ifdef CCPP
+      if (Model%lsm == Model%lsm_noah .or. (.not.warm_start)) then
+        !--- names of the 2D variables to save
+        sfc_name3(1) = 'stc'
+        sfc_name3(2) = 'smc'
+        sfc_name3(3) = 'slc'
+      else if (Model%lsm == Model%lsm_ruc) then
+        !--- names of the 2D variables to save
+        sfc_name3(1) = 'tslb'
+        sfc_name3(2) = 'smois'
+        sfc_name3(3) = 'sh2o'
+        sfc_name3(4) = 'smfr'
+        sfc_name3(5) = 'flfr'
+      end if
+#else
       !--- names of the 2D variables to save
       sfc_name3(1) = 'stc'
       sfc_name3(2) = 'smc'
       sfc_name3(3) = 'slc'
- 
+#endif
+
       !--- register the 3D fields
       do num = 1,nvar_s3
         var3_p => sfc_var3(:,:,:,num)
@@ -690,7 +784,45 @@ module FV3GFS_io_mod
           !--- nsstm qrain
           Sfcprop(nb)%qrain(ix)   = sfc_var2(i,j,50)
         endif
+#ifdef CCPP
+        if (Model%lsm == Model%lsm_ruc .and. warm_start) then
+          !--- Extra RUC variables
+          Sfcprop(nb)%wet1(ix)    = sfc_var2(i,j,51)
+        endif
+        if (Model%imp_physics == Model%imp_physics_thompson .and. Model%ltaerosol) then
+          !--- Aerosol CCN/IN surface emission rates
+          Coupling(nb)%nwfa2d(ix) = sfc_var2(i,j,52)
+          Coupling(nb)%nifa2d(ix) = sfc_var2(i,j,53)
+        endif
+#endif
 
+#ifdef CCPP
+        if (Model%lsm == Model%lsm_noah .or. (.not.warm_start)) then
+          !--- 3D variables
+          do lsoil = 1,Model%lsoil
+            !--- stc
+            Sfcprop(nb)%stc(ix,lsoil) = sfc_var3(i,j,lsoil,1)
+            !--- smc
+            Sfcprop(nb)%smc(ix,lsoil) = sfc_var3(i,j,lsoil,2)
+            !--- slc
+            Sfcprop(nb)%slc(ix,lsoil) = sfc_var3(i,j,lsoil,3)
+          enddo
+        else if (Model%lsm == Model%lsm_ruc) then
+          !--- 3D variables
+          do lsoil = 1,Model%lsoil_lsm
+            !--- tslb
+            Sfcprop(nb)%tslb(ix,lsoil) = sfc_var3(i,j,lsoil,1)
+            !--- smois
+            Sfcprop(nb)%smois(ix,lsoil) = sfc_var3(i,j,lsoil,2)
+            !--- sh2o
+            Sfcprop(nb)%sh2o(ix,lsoil) = sfc_var3(i,j,lsoil,3)
+            !--- keepsmfr
+            Sfcprop(nb)%keepsmfr(ix,lsoil) = sfc_var3(i,j,lsoil,4)
+            !--- flag_frsoil
+            Sfcprop(nb)%flag_frsoil(ix,lsoil) = sfc_var3(i,j,lsoil,5)
+          enddo
+        end if
+#else
         !--- 3D variables
         do lsoil = 1,Model%lsoil
             !--- stc
@@ -700,15 +832,14 @@ module FV3GFS_io_mod
             !--- slc
             Sfcprop(nb)%slc(ix,lsoil) = sfc_var3(i,j,lsoil,3)
         enddo
+#endif
       enddo
     enddo
 
 #ifdef CCPP
-    ! DH*
     ! Calculating sncovr does NOT belong into an I/O routine!
-    ! TODO: move to physics and remove namelist_soilveg/set_soilveg
-    ! from non-CCPP physics for CCPP build.
-    ! *DH
+    ! TODO: move to physics and stop building namelist_soilveg/set_soilveg
+    ! in the FV3/non-CCPP physics when the CCPP-enabled executable is built.
 #endif
     !--- if sncovr does not exist in the restart, need to create it
     if (nint(sfc_var2(1,1,32)) == -9999) then
@@ -732,6 +863,33 @@ module FV3GFS_io_mod
       enddo
     endif
 
+#ifdef CCPP
+    ! Update top layers of NOAH surface variables with RUC data
+    ! as it is done at the end of lsm_ruc_run. Same as sncovr above,
+    ! this doesn't belong here. However, it is temporary until we
+    ! modified the code such that we can use the same surface
+    ! variables for both LSMs and just change the number of levels.
+    ! This requires to rework how the initialization is done and
+    ! also to modify gcycle/sfcsub.F.
+    if (Model%lsm == Model%lsm_ruc .and. warm_start) then
+      if (Model%me==0) write(0,*) "RUC LSM restart: update NOAH surface variables with RUC data"
+      do nb = 1, Atm_block%nblks
+        do ix = 1, Atm_block%blksz(nb)
+          i = Atm_block%index(nb)%ii(ix) - isc + 1
+          j = Atm_block%index(nb)%jj(ix) - jsc + 1
+          do lsoil = 1,min(Model%lsoil,Model%lsoil_lsm)
+            !--- stc
+            Sfcprop(nb)%stc(ix,lsoil) = Sfcprop(nb)%tslb(ix,lsoil)
+            !--- smc
+            Sfcprop(nb)%smc(ix,lsoil) = Sfcprop(nb)%smois(ix,lsoil)
+            !--- slc
+            Sfcprop(nb)%slc(ix,lsoil) = Sfcprop(nb)%sh2o(ix,lsoil)
+          enddo
+        enddo
+      enddo
+    endif
+#endif
+
   end subroutine sfc_prop_restart_read
 
 
@@ -745,9 +903,16 @@ module FV3GFS_io_mod
 !
 !    calls:  register_restart_field, save_restart
 !----------------------------------------------------------------------      
+#ifdef CCPP
+  subroutine sfc_prop_restart_write (Sfcprop, Coupling, Atm_block, Model, fv_domain, timestamp)
+#else
   subroutine sfc_prop_restart_write (Sfcprop, Atm_block, Model, fv_domain, timestamp)
+#endif
     !--- interface variable definitions
     type(GFS_sfcprop_type),      intent(in) :: Sfcprop(:)
+#ifdef CCPP
+    type(GFS_coupling_type),     intent(in) :: Coupling(:)
+#endif
     type(block_control_type),    intent(in) :: Atm_block
     type(IPD_control_type),      intent(in) :: Model
     type(domain2d),              intent(in) :: fv_domain
@@ -757,6 +922,9 @@ module FV3GFS_io_mod
     integer :: isc, iec, jsc, jec, npz, nx, ny
     integer :: id_restart
     integer :: nvar2m, nvar2o, nvar3
+#ifdef CCPP
+    integer :: nvar2r, nvar2t
+#endif
     logical :: mand
     character(len=32) :: fn_srf = 'sfc_data.nc'
     real(kind=kind_phys), pointer, dimension(:,:)   :: var2_p => NULL()
@@ -764,7 +932,17 @@ module FV3GFS_io_mod
 
     nvar2m = 32
     nvar2o = 18
+#ifdef CCPP
+    nvar2r = 1
+    nvar2t = 2
+    if (Model%lsm == Model%lsm_ruc) then
+      nvar3  = 5
+    else
+      nvar3  = 3
+    endif
+#else
     nvar3  = 3
+#endif
 
     isc = Atm_block%isc
     iec = Atm_block%iec
@@ -774,12 +952,39 @@ module FV3GFS_io_mod
     nx = (iec - isc + 1)
     ny = (jec - jsc + 1)
 
+#ifdef CCPP
+    if (Model%lsm == Model%lsm_ruc) then
+      if (allocated(sfc_name2)) then
+        if (size(sfc_var3,dim=3).ne.Model%lsoil_lsm) then
+          !--- deallocate containers and free restart container
+          deallocate(sfc_name2)
+          deallocate(sfc_name3)
+          deallocate(sfc_var2)
+          deallocate(sfc_var3)
+          call free_restart_type(Sfc_restart)
+        end if
+      end if
+    end if
+#endif
+
     if (.not. allocated(sfc_name2)) then
       !--- allocate the various containers needed for restarts
+#ifdef CCPP
+      allocate(sfc_name2(nvar2m+nvar2o+nvar2r+nvar2t))
+      allocate(sfc_name3(nvar3))
+      allocate(sfc_var2(nx,ny,nvar2m+nvar2o+nvar2r+nvar2t))
+      if (Model%lsm == Model%lsm_noah) then
+        allocate(sfc_var3(nx,ny,Model%lsoil,nvar3))
+      else if (Model%lsm == Model%lsm_ruc) then
+        allocate(sfc_var3(nx,ny,Model%lsoil_lsm,nvar3))
+      end if
+#else
       allocate(sfc_name2(nvar2m+nvar2o))
       allocate(sfc_name3(nvar3))
       allocate(sfc_var2(nx,ny,nvar2m+nvar2o))
       allocate(sfc_var3(nx,ny,Model%lsoil,nvar3))
+#endif
+
       sfc_var2 = -9999._kind_phys
       sfc_var3 = -9999._kind_phys
 
@@ -836,7 +1041,12 @@ module FV3GFS_io_mod
       sfc_name2(48) = 'ifd'
       sfc_name2(49) = 'dt_cool'
       sfc_name2(50) = 'qrain'
- 
+#ifdef CCPP
+      sfc_name2(51) = 'wet1'
+      sfc_name2(52) = 'nwfa2d'
+      sfc_name2(53) = 'nifa2d'
+#endif
+
       !--- register the 2D fields
       do num = 1,nvar2m
         var2_p => sfc_var2(:,:,num)
@@ -854,13 +1064,43 @@ module FV3GFS_io_mod
           id_restart = register_restart_field(Sfc_restart, fn_srf, sfc_name2(num), var2_p, domain=fv_domain, mandatory=mand)
         enddo
       endif
+#ifdef CCPP
+      if (Model%lsm == Model%lsm_ruc) then
+        do num = nvar2m+nvar2o+1, nvar2m+nvar2o+nvar2r
+          var2_p => sfc_var2(:,:,num)
+          id_restart = register_restart_field(Sfc_restart, fn_srf, sfc_name2(num), var2_p, domain=fv_domain)
+        enddo
+      endif
+      if (Model%imp_physics == Model%imp_physics_thompson .and. Model%ltaerosol) then
+        do num = nvar2m+nvar2o+nvar2r+1, nvar2m+nvar2o+nvar2r+nvar2t
+          var2_p => sfc_var2(:,:,num)
+          id_restart = register_restart_field(Sfc_restart, fn_srf, sfc_name2(num), var2_p, domain=fv_domain)
+        enddo
+      endif
+#endif
       nullify(var2_p)
- 
+
+#ifdef CCPP
+      if (Model%lsm == Model%lsm_noah) then
+        !--- names of the 2D variables to save
+        sfc_name3(1) = 'stc'
+        sfc_name3(2) = 'smc'
+        sfc_name3(3) = 'slc'
+      else if (Model%lsm == Model%lsm_ruc) then
+        !--- names of the 2D variables to save
+        sfc_name3(1) = 'tslb'
+        sfc_name3(2) = 'smois'
+        sfc_name3(3) = 'sh2o'
+        sfc_name3(4) = 'smfr'
+        sfc_name3(5) = 'flfr'
+      end if
+#else
       !--- names of the 2D variables to save
       sfc_name3(1) = 'stc'
       sfc_name3(2) = 'smc'
       sfc_name3(3) = 'slc'
- 
+#endif
+
       !--- register the 3D fields
       do num = 1,nvar3
         var3_p => sfc_var3(:,:,:,num)
@@ -977,7 +1217,45 @@ module FV3GFS_io_mod
           !--- nsstm qrain
           sfc_var2(i,j,50) = Sfcprop(nb)%qrain(ix)
         endif
- 
+#ifdef CCPP
+        if (Model%lsm == Model%lsm_ruc) then
+          !--- Extra RUC variables
+          sfc_var2(i,j,51) = Sfcprop(nb)%wet1(ix)
+        endif
+        if (Model%imp_physics == Model%imp_physics_thompson .and. Model%ltaerosol) then
+          !--- Aerosol CCN/IN surface emission rates
+          sfc_var2(i,j,52) = Coupling(nb)%nwfa2d(ix)
+          sfc_var2(i,j,53) = Coupling(nb)%nifa2d(ix)
+        endif
+#endif
+
+#ifdef CCPP
+        if (Model%lsm == Model%lsm_noah) then
+          !--- 3D variables
+          do lsoil = 1,Model%lsoil
+            !--- stc
+            sfc_var3(i,j,lsoil,1) = Sfcprop(nb)%stc(ix,lsoil)
+            !--- smc
+            sfc_var3(i,j,lsoil,2) = Sfcprop(nb)%smc(ix,lsoil)
+            !--- slc
+            sfc_var3(i,j,lsoil,3) = Sfcprop(nb)%slc(ix,lsoil)
+          enddo
+        else if (Model%lsm == Model%lsm_ruc) then
+          !--- 3D variables
+          do lsoil = 1,Model%lsoil_lsm
+            !--- tslb
+            sfc_var3(i,j,lsoil,1) = Sfcprop(nb)%tslb(ix,lsoil)
+            !--- smc
+            sfc_var3(i,j,lsoil,2) = Sfcprop(nb)%smois(ix,lsoil)
+            !--- slc
+            sfc_var3(i,j,lsoil,3) = Sfcprop(nb)%sh2o(ix,lsoil)
+            !--- keepsmfr
+            sfc_var3(i,j,lsoil,4) = Sfcprop(nb)%keepsmfr(ix,lsoil)
+            !--- flag_frsoil
+            sfc_var3(i,j,lsoil,5) = Sfcprop(nb)%flag_frsoil(ix,lsoil)
+          enddo
+        end if
+#else
         !--- 3D variables
         do lsoil = 1,Model%lsoil
           !--- stc
@@ -987,6 +1265,7 @@ module FV3GFS_io_mod
           !--- slc
           sfc_var3(i,j,lsoil,3) = Sfcprop(nb)%slc(ix,lsoil)
         enddo
+#endif
       enddo
     enddo
 
