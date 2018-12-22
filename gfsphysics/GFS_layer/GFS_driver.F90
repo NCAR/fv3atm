@@ -196,8 +196,8 @@ module GFS_driver
                      Init_parm%tracer_names,                       &
 #ifdef CCPP
                      Init_parm%input_nml_file, Init_parm%ak,       &
-                     Init_parm%bk, Init_parm%blksz, communicator,  &
-                     ntasks)
+                     Init_parm%bk, Init_parm%blksz,                &
+                     Init_parm%restart, communicator, ntasks)
 #elif MEMCHECK
                      Init_parm%input_nml_file, communicator)
 #else
