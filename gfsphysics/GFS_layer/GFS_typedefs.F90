@@ -159,6 +159,7 @@ module GFS_typedefs
 !! | cdat           |                                                        | model current date in GFS format (same as jdat)         | none          |    0 | integer  |           | none   | F        |
 !! | dt_dycore      |                                                        | dynamics time step in seconds                           | s             |    0 | real     | kind_phys | none   | F        |
 !! | dt_phys        |                                                        | physics  time step in seconds                           | s             |    0 | real     | kind_phys | none   | F        |
+!! | restart        |                                                        | flag for restart (warmstart) or coldstart               | flag          |    0 | logical  |           | none   | F        |
 !! | blksz          |                                                        | for explicit data blocking                              | count         |    1 | integer  |           | none   | F        |
 !! | ak             |                                                        | a parameter for sigma pressure level calculations       | Pa            |    1 | real     | kind_phys | none   | F        |
 !! | bk             |                                                        | b parameter for sigma pressure level calculations       | none          |    1 | real     | kind_phys | none   | F        |
@@ -190,6 +191,10 @@ module GFS_typedefs
     integer :: cdat(8)                           !< model current date in GFS format (same as jdat)
     real(kind=kind_phys) :: dt_dycore            !< dynamics time step in seconds
     real(kind=kind_phys) :: dt_phys              !< physics  time step in seconds
+#ifdef CCPP
+!--- restart information
+    logical :: restart                           !< flag whether this is a coldstart (.false.) or a warmstart/restart (.true.)
+#endif
 !--- blocking data
     integer, pointer :: blksz(:)                 !< for explicit data blocking
                                                  !< default blksz(1)=[nx*ny]
@@ -1025,6 +1030,8 @@ module GFS_typedefs
 !! | IPD_Control%fhour                    | forecast_time                                                                 | curent forecast time                                                 | h             |    0 | real      | kind_phys | none   | F        |
 !! | IPD_Control%zhour                    |                                                                               | previous hour diagnostic buckets emptied                             | h             |    0 | real      | kind_phys | none   | F        |
 !! | IPD_Control%kdt                      | index_of_time_step                                                            | current forecast iteration                                           | index         |    0 | integer   |           | none   | F        |
+!! | IPD_Control%first_time_step          | flag_for_first_time_step                                                      | flag for first time step for time integration loop (cold/warmstart)  | flag          |    0 | logical   |           | none   | F        |
+!! | IPD_Control%restart                  | flag_for_restart                                                              | flag for restart (warmstart) or coldstart                            | flag          |    0 | logical   |           | none   | F        |
 !! | IPD_Control%jdat                     | forecast_date_and_time                                                        | current forecast date and time                                       | none          |    1 | integer   |           | none   | F        |
 !! | IPD_Control%iccn                     | flag_for_in_ccn_forcing_for_morrison_gettelman_microphysics                   | flag for IN and CCN forcing for morrison gettelman microphysics      | flag          |    0 | logical   |           | none   | F        |
 !! | IPD_Control%sec                      | seconds_elapsed_since_model_initialization                                    | seconds elapsed since model initialization                           | s             |    0 | real      | kind_phys | none   | F        |
@@ -1095,7 +1102,7 @@ module GFS_typedefs
     integer              :: lonr            !< number of global points in x-dir (i) along the equator
     integer              :: latr            !< number of global points in y-dir (j) along any meridian
 #ifdef CCPP
-    integer,     pointer :: blksz(:)        !< for explicit data blocking
+    integer,     pointer :: blksz(:)        !< for explicit data blocking: block sizes of all blocks
 #endif
 
 !--- coupling parameters
@@ -1458,6 +1465,10 @@ module GFS_typedefs
     real(kind=kind_phys) :: fhour           !< curent forecast hour
     real(kind=kind_phys) :: zhour           !< previous hour diagnostic buckets emptied
     integer              :: kdt             !< current forecast iteration
+#ifdef CCPP
+    logical              :: first_time_step !< flag signaling first time step for time integration routine
+    logical              :: restart         !< flag whether this is a coldstart (.false.) or a warmstart/restart (.true.)
+#endif
     integer              :: jdat(1:8)       !< current forecast date and time
                                             !< (yr, mon, day, t-zone, hr, min, sec, mil-sec)
     logical              :: iccn            !< using IN CCN forcing for MG2/3
@@ -1596,8 +1607,8 @@ module GFS_typedefs
 !! | IPD_Data(nb)%Tbd%htlw0                            | tendency_of_air_temperature_due_to_longwave_heating_assuming_clear_sky_on_radiation_time_step  | clear sky heating rate due to longwave radiation        | K s-1         |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Tbd%htswc                            | tendency_of_air_temperature_due_to_shortwave_heating_on_radiation_time_step                    | total sky heating rate due to shortwave radiation       | K s-1         |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Tbd%htsw0                            | tendency_of_air_temperature_due_to_shortwave_heating_assuming_clear_sky_on_radiation_time_step | clear sky heating rates due to shortwave radiation      | K s-1         |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Tbd%forcet                           | temperature_tendency_due_to_dynamics                                                           | temperature tendency due to dynamics only               | K s-1         |    2 | real    | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Tbd%forceq                           | moisture_tendency_due_to_dynamics                                                              | moisture tendency due to dynamics only                  | kg kg-1 s-1   |    2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Tbd%forcet                           | temperature_tendency_due_to_dynamics                                                           | temperature tendency due to dynamics only DH* INTERSTITIAL? | K s-1       |  2 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Tbd%forceq                           | moisture_tendency_due_to_dynamics                                                              | moisture tendency due to dynamics only    DH* INTERSTITIAL? | kg kg-1 s-1 |  2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Tbd%prevst                           | temperature_from_previous_timestep                                                             | temperature from previous time step                     | K             |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Tbd%prevsq                           | moisture_from_previous_timestep                                                                | moisture from previous time step                        | kg kg-1       |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Tbd%cactiv                           | conv_activity_counter                                                                          | convective activity memory                              | none          |    1 | integer |           | none   | F        |
@@ -3101,7 +3112,7 @@ module GFS_typedefs
                                  dt_phys, idat, jdat, tracer_names, &
 #ifdef CCPP
                                  input_nml_file, ak, bk, blksz,     &
-                                 communicator, ntasks)
+                                 restart, communicator, ntasks)
 #elif MEMCHECK
                                  input_nml_file, communicator)
 #else
@@ -3147,6 +3158,7 @@ module GFS_typedefs
     real(kind=kind_phys), dimension(:), intent(in) :: ak
     real(kind=kind_phys), dimension(:), intent(in) :: bk
     integer,                intent(in) :: blksz(:)
+    logical,                intent(in) :: restart
     integer,                intent(in) :: communicator
     integer,                intent(in) :: ntasks
 #elif MEMCHECK
@@ -3960,6 +3972,8 @@ module GFS_typedefs
     Model%fhour            = (rinc(4) + Model%dtp)/con_hr
     Model%zhour            = mod(Model%phour,Model%fhzero)
     Model%kdt              = 0
+    Model%first_time_step  = .true.
+    Model%restart          = restart
     Model%jdat(1:8)        = jdat(1:8)
 #ifdef CCPP
     Model%sec              = 0
@@ -4398,7 +4412,7 @@ module GFS_typedefs
       print *, ' latr              : ', Model%latr
 #ifdef CCPP
       print *, ' blksz(1)          : ', Model%blksz(1)
-      print *, ' blksz(size(blksz)): ', Model%blksz(size(Model%blksz))
+      print *, ' blksz(nblks)      : ', Model%blksz(size(blksz))
 #endif
       print *, ' '
       print *, 'coupling parameters'
@@ -4646,6 +4660,8 @@ module GFS_typedefs
 #ifdef CCPP
       print *, ' sec               : ', Model%sec
       print *, ' si                : ', Model%si
+      print *, ' first_time_step   : ', Model%first_time_step
+      print *, ' restart           : ', Model%restart
 #endif
     endif
 
