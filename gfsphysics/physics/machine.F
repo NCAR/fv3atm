@@ -31,13 +31,12 @@
      &,                     kind_INTEGER = 4                             ! -,,-
 
 #endif
+
 #ifdef OVERLOAD_R4
       integer, parameter :: kind_dyn  = 4 
 #else
       integer, parameter :: kind_dyn  = 8
 #endif
- 
-
 
 !
       real(kind=kind_evod), parameter :: mprec = 1.e-12           ! machine precision to restrict dep
