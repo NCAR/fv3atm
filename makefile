@@ -30,33 +30,33 @@ FV3_EXE  = fv3.exe
 FV3CAP_LIB  = libfv3cap.a
 
 all: libs
-	$(MAKE) $(FV3_EXE) $(MAKEFLAGS) FMS_DIR=$(FMS_DIR)
+	$(MAKE) $(FV3_EXE) $(MAKE_OPTS) FMS_DIR=$(FMS_DIR)
 
 nems: libs
-	$(MAKE) $(FV3CAP_LIB) $(MAKEFLAGS) FMS_DIR=$(FMS_DIR)
+	$(MAKE) $(FV3CAP_LIB) $(MAKE_OPTS) FMS_DIR=$(FMS_DIR)
 	$(MAKE) esmf_make_fragment FMS_DIR=$(FMS_DIR)
 
 # Remove stochastic_physics from CCPP build
 ifneq (,$(findstring CCPP,$(CPPDEFS)))
 libs:
-	$(MAKE) -C cpl                 $(MAKEFLAGS) FMS_DIR=$(FMS_DIR)
-	$(MAKE) -C $(PHYSP)physics     $(MAKEFLAGS) FMS_DIR=$(FMS_DIR) 32BIT=N  DYN32=$(DYN32) # force gfs physics to 64bit, flag to CCPP build for 32bit dynamics
-	$(MAKE) -C ipd                 $(MAKEFLAGS) FMS_DIR=$(FMS_DIR) 32BIT=N  # force gfs physics to 64bit
-	$(MAKE) -C io                  $(MAKEFLAGS) FMS_DIR=$(FMS_DIR)
-	$(MAKE) -C atmos_cubed_sphere  $(MAKEFLAGS) FMS_DIR=$(FMS_DIR)
-	#$(MAKE) -C stochastic_physics  $(MAKEFLAGS) FMS_DIR=$(FMS_DIR) 32BIT=N  # force gfs physics to 64bit
+	$(MAKE) -C cpl                 $(MAKE_OPTS) FMS_DIR=$(FMS_DIR)
+	$(MAKE) -C $(PHYSP)physics     $(MAKE_OPTS) FMS_DIR=$(FMS_DIR) 32BIT=N  DYN32=$(DYN32) # force gfs physics to 64bit, flag to CCPP build for 32bit dynamics
+	$(MAKE) -C ipd                 $(MAKE_OPTS) FMS_DIR=$(FMS_DIR) 32BIT=N  # force gfs physics to 64bit
+	$(MAKE) -C io                  $(MAKE_OPTS) FMS_DIR=$(FMS_DIR)
+	$(MAKE) -C atmos_cubed_sphere  $(MAKE_OPTS) FMS_DIR=$(FMS_DIR)
+	#$(MAKE) -C stochastic_physics  $(MAKE_OPTS) FMS_DIR=$(FMS_DIR) 32BIT=N  # force gfs physics to 64bit
 
 $(FV3_EXE): atmos_model.o coupler_main.o atmos_cubed_sphere/libfv3core.a io/libfv3io.a ipd/libipd.a $(PHYSP)physics/lib$(PHYSP)phys.a cpl/libfv3cpl.a
 	$(LD) -o $@ $^ $(NCEPLIBS) $(LDFLAGS)
 
 else
 libs:
-	$(MAKE) -C cpl                 $(MAKEFLAGS) FMS_DIR=$(FMS_DIR)
-	$(MAKE) -C $(PHYSP)physics     $(MAKEFLAGS) FMS_DIR=$(FMS_DIR) 32BIT=N  # force gfs physics to 64bit
-	$(MAKE) -C ipd                 $(MAKEFLAGS) FMS_DIR=$(FMS_DIR) 32BIT=N  # force gfs physics to 64bit
-	$(MAKE) -C io                  $(MAKEFLAGS) FMS_DIR=$(FMS_DIR)
-	$(MAKE) -C atmos_cubed_sphere  $(MAKEFLAGS) FMS_DIR=$(FMS_DIR)
-	$(MAKE) -C stochastic_physics  $(MAKEFLAGS) FMS_DIR=$(FMS_DIR) 32BIT=N  # force gfs physics to 64bit
+	$(MAKE) -C cpl                 $(MAKE_OPTS) FMS_DIR=$(FMS_DIR)
+	$(MAKE) -C $(PHYSP)physics     $(MAKE_OPTS) FMS_DIR=$(FMS_DIR) 32BIT=N  # force gfs physics to 64bit
+	$(MAKE) -C ipd                 $(MAKE_OPTS) FMS_DIR=$(FMS_DIR) 32BIT=N  # force gfs physics to 64bit
+	$(MAKE) -C io                  $(MAKE_OPTS) FMS_DIR=$(FMS_DIR)
+	$(MAKE) -C atmos_cubed_sphere  $(MAKE_OPTS) FMS_DIR=$(FMS_DIR)
+	$(MAKE) -C stochastic_physics  $(MAKE_OPTS) FMS_DIR=$(FMS_DIR) 32BIT=N  # force gfs physics to 64bit
 
 $(FV3_EXE): atmos_model.o coupler_main.o atmos_cubed_sphere/libfv3core.a io/libfv3io.a ipd/libipd.a $(PHYSP)physics/lib$(PHYSP)phys.a stochastic_physics/libstochastic_physics.a cpl/libfv3cpl.a
 	$(LD) -o $@ $^ $(NCEPLIBS) $(LDFLAGS)

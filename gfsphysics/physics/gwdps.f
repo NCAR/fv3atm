@@ -338,7 +338,7 @@
      &               PRSI,DEL,PRSL,PRSLK,PHII, PHIL,DELTIM,KDT,         &
      &               HPRIME,OC,OA4,CLX4,THETA,SIGMA,GAMMA,ELVMAX,       &
      &               DUSFC,DVSFC,G, CP, RD, RV, IMX,                    &
-     &               nmtvr, cdmbgwd, me, lprnt, ipr,  rdxzb)
+     &               nmtvr, cdmbgwd, me, lprnt, ipr, rdxzb)
 !
 !   ********************************************************************
 ! ----->  I M P L E M E N T A T I O N    V E R S I O N   <----------
@@ -351,7 +351,7 @@
 !-----         ALSO INCLUDED IS RI  SMOOTH OVER A THICK LOWER LAYER
 !-----         ALSO INCLUDED IS DECREASE IN DE-ACC AT TOP BY 1/2
 !-----     THE NMC GWD INCORPORATING BOTH GLAS(P&S) AND GFDL(MIGWD)
-!-----        MOUNTAIN INDUCED GRAVITY WAVE DRAG 
+!-----        MOUNTAIN INDUCED GRAVITY WAVE DRAG
 !-----    CODE FROM .FR30(V3MONNX) FOR MONIN3
 !-----        THIS VERSION (06 MAR 1987)
 !-----        THIS VERSION (26 APR 1987)    3.G
@@ -427,8 +427,8 @@
 !                OTHER INPUT VARIABLES UNMODIFIED.
 !  revision log:
 !    May 2013  J. Wang change cleff back to opn setting
-!    Jan 2014  J. Wang merge Henry and Fangin's dissipation heat in gfs to nems 
-!     
+!    Jan 2014  J. Wang merge Henry and Fangin's dissipation heat in gfs to nems
+!
 !
 !   ********************************************************************
       USE MACHINE , ONLY : kind_phys
@@ -448,8 +448,8 @@
       real(kind=kind_phys) wk(IM)
       real(kind=kind_phys) bnv2lm(IM,KM),PE(IM),EK(IM),ZBK(IM),UP(IM)
       real(kind=kind_phys) DB(IM,KM),ANG(IM,KM),UDS(IM,KM)
-      real(kind=kind_phys) ZLEN, DBTMP, R, PHIANG, CDmb, DBIM, ZR
-      real(kind=kind_phys) ENG0, ENG1, COSANG2, SINANG2
+      real(kind=kind_phys) ZLEN, DBTMP, Rtrm, PHIANG, CDmb, DBIM, ZR
+      real(kind=kind_phys) ENG0, ENG1
 !
 !     Some constants
 !
@@ -467,8 +467,8 @@
       parameter (FRC=1.0, CE=0.8, CEOFRC=CE/FRC, frmax=100., CG=0.5)
       parameter (GMAX=1.0, VELEPS=1.0, FACTOP=0.5)
 !      parameter (GMAX=1.0, CRITAC=5.0E-4, VELEPS=1.0, FACTOP=0.5)
-      parameter (RLOLEV=50000.0) 
-!     parameter (RLOLEV=500.0) 
+      parameter (RLOLEV=50000.0)
+!     parameter (RLOLEV=500.0)
 !     parameter (RLOLEV=0.5)
 !
        real(kind=kind_phys) dpmin,hminmt,hncrit,minwnd,sigfac
@@ -498,14 +498,14 @@
 !
 !----   MOUNTAIN INDUCED GRAVITY WAVE DRAG
 !
-      real(kind=kind_phys) TAUB(IM),  XN(IM),     YN(IM),    UBAR(IM)     &
-     &,                    VBAR(IM),  ULOW(IM),   OA(IM),    CLX(IM)      &
-     &,                    ROLL(IM),  ULOI(IM),   DUSFC(IM), DVSFC(IM)    &
+      real(kind=kind_phys) TAUB(IM),  XN(IM),     YN(IM),    UBAR(IM)   &
+     &,                    VBAR(IM),  ULOW(IM),   OA(IM),    CLX(IM)    &
+     &,                    ROLL(IM),  ULOI(IM),   DUSFC(IM), DVSFC(IM)  &
      &,                    DTFAC(IM), XLINV(IM),  DELKS(IM), DELKS1(IM)
 !
-      real(kind=kind_phys) BNV2(IM,KM),  TAUP(IM,KM+1), ri_n(IM,KM)       &
-     &,                    TAUD(IM,KM),  RO(IM,KM),     VTK(IM,KM)        &
-     &,                    VTJ(IM,KM),   SCOR(IM),      VELCO(IM,KM-1)    &
+      real(kind=kind_phys) BNV2(IM,KM),  TAUP(IM,KM+1), ri_n(IM,KM)     &
+     &,                    TAUD(IM,KM),  RO(IM,KM),     VTK(IM,KM)      &
+     &,                    VTJ(IM,KM),   SCOR(IM),      VELCO(IM,KM-1)  &
      &,                    bnv2bar(im)
 !
 !     real(kind=kind_phys) VELKO(KM-1)
@@ -514,15 +514,16 @@
       Integer   kreflm(IM), iwklm(im)
       Integer   idxzb(im), ktrial, klevm1, nmtvr
 !
-      real(kind=kind_phys) gor,    gocp,  fv,    gr2,  bnv,  fr           &
-     &,                    brvf,   cleff, tem,   tem1,  tem2, temc, temv  &
-     &,                    wdir,   ti,    rdz,   dw2,   shr2, bvf2        &
-     &,                    rdelks, efact, coefm, gfobnv                   &
-     &,                    scork,  rscor, hd,    fro,   rim,  sira        &
-     &,                    dtaux,  dtauy, pkp1log, pklog
-      integer kmm1, kmm2, lcap, lcapp1, kbps, kbpsp1,kbpsm1               &
-     &, kmps, idir, nwd, i, j, k, klcap, kp1, kmpbl, npt, npr             &
-     &, kmll                                
+      real(kind=kind_phys) gor,    gocp,  fv,    gr2,  bnv,  fr         &
+     &,                    brvf,   cleff, tem,   tem1,  tem2, temc, temv&
+     &,                    wdir,   ti,    rdz,   dw2,   shr2, bvf2      &
+     &,                    rdelks, efact, coefm, gfobnv, onebg          &
+     &,                    scork,  rscor, hd,    fro,   rim,  sira      &
+     &,                    dtaux,  dtauy, pkp1log, pklog                &
+     &,                    cosang, sinang, cos2a, sin2a
+!
+      integer kmm1, kmm2, lcap, lcapp1, kbps, kbpsp1,kbpsm1             &
+     &, kmps, idir, nwd, i, j, k, klcap, kp1, kmpbl, npt, npr, kmll
 !    &, kmll,kmds,ihit,jhit
       logical lprnt
 !
@@ -547,11 +548,12 @@
         ENDDO
       ENDDO
 !
-      RDI  = 1.0 / RD
-      GOR  = G/RD
-      GR2  = G*GOR
-      GOCP = G/CP
-      FV   = RV/RD - 1
+      RDI    = 1.0 / RD
+      onebg  = 1.0 / g
+      GOR    = G/RD
+      GR2    = G*GOR
+      GOCP   = G/CP
+      FV     = RV/RD - 1
 !
 !     NCNT   = 0
       KMM1   = KM - 1
@@ -560,20 +562,19 @@
       LCAPP1 = LCAP + 1
 !
 !
-      IF ( NMTVR .eq. 14) then 
+      IF ( NMTVR == 14) then 
 ! ----  for lm and gwd calculation points
         RDXZB(:)  = 0 
         ipt = 0
         npt = 0
         DO I = 1,IM
-          IF ( (elvmax(i) .GT. HMINMT) 
-     &       .and. (hprime(i) .GT. hpmin) )  then
+          IF (elvmax(i) > HMINMT .and. hprime(i) > hpmin)  then
              npt      = npt + 1
              ipt(npt) = i
-             if (ipr .eq. i) npr = npt
+             if (ipr == i) npr = npt
           ENDIF
         ENDDO
-        IF (npt .eq. 0) RETURN     ! No gwd/mb calculation done!
+        IF (npt == 0) RETURN     ! No gwd/mb calculation done!
 !
 !       if (lprnt) print *,' npt=',npt,' npr=',npr,' ipr=',ipr,' im=',im
 !    &,' ipt(npt)=',ipt(npt)
@@ -599,8 +600,10 @@
 !  (*j*)  11/03:  test upper limit on KMLL=km - 1
 !      then do not need hncrit -- test with large hncrit first.
 !       KMLL  = km / 2 ! maximum mtnlm height : # of vertical levels / 2
+
         KMLL = kmm1
-! --- No mtn should be as high as KMLL (so we do not have to start at 
+
+! --- No mtn should be as high as KMLL (so we do not have to start at
 ! --- the top of the model but could do calc for all levels).
 !
           DO I = 1, npt
@@ -613,21 +616,22 @@
             j = ipt(i)
 ! --- interpolate to max mtn height for index, iwklm(I) wk[gz]
 ! --- ELVMAX is limited to hncrit because to hi res topo30 orog.
-            pkp1log =  phil(j,k+1) / G
-            pklog =  phil(j,k)   / G
+            pkp1log =  phil(j,k+1) * onebg
+            pklog   =  phil(j,k)   * onebg
 !!!-------     ELVMAX(J) = min (ELVMAX(J) + sigfac * hprime(j), hncrit)
-            if ( ( ELVMAX(j) .le.  pkp1log ) .and. 
-     &           ( ELVMAX(j) .ge.   pklog  ) ) THEN
+
+            if (ELVMAX(j) <=  pkp1log .and. ELVMAX(j) >=  pklog) THEN
+
 !     print *,' in gwdps_lm.f 1  =',k,ELVMAX(j),pklog,pkp1log,me
 ! ---        wk for diags but can be saved and reused.  
-               wk(i)  = G * ELVMAX(j) / ( phil(j,k+1) - phil(j,k) )
-               iwklm(I)  =  MAX(iwklm(I), k+1 ) 
+               wk(i)    = G * ELVMAX(j) / (phil(j,k+1) - phil(j,k))
+               iwklm(I) =  MAX(iwklm(I), k+1) 
 !     print *,' in gwdps_lm.f 2 npt=',npt,i,j,wk(i),iwklm(i),me
             endif
 !
 ! ---        find at prsl levels large scale environment variables
 ! ---        these cover all possible mtn max heights
-            VTJ(I,K)  = T1(J,K)  * (1.+FV*Q1(J,K))
+            VTJ(I,K)  = T1(J,K)  * (1.0+FV*Q1(J,K))
             VTK(I,K)  = VTJ(I,K) / PRSLK(J,K)
             RO(I,K)   = RDI * PRSL(J,K) / VTJ(I,K) ! DENSITY Kg/M**3
           ENDDO
@@ -639,7 +643,7 @@
 !         jhit = 0
 !        do i = 1, npt
 !        j=ipt(i)
-!          if ( iwklm(i) .gt. ihit ) then 
+!          if ( iwklm(i) .gt. ihit ) then
 !            ihit = iwklm(i)
 !            jhit = j
 !          endif
@@ -648,14 +652,15 @@
 !    &          kdt,ihit,jhit,phil(jhit,ihit),me
          
         klevm1 = KMLL - 1
-        DO K = 1, klevm1  
+        DO K = 1, klevm1
+          kp1 = k + 1
           DO I = 1, npt
            j   = ipt(i)
-            RDZ  = g   / ( phil(j,k+1) - phil(j,k) )
+           RDZ = g / (phil(j,kp1) - phil(j,k))
 ! ---                               Brunt-Vaisala Frequency
 !> - Compute Brunt-Vaisala Frequency \f$N\f$.
-            BNV2LM(I,K) = (G+G) * RDZ * ( VTK(I,K+1)-VTK(I,K) )
-     &                     / ( VTK(I,K+1)+VTK(I,K) )
+            BNV2LM(I,K) = (G+G) * RDZ * (VTK(I,Kp1) - VTK(I,K))
+     &                                / (VTK(I,Kp1) + VTK(I,K))
             bnv2lm(i,k) = max( bnv2lm(i,k), bnv2min )
           ENDDO
         ENDDO
@@ -673,14 +678,14 @@
           BNV2bar(I) = (PRSL(J,1)-PRSL(J,2)) * DELKS1(I) * BNV2LM(I,1)
         ENDDO
 
-! --- find the dividing stream line height 
+! --- find the dividing stream line height
 ! --- starting from the level above the max mtn downward
 ! --- iwklm(i) is the k-index of mtn elvmax elevation
 !> - Find the dividing streamline height starting from the level above
 !! the maximum mountain height and processing downward.
         DO Ktrial = KMLL, 1, -1
           DO I = 1, npt
-             IF ( Ktrial .LT. iwklm(I) .and. kreflm(I) .eq. 0 ) then
+             IF ( Ktrial < iwklm(I) .and. kreflm(I) == 0 ) then
                 kreflm(I) = Ktrial
              ENDIF
           ENDDO
@@ -694,11 +699,11 @@
 !   
         DO I = 1, npt
           DO K = 1, Kreflm(I)
-            J        = ipt(i)
+            J          = ipt(i)
             RDELKS     = DEL(J,K) * DELKS(I)
-            UBAR(I)    = UBAR(I)  + RDELKS * U1(J,K) ! trial Mean U below 
-            VBAR(I)    = VBAR(I)  + RDELKS * V1(J,K) ! trial Mean V below 
-            ROLL(I)    = ROLL(I)  + RDELKS * RO(I,K) ! trial Mean RO below 
+            UBAR(I)    = UBAR(I)  + RDELKS * U1(J,K) ! trial Mean U below
+            VBAR(I)    = VBAR(I)  + RDELKS * V1(J,K) ! trial Mean V below
+            ROLL(I)    = ROLL(I)  + RDELKS * RO(I,K) ! trial Mean RO below
             RDELKS     = (PRSL(J,K)-PRSL(J,K+1)) * DELKS1(I)
             BNV2bar(I) = BNV2bar(I) + BNV2lm(I,K) * RDELKS
 ! --- these vert ave are for diags, testing and GWD to follow (*j*).
@@ -707,7 +712,7 @@
 !     print *,' in gwdps_lm.f 5  =',i,kreflm(npt),BNV2bar(npt),me
 !
 ! --- integrate to get PE in the trial layer.
-! --- Need the first layer where PE>EK - as soon as 
+! --- Need the first layer where PE>EK - as soon as
 ! --- IDXZB is not 0 we have a hit and Zb is found.
 !
         DO I = 1, npt
@@ -715,49 +720,50 @@
           DO K = iwklm(I), 1, -1
             PHIANG   =  atan2(V1(J,K),U1(J,K))*RAD_TO_DEG
             ANG(I,K) = ( THETA(J) - PHIANG )
-            if ( ANG(I,K) .gt.  90. ) ANG(I,K) = ANG(I,K) - 180.
-            if ( ANG(I,K) .lt. -90. ) ANG(I,K) = ANG(I,K) + 180.
+            if ( ANG(I,K) >  90. ) ANG(I,K) = ANG(I,K) - 180.
+            if ( ANG(I,K) < -90. ) ANG(I,K) = ANG(I,K) + 180.
             ANG(I,K) = ANG(I,K) * DEG_TO_RAD
 !
 !> - Compute wind speed UDS
 !!\f[
 !!    UDS=\max(\sqrt{U1^2+V1^2},minwnd)
 !!\f]
-!! where \f$ minwnd=0.1 \f$, \f$U1\f$ and \f$V1\f$ are zonal and 
+!! where \f$ minwnd=0.1 \f$, \f$U1\f$ and \f$V1\f$ are zonal and
 !! meridional wind components of model layer wind.
-            UDS(I,K) = 
+
+            UDS(I,K) =
      &          MAX(SQRT(U1(J,K)*U1(J,K) + V1(J,K)*V1(J,K)), minwnd)
 ! --- Test to see if we found Zb previously
-            IF (IDXZB(I) .eq. 0 ) then
-              PE(I) = PE(I) + BNV2lm(I,K) * 
-     &           ( G * ELVMAX(J) - phil(J,K) ) * 
-     &           ( PHII(J,K+1) - PHII(J,K) ) / (G*G)
+            IF (IDXZB(I) == 0 ) then
+              PE(I) = PE(I) + BNV2lm(I,K) * (G*ELVMAX(J) - phil(J,K))
+     &                                    * (PHII(J,K+1) - PHII(J,K))
+     &                                    * (onebg*onebg)
 ! --- KE
 ! --- Wind projected on the line perpendicular to mtn range, U(Zb(K)).
 ! --- kenetic energy is at the layer Zb
 ! --- THETA ranges from -+90deg |_ to the mtn "largest topo variations"
               UP(I)  =  UDS(I,K) * cos(ANG(I,K))
-              EK(I)  = 0.5 *  UP(I) * UP(I) 
+              EK(I)  = 0.5 *  UP(I) * UP(I)
 
 ! --- Dividing Stream lime  is found when PE =exceeds EK.
-              IF ( PE(I) .ge.  EK(I) ) THEN
+              IF (PE(I) >= EK(I)) THEN
                  IDXZB(I) = K
                  RDXZB(J) = real(K,kind=kind_phys)
               ENDIF
 ! --- Then mtn blocked flow is between Zb=k(IDXZB(I)) and surface
 !
-!> - The dividing streamline height (idxzb), of a subgrid scale 
-!! obstable, is found by comparing the potential (PE) and kinetic 
+!> - The dividing streamline height (idxzb), of a subgrid scale
+!! obstable, is found by comparing the potential (PE) and kinetic
 !! energies (EK) of the upstream large scale wind and subgrid scale air
 !! parcel movements. the dividing streamline is found when
-!! \f$PE\geq EK\f$. Mountain-blocked flow is defined to exist between 
-!! the surface and the dividing streamline height (\f$h_d\f$), which 
-!! can be found by solving an integral equation for \f$h_d\f$: 
+!! \f$PE\geq EK\f$. Mountain-blocked flow is defined to exist between
+!! the surface and the dividing streamline height (\f$h_d\f$), which
+!! can be found by solving an integral equation for \f$h_d\f$:
 !!\f[
 !! \frac{U^{2}(h_{d})}{2}=\int_{h_{d}}^{H} N^{2}(z)(H-z)dz
 !!\f]
 !! where \f$H\f$ is the maximum subgrid scale elevation within the grid
-!! box of actual orography, \f$h\f$, obtained from the GTOPO30 dataset 
+!! box of actual orography, \f$h\f$, obtained from the GTOPO30 dataset
 !! from the U.S. Geological Survey.
             ENDIF
           ENDDO
@@ -786,61 +792,67 @@
 !     endif
 !
 ! --- The drag for mtn blocked flow
-! 
+!
         DO I = 1, npt
           J = ipt(i)
           ZLEN = 0.
 !      print *,' in gwdps_lm.f 9  =',i,j,IDXZB(i),me
-          IF ( IDXZB(I) .gt. 0 ) then 
+          IF (IDXZB(I) > 0) then
             DO K = IDXZB(I), 1, -1
-              IF ( PHIL(J,IDXZB(I)) .gt.  PHIL(J,K) ) then
+              IF (PHIL(J,IDXZB(I)) >  PHIL(J,K)) then
 
 !> - Calculate \f$ZLEN\f$, which sums up a number of contributions of
 !! elliptic obstables.
 !!\f[
 !!    ZLEN=\sqrt{[\frac{h_{d}-z}{z+h'}]}
 !!\f]
-!! where \f$z\f$ is the height, \f$h'\f$ is the orographic standard 
+!! where \f$z\f$ is the height, \f$h'\f$ is the orographic standard
 !! deviation (HPRIME).
-                ZLEN = SQRT( ( PHIL(J,IDXZB(I)) - PHIL(J,K) ) / 
-     &                       ( PHIL(J,K ) + G * hprime(J) ) )
+                ZLEN = SQRT( (PHIL(J,IDXZB(I)) - PHIL(J,K))
+     &                     / (PHIL(J,K )       + G*hprime(J)) )
 ! --- lm eq 14:
-!> - Calculate the drag coefficient to vary with the aspect ratio of 
+!> - Calculate the drag coefficient to vary with the aspect ratio of
 !! the obstable as seen by the incident flow (see eq.14 in Lott and
-!! Miller (1997) \cite lott_and_miller_1997) 
+!! Miller (1997) \cite lott_and_miller_1997)
 !!\f[
 !! R=\frac{\cos^{2}\psi+\gamma\sin^{2}\psi}{\gamma\cos^{2}\psi+\sin^{2}\psi}
 !!\f]
-!! where \f$\psi\f$, which is derived from THETA, is the angle between 
-!! the incident flow direction and the normal ridge direcion. 
+!! where \f$\psi\f$, which is derived from THETA, is the angle between
+!! the incident flow direction and the normal ridge direcion.
 !! \f$\gamma\f$ is the orographic anisotropy (GAMMA).
-               COSANG2 = cos(ANG(I,K))*cos(ANG(I,K))
-               SINANG2 = sin(ANG(I,K))*sin(ANG(I,K))
-               if ( abs(GAMMA(J) * COSANG2 + SINANG2) 
-     &              .lt. 1.e-06 ) then
-                 ZR = 2.0
-               else
-                 R = (COSANG2 + GAMMA(J) * SINANG2) /
-     &              (GAMMA(J) * COSANG2 + SINANG2)
-                 ZR =  MAX( 2. - 1. / R, 0. )
-               endif
+
+                cosang = cos(ang(i,k))
+                sinang = sin(ang(i,k))
+                cos2a  = cosang * cosang
+                sin2a  = sinang * sinang
+                tem    = cos2a + GAMMA(J)*sin2a
+                                                       ! Here Rtrm is 1.0/R
+                                                       ! --------------------
+                if (abs(tem) > 1.e-06) then
+                  Rtrm   = (gamma(J)*cos2a + sin2a) / tem
+                elseif (tem > 0.0) then
+                  Rtrm   = (gamma(J)*cos2a + sin2a) * 1.0e6
+                else
+                  Rtrm   = - (gamma(J)*cos2a + sin2a) * 1.0e6
+                endif
+                ZR =  MAX( 2.0 - Rtrm, 0. )
+
 ! --- (negitive of DB -- see sign at tendency)
-!> - In each model layer below the dividing streamlines, a drag from 
+!> - In each model layer below the dividing streamlines, a drag from
 !! the blocked flow is exerted by the obstacle on the large scale flow.
-!! The drag per unit area and per unit height is written (eq.15 in 
+!! The drag per unit area and per unit height is written (eq.15 in
 !! Lott and Miller (1997) \cite lott_and_miller_1997):
 !!\f[
 !! D_{b}(z)=-C_{d}\max(2-\frac{1}{R},0)\rho\frac{\sigma}{2h'}ZLEN\max(\cos\psi,\gamma\sin\psi)\frac{UDS}{2}
 !!\f]
-!! where \f$C_{d}\f$ is a specified constant, \f$\sigma\f$ is the 
-!! orographic slope. 
+!! where \f$C_{d}\f$ is a specified constant, \f$\sigma\f$ is the
+!! orographic slope.
 
                 DBTMP = 0.25 *  CDmb * ZR * sigma(J) *
-     &                  MAX(cos(ANG(I,K)), gamma(J)*sin(ANG(I,K))) *
-     &                  ZLEN / hprime(J) 
-                DB(I,K) =  DBTMP * UDS(I,K)    
+     &                  MAX(cosANG, gamma(J)*sinANG) * ZLEN / hprime(J)
+                DB(I,K) =  DBTMP * UDS(I,K)
 !
-!               if(lprnt .and. i .eq. npr) then 
+!               if(lprnt .and. i .eq. npr) then
 !                 print *,' in gwdps_lmi.f 10 npt=',npt,i,j,idxzb(i)
 !    &,           DBTMP,R' ang=',ang(i,k),' gamma=',gamma(j),' K=',K
 !                 print *,' in gwdps_lmi.f 11   K=',k,ZLEN,cos(ANG(I,K))
@@ -856,18 +868,18 @@
 !.............................
 ! end  mtn blocking section
 !
-      ELSEIF ( NMTVR .ne. 14) then 
-! ----  for mb not present and  gwd (nmtvr .ne .14) 
-        ipt     = 0
-        npt     = 0
+      ELSEIF ( NMTVR /= 14) then
+! ----  for mb not present and  gwd (nmtvr .ne .14)
+        ipt = 0
+        npt = 0
         DO I = 1,IM
-          IF ( hprime(i) .GT. hpmin )  then
+          IF ( hprime(i) > hpmin )  then
              npt      = npt + 1
              ipt(npt) = i
-             if (ipr .eq. i) npr = npt
+             if (ipr == i) npr = npt
           ENDIF
         ENDDO
-        IF (npt .eq. 0) RETURN     ! No gwd/mb calculation done!
+        IF (npt == 0) RETURN     ! No gwd/mb calculation done!
 !
 !       if (lprnt) print *,' NPR=',npr,' npt=',npt,' IPR=',IPR
 !      &,' ipt(npt)=',ipt(npt)
@@ -886,7 +898,7 @@
 !
 !  Scale cleff between IM=384*2 and 192*2 for T126/T170 and T62
 !
-      if (imx .gt. 0) then
+      if (imx > 0) then
 !       cleff = 1.0E-5 * SQRT(FLOAT(IMX)/384.0) !  this is inverse of CLEFF!
 !       cleff = 1.0E-5 * SQRT(FLOAT(IMX)/192.0) !  this is inverse of CLEFF!
 !       cleff = 0.5E-5 * SQRT(FLOAT(IMX)/192.0) !  this is inverse of CLEFF!
@@ -903,29 +915,30 @@
       DO K = 1,KM
         DO I =1,npt
           J         = ipt(i)
-          VTJ(I,K)  = T1(J,K)  * (1.+FV*Q1(J,K))
+          VTJ(I,K)  = T1(J,K)  * (1.0+FV*Q1(J,K))
           VTK(I,K)  = VTJ(I,K) / PRSLK(J,K)
           RO(I,K)   = RDI * PRSL(J,K) / VTJ(I,K) ! DENSITY TONS/M**3
           TAUP(I,K) = 0.0
         ENDDO
       ENDDO
       DO K = 1,KMM1
+        kp1 = k + 1
         DO I =1,npt
           J         = ipt(i)
-          TI        = 2.0 / (T1(J,K)+T1(J,K+1))
-          TEM       = TI  / (PRSL(J,K)-PRSL(J,K+1))
-          RDZ       = g   / (phil(j,k+1) - phil(j,k))
-          TEM1      = U1(J,K) - U1(J,K+1)
-          TEM2      = V1(J,K) - V1(J,K+1)
+          TI        = 2.0 / (T1(J,K)+T1(J,Kp1))
+          TEM       = TI  / (PRSL(J,K)-PRSL(J,Kp1))
+          RDZ       = g   / (phil(j,kp1) - phil(j,k))
+          TEM1      = U1(J,K) - U1(J,Kp1)
+          TEM2      = V1(J,K) - V1(J,Kp1)
           DW2       = TEM1*TEM1 + TEM2*TEM2
           SHR2      = MAX(DW2,DW2MIN) * RDZ * RDZ
-          BVF2      = G*(GOCP+RDZ*(VTJ(I,K+1)-VTJ(I,K))) * TI
+          BVF2      = G*(GOCP+RDZ*(VTJ(I,Kp1)-VTJ(I,K))) * TI
           ri_n(I,K) = MAX(BVF2/SHR2,RIMIN)   ! Richardson number
 !                                              Brunt-Vaisala Frequency
 !         TEM       = GR2 * (PRSL(J,K)+PRSL(J,K+1)) * TEM
 !         BNV2(I,K) = TEM * (VTK(I,K+1)-VTK(I,K))/(VTK(I,K+1)+VTK(I,K))
-          BNV2(I,K) = (G+G) * RDZ * (VTK(I,K+1)-VTK(I,K))
-     &                            / (VTK(I,K+1)+VTK(I,K))
+          BNV2(I,K) = (G+G) * RDZ * (VTK(I,Kp1)-VTK(I,K))
+     &                            / (VTK(I,Kp1)+VTK(I,K))
           bnv2(i,k) = max( bnv2(i,k), bnv2min )
         ENDDO
       ENDDO
@@ -953,24 +966,24 @@
         DO I=1,npt
           j   = ipt(i)
           tem = (prsi(j,1) - prsi(j,k))
-          if (tem .lt. dpmin) iwk(i) = k
+          if (tem < dpmin) iwk(i) = k
         enddo
       enddo
 !
-!> - Calculate the reference level index: kref=max(2,KPBL+1). where 
+!> - Calculate the reference level index: kref=max(2,KPBL+1). where
 !! KPBL is the index for the PBL top layer.
       KBPS = 1
       KMPS = KM
       DO I=1,npt
         J         = ipt(i)
-        kref(I)   = MAX(IWK(I), KPBL(J)+1 ) ! reference level 
+        kref(I)   = MAX(IWK(I), KPBL(J)+1 ) ! reference level
         DELKS(I)  = 1.0 / (PRSI(J,1) - PRSI(J,kref(I)))
         DELKS1(I) = 1.0 / (PRSL(J,1) - PRSL(J,kref(I)))
         UBAR (I)  = 0.0
         VBAR (I)  = 0.0
         ROLL (I)  = 0.0
-        KBPS      = MAX(KBPS,  kref(I))
-        KMPS      = MIN(KMPS,  kref(I))
+        KBPS      = MAX(KBPS, kref(I))
+        KMPS      = MIN(KMPS, kref(I))
 !
         BNV2bar(I) = (PRSL(J,1)-PRSL(J,2)) * DELKS1(I) * BNV2(I,1)
       ENDDO
@@ -979,7 +992,7 @@
       KBPSM1 = KBPS - 1
       DO K = 1,KBPS
         DO I = 1,npt
-          IF (K .LT. kref(I)) THEN
+          IF (K < kref(I)) THEN
             J          = ipt(i)
             RDELKS     = DEL(J,K) * DELKS(I)
             UBAR(I)    = UBAR(I)  + RDELKS * U1(J,K)   ! Mean U below kref
@@ -998,8 +1011,8 @@
 !             NWD  1   2   3   4   5   6   7   8
 !              WD  W   S  SW  NW   E   N  NE  SE
 !
-!> - Calculate low-level horizontal wind direction, the derived 
-!! orographic asymmetry parameter (OA), and the derived Lx (CLX). 
+!> - Calculate low-level horizontal wind direction, the derived
+!! orographic asymmetry parameter (OA), and the derived Lx (CLX).
       DO I = 1,npt
         J      = ipt(i)
         wdir   = atan2(UBAR(I),VBAR(I)) + pi
@@ -1037,10 +1050,11 @@
       ENDDO
 !
       DO  K = 1,KMM1
+        kp1 = k + 1
         DO  I = 1,npt
           J            = ipt(i)
-          VELCO(I,K)   = 0.5 * ((U1(J,K)+U1(J,K+1))*UBAR(I)
-     &                       +  (V1(J,K)+V1(J,K+1))*VBAR(I))
+          VELCO(I,K)   = 0.5 * ((U1(J,K)+U1(J,Kp1))*UBAR(I)
+     &                       +  (V1(J,K)+V1(J,Kp1))*VBAR(I))
           VELCO(I,K)   = VELCO(I,K) * ULOI(I)
 !         IF ((VELCO(I,K).LT.VELEPS) .AND. (VELCO(I,K).GT.0.)) THEN
 !           VELCO(I,K) = VELEPS
@@ -1085,15 +1099,15 @@
 !     RATIO CONST. USE SIMPLIFIED RELATIONSHIP BETWEEN STANDARD
 !     DEVIATION & CRITICAL HGT
 !
-!> - Calculate enhancement factor (E),number of mountans (m') and 
+!> - Calculate enhancement factor (E),number of mountans (m') and
 !! aspect ratio constant.
-!!\n As in eq.(4.9),(4.10),(4.11) in Kim and Arakawa (1995) 
-!! \cite kim_and_arakawa_1995, we define m' and E in such a way that they 
-!! depend on the geometry and location of the subgrid-scale orography 
-!! through OA and the nonlinearity of flow above the orography through 
-!! Fr. OC, which is the orographic convexity, and statistically 
-!! determine how protruded (sharp) the subgrid-scale orography is, is 
-!! included in the saturation flux G' in such a way that G' is 
+!!\n As in eq.(4.9),(4.10),(4.11) in Kim and Arakawa (1995)
+!! \cite kim_and_arakawa_1995, we define m' and E in such a way that they
+!! depend on the geometry and location of the subgrid-scale orography
+!! through OA and the nonlinearity of flow above the orography through
+!! Fr. OC, which is the orographic convexity, and statistically
+!! determine how protruded (sharp) the subgrid-scale orography is, is
+!! included in the saturation flux G' in such a way that G' is
 !! proportional to OC. The forms of E,m' and G' are:
 !!\f[
 !!  E(OA,F_{r_{0}})=(OA+2)^{\delta}
@@ -1110,17 +1124,17 @@
 !!\f[
 !! a^{2}=C_{G}OC^{-1}
 !!\f]
-!! where \f$F_{r_{c}}(=1)\f$ is the critical Froude number, 
+!! where \f$F_{r_{c}}(=1)\f$ is the critical Froude number,
 !! \f$F_{r_{0}}\f$ is the Froude number. \f$C_{E}\f$,\f$C_{m}\f$,
 !! \f$C_{G}\f$ are constants.
 
-!> - Calculate the reference-level drag \f$\tau_{0}\f$ (eq.(4.8) in 
+!> - Calculate the reference-level drag \f$\tau_{0}\f$ (eq.(4.8) in
 !! Kim and Arakawa (1995) \cite kim_and_arakawa_1995):
 !!\f[
 !! \tau_0=E\frac{m'}{\triangle x}\frac{\rho_{0}U_0^3}{N_{0}}G'
 !!\f]
-!! where \f$E\f$,\f$m'\f$, and \f$G'\f$ are the enhancement factor, 
-!! "the number of mountains", and the flux function defined above, 
+!! where \f$E\f$,\f$m'\f$, and \f$G'\f$ are the enhancement factor,
+!! "the number of mountains", and the flux function defined above,
 !! respectively.
 
         EFACT    = (OA(I) + 2.) ** (CEOFRC*FR)
@@ -1149,7 +1163,7 @@
 !
       DO K = 1, KBPS
         DO I = 1,npt
-          IF (K .LE. kref(I)) TAUP(I,K) = TAUB(I)
+          IF (K <= kref(I)) TAUP(I,K) = TAUB(I)
         ENDDO
       ENDDO
 !
@@ -1163,34 +1177,34 @@
 !-----UNSTABLE LAYER IF UPPER AIR VEL COMP ALONG SURF VEL <=0 (CRIT LAY)
 !---- AT (U-C)=0. CRIT LAYER EXISTS AND BIT VECTOR SHOULD BE SET (.LE.)
 !
-          IF (K .GE. kref(I)) THEN
-            ICRILV(I) = ICRILV(I) .OR. ( ri_n(I,K) .LT. RIC)
-     &                            .OR. (VELCO(I,K) .LE. 0.0)
+          IF (K >= kref(I)) THEN
+            ICRILV(I) = ICRILV(I) .OR. ( ri_n(I,K) <  RIC)
+     &                            .OR. (VELCO(I,K) <= 0.0)
           ENDIF
         ENDDO
 !
 !> - Compute the drag above the reference level (\f$k\geq kref\f$):
 !!  - Calculate the ratio of the Scorer parameter (\f$R_{scor}\f$).
-!! \n From a series of experiments, Kim and Arakawa (1995) 
-!! \cite kim_and_arakawa_1995 found that the magnitude of drag divergence 
-!! tends to be underestimated by the revised scheme in low-level 
+!! \n From a series of experiments, Kim and Arakawa (1995)
+!! \cite kim_and_arakawa_1995 found that the magnitude of drag divergence
+!! tends to be underestimated by the revised scheme in low-level
 !! downstream regions with wave breaking. Therefore, at low levels when
-!! OA > 0 (i.e., in the "downstream" region) the saturation hypothesis 
-!! is replaced by the following formula based on the ratio of the 
+!! OA > 0 (i.e., in the "downstream" region) the saturation hypothesis
+!! is replaced by the following formula based on the ratio of the
 !! the Scorer parameter:
 !!\f[
 !! R_{scor}=\min \left[\frac{\tau_i}{\tau_{i+1}},1\right]
 !!\f]
         DO I = 1,npt
-          IF (K .GE. kref(I))   THEN
-            IF (.NOT.ICRILV(I) .AND. TAUP(I,K) .GT. 0.0 ) THEN
+          IF (K >= kref(I))   THEN
+            IF (.NOT.ICRILV(I) .AND. TAUP(I,K) > 0.0 ) THEN
               TEMV = 1.0 / max(VELCO(I,K), 0.01)
 !             IF (OA(I) .GT. 0. .AND.  PRSI(ipt(i),KP1).GT.RLOLEV) THEN
-              IF (OA(I).GT.0. .AND. kp1 .lt. kint(i)) THEN
+              IF (OA(I) > 0. .AND. kp1 < kint(i)) THEN
                 SCORK   = BNV2(I,K) * TEMV * TEMV
                 RSCOR   = MIN(1.0, SCORK / SCOR(I))
                 SCOR(I) = SCORK
-              ELSE 
+              ELSE
                 RSCOR   = 1.
               ENDIF
 !
@@ -1199,11 +1213,11 @@
 !! \tau=\frac{m'}{\triangle x}\rho NUh_d^2
 !!\f]
 !! where \f$h_{d}\f$ is the displacement wave amplitude. In the absence
-!! of wave breaking, the displacement amplitude for the \f$i^{th}\f$ 
-!! layer can be expressed using the drag for the layer immediately 
+!! of wave breaking, the displacement amplitude for the \f$i^{th}\f$
+!! layer can be expressed using the drag for the layer immediately
 !! below. Thus, assuming \f$\tau_i=\tau_{i+1}\f$, we can get:
 !!\f[
-!! h_{d_i}^2=\frac{\triangle x}{m'}\frac{\tau_{i+1}}{\rho_{i}N_{i}U_{i}}    
+!! h_{d_i}^2=\frac{\triangle x}{m'}\frac{\tau_{i+1}}{\rho_{i}N_{i}U_{i}}
 !!\f]
 
               BRVF = SQRT(BNV2(I,K))        ! Brunt-Vaisala Frequency
@@ -1215,9 +1229,9 @@
 !
 !    RIM is the  MINIMUM-RICHARDSON NUMBER BY SHUTTS (1985)
 !
-!> - The minimum Richardson number (\f$Ri_{m}\f$) or local 
+!> - The minimum Richardson number (\f$Ri_{m}\f$) or local
 !! wave-modified Richardson number, which determines the onset of wave
-!! breaking, is expressed in terms of \f$R_{i}\f$ and 
+!! breaking, is expressed in terms of \f$R_{i}\f$ and
 !! \f$F_{r_{d}}=Nh_{d}/U\f$:
 !!\f[
 !! Ri_{m}=\frac{Ri(1-Fr_{d})}{(1+\sqrt{Ri}\cdot Fr_{d})^{2}}
@@ -1234,26 +1248,26 @@
 !>  - Check stability to employ the 'saturation hypothesis' of Lindzen
 !! (1981) \cite lindzen_1981 except at tropospheric downstream regions.
 !! \n Wave breaking occurs when \f$Ri_{m}<Ri_{c}=0.25\f$. Then
-!! Lindzen's wave saturation hypothesis resets the displacement 
-!! amplitude \f$h_{d}\f$ to that corresponding to \f$Ri_{m}=0.25\f$, 
-!! we obtain the critical \f$h_{d}\f$(or \f$h_{c}\f$) expressed in 
+!! Lindzen's wave saturation hypothesis resets the displacement
+!! amplitude \f$h_{d}\f$ to that corresponding to \f$Ri_{m}=0.25\f$,
+!! we obtain the critical \f$h_{d}\f$(or \f$h_{c}\f$) expressed in
 !! terms of the mean values of \f$U\f$, \f$N\f$, and \f$Ri\f$ (
 !! eq.(4.7) in Kim and Arakawa (1995) \cite kim_and_arakawa_1995):
 !!\f[
 !! h_{c}=\frac{U}{N}\left\{2(2+\frac{1}{\sqrt{Ri}})^{1/2}-(2+\frac{1}{\sqrt{Ri}})\right\}
 !!\f]
-!! if \f$Ri_{m}\leq Ri_{c}\f$, obtain \f$\tau\f$ from the drag above 
-!! the reference level by using \f$h_{c}\f$ computed above; otherwise 
-!! \f$\tau\f$ is unchanged (note: scaled by the ratio of the Scorer 
+!! if \f$Ri_{m}\leq Ri_{c}\f$, obtain \f$\tau\f$ from the drag above
+!! the reference level by using \f$h_{c}\f$ computed above; otherwise
+!! \f$\tau\f$ is unchanged (note: scaled by the ratio of the Scorer
 !! paramter).
 !                                       ----------------------
-              IF (RIM .LE. RIC .AND.
+              IF (RIM <= RIC .AND.
 !    &           (OA(I) .LE. 0. .OR.  PRSI(ipt(I),KP1).LE.RLOLEV )) THEN
-     &           (OA(I) .LE. 0. .OR.  kp1 .ge. kint(i) )) THEN
+     &           (OA(I) <= 0. .OR.  kp1 >= kint(i) )) THEN
                  TEMC = 2.0 + 1.0 / TEM2
                  HD   = VELCO(I,K) * (2.*SQRT(TEMC)-TEMC) / BRVF
                  TAUP(I,KP1) = TEM1 * HD * HD
-              ELSE 
+              ELSE
                  TAUP(I,KP1) = TAUP(I,K) * RSCOR
               ENDIF
               taup(i,kp1) = min(taup(i,kp1), taup(i,k))
@@ -1298,8 +1312,8 @@
 !
       DO K = 1,KMM1
         DO I = 1,npt
-           IF (K .GT. kref(I) .and. PRSI(ipt(i),K) .GE. RLOLEV) THEN
-             IF(TAUD(I,K).NE.0.) THEN
+           IF (K > kref(I) .and. PRSI(ipt(i),K) >= RLOLEV) THEN
+             IF(TAUD(I,K) /= 0.) THEN
                TEM = DELTIM * TAUD(I,K)
                DTFAC(I) = MIN(DTFAC(I),ABS(VELCO(I,K)/TEM))
              ENDIF
@@ -1313,36 +1327,36 @@
 !     endif
 
 !> - Calculate outputs: A, B, DUSFC, DVSFC (see parameter description).
-!!  - Below the dividing streamline height (k < idxzb), mountain 
-!!    blocking(\f$D_{b}\f$) is applied. 
+!!  - Below the dividing streamline height (k < idxzb), mountain
+!!    blocking(\f$D_{b}\f$) is applied.
 !!  - Otherwise (k>= idxzb), orographic GWD (\f$\tau\f$) is applied.
       DO K = 1,KM
         DO I = 1,npt
-          J          = ipt(i)
-          TAUD(I,K)  = TAUD(I,K) * DTFAC(I)
-          DTAUX      = TAUD(I,K) * XN(I)
-          DTAUY      = TAUD(I,K) * YN(I)
-          ENG0       = 0.5*(U1(j,K)*U1(j,K)+V1(J,K)*V1(J,K))
+          J         = ipt(i)
+          TAUD(I,K) = TAUD(I,K) * DTFAC(I)
+          DTAUX     = TAUD(I,K) * XN(I)
+          DTAUY     = TAUD(I,K) * YN(I)
+          ENG0      = 0.5*(U1(j,K)*U1(j,K)+V1(J,K)*V1(J,K))
 ! ---  lm mb (*j*)  changes overwrite GWD
-          if ( K .lt. IDXZB(I) .AND. IDXZB(I) .ne. 0 ) then
-            DBIM = DB(I,K) / (1.+DB(I,K)*DELTIM)
+          if ( K < IDXZB(I) .AND. IDXZB(I) /= 0 ) then
+            DBIM    =   DB(I,K) / (1.+DB(I,K)*DELTIM)
             A(J,K)  = - DBIM * V1(J,K) + A(J,K)
             B(J,K)  = - DBIM * U1(J,K) + B(J,K)
             ENG1    = ENG0*(1.0-DBIM*DELTIM)*(1.0-DBIM*DELTIM)
-!          if ( ABS(DBIM * U1(J,K)) .gt. .01 ) 
+!          if ( ABS(DBIM * U1(J,K)) .gt. .01 )
 !    & print *,' in gwdps_lmi.f KDT=',KDT,I,K,DB(I,K),
 !    &                      dbim,idxzb(I),U1(J,K),V1(J,K),me
-            DUSFC(J)   = DUSFC(J) - DBIM * U1(J,K) * DEL(J,K)
-            DVSFC(J)   = DVSFC(J) - DBIM * V1(J,K) * DEL(J,K)
+            DUSFC(J) = DUSFC(J) - DBIM * U1(J,K) * DEL(J,K)
+            DVSFC(J) = DVSFC(J) - DBIM * V1(J,K) * DEL(J,K)
           else
 !
-            A(J,K)     = DTAUY     + A(J,K)
-            B(J,K)     = DTAUX     + B(J,K)
-            ENG1       = 0.5*(
-     &                   (U1(J,K)+DTAUX*DELTIM)*(U1(J,K)+DTAUX*DELTIM)
-     &                 + (V1(J,K)+DTAUY*DELTIM)*(V1(J,K)+DTAUY*DELTIM))
-            DUSFC(J)   = DUSFC(J)  + DTAUX * DEL(J,K)
-            DVSFC(J)   = DVSFC(J)  + DTAUY * DEL(J,K)
+            A(J,K)   = DTAUY     + A(J,K)
+            B(J,K)   = DTAUX     + B(J,K)
+            ENG1     = 0.5*(
+     &                 (U1(J,K)+DTAUX*DELTIM)*(U1(J,K)+DTAUX*DELTIM)
+     &               + (V1(J,K)+DTAUY*DELTIM)*(V1(J,K)+DTAUY*DELTIM))
+            DUSFC(J) = DUSFC(J)  + DTAUX * DEL(J,K)
+            DVSFC(J) = DVSFC(J)  + DTAUY * DEL(J,K)
           endif
           C(J,K) = C(J,K) + max(ENG0-ENG1,0.)/CP/DELTIM
         ENDDO
@@ -1352,14 +1366,14 @@
 !       print *,' in gwdps_lm.f after  B=',B(ipr,:)
 !       print *,' DB=',DB(ipr,:)
 !     endif
-      TEM    = -1.0/G
+
       DO I = 1,npt
         J          = ipt(i)
 !       TEM    = (-1.E3/G)
-        DUSFC(J) = TEM * DUSFC(J)
-        DVSFC(J) = TEM * DVSFC(J)
+        DUSFC(J) = - onebg * DUSFC(J)
+        DVSFC(J) = - onebg * DVSFC(J)
       ENDDO
-!                                                                       
+!
 !    MONITOR FOR EXCESSIVE GRAVITY WAVE DRAG TENDENCIES IF NCNT>0
 !
 !     IF(NCNT.GT.0) THEN

@@ -105,8 +105,8 @@
       real (kind=kind_phys), parameter :: f12    = 12.0
       real (kind=kind_phys), parameter :: f3600  = 3600.0
       real (kind=kind_phys), parameter :: czlimt = 0.0001      ! ~ cos(89.99427)
-!     real (kind=kind_phys), parameter :: pid12  = con_pi/f12  ! angle per hour
-      real (kind=kind_phys), parameter :: pid12  = (2.0*asin(1.0))/f12
+      real (kind=kind_phys), parameter :: pid12  = con_pi/f12  ! angle per hour
+!     real (kind=kind_phys), parameter :: pid12  = (2.0*asin(1.0))/f12
 
 !> \name Module variable (to be set in module_radiation_astronomy::sol_init):
       real (kind=kind_phys), public    :: solc0 = con_solr
@@ -116,21 +116,21 @@
 !> \name Module variables (to be set in module_radiation_astronomy::sol_update)
 
 !> equation of time
-      real (kind=kind_phys) :: sollag=0.0   
+      real (kind=kind_phys) :: sollag=0.0
 !> sine of the solar declination angle
-      real (kind=kind_phys) :: sindec=0.0   
+      real (kind=kind_phys) :: sindec=0.0
 !> cosine of the solar declination angle
-      real (kind=kind_phys) :: cosdec=0.0   
+      real (kind=kind_phys) :: cosdec=0.0
 !> solar angle increment per interation of cosz calc
-      real (kind=kind_phys) :: anginc=0.0   
+      real (kind=kind_phys) :: anginc=0.0
 !> saved monthly solar constants (isolflg=4 only)
-      real (kind=kind_phys) :: smon_sav(12) 
+      real (kind=kind_phys) :: smon_sav(12)
       data smon_sav(1:12) / 12*con_solr /
 
 !> saved year  of data used
-      integer               :: iyr_sav =0  
+      integer               :: iyr_sav =0
 !> total number of zenith angle iterations
-      integer               :: nstp    =6  
+      integer               :: nstp    =6
 
       public  sol_init, sol_update, coszmn
 
@@ -301,7 +301,7 @@
 
 
 !> This subroutine computes solar parameters at forecast time.
-!!\param jdate     ncep absolute date and time at fcst time 
+!!\param jdate     ncep absolute date and time at fcst time
 !!                 (yr, mon, day, t-zone, hr, min, sec, mil-sec)
 !!\param kyear     usually kyear=jdate(1). if not, it is for hindcast
 !!                 mode, and it is usually the init cond time and
@@ -602,15 +602,18 @@
       nswr  = nint(deltsw / deltim)         ! number of mdl t-step per sw call
       dtswh = deltsw / f3600                ! time length in hours
 
-      if ( deltsw >= f3600 ) then           ! for longer sw call interval
-        nn   = max(6, min(12, nint(f3600/deltim) ))   ! num of calc per hour
-        nstp = nint(dtswh) * nn + 1                   ! num of calc per sw call
-      else                                  ! for shorter sw sw call interval
-        nstp = max(2, min(20, nswr)) + 1
-!       nn   = nint( float(nstp-1)/dtswh )
-      endif
+!     if ( deltsw >= f3600 ) then           ! for longer sw call interval
+!       nn   = max(6, min(12, nint(f3600/deltim) ))   ! num of calc per hour
+!       nstp = nint(dtswh) * nn + 1                   ! num of calc per sw call
+!     else                                  ! for shorter sw sw call interval
+!       nstp = max(2, min(20, nswr)) + 1
+!!      nn   = nint( float(nstp-1)/dtswh )
+!     endif
 
-      anginc = pid12 * dtswh / float(nstp-1)          ! solar angle inc during each calc step
+!     anginc = pid12 * dtswh / float(nstp-1)          ! solar angle inc during each calc step
+
+      nstp = nswr
+      anginc = pid12 * dtswh / float(nstp)
 
       if ( me == 0 ) then
         print *,'   for cosz calculations: nswr,deltim,deltsw,dtswh =', &
@@ -860,7 +863,7 @@
       enddo
 
       do it = 1, nstp
-        cns = solang + float(it-1)*anginc + sollag
+        cns = solang + (float(it)-0.5)*anginc + sollag
 
         do i = 1, IM
           ss  = sinlat(i) * sindec
