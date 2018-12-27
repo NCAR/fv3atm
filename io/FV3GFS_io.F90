@@ -418,7 +418,7 @@ module FV3GFS_io_mod
     nvar_s2m = 32
     nvar_s2o = 18
 #ifdef CCPP
-    nvar_s2r = 1
+    nvar_s2r = 5
     if (Model%lsm == Model%lsm_ruc .and. warm_start) then
       nvar_s3  = 5
     else
@@ -582,6 +582,10 @@ module FV3GFS_io_mod
       sfc_name2(50) = 'qrain'
 #ifdef CCPP
       sfc_name2(51) = 'wet1'
+      sfc_name2(52) = 'clw_surf'
+      sfc_name2(53) = 'qwv_surf'
+      sfc_name2(54) = 'tsnow'
+      sfc_name2(55) = 'sr'
 #endif
 
       !--- register the 2D fields
@@ -764,6 +768,10 @@ module FV3GFS_io_mod
         if (Model%lsm == Model%lsm_ruc .and. warm_start) then
           !--- Extra RUC variables
           Sfcprop(nb)%wet1(ix)    = sfc_var2(i,j,51)
+          Sfcprop(nb)%clw_surf(ix)= sfc_var2(i,j,52)
+          Sfcprop(nb)%qwv_surf(ix)= sfc_var2(i,j,53)
+          Sfcprop(nb)%tsnow(ix)   = sfc_var2(i,j,54)
+          Sfcprop(nb)%sr(ix)      = sfc_var2(i,j,55)
         endif
 #endif
 
@@ -897,7 +905,7 @@ module FV3GFS_io_mod
     nvar2m = 32
     nvar2o = 18
 #ifdef CCPP
-    nvar2r = 1
+    nvar2r = 5
     if (Model%lsm == Model%lsm_ruc) then
       nvar3  = 5
     else
@@ -1006,6 +1014,10 @@ module FV3GFS_io_mod
       sfc_name2(50) = 'qrain'
 #ifdef CCPP
       sfc_name2(51) = 'wet1'
+      sfc_name2(52) = 'clw_surf'
+      sfc_name2(53) = 'qwv_surf'
+      sfc_name2(54) = 'tsnow'
+      sfc_name2(55) = 'sr'
 #endif
 
       !--- register the 2D fields
@@ -1176,6 +1188,10 @@ module FV3GFS_io_mod
         if (Model%lsm == Model%lsm_ruc) then
           !--- Extra RUC variables
           sfc_var2(i,j,51) = Sfcprop(nb)%wet1(ix)
+          sfc_var2(i,j,52) = Sfcprop(nb)%clw_surf(ix)
+          sfc_var2(i,j,53) = Sfcprop(nb)%qwv_surf(ix)
+          sfc_var2(i,j,54) = Sfcprop(nb)%tsnow(ix)
+          sfc_var2(i,j,55) = Sfcprop(nb)%sr(ix)
         endif
 #endif
 
