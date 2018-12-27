@@ -384,6 +384,7 @@ module GFS_typedefs
 !! | IPD_Data(nb)%Sfcprop%f10m        | ratio_of_wind_at_lowest_model_layer_and_wind_at_10m                    | ratio of sigma level 1 wind and 10m wind               | ratio         |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%tprcp       | nonnegative_lwe_thickness_of_precipitation_amount_on_dynamics_timestep | total precipitation amount in each time step           | m             |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%srflag      | flag_for_precipitation_type                                            | snow/rain flag for precipitation                       | flag          |    1 | real    | kind_phys | none   | F        |
+!! | IPD_Data(nb)%Sfcprop%sr          | ratio_of_snowfall_to_rainfall                                          | snow ratio: ratio of snow to total precipitation       | frac          |    1 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%slc         | volume_fraction_of_unfrozen_soil_moisture                              | liquid soil moisture                                   | frac          |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%smc         | volume_fraction_of_soil_moisture                                       | total soil moisture                                    | frac          |    2 | real    | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Sfcprop%stc         | soil_temperature                                                       | soil temperature                                       | K             |    2 | real    | kind_phys | none   | F        |
@@ -480,6 +481,7 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: f10m   (:)   => null()  !< fm at 10m - Ratio of sigma level 1 wind and 10m wind
     real (kind=kind_phys), pointer :: tprcp  (:)   => null()  !< sfc_fld%tprcp - total precipitation
     real (kind=kind_phys), pointer :: srflag (:)   => null()  !< sfc_fld%srflag - snow/rain flag for precipitation
+    real (kind=kind_phys), pointer :: sr     (:)   => null()  !< snow ratio : ratio of snow to total precipitation
     real (kind=kind_phys), pointer :: slc    (:,:) => null()  !< liquid soil moisture
     real (kind=kind_phys), pointer :: smc    (:,:) => null()  !< total soil moisture
     real (kind=kind_phys), pointer :: stc    (:,:) => null()  !< soil temperature
@@ -1870,7 +1872,6 @@ module GFS_typedefs
 !! | IPD_Data(nb)%Intdiag%epi                  | instantaneous_surface_potential_evaporation                             | instantaneous sfc potential evaporation                         | W m-2         |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%smcwlt2              | volume_fraction_of_condensed_water_in_soil_at_wilting_point             | wilting point (volumetric)                                      | frac          |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%smcref2              | threshold_volume_fraction_of_condensed_water_in_soil                    | soil moisture threshold (volumetric)                            | frac          |    1 | real        | kind_phys | none   | F        |
-!! | IPD_Data(nb)%Intdiag%sr                   | ratio_of_snowfall_to_rainfall                                           | snow ratio: ratio of snow to total precipitation                | frac          |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%tdomr                | dominant_rain_type                                                      | dominant rain type                                              | none          |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%tdomzr               | dominant_freezing_rain_type                                             | dominant freezing rain type                                     | none          |    1 | real        | kind_phys | none   | F        |
 !! | IPD_Data(nb)%Intdiag%tdomip               | dominant_sleet_type                                                     | dominant sleet type                                             | none          |    1 | real        | kind_phys | none   | F        |
@@ -2034,7 +2035,6 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: epi    (:)     => null()   !< instantaneous sfc potential evaporation
     real (kind=kind_phys), pointer :: smcwlt2(:)     => null()   !< wilting point (volumetric)
     real (kind=kind_phys), pointer :: smcref2(:)     => null()   !< soil moisture threshold (volumetric)
-    real (kind=kind_phys), pointer :: sr     (:)     => null()   !< snow ratio : ratio of snow to total precipitation
     real (kind=kind_phys), pointer :: tdomr  (:)     => null()   !< dominant accumulated rain type
     real (kind=kind_phys), pointer :: tdomzr (:)     => null()   !< dominant accumulated freezing rain type
     real (kind=kind_phys), pointer :: tdomip (:)     => null()   !< dominant accumulated sleet type
@@ -2739,6 +2739,7 @@ module GFS_typedefs
     allocate (Sfcprop%f10m   (IM))
     allocate (Sfcprop%tprcp  (IM))
     allocate (Sfcprop%srflag (IM))
+    allocate (Sfcprop%sr     (IM))
     allocate (Sfcprop%slc    (IM,Model%lsoil))
     allocate (Sfcprop%smc    (IM,Model%lsoil))
     allocate (Sfcprop%stc    (IM,Model%lsoil))
@@ -2753,6 +2754,7 @@ module GFS_typedefs
     Sfcprop%f10m   = clear_val
     Sfcprop%tprcp  = clear_val
     Sfcprop%srflag = clear_val
+    Sfcprop%sr     = clear_val
     Sfcprop%slc    = clear_val
     Sfcprop%smc    = clear_val
     Sfcprop%stc    = clear_val
@@ -4412,7 +4414,7 @@ module GFS_typedefs
       print *, ' latr              : ', Model%latr
 #ifdef CCPP
       print *, ' blksz(1)          : ', Model%blksz(1)
-      print *, ' blksz(nblks)      : ', Model%blksz(size(blksz))
+      print *, ' blksz(nblks)      : ', Model%blksz(size(Model%blksz))
 #endif
       print *, ' '
       print *, 'coupling parameters'
@@ -5039,7 +5041,6 @@ module GFS_typedefs
     allocate (Diag%epi     (IM))
     allocate (Diag%smcwlt2 (IM))
     allocate (Diag%smcref2 (IM))
-    allocate (Diag%sr      (IM))
     allocate (Diag%tdomr   (IM))
     allocate (Diag%tdomzr  (IM))
     allocate (Diag%tdomip  (IM))
@@ -5207,7 +5208,6 @@ module GFS_typedefs
     Diag%epi        = zero
     Diag%smcwlt2    = zero
     Diag%smcref2    = zero
-    Diag%sr         = zero
     Diag%tdomr      = zero
     Diag%tdomzr     = zero
     Diag%tdomip     = zero
