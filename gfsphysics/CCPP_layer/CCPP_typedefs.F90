@@ -1,5 +1,6 @@
 module CCPP_typedefs
 
+    use machine, only: kind_dyn
     implicit none
 
 #if 0
@@ -12,13 +13,7 @@ module CCPP_typedefs
 
     private
 
-    public CCPP_shared_type, CCPP_interstitial_type, kind_dyn
-
-#ifdef OVERLOAD_R4
-    integer, parameter :: kind_dyn  = 4
-#else
-    integer, parameter :: kind_dyn  = 8
-#endif
+    public CCPP_shared_type, CCPP_interstitial_type
 
 #if 0
 !! \section arg_table_CCPP_shared_type
