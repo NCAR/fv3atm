@@ -48,7 +48,7 @@ module CCPP_typedefs
 !! | local_name                                         | standard_name                                                 | long_name                                                                           | units   | rank | type        |    kind   | intent | optional |
 !! |----------------------------------------------------|---------------------------------------------------------------|-------------------------------------------------------------------------------------|---------|------|-------------|-----------|--------|----------|
 !! | CCPP_interstitial%akap                             | kappa_dry_for_fast_physics                                    | modified kappa for fast physics                                                     | none    |    0 | real        | kind_dyn  | none   | F        |
-!! | CCPP_interstitial%bdt                              |                                                               | large time step for dynamics                                                        | s       |    0 | real        |           | none   | F        |
+!! | CCPP_interstitial%bdt                              |                                                               | large time step for dynamics                                                        | s       |    0 | real        | kind_dyn  | none   | F        |
 !! | CCPP_interstitial%cappa                            | cappa_moist_gas_constant_at_Lagrangian_surface                | cappa(i,j,k) = rdgas / ( rdgas +  cvm(i)/(1.+r_vir*q(i,j,k,sphum)) )                | none    |    3 | real        | kind_dyn  | none   | F        |
 !! | CCPP_interstitial%dtdt                             | tendency_of_air_temperature_at_Lagrangian_surface             | air temperature tendency due to fast physics at Lagrangian surface                  | K s-1   |    3 | real        | kind_dyn  | none   | F        |
 !! | CCPP_interstitial%do_qa                            | flag_for_inline_cloud_fraction_calculation                    | flag for the inline cloud fraction calculation                                      | flag    |    0 | logical     |           | none   | F        |
@@ -102,7 +102,7 @@ contains
     logical, intent(in) :: hydrostatic
     logical, intent(in) :: phys_hydrostatic
     !
-    Shared%hydrostatic      = hydrostatic
+    Shared%hydrostatic = hydrostatic
     ! Number of OpenMP threads available for schemes, default only one
     Shared%nthreads = 1
     ! DH*

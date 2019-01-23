@@ -62,6 +62,7 @@ else
     PHYSICS_SRCS_f90 = \
 	   ./physics/aerinterp.f90                                                   \
 	   ./physics/calpreciptype.f90                                               \
+	   ./physics/gcm_shoc.f90                                                    \
 	   ./physics/get_prs_fv3.f90                                                 \
 	   ./physics/h2ointerp.f90                                                   \
 	   ./physics/iccninterp.f90                                                  \
@@ -166,7 +167,6 @@ SRCS_f   =  \
 SRCS_f90 = \
 	   $(PHYSICS_SRCS_f90)                                                       \
 	   ./physics/funcphys.f90                                                    \
-	   ./physics/gcm_shoc.f90                                                    \
 	   ./physics/module_nst_model.f90                                            \
 	   ./physics/module_nst_parameters.f90                                       \
 	   ./physics/module_nst_water_prop.f90                                       \

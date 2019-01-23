@@ -584,11 +584,6 @@ module module_physics_driver
       real(kind=kind_phys), dimension(size(Grid%xlon,1),4) ::           &
            oa4, clx
 
-#ifndef CCPP
-      real(kind=kind_phys), dimension(size(Grid%xlon,1),Model%lsoil) :: &
-          smsoil, stsoil, slsoil
-#endif
-
 #ifdef CCPP
       real(kind=kind_phys), dimension(size(Grid%xlon,1),Model%levs) ::  &
           del, rhc, dtdt, dudt, dvdt, gwdcu, gwdcv, dtdtc, rainp,       &
@@ -736,6 +731,13 @@ module module_physics_driver
           write(0,*) 'Error in call to GFS_suite_stateout_reset: ' // trim(errmsg)
           stop
       end if
+#else
+      ! DH Strictly speaking, this is not required. But when hunting for bit-for-bit differences,
+      ! doing the same as in GFS_suite_stateout_reset makes life a lot easier.
+      Stateout%gt0(:,:)   = Statein%tgrs(:,:)
+      Stateout%gu0(:,:)   = Statein%ugrs(:,:)
+      Stateout%gv0(:,:)   = Statein%vgrs(:,:)
+      Stateout%gq0(:,:,:) = Statein%qgrs(:,:,:)
 #endif
 
 !
@@ -1180,15 +1182,6 @@ module module_physics_driver
       endif
 
 #ifndef CCPP
-!  --- ...  transfer soil moisture and temperature from global to local variables
-      do k=1,lsoil
-        do i=1,im
-          smsoil(i,k) = Sfcprop%smc(i,k)
-          stsoil(i,k) = Sfcprop%stc(i,k)
-          slsoil(i,k) = Sfcprop%slc(i,k)          !! clu: slc -> slsoil
-        enddo
-      enddo
-
       do k=1,levs
         do i=1,im
           dudt(i,k)  = 0.
@@ -2003,8 +1996,8 @@ module module_physics_driver
              bexp1d, xlai1d, vegf1d, Model%pertvegf,                    &
 !  ---  in/outs:
              Sfcprop%weasd, Sfcprop%snowd, Sfcprop%tsfc, Sfcprop%tprcp, &
-             Sfcprop%srflag, smsoil, stsoil, slsoil, Sfcprop%canopy,    &
-             trans, tsurf, Sfcprop%zorl,                                &
+             Sfcprop%srflag, Sfcprop%smc, Sfcprop%stc, Sfcprop%slc,     &
+             Sfcprop%canopy, trans, tsurf, Sfcprop%zorl,                &
 !  ---  outputs:
              Sfcprop%sncovr, qss, gflx, drain, evap, hflx, ep1d, runof, &
              Diag%cmm, Diag%chh, evbs, evcw, sbsno, snowc, Diag%soilm,  &
@@ -2214,6 +2207,7 @@ module module_physics_driver
              stop
          end if
 #else
+         if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of sfc_sice'
          call sfc_sice                                                     &
 !  ---  inputs:
               (im, lsoil, Statein%pgr, Statein%ugrs, Statein%vgrs,         &
@@ -2224,7 +2218,7 @@ module module_physics_driver
                Model%lsm, lprnt, ipr,                                      &
 !  ---  input/outputs:
                zice, cice, tice, Sfcprop%weasd, Sfcprop%tsfc,              &
-               Sfcprop%tprcp, stsoil, ep1d,                                &
+               Sfcprop%tprcp, Sfcprop%stc, ep1d,                           &
 !  ---  outputs:
                Sfcprop%snowd, qss, snowmt, gflx, Diag%cmm, Diag%chh, evap, &
                hflx)
@@ -2735,6 +2729,7 @@ module module_physics_driver
               stop
           end if
 #else
+          if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of moninshoc'
           call moninshoc(ix, im, levs, nvdiff, ntcw, nncl, dvdt, dudt, dtdt, dqdt, &
                          Statein%ugrs, Statein%vgrs, Statein%tgrs, Statein%qgrs,   &
                          Tbd%phy_f3d(1,1,ntot3d-1), prnum, ntke,                   &
@@ -2970,6 +2965,7 @@ module module_physics_driver
 !     if (lprnt)  write(0,*)' dqdtm=',(dqdt(ipr,k,1),k=1,15)
 #endif
           elseif (.not. Model%old_monin) then
+            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of moninq'
             call moninq(ix, im, levs, nvdiff, ntcw, dvdt, dudt, dtdt, dqdt,         &
                         Statein%ugrs, Statein%vgrs, Statein%tgrs, Statein%qgrs,     &
                         Radtend%htrsw, Radtend%htrlw, xmu, Statein%prsik(1,1), rb,  &
@@ -2982,6 +2978,7 @@ module module_physics_driver
                         Model%xkzminv, Model%moninq_fac, Model%rbcr)
           else
             if (Model%mstrat) then
+              if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of moninp1'
               call moninp1(ix, im, levs, nvdiff, dvdt, dudt, dtdt, dqdt,            &
                            Statein%ugrs, Statein%vgrs, Statein%tgrs, Statein%qgrs,  &
                            Statein%prsik(1,1), rb, Sfcprop%ffmm, Sfcprop%ffhh,      &
@@ -2991,6 +2988,7 @@ module module_physics_driver
                            dtsfc1, dqsfc1, Diag%hpbl, gamt, gamq, dkt, kinver,      &
                            Model%xkzm_m, Model%xkzm_h)
             else
+              if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of moninp'
               call moninp(ix, im, levs, nvdiff, dvdt, dudt, dtdt, dqdt,             &
                            Statein%ugrs, Statein%vgrs, Statein%tgrs, Statein%qgrs,  &
                            Statein%prsik(1,1), rb, Sfcprop%ffmm, Sfcprop%ffhh,      &
@@ -3191,6 +3189,7 @@ module module_physics_driver
               stop
           end if
 #else
+          if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of moninshoc'
           call moninshoc(ix, im, levs, nvdiff, ntcw, nncl, dvdt, dudt, dtdt, dvdftra, &
                          Statein%ugrs, Statein%vgrs, Statein%tgrs, vdftra,            &
                          Tbd%phy_f3d(1,1,ntot3d-1), prnum, ntke,                      &
@@ -3302,6 +3301,7 @@ module module_physics_driver
                 stop
             end if
 #else
+            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of moninedmf'
             call moninedmf(ix, im, levs, nvdiff, ntcw, dvdt, dudt, dtdt, dvdftra,     &
                            Statein%ugrs, Statein%vgrs, Statein%tgrs, vdftra,          &
                            Radtend%htrsw, Radtend%htrlw, xmu, Statein%prsik(1,1),     &
@@ -3315,6 +3315,7 @@ module module_physics_driver
                            Model%xkzminv, Model%moninq_fac)
 #endif
           elseif (.not. Model%old_monin) then
+            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of moninq'
             call moninq(ix, im, levs, nvdiff, ntcw, dvdt, dudt, dtdt, dvdftra,        &
                         Statein%ugrs, Statein%vgrs, Statein%tgrs, vdftra,             &
                         Radtend%htrsw, Radtend%htrlw, xmu, Statein%prsik(1,1), rb,    &
@@ -3327,6 +3328,7 @@ module module_physics_driver
                         Model%xkzminv, Model%moninq_fac, Model%rbcr)
           else
             if (Model%mstrat) then
+              if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of moninp1'
               call moninp1(ix, im, levs, nvdiff, dvdt, dudt, dtdt, dvdftra,           &
                            Statein%ugrs, Statein%vgrs, Statein%tgrs, vdftra,          &
                            Statein%prsik(1,1), rb, Sfcprop%ffmm, Sfcprop%ffhh,        &
@@ -3336,6 +3338,7 @@ module module_physics_driver
                            dtsfc1, dqsfc1, Diag%hpbl, gamt, gamq, dkt, kinver,        &
                            Model%xkzm_m, Model%xkzm_h)
             else
+              if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of moninp'
               call moninp(ix, im, levs, nvdiff, dvdt, dudt, dtdt, dvdftra,            &
                           Statein%ugrs, Statein%vgrs, Statein%tgrs, vdftra,           &
                           Statein%prsik(1,1), rb, Sfcprop%ffmm, Sfcprop%ffhh,         &
@@ -5243,16 +5246,20 @@ module module_physics_driver
       !Coupling%upd_mfi                           ! intent(inout)
       !Coupling%dwn_mfi                           ! intent(inout)
       !Coupling%det_mfi                           ! intent(inout)
-      Interstitial(nt)%cnvw = cnvw                ! intent(inout)
-      Interstitial(nt)%cnvc = cnvc                ! intent(inout)
+      if (allocated(cnvc) .and. allocated(cnvw)) then
+        Interstitial(nt)%cnvw = cnvw              ! intent(inout)
+        Interstitial(nt)%cnvc = cnvc              ! intent(inout)
+      end if
       !Tbd%phy_f3d(:,:,Model%ncnvw)               ! intent(inout)
       !Tbd%phy_f3d(:,:,Model%ncnvw+1)             ! intent(inout)
       !cdata_block(nb,nt)%errmsg = errmsg         ! intent(out)
       !cdata_block(nb,nt)%errflg = errflg         ! intent(out)
       call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_DCNV_generic_post", ierr=ierr)
       ! Copy back intent(inout/out) interstitial variables to local variables in driver
-      cnvw = Interstitial(nt)%cnvw
-      cnvc = Interstitial(nt)%cnvc
+      if (allocated(cnvc) .and. allocated(cnvw)) then
+        cnvw = Interstitial(nt)%cnvw
+        cnvc = Interstitial(nt)%cnvc
+      end if
       errmsg = trim(cdata_block(nb,nt)%errmsg)
       errflg = cdata_block(nb,nt)%errflg
       if (errflg/=0) then
@@ -7633,17 +7640,6 @@ module module_physics_driver
         enddo
 #endif
        endif ! lsm == lsm_noah for sea ice
-
-#ifndef CCPP
-!!  --- ...  return updated smsoil and stsoil to global arrays
-      do k=1,lsoil
-        do i=1,im
-          Sfcprop%smc(i,k) = smsoil(i,k)
-          Sfcprop%stc(i,k) = stsoil(i,k)
-          Sfcprop%slc(i,k) = slsoil(i,k)
-        enddo
-      enddo
-#endif
 
 !     tem = dtf * 0.03456 / 86400.0
 !       write(1000+me,*)' pwat=',pwat(i),'i=',i,',
