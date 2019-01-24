@@ -21,83 +21,93 @@ FFLAGS   += -I$(FMS_DIR) -I../cpl
 
 CPPDEFS += -DNEW_TAUCTMAX -DSMALL_PE -DNEMS_GSM -DINTERNAL_FILE_NML
 
+# Various CCPP builds
 ifneq (,$(findstring CCPP,$(CPPDEFS)))
-    CCPP_SRCS_F90 = \
+# Set CCPP static api for static build, then set CCPP sources
+ifneq (,$(findstring STATIC,$(CPPDEFS)))
+    CCPP_STATIC_API = ./CCPP_layer/ccpp_static_api.F90
+else
+    CCPP_STATIC_API = 
+endif
+CCPP_SRCS_F90 = \
 	   ./CCPP_layer/CCPP_typedefs.F90                                            \
-	   ./CCPP_layer/CCPP_data.F90
-    PHYSICS_SRCS_f =
-    PHYSICS_SRCS_f90 =
+	   ./CCPP_layer/CCPP_data.F90                                                \
+	   $(CCPP_STATIC_API)
+# Set physics source files for the hybrid build
 ifneq (,$(findstring HYBRID,$(CPPDEFS)))
-    PHYSICS_SRCS_F90 = \
+SRCS_f = \
+	   ./physics/dcyc2.pre.rad.f                                                 \
+	   ./physics/gscondp.f                                                       \
+	   ./physics/ideaca.f                                                        \
+	   ./physics/lrgsclr.f                                                       \
+	   ./physics/mersenne_twister.f                                              \
+	   ./physics/moninp.f                                                        \
+	   ./physics/moninp1.f                                                       \
+	   ./physics/moninq.f                                                        \
+	   ./physics/moninq1.f                                                       \
+	   ./physics/mstadb.f                                                        \
+	   ./physics/mstadbtn.f                                                      \
+	   ./physics/mstcnv.f                                                        \
+	   ./physics/namelist_soilveg.f                                              \
+	   ./physics/physparam.f                                                     \
+	   ./physics/precpd_shoc.f                                                   \
+	   ./physics/precpdp.f                                                       \
+	   ./physics/radlw_param.f                                                   \
+	   ./physics/radsw_param.f                                                   \
+	   ./physics/rascnvv2.f                                                      \
+	   ./physics/sascnv.f                                                        \
+	   ./physics/sascnvn.f                                                       \
+	   ./physics/set_soilveg.f                                                   \
+	   ./physics/sfc_cice.f                                                      \
+	   ./physics/sfc_ocean.f                                                     \
+	   ./physics/shalcnv.f                                                       \
+	   ./physics/shalcv.f                                                        \
+	   ./physics/shalcv_opr.f
+SRCS_f90 = \
+	   ./physics/funcphys.f90                                                    \
+	   ./physics/wam_f107_kp_mod.f90
+SRCS_F = \
+	   ./physics/machine.F
+SRCS_F90 = \
+	   ./physics/GFDL_parse_tracers.F90                                          \
+	   ./physics/physcons.F90                                                    \
+	   $(CCPP_SRCS_F90)                                                          \
+	   ./physics/module_mp_radar.F90                                             \
+	   ./physics/module_mp_wsm6_fv3.F90                                          \
 	   ./physics/GFS_debug.F90                                                   \
-	   ./GFS_layer/GFS_physics_driver.F90
+	   ./GFS_layer/GFS_physics_driver.F90                                        \
+	   ./GFS_layer/GFS_abstraction_layer.F90                                     \
+	   ./GFS_layer/GFS_diagnostics.F90                                           \
+	   ./GFS_layer/GFS_driver.F90                                                \
+	   ./GFS_layer/GFS_restart.F90                                               \
+	   ./GFS_layer/GFS_typedefs.F90
 else
-    PHYSICS_SRCS_F90 =
+# CCPP standalone and static builds
+SRCS_f = \
+	   ./physics/mersenne_twister.f                                              \
+	   ./physics/namelist_soilveg.f                                              \
+	   ./physics/physparam.f                                                     \
+	   ./physics/radlw_param.f                                                   \
+	   ./physics/radsw_param.f                                                   \
+	   ./physics/set_soilveg.f
+SRCS_f90 = \
+	   ./physics/funcphys.f90
+SRCS_F = \
+	   ./physics/machine.F
+SRCS_F90 = \
+	   ./physics/GFDL_parse_tracers.F90                                          \
+	   ./physics/physcons.F90                                                    \
+	   $(CCPP_SRCS_F90)                                                          \
+	   ./GFS_layer/GFS_abstraction_layer.F90                                     \
+	   ./GFS_layer/GFS_diagnostics.F90                                           \
+	   ./GFS_layer/GFS_driver.F90                                                \
+	   ./GFS_layer/GFS_restart.F90                                               \
+	   ./GFS_layer/GFS_typedefs.F90
 endif
-    RADIATION_SRCS_f =
-    RADIATION_SRCS_F90 =
+# non-CCPP build
 else
-    CCPP_SRCS_F90 =
-    PHYSICS_SRCS_f = \
-	   ./physics/aerclm_def.f                                                    \
+SRCS_f =  \
 	   ./physics/cnvc90.f                                                        \
-	   ./physics/gscond.f                                                        \
-	   ./physics/h2o_def.f                                                       \
-	   ./physics/h2ophys.f                                                       \
-	   ./physics/iccn_def.f                                                      \
-	   ./physics/ozne_def.f                                                      \
-	   ./physics/ozphys.f                                                        \
-	   ./physics/ozphys_2015.f                                                   \
-	   ./physics/precpd.f                                                        \
-	   ./physics/rayleigh_damp.f                                                 \
-	   ./physics/rayleigh_damp_mesopause.f                                       \
-	   ./physics/samfdeepcnv.f                                                   \
-	   ./physics/samfshalcnv.f                                                   \
-	   ./physics/sfc_diag.f                                                      \
-	   ./physics/sfc_diff.f                                                      \
-	   ./physics/sfc_drv.f                                                       \
-	   ./physics/sfc_nst.f                                                       \
-	   ./physics/sfc_sice.f                                                      \
-	   ./physics/sflx.f
-    PHYSICS_SRCS_f90 = \
-	   ./physics/aerinterp.f90                                                   \
-	   ./physics/calpreciptype.f90                                               \
-	   ./physics/gcm_shoc.f90                                                    \
-	   ./physics/get_prs_fv3.f90                                                 \
-	   ./physics/h2ointerp.f90                                                   \
-	   ./physics/iccninterp.f90                                                  \
-	   ./physics/ozinterp.f90
-    PHYSICS_SRCS_F = \
-	   ./physics/cldwat2m_micro.F                                                \
-	   ./physics/aer_cloud.F                                                     \
-	   ./physics/cldmacro.F                                                      \
-	   ./physics/wv_saturation.F
-    PHYSICS_SRCS_F90 = \
-	   ./physics/gfdl_cloud_microphys.F90                                        \
-	   ./physics/micro_mg_utils.F90                                              \
-	   ./physics/micro_mg2_0.F90                                                 \
-	   ./physics/micro_mg3_0.F90                                                 \
-	   ./physics/m_micro_driver.F90                                              \
-	   ./physics/cs_conv.F90                                                     \
-	   ./physics/GFS_debug.F90                                                   \
-	   ./GFS_layer/GFS_physics_driver.F90
-    RADIATION_SRCS_f = \
-	   ./physics/radiation_aerosols.f                                            \
-	   ./physics/radiation_astronomy.f                                           \
-	   ./physics/radiation_clouds.f                                              \
-	   ./physics/radiation_gases.f                                               \
-	   ./physics/radiation_surface.f                                             \
-	   ./physics/radlw_datatb.f                                                  \
-	   ./physics/radsw_datatb.f                                                  \
-	   ./physics/radlw_main.f                                                    \
-	   ./physics/radsw_main.f                                                    \
-	   ./physics/rad_initialize.f
-    RADIATION_SRCS_F90 =  \
-	   ./GFS_layer/GFS_radiation_driver.F90
-endif
-
-SRCS_f   =  \
-	   $(PHYSICS_SRCS_f)                                                         \
 	   ./physics/co2hc.f                                                         \
 	   ./physics/date_def.f                                                      \
 	   ./physics/dcyc2.f                                                         \
@@ -106,11 +116,14 @@ SRCS_f   =  \
 	   ./physics/get_prs.f                                                       \
 	   ./physics/gfs_phy_tracer_config.f                                         \
 	   ./physics/gocart_tracer_config_stub.f                                     \
+	   ./physics/gscond.f                                                        \
 	   ./physics/gscondp.f                                                       \
 	   ./physics/gwdc.f                                                          \
 	   ./physics/gwdps.f                                                         \
+	   ./physics/h2o_def.f                                                       \
 	   ./physics/h2oc.f                                                          \
 	   ./physics/h2ohdc.f                                                        \
+	   ./physics/h2ophys.f                                                       \
 	   ./physics/ideaca.f                                                        \
 	   ./physics/idea_co2.f                                                      \
 	   ./physics/idea_composition.f                                              \
@@ -139,23 +152,48 @@ SRCS_f   =  \
 	   ./physics/mstadbtn2.f                                                     \
 	   ./physics/mstcnv.f                                                        \
 	   ./physics/namelist_soilveg.f                                              \
+	   ./physics/ozne_def.f                                                      \
+	   ./physics/iccn_def.f                                                      \
+	   ./physics/aerclm_def.f                                                    \
+	   ./physics/ozphys.f                                                        \
+	   ./physics/ozphys_2015.f                                                   \
 	   ./physics/physparam.f                                                     \
+	   ./physics/precpd.f                                                        \
 	   ./physics/precpd_shoc.f                                                   \
 	   ./physics/precpdp.f                                                       \
 	   ./physics/precpd_shoc.f                                                   \
 	   ./physics/progt2.f                                                        \
 	   ./physics/progtm_module.f                                                 \
+	   ./physics/rad_initialize.f                                                \
+	   ./physics/radiation_aerosols.f                                            \
+	   ./physics/radiation_astronomy.f                                           \
+	   ./physics/radiation_clouds.f                                              \
+	   ./physics/radiation_gases.f                                               \
+	   ./physics/radiation_surface.f                                             \
+	   ./physics/radlw_datatb.f                                                  \
+	   ./physics/radlw_main.f                                                    \
 	   ./physics/radlw_param.f                                                   \
+	   ./physics/radsw_datatb.f                                                  \
+	   ./physics/radsw_main.f                                                    \
 	   ./physics/radsw_param.f                                                   \
-	   $(RADIATION_SRCS_f)                                                       \
 	   ./physics/rascnvv2.f                                                      \
+	   ./physics/rayleigh_damp.f                                                 \
+	   ./physics/rayleigh_damp_mesopause.f                                       \
+	   ./physics/samfdeepcnv.f                                                   \
+	   ./physics/samfshalcnv.f                                                   \
 	   ./physics/sascnv.f                                                        \
 	   ./physics/sascnvn.f                                                       \
 	   ./physics/satmedmfvdif.f                                                  \
 	   ./physics/set_soilveg.f                                                   \
 	   ./physics/sfc_cice.f                                                      \
+	   ./physics/sfc_diag.f                                                      \
+	   ./physics/sfc_diff.f                                                      \
+	   ./physics/sfc_drv.f                                                       \
 	   ./physics/sfc_land.f                                                      \
+	   ./physics/sfc_nst.f                                                       \
 	   ./physics/sfc_ocean.f                                                     \
+	   ./physics/sfc_sice.f                                                      \
+	   ./physics/sflx.f                                                          \
 	   ./physics/shalcnv.f                                                       \
 	   ./physics/shalcv.f                                                        \
 	   ./physics/shalcv_1lyr.f                                                   \
@@ -165,35 +203,51 @@ SRCS_f   =  \
 	   ./physics/tridi2t3.f
 
 SRCS_f90 = \
-	   $(PHYSICS_SRCS_f90)                                                       \
+	   ./physics/calpreciptype.f90                                               \
 	   ./physics/funcphys.f90                                                    \
+	   ./physics/gcm_shoc.f90                                                    \
+	   ./physics/get_prs_fv3.f90                                                 \
+	   ./physics/h2ointerp.f90                                                   \
 	   ./physics/module_nst_model.f90                                            \
 	   ./physics/module_nst_parameters.f90                                       \
 	   ./physics/module_nst_water_prop.f90                                       \
+	   ./physics/ozinterp.f90                                                    \
+	   ./physics/iccninterp.f90                                                  \
+	   ./physics/aerinterp.f90                                                   \
 	   ./physics/wam_f107_kp_mod.f90
 
 SRCS_F = \
-	   $(PHYSICS_SRCS_F)                                                         \
+	   ./physics/aer_cloud.F                                                 \
+	   ./physics/cldmacro.F                                                      \
+	   ./physics/cldwat2m_micro.F                                                \
 	   ./physics/machine.F                                                       \
 	   ./physics/num_parthds.F                                                   \
-	   ./physics/sfcsub.F
+	   ./physics/sfcsub.F                                                        \
+	   ./physics/wv_saturation.F
 
 SRCS_F90 = \
-	   $(PHYSICS_SRCS_F90)                                                       \
 	   ./physics/GFDL_parse_tracers.F90                                          \
 	   ./physics/gcycle.F90                                                      \
+	   ./physics/gfdl_cloud_microphys.F90                                        \
+	   ./physics/micro_mg_utils.F90                                              \
+	   ./physics/micro_mg2_0.F90                                                 \
+	   ./physics/micro_mg3_0.F90                                                 \
+	   ./physics/m_micro_driver.F90                                              \
+	   ./physics/cs_conv.F90                                                     \
+	   ./physics/GFS_debug.F90                                                   \
 	   ./physics/module_mp_radar.F90                                             \
 	   ./physics/module_mp_thompson_gfs.F90                                      \
 	   ./physics/module_mp_wsm6_fv3.F90                                          \
 	   ./physics/physcons.F90                                                    \
 	   ./physics/surface_perturbation.F90                                        \
-	   $(CCPP_SRCS_F90)                                                          \
 	   ./GFS_layer/GFS_abstraction_layer.F90                                     \
 	   ./GFS_layer/GFS_diagnostics.F90                                           \
 	   ./GFS_layer/GFS_driver.F90                                                \
-	   $(RADIATION_SRCS_F90)                                                     \
+	   ./GFS_layer/GFS_physics_driver.F90                                        \
+	   ./GFS_layer/GFS_radiation_driver.F90                                      \
 	   ./GFS_layer/GFS_restart.F90                                               \
 	   ./GFS_layer/GFS_typedefs.F90
+endif
 
 SRCS_c   =
 
