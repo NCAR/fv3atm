@@ -3951,7 +3951,7 @@ module GFS_typedefs
 
 #if !defined(CCPP) || defined(HYBRID)
     ! Beware! The values set here reside in wam_f107_kp_mod and determine sizes of arrays
-    ! inside that module. These arreys get used later in modules idea_tracer.f, idea_ion.f,
+    ! inside that module. These arrays get used later in modules idea_tracer.f, idea_ion.f,
     ! idea_solar_heating.f, efield.f, and idea_composition.f.
     ! Since in wam_f107_kp_mod no default values are assigned to the four integers below, not
     ! setting them here can lead to memory corruption that are hard to detect.

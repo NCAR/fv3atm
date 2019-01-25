@@ -63,7 +63,7 @@ module CCPP_data
 
     !------------------------------------------------------!
     !  CCPP data containers for dynamics and shared data,  !
-    !  CCPP_interstitial has dimension nthreads            !
+    !  CCPP_shared has dimension nthreads                  !
     !------------------------------------------------------!
     type(CCPP_interstitial_type),                              save, target :: CCPP_interstitial
     type(CCPP_shared_type),       dimension(:),   allocatable, save, target :: CCPP_shared
@@ -71,7 +71,7 @@ module CCPP_data
     !------------------------------------------------------!
     !  CCPP containers for the six tiles used in dynamics, !
     !  for the entire domain and for the individual blocks !
-    !  with dimensionss nblocks and nthreads               !
+    !  with dimensions nblocks and nthreads                !
     !------------------------------------------------------!
     type(ccpp_t),                                              save, target :: cdata_tile
     type(ccpp_t),                                              save, target :: cdata_domain
