@@ -783,8 +783,8 @@ module GFS_typedefs
 !! | GFS_Control%lonr                     | number_of_equatorial_longitude_points                                         | number of global points in x-dir (i) along the equator  | count         |    0 | integer   |           | none   | F        |
 !! | GFS_Control%latr                     |                                                                               | number of global points in y-dir (j) along the meridian | count         |    0 | integer   |           | none   | F        |
 !! | GFS_Control%blksz                    | horizontal_block_size                                                         | for explicit data blocking: block sizes of all blocks   | count         |    1 | integer   |           | none   | F        |
-!! | GFS_Control%blksz(nb)                | horizontal_loop_extent                                                        | horizontal loop extent (previously Interstitial(nt)%im) | count         |    0 | integer   |           | none   | F        |
-!! | GFS_Control%blksz(nb)                | horizontal_dimension                                                          | horizontal dimension (previously Interstitial(nt)%ix)   | count         |    0 | integer   |           | none   | F        |
+!! | GFS_Control%blksz(cdata%blk_no)      | horizontal_loop_extent                                                        | horizontal loop extent (previously Interstitial(nt)%im) | count         |    0 | integer   |           | none   | F        |
+!! | GFS_Control%blksz(cdata%blk_no)      | horizontal_dimension                                                          | horizontal dimension (previously Interstitial(nt)%ix)   | count         |    0 | integer   |           | none   | F        |
 !! | GFS_Control%cplflx                   | flag_for_flux_coupling                                                        | flag controlling cplflx collection (default off)        | flag          |    0 | logical   |           | none   | F        |
 !! | GFS_Control%cplwav                   |                                                                               | flag controlling cplwav collection (default off)        | flag          |    0 | logical   |           | none   | F        |
 !! | GFS_Control%cplchm                   | flag_for_chemistry_coupling                                                   | flag controlling cplchm collection (default off)        | flag          |    0 | logical   |           | none   | F        |
@@ -3977,8 +3977,10 @@ module GFS_typedefs
     Model%fhour            = (rinc(4) + Model%dtp)/con_hr
     Model%zhour            = mod(Model%phour,Model%fhzero)
     Model%kdt              = 0
+#ifdef CCPP
     Model%first_time_step  = .true.
     Model%restart          = restart
+#endif
     Model%jdat(1:8)        = jdat(1:8)
 #ifdef CCPP
     Model%sec              = 0
