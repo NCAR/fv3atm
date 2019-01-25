@@ -227,6 +227,9 @@
                      call print_var(mpirank,omprank, blkno, 'Tbd%aer_nm'          , Tbd%aer_nm)
                      ! Diag
                      call print_var(mpirank,omprank, blkno, 'Diag%fluxr       ',    Diag%fluxr)
+                     do n=1,size(Diag%fluxr(1,:))
+                         call print_var(mpirank,omprank, blkno, 'Diag%fluxr_n ',    Diag%fluxr(:,n))
+                     end do
                      call print_var(mpirank,omprank, blkno, 'Diag%srunoff     ',    Diag%srunoff)
                      call print_var(mpirank,omprank, blkno, 'Diag%evbsa       ',    Diag%evbsa)
                      call print_var(mpirank,omprank, blkno, 'Diag%evcwa       ',    Diag%evcwa)
@@ -288,8 +291,9 @@
                      call print_var(mpirank,omprank, blkno, 'Diag%tdomzr      ',    Diag%tdomzr)
                      call print_var(mpirank,omprank, blkno, 'Diag%tdomip      ',    Diag%tdomip)
                      call print_var(mpirank,omprank, blkno, 'Diag%tdoms       ',    Diag%tdoms)
-                     call print_var(mpirank,omprank, blkno, 'Diag%snowfallac  ',    Diag%snowfallac)
-                     call print_var(mpirank,omprank, blkno, 'Diag%acsnow      ',    Diag%acsnow)
+                     ! CCPP only
+                     !call print_var(mpirank,omprank, blkno, 'Diag%snowfallac  ',    Diag%snowfallac)
+                     !call print_var(mpirank,omprank, blkno, 'Diag%acsnow      ',    Diag%acsnow)
                      call print_var(mpirank,omprank, blkno, 'Diag%skebu_wts   ',    Diag%skebu_wts)
                      call print_var(mpirank,omprank, blkno, 'Diag%skebv_wts   ',    Diag%skebv_wts)
                      call print_var(mpirank,omprank, blkno, 'Diag%sppt_wts    ',    Diag%sppt_wts)
