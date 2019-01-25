@@ -1760,7 +1760,12 @@ module GFS_diagnostics
       ExtDiag(idx)%data(nb)%var2 => IntDiag(nb)%tdomip(:)
     enddo
 
+! DH* optimization - output certain diagnostics only if used/computed;
+! can't use if comparing to official baseline because of the way the
+! comparison is done (using cmp).
+#if 0
     if(Model%lradar) then
+#endif
       idx = idx + 1
       ExtDiag(idx)%axes = 3
       ExtDiag(idx)%name = 'refl_10cm'
@@ -1771,7 +1776,9 @@ module GFS_diagnostics
       do nb = 1,nblks
         ExtDiag(idx)%data(nb)%var3 => IntDiag(nb)%refl_10cm(:,:)
       enddo
+#if 0
     endif
+#endif
 
     idx = idx + 1
     ExtDiag(idx)%axes = 3
@@ -1786,7 +1793,9 @@ module GFS_diagnostics
       enddo
     endif
 
+#if 0
     if (Model%do_skeb) then
+#endif
       idx = idx + 1
       ExtDiag(idx)%axes = 3
       ExtDiag(idx)%name = 'skebu_wts'
@@ -1808,9 +1817,11 @@ module GFS_diagnostics
       do nb = 1,nblks
         ExtDiag(idx)%data(nb)%var3 => IntDiag(nb)%skebv_wts(:,:)
       enddo
+#if 0
     endif
 
     if (Model%use_zmtnblck) then
+#endif
       idx = idx + 1
       ExtDiag(idx)%axes = 2
       ExtDiag(idx)%name = 'zmtnblck'
@@ -1821,9 +1832,11 @@ module GFS_diagnostics
       do nb = 1,nblks
         ExtDiag(idx)%data(nb)%var2 => IntDiag(nb)%zmtnblck(:)
       enddo
+#if 0
     endif
 
     if (Model%do_sppt) then
+#endif
       idx = idx + 1
       ExtDiag(idx)%axes = 3
       ExtDiag(idx)%name = 'sppt_wts'
@@ -1834,9 +1847,11 @@ module GFS_diagnostics
       do nb = 1,nblks
         ExtDiag(idx)%data(nb)%var3 => IntDiag(nb)%sppt_wts(:,:)
       enddo
+#if 0
     endif
 
     if (Model%do_shum) then
+#endif
       idx = idx + 1
       ExtDiag(idx)%axes = 3
       ExtDiag(idx)%name = 'shum_wts'
@@ -1847,7 +1862,10 @@ module GFS_diagnostics
       do nb = 1,nblks
         ExtDiag(idx)%data(nb)%var3 => IntDiag(nb)%shum_wts(:,:)
       enddo
+#if 0
     endif
+#endif
+! *DH
 
 !--- three-dimensional variables that need to be handled special when writing 
     diag3d_output: if (Model%ldiag3d) then
@@ -2876,6 +2894,7 @@ module GFS_diagnostics
       enddo
     endif
 
+#if 0
     ! Cloud effective radii from Microphysics
     if (Model%imp_physics == Model%imp_physics_thompson .or. Model%imp_physics == Model%imp_physics_wsm6) then
       idx = idx + 1
@@ -2909,6 +2928,7 @@ module GFS_diagnostics
         ExtDiag(idx)%data(nb)%var3 => Tbd(nb)%phy_f3d(:,:,Model%nseffr)
       enddo
     endif
+#endif
 
     !MYNN
     if (Model%do_mynnedmf) then
