@@ -231,8 +231,8 @@ module GFS_typedefs
 !! | GFS_Data(cdata%blk_no)%Statein%tgrs                       | air_temperature                                           | model layer mean temperature                                                        | K             |    2 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Statein%tgrs(:,1)                  | air_temperature_at_lowest_model_layer                     | mean temperature at lowest model layer                                              | K             |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Statein%qgrs                       | tracer_concentration                                      | model layer mean tracer concentration                                               | kg kg-1       |    3 | real    | kind_phys | none   | F        |
-!! | GFS_Data(cdata%blk_no)%Statein%qgrs(:,:,1)                | water_vapor_specific_humidity                             | water vapor specific humidity                                                       | kg kg-1       |    2 | real    | kind_phys | none   | F        |
-!! | GFS_Data(cdata%blk_no)%Statein%qgrs(:,1,1)                | water_vapor_specific_humidity_at_lowest_model_layer       | water vapor specific humidity at lowest model layer                                 | kg kg-1       |    1 | real    | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Statein%qgrs(:,:,GFS_Control%ntqv) | water_vapor_specific_humidity                             | water vapor specific humidity                                                       | kg kg-1       |    2 | real    | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Statein%qgrs(:,1,GFS_Control%ntqv) | water_vapor_specific_humidity_at_lowest_model_layer       | water vapor specific humidity at lowest model layer                                 | kg kg-1       |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Statein%qgrs(:,:,GFS_Control%ntcw) | cloud_condensed_water_mixing_ratio                        | moist (dry+vapor, no condensates) mixing ratio of cloud water (condensate)          | kg kg-1       |    2 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Statein%qgrs(:,1,GFS_Control%ntcw) | cloud_condensed_water_mixing_ratio_at_lowest_model_layer  | moist (dry+vapor, no condensates) mixing ratio of cloud water at lowest model layer | kg kg-1       |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Statein%qgrs(:,:,GFS_Control%ntiw) | ice_water_mixing_ratio                                    | moist (dry+vapor, no condensates) mixing ratio of ice water                         | kg kg-1       |    2 | real    | kind_phys | none   | F        |
@@ -300,8 +300,8 @@ module GFS_typedefs
 !! | GFS_Data(cdata%blk_no)%Stateout%gt0                          | air_temperature_updated_by_physics                                     | temperature updated by physics                                                             | K       |    2 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Stateout%gt0(:,1)                     | air_temperature_at_lowest_model_layer_updated_by_physics               | temperature at lowest model layer updated by physics                                       | K       |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Stateout%gq0                          | tracer_concentration_updated_by_physics                                | tracer concentration updated by physics                                                    | kg kg-1 |    3 | real    | kind_phys | none   | F        |
-!! | GFS_Data(cdata%blk_no)%Stateout%gq0(:,:,1)                   | water_vapor_specific_humidity_updated_by_physics                       | water vapor specific humidity updated by physics                                           | kg kg-1 |    2 | real    | kind_phys | none   | F        |
-!! | GFS_Data(cdata%blk_no)%Stateout%gq0(:,1,1)                   | water_vapor_specific_humidity_at_lowest_model_layer_updated_by_physics | water vapor specific humidity at lowest model layer updated by physics                     | kg kg-1 |    1 | real    | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Stateout%gq0(:,:,GFS_Control%ntqv)    | water_vapor_specific_humidity_updated_by_physics                       | water vapor specific humidity updated by physics                                           | kg kg-1 |    2 | real    | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Stateout%gq0(:,1,GFS_Control%ntqv)    | water_vapor_specific_humidity_at_lowest_model_layer_updated_by_physics | water vapor specific humidity at lowest model layer updated by physics                     | kg kg-1 |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Stateout%gq0(:,:,GFS_Control%ntoz)    | ozone_concentration_updated_by_physics                                 | ozone concentration updated by physics                                                     | kg kg-1 |    2 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Stateout%gq0(:,:,GFS_Control%ntcw)    | cloud_condensed_water_mixing_ratio_updated_by_physics                  | moist (dry+vapor, no condensates) mixing ratio of cloud condensed water updated by physics | kg kg-1 |    2 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Stateout%gq0(:,:,GFS_Control%ntiw)    | ice_water_mixing_ratio_updated_by_physics                              | moist (dry+vapor, no condensates) mixing ratio of ice water updated by physics             | kg kg-1 |    2 | real    | kind_phys | none   | F        |
@@ -970,6 +970,7 @@ module GFS_typedefs
 !! | GFS_Control%tracer_names             |                                                                               | array of initialized tracers from dynamic core                       |               |    1 | character |           | none   | F        |
 !! | GFS_Control%ntrac                    | number_of_tracers                                                             | number of tracers                                                    | count         |    0 | integer   |           | none   | F        |
 !! | GFS_Control%ntracp1                  | number_of_tracers_plus_one                                                    | number of tracers plus one                                           | count         |    0 | integer   |           | none   | F        |
+!! | GFS_Control%ntqv                     | index_for_water_vapor                                                         | tracer index for water vapor (specific humidity)                     | index         |    0 | integer   |           | none   | F        |
 !! | GFS_Control%ntoz                     | index_for_ozone                                                               | tracer index for ozone mixing ratio                                  | index         |    0 | integer   |           | none   | F        |
 !! | GFS_Control%ntcw                     | index_for_liquid_cloud_condensate                                             | tracer index for cloud condensate (or liquid water)                  | index         |    0 | integer   |           | none   | F        |
 !! | GFS_Control%ntiw                     | index_for_ice_cloud_condensate                                                | tracer index for  ice water                                          | index         |    0 | integer   |           | none   | F        |
@@ -985,8 +986,8 @@ module GFS_typedefs
 !! | GFS_Control%ntke                     | index_for_turbulent_kinetic_energy                                            | tracer index for turbulent kinetic energy                            | index         |    0 | integer   |           | none   | F        |
 !! | GFS_Control%nto                      |                                                                               | tracer index for oxygen ion                                          |               |    0 | integer   |           | none   | F        |
 !! | GFS_Control%nto2                     |                                                                               | tracer index for oxygen                                              |               |    0 | integer   |           | none   | F        |
-!! | GFS_Control%ntwa                     |                                                                               | tracer index for water friendly aerosol                              |               |    0 | integer   |           | none   | F        |
-!! | GFS_Control%ntia                     |                                                                               | tracer index for ice friendly aerosol                                |               |    0 | integer   |           | none   | F        |
+!! | GFS_Control%ntwa                     | index_for_water_friendly_aerosols                                             | tracer index for water friendly aerosol                              | index         |    0 | integer   |           | none   | F        |
+!! | GFS_Control%ntia                     | index_for_ice_friendly_aerosols                                               | tracer index for ice friendly aerosol                                | index         |    0 | integer   |           | none   | F        |
 !! | GFS_Control%ntot2d                   |                                                                               | total number of variables for phyf2d                                 |               |    0 | integer   |           | none   | F        |
 !! | GFS_Control%ntot3d                   |                                                                               | total number of variables for phyf3d                                 |               |    0 | integer   |           | none   | F        |
 !! | GFS_Control%indcld                   | index_for_cloud_fraction_in_3d_arrays_for_microphysics                        | index of cloud fraction in phyf3d (used only for SHOC or MG)         | index         |    0 | integer   |           | none   | F        |
@@ -1390,6 +1391,7 @@ module GFS_typedefs
     integer              :: ntrac           !< number of tracers
 #ifdef CCPP
     integer              :: ntracp1         !< number of tracers plus one
+    integer              :: ntqv            !< tracer index for water vapor (specific humidity)
 #endif
     integer              :: ntoz            !< tracer index for ozone mixing ratio
     integer              :: ntcw            !< tracer index for cloud condensate (or liquid water)
@@ -2091,7 +2093,7 @@ module GFS_typedefs
 !! | GFS_Interstitial(cdata%thrd_no)%dkt                           | atmosphere_heat_diffusivity                                                                    | diffusivity for heat                                                                | m2 s-1        |    2 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%dlength                       | characteristic_grid_length_scale                                                               | representative horizontal length scale of grid box                                  | m             |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%dqdt                          | tendency_of_tracers_due_to_model_physics                                                       | updated tendency of the tracers due to model physics                                | kg kg-1 s-1   |    3 | real        | kind_phys | none   | F        |
-!! | GFS_Interstitial(cdata%thrd_no)%dqdt(:,:,1)                   | tendency_of_water_vapor_specific_humidity_due_to_model_physics                                 | water vapor specific humidity tendency due to model physics                         | kg kg-1 s-1   |    2 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%dqdt(:,:,GFS_Control%ntqv)    | tendency_of_water_vapor_specific_humidity_due_to_model_physics                                 | water vapor specific humidity tendency due to model physics                         | kg kg-1 s-1   |    2 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%dqdt(:,:,GFS_Control%ntcw)    | tendency_of_liquid_cloud_water_mixing_ratio_due_to_model_physics                               | cloud condensed water mixing ratio tendency due to model physics                    | kg kg-1 s-1   |    2 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%dqdt(:,:,GFS_Control%ntiw)    | tendency_of_ice_cloud_water_mixing_ratio_due_to_model_physics                                  | cloud condensed water mixing ratio tendency due to model physics                    | kg kg-1 s-1   |    2 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%dqdt(:,:,GFS_Control%ntoz)    | tendency_of_ozone_mixing_ratio_due_to_model_physics                                            | ozone mixing ratio tendency due to model physics                                    | kg kg-1 s-1   |    2 | real        | kind_phys | none   | F        |
@@ -3864,6 +3866,9 @@ module GFS_typedefs
 #endif
     allocate (Model%tracer_names(Model%ntrac))
     Model%tracer_names(:)  = tracer_names(:)
+#ifdef CCPP
+    Model%ntqv             = 1
+#endif
     Model%ntoz             = get_tracer_index(Model%tracer_names, 'o3mr',       Model%me, Model%master, Model%debug)
     Model%ntcw             = get_tracer_index(Model%tracer_names, 'liq_wat',    Model%me, Model%master, Model%debug)
     Model%ntiw             = get_tracer_index(Model%tracer_names, 'ice_wat',    Model%me, Model%master, Model%debug)
@@ -4571,6 +4576,9 @@ module GFS_typedefs
       print *, 'tracers'
       print *, ' tracer_names      : ', Model%tracer_names
       print *, ' ntrac             : ', Model%ntrac
+#ifdef CCPP
+      print *, ' ntqv              : ', Model%ntqv
+#endif
       print *, ' ntoz              : ', Model%ntoz
       print *, ' ntcw              : ', Model%ntcw
       print *, ' ntiw              : ', Model%ntiw
@@ -5166,6 +5174,7 @@ module GFS_typedefs
     Diag%skebv_wts  = zero
     Diag%sppt_wts   = zero
     Diag%shum_wts   = zero
+    Diag%zmtnblck   = zero
     Diag%totprcpb   = zero
     Diag%cnvprcpb   = zero
     Diag%toticeb    = zero
