@@ -81,16 +81,22 @@ use atmosphere_mod,     only: set_atmosphere_pelist
 use atmosphere_mod,     only: Atm, mytile
 use block_control_mod,  only: block_control_type, define_blocks_packed
 use DYCORE_typedefs,    only: DYCORE_data_type, DYCORE_diag_type
+#ifdef CCPP
+use IPD_typedefs,       only: IPD_init_type, IPD_diag_type,    &
+                              IPD_restart_type, IPD_kind_phys, &
+                              IPD_func0d_proc, IPD_func1d_proc
+#else
 use IPD_typedefs,       only: IPD_init_type, IPD_control_type, &
                               IPD_data_type, IPD_diag_type,    &
                               IPD_restart_type, IPD_kind_phys, &
                               IPD_func0d_proc, IPD_func1d_proc
-#ifdef CCPP
-use IPD_typedefs,       only: IPD_interstitial_type
 #endif
 
 #ifdef CCPP
-use CCPP_data,          only: ccpp_suite
+use CCPP_data,          only: ccpp_suite,                      &
+                              IPD_control => GFS_control,      &
+                              IPD_data => GFS_data,            &
+                              IPD_interstitial => GFS_interstitial
 use IPD_driver,         only: IPD_initialize, IPD_step, IPD_finalize
 use IPD_CCPP_driver,    only: IPD_CCPP_step
 #ifdef HYBRID
@@ -177,12 +183,15 @@ type(DYCORE_diag_type)                 :: DYCORE_Diag(25)
 !----------------
 !  IPD containers
 !----------------
+#ifndef CCPP
 type(IPD_control_type)              :: IPD_Control
 type(IPD_data_type),    allocatable :: IPD_Data(:)  ! number of blocks
 type(IPD_diag_type),    target      :: IPD_Diag(DIAG_SIZE)
 type(IPD_restart_type)              :: IPD_Restart
-#ifdef CCPP
-type(IPD_interstitial_type) , allocatable, target :: IPD_Interstitial(:) ! number of threads
+#else
+! IPD_Control and IPD_Data are coming from CCPP_data
+type(IPD_diag_type),    target      :: IPD_Diag(DIAG_SIZE)
+type(IPD_restart_type)              :: IPD_Restart
 #endif
 
 !--------------
@@ -569,10 +578,7 @@ subroutine atmos_model_init (Atmos, Time_init, Time, Time_step)
 
 #ifdef CCPP
    ! Initialize the CCPP framework
-   call IPD_CCPP_step (step="init", IPD_Control=IPD_Control, IPD_Data=IPD_Data, &
-                                    IPD_Diag=IPD_Diag, IPD_Restart=IPD_Restart, &
-                                    IPD_Interstitial=IPD_Interstitial,          &
-                                    nblks=Atm_block%nblks, ierr=ierr)
+   call IPD_CCPP_step (step="init", nblks=Atm_block%nblks, ierr=ierr)
    if (ierr/=0)  call mpp_error(FATAL, 'Call to IPD-CCPP init step failed')
    ! Doing the init here will require logic in thompson aerosol init if no aerosol
    ! profiles are specified and internal profiles are calculated, because these
