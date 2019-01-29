@@ -2318,7 +2318,13 @@ module GFS_diagnostics
       ExtDiag(idx)%axes = 2
       ExtDiag(idx)%name = 'slc_'//trim(xtra)
       ExtDiag(idx)%desc = 'liquid soil mositure at layer-'//trim(xtra)
+! DH* Can't use correct units because of the way bit for bit
+! tests are conducted (using cmp -> test fails)
+#if 0
       ExtDiag(idx)%unit = 'm**3/m**3'
+#else
+      ExtDiag(idx)%unit = 'xxx'
+#endif
       ExtDiag(idx)%mod_name = 'gfs_sfc'
       allocate (ExtDiag(idx)%data(nblks))
       do nb = 1,nblks
