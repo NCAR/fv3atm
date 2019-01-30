@@ -939,6 +939,7 @@ module GFS_typedefs
 !! | GFS_Control%redrag                   | flag_for_reduced_drag_coefficient_over_sea                                    | flag for reduced drag coeff. over sea                   | flag          |    0 | logical   |           | none   | F        |
 !! | GFS_Control%hybedmf                  | flag_for_hedmf                                                                | flag for hybrid edmf pbl scheme (moninedmf)             | flag          |    0 | logical   |           | none   | F        |
 !! | GFS_Control%dspheat                  | flag_TKE_dissipation_heating                                                  | flag for tke dissipative heating                        | flag          |    0 | logical   |           | none   | F        |
+!! | GFS_Control%lheatstrg                | flag_for_canopy_heat_storage_parameterization                                 |                                                         |               |    0 | logical   |           | none   | F        |
 !! | GFS_Control%cnvcld                   |                                                                               |                                                         |               |    0 | logical   |           | none   | F        |
 !! | GFS_Control%random_clds              |                                                                               | flag controls whether clouds are random                 |               |    0 | logical   |           | none   | F        |
 !! | GFS_Control%shal_cnv                 | flag_for_shallow_convection                                                   | flag for calling shallow convection                     | flag          |    0 | logical   |           | none   | F        |
@@ -1325,7 +1326,8 @@ module GFS_typedefs
     logical              :: shinhong        !< flag for scale-aware Shinhong vertical turbulent mixing scheme
     logical              :: do_ysu          !< flag for YSU turbulent mixing scheme
     logical              :: dspheat         !< flag for tke dissipative heating
-    logical              :: cnvcld
+    logical              :: lheatstrg       !< flag for canopy heat storage parameterization
+    logical              :: cnvcld        
     logical              :: random_clds     !< flag controls whether clouds are random
     logical              :: shal_cnv        !< flag for calling shallow convection
     logical              :: do_deep         !< whether to do deep convection
@@ -3450,6 +3452,7 @@ module GFS_typedefs
     logical              :: shinhong       = .false.                  !< flag for scale-aware Shinhong vertical turbulent mixing scheme
     logical              :: do_ysu         = .false.                  !< flag for YSU vertical turbulent mixing scheme
     logical              :: dspheat        = .false.                  !< flag for tke dissipative heating
+    logical              :: lheatstrg      = .false.                  !< flag for canopy heat storage parameterization
     logical              :: cnvcld         = .false.
     logical              :: random_clds    = .false.                  !< flag controls whether clouds are random
     logical              :: shal_cnv       = .false.                  !< flag for calling shallow convection
@@ -3649,7 +3652,7 @@ module GFS_typedefs
                                bl_mynn_mixqt, icloud_bl, bl_mynn_tkeadvect,                 &
 #endif
                                h2o_phys, pdfcld, shcnvcw, redrag, hybedmf, satmedmf,        &
-                               shinhong, do_ysu, dspheat, cnvcld,                           &
+                               shinhong, do_ysu, dspheat, dspheat, lheatstrg, cnvcld,       &
                                random_clds, shal_cnv, imfshalcnv, imfdeepcnv, do_deep, jcap,&
                                cs_parm, flgmin, cgwf, ccwf, cdmbgwd, sup, ctei_rm, crtrh,   &
                                dlqf, rbcr, shoc_parm, psauras, prauras, wminras,            &
@@ -3945,6 +3948,7 @@ module GFS_typedefs
     Model%shinhong         = shinhong
     Model%do_ysu           = do_ysu
     Model%dspheat          = dspheat
+    Model%lheatstrg        = lheatstrg
     Model%cnvcld           = cnvcld
     Model%random_clds      = random_clds
     Model%shal_cnv         = shal_cnv
@@ -4733,6 +4737,7 @@ module GFS_typedefs
       print *, ' shinhong          : ', Model%shinhong
       print *, ' do_ysu            : ', Model%do_ysu
       print *, ' dspheat           : ', Model%dspheat
+      print *, ' lheatstrg         : ', Model%lheatstrg
       print *, ' cnvcld            : ', Model%cnvcld
       print *, ' random_clds       : ', Model%random_clds
       print *, ' shal_cnv          : ', Model%shal_cnv

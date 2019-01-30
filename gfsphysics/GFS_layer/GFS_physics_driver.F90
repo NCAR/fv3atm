@@ -98,8 +98,10 @@ module module_physics_driver
 !                                                                       !
 !     get_prs,  dcyc2t2_pre_rad (testing),    dcyc2t3,  sfc_diff,       !
 !     sfc_ocean,sfc_drv,  sfc_land, sfc_sice, sfc_diag, moninp1,        !
-!     moninp,   moninq1,  moninq,   gwdps,    ozphys,   get_phi,        !
-!     sascnv,   sascnvn,  rascnv,   cs_convr, gwdc,     shalcvt3,shalcv,!
+!     moninp,   moninq1,  moninq,   satmedmfvdif,                       !
+!     gwdps,    ozphys,   get_phi,                                      !
+!     sascnv,   sascnvn,  samfdeepcnv,  rascnv,   cs_convr, gwdc,       !
+!     shalcvt3, shalcv,   samfshalcnv,                                  !
 !     shalcnv,  cnvc90,   lrgscl,   gsmdrive, gscond,   precpd,         !
 !     progt2.                                                           !
 !                                                                       !
@@ -200,6 +202,9 @@ module module_physics_driver
 !      Jan 04 2018  S. Moorthi  fix a bug in rhc for use in MG          !
 !                               macrophysics and replace ntrac by nvdiff!
 !                               in call to moninshoc                    !
+!      Jun  2018    J. Han      Add scal-aware TKE-based moist EDMF     !
+!                               vertical turbulent mixng scheme         !
+!      Nov  2018    J. Han      Add canopy heat storage parameterization!
 !
 !  ====================    end of description    =====================
 !  ====================  definition of variables  ====================  !
@@ -2030,15 +2035,15 @@ module module_physics_driver
          if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of sfc_drv'
          call sfc_drv                                                   &
 !  ---  inputs:
-            (im, lsoil, Statein%pgr, Statein%ugrs, Statein%vgrs,        &
-             Statein%tgrs, Statein%qgrs, soiltyp, vegtype, sigmaf,      &
-             Radtend%semis, gabsbdlw, adjsfcdsw, adjsfcnsw, dtf,        &
-             Sfcprop%tg3, cd, cdq, Statein%prsl(1,1), work3, Diag%zlvl, &
-             islmsk, Tbd%phy_f2d(1,Model%num_p2d), slopetyp,            &
-             Sfcprop%shdmin, Sfcprop%shdmax, Sfcprop%snoalb,            &
-             Radtend%sfalb, flag_iter, flag_guess, Model%isot,          &
-             Model%ivegsrc,                                             &
-             bexp1d, xlai1d, vegf1d, Model%pertvegf,                    &
+           (im, lsoil, Statein%pgr, Statein%ugrs, Statein%vgrs,        &
+            Statein%tgrs, Statein%qgrs, soiltyp, vegtype, sigmaf,      &
+            Radtend%semis, gabsbdlw, adjsfcdsw, adjsfcnsw, dtf,        &
+            Sfcprop%tg3, cd, cdq, Statein%prsl(1,1), work3, Diag%zlvl, &
+            islmsk, Tbd%phy_f2d(1,Model%num_p2d), slopetyp,            &
+            Sfcprop%shdmin, Sfcprop%shdmax, Sfcprop%snoalb,            &
+            Radtend%sfalb, flag_iter, flag_guess, Model%lheatstrg,     &
+            Model%isot, Model%ivegsrc,                                 &
+            bexp1d, xlai1d, vegf1d, Model%pertvegf,                    &
 !  ---  in/outs:
              Sfcprop%weasd, Sfcprop%snowd, Sfcprop%tsfc, Sfcprop%tprcp, &
              Sfcprop%srflag, Sfcprop%smc, Sfcprop%stc, Sfcprop%slc,     &
