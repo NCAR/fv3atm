@@ -721,3 +721,37 @@
 
     end module GFS_diagtoscreen
 
+    module GFS_abort
+
+      private
+ 
+      public GFS_abort_init, GFS_abort_run, GFS_abort_finalize
+
+      contains
+
+      subroutine GFS_abort_init ()
+      end subroutine GFS_abort_init
+
+      subroutine GFS_abort_finalize ()
+      end subroutine GFS_abort_finalize
+
+      subroutine GFS_abort_run (Model, blkno)
+
+         use machine,               only: kind_phys
+         use GFS_typedefs,          only: GFS_control_type
+
+         implicit none
+
+         !--- interface variables
+         type(GFS_control_type),   intent(in   ) :: Model
+         integer,                  intent(in   ) :: blkno
+
+         if (Model%kdt==1 .and. blkno==4) then
+             if (Model%me==0) write(0,*) "GFS_abort_run: ABORTING MODEL"
+             call sleep(10)
+             stop
+         end if
+
+      end subroutine GFS_abort_run
+
+    end module GFS_abort
