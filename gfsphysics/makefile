@@ -310,6 +310,24 @@ FFLAGS_LOPT2=$(subst -fp-model,-fimf-arch-consistency=true -fp-model,$(FFLAGS))
 	$(FC) $(CPPDEFS) $(FFLAGS_LOPT2) $(OTHER_FFLAGS) -c $< -o $@
 endif
 
+# For CCPP acceptance: selective reduction of optimization flags, hopefully
+# to be removed once established that this is not a reasonable approach.
+# Reduce optimization (substitute xCORE-AVX2 or xHost with xCORE-AVX-I) for sflx.f
+ifneq (,$(findstring TRANSITION,$(CPPDEFS)))
+ifneq (,$(findstring xCORE-AVX2,$(FFLAGS)))
+FFLAGS_LOPT=$(subst xCORE-AVX2,xCORE-AVX-I,$(FFLAGS))
+./physics/sflx.o : ./physics/sflx.f
+	$(FC) $(CPPDEFS) $(FFLAGS_LOPT) $(OTHER_FFLAGS) -c $< -o $@
+else ifneq (,$(findstring axSSE4.2,AVX,CORE-AVX2,$(FFLAGS)))
+FFLAGS_LOPT=$(subst CORE-AVX2,CORE-AVX-I,$(FFLAGS))
+./physics/sflx.o : ./physics/sflx.f
+	$(FC) $(CPPDEFS) $(FFLAGS_LOPT) $(OTHER_FFLAGS) -c $< -o $@
+else
+./physics/sflx.o : ./physics/sflx.f
+	$(FC) $(CPPDEFS) $(FFLAGS) $(OTHER_FFLAGS) -c $< -o $@
+endif
+endif # (,$(findstring TRANSITION,$(CPPDEFS)))
+
 # Do preprocessing of the GFS driver and GFS physics driver in two
 # steps to be able to look at the actual .f90 file that is compiled
 ./GFS_layer/GFS_driver.o: ./GFS_layer/GFS_driver.F90
