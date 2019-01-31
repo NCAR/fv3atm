@@ -172,6 +172,7 @@ module IPD_CCPP_driver
         call ccpp_physics_init(cdata_block(nb,nt), ierr=ierr)
         if (ierr/=0) then
           write(0,'(2(a,i4))') "An error occurred in ccpp_physics_init for block ", nb, " and thread ", nt
+          write(0,'(a)') trim(cdata_block(nb,nt)%errmsg)
           return
         end if
       end do
@@ -193,6 +194,7 @@ module IPD_CCPP_driver
       call ccpp_physics_run(cdata_domain, group_name="time_vary", ierr=ierr)
       if (ierr/=0) then
         write(0,'(2(a,i4))') "An error occurred in ccpp_physics_run for group time_vary"
+        write(0,'(a)') trim(cdata_domain%errmsg)
         return
       end if
 
@@ -221,6 +223,7 @@ module IPD_CCPP_driver
         call ccpp_physics_run(cdata_block(nb,nt), group_name=trim(step), ierr=ierr2)
         if (ierr2/=0) then
            write(0,'(a,i4,a,i4)') "An error occurred in ccpp_physics_run for group " // trim(step) // ", block ", nb, " and thread ", nt
+           write(0,'(a)') trim(cdata_block(nb,nt)%errmsg)
            ierr = ierr + ierr2
         end if
       end do
@@ -238,6 +241,7 @@ module IPD_CCPP_driver
           call ccpp_physics_finalize(cdata_block(nb,nt), ierr=ierr)
           if (ierr/=0) then
             write(0,'(a,i4,a,i4)') "An error occurred in ccpp_physics_finalize for block ", nb, " and thread ", nt
+            write(0,'(a)') trim(cdata_block(nb,nt)%errmsg)
             return
           end if
           !--- Finalize CCPP framework for blocks/threads

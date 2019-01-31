@@ -393,6 +393,10 @@ subroutine update_atmos_radiation_physics (Atmos)
       if (mpp_pe() == mpp_root_pe() .and. debug) write(6,*) "end of radiation and physics step"
     endif
 
+#ifdef CCPP
+    ! Update flag for first time step of time integration
+    IPD_Control%first_time_step = .false.
+#endif
 !-----------------------------------------------------------------------
  end subroutine update_atmos_radiation_physics
 ! </SUBROUTINE>
@@ -554,6 +558,9 @@ subroutine atmos_model_init (Atmos, Time_init, Time, Time_step)
    Init_parm%xlat            => Atmos%lat
    Init_parm%area            => Atmos%area
    Init_parm%tracer_names    => tracer_names
+#ifdef CCPP
+   Init_parm%restart         =  Atm(mytile)%flagstruct%warm_start
+#endif
 
 #ifdef INTERNAL_FILE_NML
    Init_parm%input_nml_file  => input_nml_file
@@ -608,7 +615,11 @@ subroutine atmos_model_init (Atmos, Time_init, Time, Time_step)
 
    call atmosphere_nggps_diag (Time, init=.true.)
    call FV3GFS_diag_register (IPD_Diag, Time, Atm_block, IPD_Control, Atmos%lon, Atmos%lat, Atmos%axes)
+#ifdef CCPP
+   call FV3GFS_restart_read (IPD_Data, IPD_Restart, Atm_block, IPD_Control, Atmos%domain, Atm(mytile)%flagstruct%warm_start)
+#else
    call FV3GFS_restart_read (IPD_Data, IPD_Restart, Atm_block, IPD_Control, Atmos%domain)
+#endif
 
    !--- set the initial diagnostic timestamp
    diag_time = Time
@@ -658,6 +669,10 @@ subroutine atmos_model_init (Atmos, Time_init, Time, Time_step)
      fv3Clock = mpp_clock_id( 'FV3 Dycore            ', flags=clock_flag_default, grain=CLOCK_COMPONENT )
    endif
 
+#ifdef CCPP
+   ! Set flag for first time step of time integration
+   IPD_Control%first_time_step = .true.
+#endif
 !-----------------------------------------------------------------------
 end subroutine atmos_model_init
 ! </SUBROUTINE>

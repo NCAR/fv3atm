@@ -2595,8 +2595,13 @@
           clouds(i,k,5) = rei(i,k)
           clouds(i,k,6) = crp(i,k)  ! added for Thompson 
           clouds(i,k,7) = rer(i,k)
-          clouds(i,k,8) = csp(i,k)  ! added for Thompson 
+          clouds(i,k,8) = csp(i,k)  ! added for Thompson
+          ! DH*
+          ! Use correct version as in CCPP
+          !clouds(i,k,9) = res(i,k)
+          ! Use incorrect version as currently in master
           clouds(i,k,9) = rei(i,k)
+          ! *DH
         enddo
       enddo
 

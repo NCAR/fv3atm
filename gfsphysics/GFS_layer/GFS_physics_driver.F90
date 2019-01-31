@@ -1955,7 +1955,7 @@ module module_physics_driver
          Interstitial(nt)%snohf  = snohf        ! intent(out)
          !Diag%smcwlt2                          ! intent(out)
          !Diag%smcref2                          ! intent(out)
-         !Diag%wet1                             ! intent(out)
+         !Sfcprop%wet1                          ! intent(out)
          !cdata_block(nb,nt)%errmsg = errmsg    ! intent(out)
          !cdata_block(nb,nt)%errflg = errflg    ! intent(out)
          ! Call NOAH LSM through CCPP
@@ -2001,7 +2001,7 @@ module module_physics_driver
 !  ---  outputs:
              Sfcprop%sncovr, qss, gflx, drain, evap, hflx, ep1d, runof, &
              Diag%cmm, Diag%chh, evbs, evcw, sbsno, snowc, Diag%soilm,  &
-             snohf, Diag%smcwlt2, Diag%smcref2, Diag%wet1)
+             snohf, Diag%smcwlt2, Diag%smcref2, Sfcprop%wet1)
 #endif
 !     if (lprnt) write(0,*)' tseae=',tsea(ipr),' tsurf=',tsurf(ipr),iter &
 !    &,' phy_f2d=',phy_f2d(ipr,num_p2d)
@@ -2062,7 +2062,7 @@ module module_physics_driver
               !Diag%snow                             ! intent(in)
               !Diag%graupel                          ! intent(in)
               !Sfcprop%srflag                        ! intent(in)
-              !Diag%sr                               ! intent(in)
+              !Sfcprop%sr                            ! intent(in)
               !Sfcprop%smc                           ! intent(inout)
               !Sfcprop%stc                           ! intent(inout)
               !Sfcprop%slc                           ! intent(inout)
@@ -2099,7 +2099,7 @@ module module_physics_driver
               !Diag%runoff                           ! intent(inout)
               !Diag%srunoff                          ! intent(inout)
               !Diag%soilm                            ! intent(out)
-              !Diag%wet1                             ! intent(out)
+              !Sfcprop%wet1                          ! intent(out)
               !Diag%acsnow                           ! intent(out)
               !Diag%snowfallac                       ! intent(out)
               !cdata_block(nb,nt)%errmsg = errmsg    ! intent(out)
@@ -6379,7 +6379,7 @@ module module_physics_driver
           if (Model%do_shoc) then
             call precpd_shoc (im, ix, levs, dtp, del, Statein%prsl,            &
                               Stateout%gq0(1,1,1), Stateout%gq0(1,1,ntcw),     &
-                              Stateout%gt0, rain1, Diag%sr, rainp, rhc,        &
+                              Stateout%gt0, rain1, Sfcprop%sr, rainp, rhc,     &
                               psautco_l, prautco_l, Model%evpco, Model%wminco, &
                               Tbd%phy_f3d(1,1,ntot3d-2), lprnt, ipr)
           else
@@ -6415,7 +6415,7 @@ module module_physics_driver
             !Stateout%gq0(:,:,Model%ntcw)                           ! intent(inout)
             !Stateout%gt0                                           ! intent(inout)
             Interstitial(nt)%prcpmp = rain1                         ! intent(out  )
-            !Diag%sr                                                ! intent(out  )
+            !Sfcprop%sr                                             ! intent(out  )
             Interstitial(nt)%rainp = rainp                          ! intent(out  )
             Interstitial(nt)%rhc = rhc                              ! intent(in   )
             !Model%psautco                                          ! intent(in   )
@@ -6447,7 +6447,7 @@ module module_physics_driver
             if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of precpd'
             call precpd (im, ix, levs, dtp, del, Statein%prsl,                 &
                         Stateout%gq0(1,1,1), Stateout%gq0(1,1,ntcw),           &
-                        Stateout%gt0, rain1, Diag%sr, rainp, rhc, psautco_l,   &
+                        Stateout%gt0, rain1, Sfcprop%sr, rainp, rhc, psautco_l,&
                         prautco_l, Model%evpco, Model%wminco, lprnt, ipr)
 #endif
           endif
@@ -6473,7 +6473,7 @@ module module_physics_driver
             call precpdp (im, ix, levs,  dtp, del, Statein%prsl,       &
                           Statein%pgr, Stateout%gq0(1,1,1),            &
                           Stateout%gq0(1,1,ntcw), Stateout%gt0,        &
-                          rain1, Diag%sr, rainp, rhc,                  &
+                          rain1, Sfcprop%sr, rainp, rhc,               &
                           Tbd%phy_f3d(1,1,Model%num_p3d+1), psautco_l, &
                           prautco_l, Model%evpco, Model%wminco, lprnt, ipr)
 !          endif   ! end of grid-scale precip/microphysics options
@@ -6497,7 +6497,7 @@ module module_physics_driver
 !              Stateout%gq0(1:im,1:im,Model%ntrnc),                                        &
 !              Stateout%gt0, Statein%prsl, Statein%vvl, del, dtp, kdt,                     &
 !              rain1,                                                                      &
-!              diag%sr,                                                                    &
+!              Sfcprop%sr,                                                                 &
 !!             Diag%refl_10cm, Model%lradar,                                               &
 !!             Tbd%phy_f3d(:,:,1),Tbd%phy_f3d(:,:,2),Tbd%phy_f3d(:,:,3),                   & !has_reqc, has_reqi, has_reqs,
 !!             ims,ime,kms,kme,its,ite,kts,kte)
@@ -6517,7 +6517,7 @@ module module_physics_driver
 !2014v         Stateout%gt0, Statein%prsl, Statein%vvl, del, dtp, kdt,                     &
                Stateout%gt0, Statein%prsl, del, dtp, kdt,                                  &
                rain1,                                                                      &
-               diag%sr,                                                                    &
+               Sfcprop%sr,                                                                 &
                islmsk,                                                                     &
                Diag%refl_10cm, Model%lradar,                                               &
                Tbd%phy_f3d(:,:,1),Tbd%phy_f3d(:,:,2),Tbd%phy_f3d(:,:,3),me,Statein%phii)
@@ -6578,25 +6578,17 @@ module module_physics_driver
           !Statein%phii                                         ! intent(in)
           !Statein%vvl                                          ! intent(in)
           !Model%dtp                                            ! intent(in)
-          !Model%kdt                                            ! intent(in)
-          !Diag%rain                                            ! DH* REMOVE
-          !Interstitial(nt)%prcpmp                              ! intent(inout), should be zero on entry - DH* fix dynamics/physics timestep inconsistencies
-          !Diag%snow                                            ! intent(inout)
-          !Diag%ice                                             ! intent(inout)
-          !Diag%graupel                                         ! intent(inout)
-          !Diag%sr                                              ! intent(  out)
+          !Interstitial(nt)%prcpmp                              ! intent(  out)
+          !Interstitial(nt)%rainmp                              ! intent(  out)
+          !Interstitial(nt)%graupelmp                           ! intent(  out)
+          !Interstitial(nt)%icemp                               ! intent(  out)
+          !Interstitial(nt)%snowmp                              ! intent(  out)
+          !Sfcprop%sr                                           ! intent(  out)
           !Diag%refl_10cm                                       ! intent(  out)
           !Model%lradar                                         ! intent(in   )
-          ! DH* use Tbd%phy_f3d(:,:,1-3) directly? difficult, because
-          ! these fields are used for different purposes depending on
-          ! the physics options and as such would require multiple
-          ! standard names. Alternative: create separate fields for
-          ! each MP scheme, make sure they are treated in the same
-          ! way as Tbd here and allocate them only if the scheme
-          ! is active. *DH
-          Interstitial(nt)%clouds(:,:,3) = Tbd%phy_f3d(:,:,1)   ! intent(inout)
-          Interstitial(nt)%clouds(:,:,5) = Tbd%phy_f3d(:,:,2)   ! intent(inout)
-          Interstitial(nt)%clouds(:,:,9) = Tbd%phy_f3d(:,:,3)   ! intent(inout)
+          !Tbd%phy_f3d(:,:,IPD_Control%nleffr)                  ! intent(inout)
+          !Tbd%phy_f3d(:,:,IPD_Control%nieffr)                  ! intent(inout)
+          !Tbd%phy_f3d(:,:,IPD_Control%nseffr)                  ! intent(inout)
           !Model%me                                             ! intent(in)
           !Model%master                                         ! intent(in)
           !Model%communicator                                   ! intent(in)
@@ -6605,10 +6597,7 @@ module module_physics_driver
           !
           call ccpp_physics_run(cdata_block(nb,nt), scheme_name="mp_thompson_hrrr", ierr=ierr)
           ! Copy back intent(inout) and intent(out) interstitial variables to local variables in driver
-          rain1 = Interstitial(nt)%prcpmp ! DH* fix
-          Tbd%phy_f3d(:,:,1) = Interstitial(nt)%clouds(:,:,3)
-          Tbd%phy_f3d(:,:,2) = Interstitial(nt)%clouds(:,:,5)
-          Tbd%phy_f3d(:,:,3) = Interstitial(nt)%clouds(:,:,9)
+          rain1 = Interstitial(nt)%prcpmp
           errmsg = trim(cdata_block(nb,nt)%errmsg)
           errflg = cdata_block(nb,nt)%errflg
           !
@@ -6650,7 +6639,7 @@ module module_physics_driver
                                 Stateout%gq0(1:im,1:levs,Model%ntsw),                           &
                                 Stateout%gq0(1:im,1:levs,Model%ntgl),                           &
                                 Statein%prsl, del, dtp, rain1,                                  &
-                                diag%sr,                                                        &
+                                Sfcprop%sr,                                                     &
                                 islmsk,                                                         &
                                 Tbd%phy_f3d(:,:,1),Tbd%phy_f3d(:,:,2),Tbd%phy_f3d(:,:,3),       &
                                 ims,ime, kms,kme,                                               &
@@ -6870,7 +6859,7 @@ module module_physics_driver
         !Stateout%gq0(:,:,ntiw)                               ! intent(out)
         !Stateout%gt0                                         ! intent(inout)
         !Interstitial(nt)%prcpmp                              ! intent(out)
-        !Diag%sr                                              ! intent(out)
+        !Sfcprop%sr                                           ! intent(out)
         !Stateout%gq0(:,:,ntlnc)                              ! intent(inout)
         !Stateout%gq0(:,:,ntinc)                              ! intent(inout)
         !Model%fprcp                                          ! intent(in)
@@ -6886,7 +6875,7 @@ module module_physics_driver
         !Tbd%phy_f3d(1,1,3)                                   ! intent(out)
         !Tbd%phy_f3d(1,1,4)                                   ! intent(out)
         !Tbd%phy_f3d(1,1,5)                                   ! intent(out)
-        !Tbd%phy_f3d(1,1,Model%ngreffr)                       ! intent(out)
+        !Tbd%phy_f3d(1,1,Model%ngeffr)                        ! intent(out)
         !Tbd%aer_nm                                           ! intent(in)
         !Model%aero_in                                        ! intent(in)
         !Tbd%in_nm                                            ! intent(in)
@@ -6932,7 +6921,7 @@ module module_physics_driver
                              CNV_FICE, CNV_NDROP, CNV_NICE, Stateout%gq0(1,1,1), &
                              Stateout%gq0(1,1,ntcw),                             &
                              Stateout%gq0(1,1,ntiw), Stateout%gt0, rain1,        &
-                             Diag%sr, Stateout%gq0(1,1,ntlnc),                   &
+                             Sfcprop%sr, Stateout%gq0(1,1,ntlnc),                &
                              Stateout%gq0(1,1,ntinc), Model%fprcp, qrn,          &
                              qsnw, qgl, ncpr, ncps, ncgl,                        &
                              Tbd%phy_f3d(1,1,1),  kbot,                          &
@@ -7073,7 +7062,7 @@ module module_physics_driver
           !Interstitial(nt)%snowmp                     ! intent(out)
           !Interstitial(nt)%graupelmp                  ! intent(out)
           !Interstitial(nt)%prcpmp                     ! intent(out)
-          !Diag%sr                                     ! intent(out)
+          !Sfcprop%sr                                  ! intent(out)
           !Model%dtp                                   ! intent(in)
           !CCPP_shared(nt)%hydrostatic                 ! intent(in) - set in CCPP_shared(nt)%create
           !CCPP_shared(nt)%phys_hydrostatic            ! intent(in) - set in CCPP_shared(nt)%create
@@ -7165,10 +7154,10 @@ module module_physics_driver
             Diag%snow(i)    = snow0   (i,1) * tem
             Diag%graupel(i) = graupel0(i,1) * tem
             if ( rain1(i) > rainmin ) then
-              Diag%sr(i)  = (snow0(i,1) + ice0(i,1)  + graupel0(i,1)) &
-                          / (rain0(i,1) + snow0(i,1) + ice0(i,1) + graupel0(i,1))
+              Sfcprop%sr(i) = (snow0(i,1) + ice0(i,1)  + graupel0(i,1)) &
+                            / (rain0(i,1) + snow0(i,1) + ice0(i,1) + graupel0(i,1))
             else
-              Diag%sr(i)  = 0.0
+              Sfcprop%sr(i) = 0.0
             endif
           enddo
           do k = 1, levs
@@ -7286,6 +7275,7 @@ module module_physics_driver
       !Model%ntrac                                ! intent(in)
       !Model%imp_physics                          ! intent(in)
       !Model%imp_physics_gfdl                     ! intent(in)
+      !Model%imp_physics_thompson                 ! intent(in)
       !Model%cal_pre                              ! intent(in)
       !Model%lssav                                ! intent(in)
       !Model%ldiag3d                              ! intent(in)
