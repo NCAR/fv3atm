@@ -312,28 +312,33 @@ endif
 
 # For CCPP acceptance: selective reduction of optimization flags, hopefully
 # to be removed once established that this is not a reasonable approach.
-# Reduce optimization (substitute xCORE-AVX2 or xHost with xCORE-AVX-I) for sflx.f
+# Reduce optimization (substitute CORE-AVX2 with CORE-AVX-I) for:
+# sflx.f
+# Reduce optimization (CORE-AVX2 with CORE-AVX-I, no-prec-* with prec-*) for:
+# satmedmfvdif.f
 ifneq (,$(findstring TRANSITION,$(CPPDEFS)))
-ifneq (,$(findstring xCORE-AVX2,$(FFLAGS)))
-FFLAGS_LOPT=$(subst xCORE-AVX2,xCORE-AVX-I,$(FFLAGS))
-./physics/sflx.o : ./physics/sflx.f
-	$(FC) $(CPPDEFS) $(FFLAGS_LOPT) $(OTHER_FFLAGS) -c $< -o $@
-else ifneq (,$(findstring axSSE4.2,AVX,CORE-AVX2,$(FFLAGS)))
+
 FFLAGS_LOPT=$(subst CORE-AVX2,CORE-AVX-I,$(FFLAGS))
 ./physics/sflx.o : ./physics/sflx.f
 	$(FC) $(CPPDEFS) $(FFLAGS_LOPT) $(OTHER_FFLAGS) -c $< -o $@
-else
-./physics/sflx.o : ./physics/sflx.f
-	$(FC) $(CPPDEFS) $(FFLAGS) $(OTHER_FFLAGS) -c $< -o $@
-endif
+
+FFLAGS_LOPT2=$(subst no-prec-div,prec-div,$(FFLAGS))
+FFLAGS_LOPT3=$(subst no-prec-sqrt,prec-sqrt,$(FFLAGS_LOPT2))
+FFLAGS_LOPT4=$(subst CORE-AVX2,CORE-AVX-I,$(FFLAGS_LOPT3))
+./physics/satmedmfvdif.o : ./physics/satmedmfvdif.f
+	$(FC) $(CPPDEFS) $(FFLAGS_LOPT4) $(OTHER_FFLAGS) -c $< -o $@
+
 endif # (,$(findstring TRANSITION,$(CPPDEFS)))
 
-# Do preprocessing of the GFS driver and GFS physics driver in two
-# steps to be able to look at the actual .f90 file that is compiled
+# Do preprocessing of the GFS drivers in two steps to be able
+# to look at the actual .f90 file that is compiled
 ./GFS_layer/GFS_driver.o: ./GFS_layer/GFS_driver.F90
 	$(CPP) $(CPPDEFS) $(CPPFLAGS) $< > $*.tmp.f90
 	$(FC) $(FFLAGS) $(OTHER_FFLAGS) -c $*.tmp.f90 -o $@
 ./GFS_layer/GFS_physics_driver.o: ./GFS_layer/GFS_physics_driver.F90
+	$(CPP) $(CPPDEFS) $(CPPFLAGS) $< > $*.tmp.f90
+	$(FC) $(FFLAGS) $(OTHER_FFLAGS) -c $*.tmp.f90 -o $@
+./GFS_layer/GFS_radiation_driver.o: ./GFS_layer/GFS_radiation_driver.F90
 	$(CPP) $(CPPDEFS) $(CPPFLAGS) $< > $*.tmp.f90
 	$(FC) $(FFLAGS) $(OTHER_FFLAGS) -c $*.tmp.f90 -o $@
 
