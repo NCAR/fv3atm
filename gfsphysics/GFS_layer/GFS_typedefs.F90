@@ -296,8 +296,8 @@ module GFS_typedefs
 !------------------------------------------------------------------
 #if 0
 !! \section arg_table_GFS_stateout_type
-!! | local_name                                         | standard_name                                                          | long_name                                                                                  | units   | rank | type    |    kind   | intent | optional |
-!! |----------------------------------------------------|------------------------------------------------------------------------|--------------------------------------------------------------------------------------------|---------|------|---------|-----------|--------|----------|
+!! | local_name                                                   | standard_name                                                          | long_name                                                                                  | units   | rank | type    |    kind   | intent | optional |
+!! |--------------------------------------------------------------|------------------------------------------------------------------------|--------------------------------------------------------------------------------------------|---------|------|---------|-----------|--------|----------|
 !! | GFS_Data(cdata%blk_no)%Stateout%gu0                          | x_wind_updated_by_physics                                              | zonal wind updated by physics                                                              | m s-1   |    2 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Stateout%gu0(:,1)                     | x_wind_at_lowest_model_layer_updated_by_physics                        | zonal wind at lowest model level updated by physics                                        | m s-1   |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Stateout%gv0                          | y_wind_updated_by_physics                                              | meridional wind updated by physics                                                         | m s-1   |    2 | real    | kind_phys | none   | F        |
@@ -3360,12 +3360,16 @@ module GFS_typedefs
                                                                       !<     1: July 2010 version of mass-flux shallow conv scheme
                                                                       !<         current operational version as of 2016
                                                                       !<     2: scale- & aerosol-aware mass-flux shallow conv scheme (2017)
+                                                                      !<     3: scale- & aerosol-aware Grell-Freitas scheme (GSD)
+                                                                      !<     4: New Tiedtke scheme (CAPS)
                                                                       !<     0: modified Tiedtke's eddy-diffusion shallow conv scheme
                                                                       !<    -1: no shallow convection used
     integer              :: imfdeepcnv     =  1                       !< flag for mass-flux deep convection scheme
                                                                       !<     1: July 2010 version of SAS conv scheme
                                                                       !<           current operational version as of 2016
                                                                       !<     2: scale- & aerosol-aware mass-flux deep conv scheme (2017)
+                                                                      !<     3: scale- & aerosol-aware Grell-Freitas scheme (GSD)
+                                                                      !<     4: New Tiedtke scheme (CAPS)
     logical              :: do_deep        = .true.                   !< whether to do deep convection
 #ifdef CCPP
     logical              :: do_mynnedmf       = .false.               !< flag for MYNN-EDMF
@@ -4157,7 +4161,6 @@ module GFS_typedefs
         if (Model%imfdeepcnv == 3 .or. Model%imfshalcnv == 3) then
             write(0,*) "Error, GF convection scheme only available through CCPP"
             stop
-        end if
         else if (Model%imfdeepcnv == 4 .or. Model%imfshalcnv == 4) then
             write(0,*) "Error, NTDK convection scheme only available through CCPP"
             stop
@@ -4399,7 +4402,7 @@ module GFS_typedefs
 
     Model%lmfshal  = (Model%shal_cnv .and. Model%imfshalcnv > 0)
 #ifdef CCPP
-    Model%lmfdeep2 = (Model%imfdeepcnv == 2 .or. Model%imfdeepcnv == 3)
+    Model%lmfdeep2 = (Model%imfdeepcnv == 2 .or. Model%imfdeepcnv == 3 .or. Model%imfdeepcnv == 4)
 #else
     Model%lmfdeep2 = (Model%imfdeepcnv == 2)
 #endif
@@ -4896,18 +4899,21 @@ module GFS_typedefs
     Tbd%htswc = clear_val
     Tbd%htsw0 = clear_val
 
-    if (Model%imfdeepcnv == 3) then
+    if (Model%imfdeepcnv == 3 .or. Model%imfdeepcnv == 4) then
        allocate(Tbd%forcet(IM, Model%levs))
        allocate(Tbd%forceq(IM, Model%levs))
        allocate(Tbd%prevst(IM, Model%levs))
        allocate(Tbd%prevsq(IM, Model%levs))
-       allocate(Tbd%cactiv(IM))
        Tbd%forcet = clear_val
        Tbd%forceq = clear_val
        Tbd%prevst = clear_val
        Tbd%prevsq = clear_val
-       Tbd%cactiv = zero
    end if
+
+   if (Model%imfdeepcnv == 3) then
+      allocate(Tbd%cactiv(IM))
+      Tbd%cactiv = zero
+  end if
 
    if (Model%lsm == Model%lsm_ruc) then
        allocate(Tbd%raincprv  (IM))
