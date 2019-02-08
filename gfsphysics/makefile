@@ -328,12 +328,28 @@ else
 endif
 endif # (,$(findstring TRANSITION,$(CPPDEFS)))
 
-# Do preprocessing of the GFS driver and GFS physics driver in two
-# steps to be able to look at the actual .f90 file that is compiled
+# For CCPP acceptance: selective reduction of optimization flags, hopefully
+# to be removed once established that this is not a reasonable approach.
+# Reduce optimization (substitute xCORE-AVX2 or xHost with xCORE-AVX-I,
+# -no-prec-div with -prec-div, and -no-prec-sqrt with -prec-sqrt) for
+# gfdl_cloud_microphys.F90
+ifneq (,$(findstring TRANSITION,$(CPPDEFS)))
+FFLAGS_LOPT2=$(subst no-prec-div,prec-div,$(FFLAGS))
+FFLAGS_LOPT3=$(subst no-prec-sqrt,prec-sqrt,$(FFLAGS_LOPT2))
+FFLAGS_LOPT4=$(subst CORE-AVX2,CORE-AVX-I,$(FFLAGS_LOPT3))
+./physics/gfdl_cloud_microphys.o: ./physics/gfdl_cloud_microphys.F90
+	$(FC) $(CPPDEFS) $(FFLAGS_LOPT4) $(OTHER_FFLAGS) -c $< -o $@
+endif # (,$(findstring TRANSITION,$(CPPDEFS)))
+
+# Do preprocessing of the GFS drivers in two steps to be able
+# to look at the actual .f90 file that is compiled
 ./GFS_layer/GFS_driver.o: ./GFS_layer/GFS_driver.F90
 	$(CPP) $(CPPDEFS) $(CPPFLAGS) $< > $*.tmp.f90
 	$(FC) $(FFLAGS) $(OTHER_FFLAGS) -c $*.tmp.f90 -o $@
 ./GFS_layer/GFS_physics_driver.o: ./GFS_layer/GFS_physics_driver.F90
+	$(CPP) $(CPPDEFS) $(CPPFLAGS) $< > $*.tmp.f90
+	$(FC) $(FFLAGS) $(OTHER_FFLAGS) -c $*.tmp.f90 -o $@
+./GFS_layer/GFS_radiation_driver.o: ./GFS_layer/GFS_radiation_driver.F90
 	$(CPP) $(CPPDEFS) $(CPPFLAGS) $< > $*.tmp.f90
 	$(FC) $(FFLAGS) $(OTHER_FFLAGS) -c $*.tmp.f90 -o $@
 
