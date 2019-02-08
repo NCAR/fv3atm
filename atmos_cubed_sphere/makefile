@@ -105,6 +105,16 @@ $(LIBRARY): $(OBJS)
 ./driver/fvGFS/atmosphere.o : ./driver/fvGFS/atmosphere.F90
 	$(FC) $(CPPDEFS) $(FPPFLAGS) $(FFLAGS) $(OTHER_FFLAGS) $(ESMF_INC) -c $< -o $@
 
+# For CCPP acceptance: reduce optimization for certain files to
+# obtain bit-for-bit identical results in PROD mode on Theia/Intel 15
+ifneq (,$(findstring TRANSITION,$(CPPDEFS)))
+
+FFLAGS_LOPT=$(subst CORE-AVX2,CORE-AVX-I,$(FFLAGS))
+./model/dyn_core.o : ./model/dyn_core.F90
+	$(FC) $(CPPDEFS) $(FPPFLAGS) $(FFLAGS_LOPT) $(OTHER_FFLAGS) -c $< -o $@
+
+endif # (,$(findstring TRANSITION,$(CPPDEFS)))
+
 .PHONY: clean
 clean:
 	@echo "Cleaning fv3core ... "
