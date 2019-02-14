@@ -323,6 +323,8 @@ FFLAGS_LOPT3=$(subst no-prec-div,prec-div,\
 	$(FC) $(CPPDEFS) $(FFLAGS_LOPT3) $(OTHER_FFLAGS) -c $< -o $@
 ./physics/gfdl_cloud_microphys.o: ./physics/gfdl_cloud_microphys.F90
 	$(FC) $(CPPDEFS) $(FFLAGS_LOPT3) $(OTHER_FFLAGS) -c $< -o $@
+./physics/satmedmfvdif.o : ./physics/satmedmfvdif.f
+	$(FC) $(CPPDEFS) $(FFLAGS_LOPT3) $(OTHER_FFLAGS) -c $< -o $@
 endif # (,$(findstring TRANSITION,$(CPPDEFS)))
 
 # Do preprocessing of the GFS drivers in two steps to be able

@@ -1574,6 +1574,8 @@ module GFS_typedefs
 !! | GFS_Data(cdata%blk_no)%Tbd%in_nm                            | in_number_concentration                                                                        | IN number concentration                                 | kg-1?         |    2 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Tbd%ccn_nm                           | ccn_number_concentration                                                                       | CCN number concentration                                | kg-1?         |    2 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Tbd%aer_nm                           | aerosol_number_concentration_from_gocart_aerosol_climatology                                   | GOCART aerosol climatology number concentration         | kg-1?         |    3 | real    | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Tbd%imap                             |                                                                                                | map of local index ix to global index i for this block  | none          |    1 | integer |           | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Tbd%jmap                             |                                                                                                | map of local index ix to global index j for this block  | none          |    1 | integer |           | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Tbd%rann                             | random_number_array                                                                            | random number array (0-1)                               | none          |    2 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Tbd%acv                              | accumulated_lwe_thickness_of_convective_precipitation_amount_cnvc90                            | accumulated convective rainfall amount for cnvc90 only  | m             |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Tbd%acvb                             | smallest_cloud_base_vertical_index_encountered_thus_far                                        | smallest cloud base vertical index encountered thus far | index         |    1 | real    | kind_phys | none   | F        |
@@ -1644,6 +1646,10 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: aer_nm   (:,:,:) => null()  !< GOCART aerosol climo
 
     !--- active when ((.not. newsas .or. cal_pre) .and. random_clds)
+#ifdef CCPP
+    integer,               pointer :: imap     (:)     => null()  !< map of local index ix to global index i for this block
+    integer,               pointer :: jmap     (:)     => null()  !< map of local index ix to global index j for this block
+#endif
     real (kind=kind_phys), pointer :: rann     (:,:)   => null()  !< random number array (0-1)
 
 !--- In/Out
@@ -4793,6 +4799,14 @@ module GFS_typedefs
 !--- aerosol fields
     allocate (Tbd%aer_nm  (IM,Model%levs,ntrcaer))
     Tbd%aer_nm = clear_val
+
+#ifdef CCPP
+!--- maps of local index ix to global indices i and j for this block
+    allocate (Tbd%imap (IM))
+    allocate (Tbd%jmap (IM))
+    Tbd%imap = 0
+    Tbd%jmap = 0
+#endif
 
     allocate (Tbd%rann (IM,Model%nrcm))
     Tbd%rann = rann_init
