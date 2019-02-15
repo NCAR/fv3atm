@@ -317,15 +317,19 @@ contains
       rdg     = -rdgas * agrav
 
 #ifdef CCPP
+
+      ! Reset all interstitial variables for CCPP version
+      ! of fast physics, and manually set runtime parameters
+      call CCPP_interstitial%reset()
       if (flagstruct%do_sat_adj) then
-         ! Manually set runtime parameters
          CCPP_interstitial%out_dt = (idiag%id_mdt > 0)
       end if
 
-      cappa = 0.
-
 #else
+      te_2d = 0.
+
       allocate ( dp1(isd:ied, jsd:jed, 1:npz) )
+      call init_ijk_mem(isd,ied, jsd,jed, npz, dp1, 0.)
 
 #ifdef MOIST_CAPPA
       allocate ( cappa(isd:ied,jsd:jed,npz) )
@@ -584,9 +588,7 @@ contains
   last_step = .false.
   mdt = bdt / real(k_split)
 
-#ifdef CCPP
-  dtdt_m = 0.
-#else
+#ifndef CCPP
   if ( idiag%id_mdt > 0 .and. (.not. do_adiabatic_init) ) then
        allocate ( dtdt_m(is:ie,js:je,npz) )
 !$OMP parallel do default(none) shared(is,ie,js,je,npz,dtdt_m)

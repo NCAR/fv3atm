@@ -3667,6 +3667,9 @@ module GFS_typedefs
     endif
     Model%iccn             = iccn
     if (Model%aero_in) Model%iccn = .false.
+    ! further down: set Model%iccn to .false.
+    ! for all microphysics schemes except
+    ! MG2/3 (these are the only ones using ICCN)
     Model%iflip            = iflip
     Model%isol             = isol
     Model%ico2             = ico2
@@ -3697,6 +3700,10 @@ module GFS_typedefs
 !--- microphysical switch
     Model%ncld             = ncld
     Model%imp_physics      = imp_physics
+    ! DH*
+    ! turn off ICCN interpolation when MG2/3 are not used
+    if (.not. Model%imp_physics==Model%imp_physics_mg) Model%iccn = .false.
+    ! *DH
 !--- Zhao-Carr MP parameters
     Model%psautco          = psautco
     Model%prautco          = prautco
