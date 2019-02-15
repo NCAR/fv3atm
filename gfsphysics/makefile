@@ -271,17 +271,17 @@ $(LIBRARY): $(OBJS)
 
 # Reduce optimization (substitute xCORE-AVX2 or xHost with xCORE-AVX-I) for radiation_aerosols.f
 ifneq (,$(findstring xCORE-AVX2,$(FFLAGS)))
-FFLAGS_LOPT=$(subst xCORE-AVX2,xCORE-AVX-I,$(FFLAGS))
+FFLAGS_LOPT1=$(subst xCORE-AVX2,xCORE-AVX-I,$(FFLAGS))
 ./physics/radiation_aerosols.o : ./physics/radiation_aerosols.f
-	$(FC) $(CPPDEFS) $(FFLAGS_LOPT) $(OTHER_FFLAGS) -c $< -o $@
+	$(FC) $(CPPDEFS) $(FFLAGS_LOPT1) $(OTHER_FFLAGS) -c $< -o $@
 else ifneq (,$(findstring axSSE4.2,AVX,CORE-AVX2,$(FFLAGS)))
-FFLAGS_LOPT=$(subst CORE-AVX2,CORE-AVX-I,$(FFLAGS))
+FFLAGS_LOPT1=$(subst CORE-AVX2,CORE-AVX-I,$(FFLAGS))
 ./physics/radiation_aerosols.o : ./physics/radiation_aerosols.f
-	$(FC) $(CPPDEFS) $(FFLAGS_LOPT) $(OTHER_FFLAGS) -c $< -o $@
+	$(FC) $(CPPDEFS) $(FFLAGS_LOPT1) $(OTHER_FFLAGS) -c $< -o $@
 else ifneq (,$(findstring xHOST,$(FFLAGS)))
-FFLAGS_LOPT=$(subst xHOST,xCORE-AVX-I,$(FFLAGS))
+FFLAGS_LOPT1=$(subst xHOST,xCORE-AVX-I,$(FFLAGS))
 ./physics/radiation_aerosols.o : ./physics/radiation_aerosols.f
-	$(FC) $(CPPDEFS) $(FFLAGS_LOPT) $(OTHER_FFLAGS) -c $< -o $@
+	$(FC) $(CPPDEFS) $(FFLAGS_LOPT1) $(OTHER_FFLAGS) -c $< -o $@
 else
 ./physics/radiation_aerosols.o : ./physics/radiation_aerosols.f
 	$(FC) $(CPPDEFS) $(FFLAGS) $(OTHER_FFLAGS) -c $< -o $@
@@ -312,22 +312,19 @@ endif
 
 # For CCPP acceptance: selective reduction of optimization flags, hopefully
 # to be removed once established that this is not a reasonable approach.
-# Reduce optimization (substitute CORE-AVX2 with CORE-AVX-I) for:
-# sflx.f
-# Reduce optimization (CORE-AVX2 with CORE-AVX-I, no-prec-* with prec-*) for:
-# satmedmfvdif.f
+# Reduce optimization (substitute xCORE-AVX2 or xHost with xCORE-AVX-I,
+# -no-prec-div with -prec-div, and -no-prec-sqrt with -prec-sqrt) for
+# gfdl_cloud_microphys.F90, sflx.f
 ifneq (,$(findstring TRANSITION,$(CPPDEFS)))
-
-FFLAGS_LOPT=$(subst CORE-AVX2,CORE-AVX-I,$(FFLAGS))
+FFLAGS_LOPT3=$(subst no-prec-div,prec-div,\
+               $(subst no-prec-sqrt,prec-sqrt,\
+                 $(subst CORE-AVX2,CORE-AVX-I,$(FFLAGS))))
 ./physics/sflx.o : ./physics/sflx.f
-	$(FC) $(CPPDEFS) $(FFLAGS_LOPT) $(OTHER_FFLAGS) -c $< -o $@
-
-FFLAGS_LOPT2=$(subst no-prec-div,prec-div,$(FFLAGS))
-FFLAGS_LOPT3=$(subst no-prec-sqrt,prec-sqrt,$(FFLAGS_LOPT2))
-FFLAGS_LOPT4=$(subst CORE-AVX2,CORE-AVX-I,$(FFLAGS_LOPT3))
+	$(FC) $(CPPDEFS) $(FFLAGS_LOPT3) $(OTHER_FFLAGS) -c $< -o $@
+./physics/gfdl_cloud_microphys.o: ./physics/gfdl_cloud_microphys.F90
+	$(FC) $(CPPDEFS) $(FFLAGS_LOPT3) $(OTHER_FFLAGS) -c $< -o $@
 ./physics/satmedmfvdif.o : ./physics/satmedmfvdif.f
-	$(FC) $(CPPDEFS) $(FFLAGS_LOPT4) $(OTHER_FFLAGS) -c $< -o $@
-
+	$(FC) $(CPPDEFS) $(FFLAGS_LOPT3) $(OTHER_FFLAGS) -c $< -o $@
 endif # (,$(findstring TRANSITION,$(CPPDEFS)))
 
 # Do preprocessing of the GFS drivers in two steps to be able
