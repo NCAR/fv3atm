@@ -33,9 +33,9 @@
 #endif
 
 #ifdef OVERLOAD_R4
-      integer, parameter :: kind_dyn  = 4 
+      integer, parameter :: kind_dyn = 4
 #else
-      integer, parameter :: kind_dyn  = 8
+      integer, parameter :: kind_dyn = 8
 #endif
 
 !
