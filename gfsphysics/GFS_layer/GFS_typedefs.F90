@@ -1578,8 +1578,8 @@ module GFS_typedefs
 !! | GFS_Data(cdata%blk_no)%Tbd%in_nm                            | in_number_concentration                                                                        | IN number concentration                                 | kg-1?         |    2 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Tbd%ccn_nm                           | ccn_number_concentration                                                                       | CCN number concentration                                | kg-1?         |    2 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Tbd%aer_nm                           | aerosol_number_concentration_from_gocart_aerosol_climatology                                   | GOCART aerosol climatology number concentration         | kg-1?         |    3 | real    | kind_phys | none   | F        |
-!! | GFS_Data(cdata%blk_no)%Tbd%imap                             |                                                                                                | map of local index ix to global index i for this block  | none          |    1 | integer |           | none   | F        |
-!! | GFS_Data(cdata%blk_no)%Tbd%jmap                             |                                                                                                | map of local index ix to global index j for this block  | none          |    1 | integer |           | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Tbd%imap                             | map_of_block_column_number_to_global_i_index                                                   | map of local index ix to global index i for this block  | none          |    1 | integer |           | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Tbd%jmap                             | map_of_block_column_number_to_global_j_index                                                   | map of local index ix to global index j for this block  | none          |    1 | integer |           | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Tbd%rann                             | random_number_array                                                                            | random number array (0-1)                               | none          |    2 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Tbd%acv                              | accumulated_lwe_thickness_of_convective_precipitation_amount_cnvc90                            | accumulated convective rainfall amount for cnvc90 only  | m             |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Tbd%acvb                             | smallest_cloud_base_vertical_index_encountered_thus_far                                        | smallest cloud base vertical index encountered thus far | index         |    1 | real    | kind_phys | none   | F        |
@@ -3677,6 +3677,9 @@ module GFS_typedefs
     endif
     Model%iccn             = iccn
     if (Model%aero_in) Model%iccn = .false.
+    ! further down: set Model%iccn to .false.
+    ! for all microphysics schemes except
+    ! MG2/3 (these are the only ones using ICCN)
     Model%iflip            = iflip
     Model%isol             = isol
     Model%ico2             = ico2
@@ -3707,6 +3710,10 @@ module GFS_typedefs
 !--- microphysical switch
     Model%ncld             = ncld
     Model%imp_physics      = imp_physics
+    ! DH*
+    ! turn off ICCN interpolation when MG2/3 are not used
+    if (.not. Model%imp_physics==Model%imp_physics_mg) Model%iccn = .false.
+    ! *DH
 !--- Zhao-Carr MP parameters
     Model%psautco          = psautco
     Model%prautco          = prautco
