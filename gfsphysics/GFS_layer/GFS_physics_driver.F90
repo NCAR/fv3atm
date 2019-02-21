@@ -1864,7 +1864,47 @@ module module_physics_driver
          else
 
 !  --- ...  surface energy balance over ocean
-
+#ifdef CCPP
+            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling sfc_ocean through option B'
+            ! Copy local variables from driver to appropriate interstitial variables
+            !Interstitial(nt)%im = im                ! intent(in   ) - set in Interstitial(nt)%create()
+            !Statein%pgr                             ! intent(in   )
+            !Statein%ugrs                            ! intent(in   )
+            !Statein%vgrs                            ! intent(in   )
+            !Statein%tgrs                            ! intent(in   )
+            !Statein%qgrs                            ! intent(in   )
+            !Sfcprop%tsfc                            ! intent(in   )
+            Interstitial(nt)%cd = cd                 ! intent(in   )
+            Interstitial(nt)%cdq = cdq               ! intent(in   )
+            !Statein%prsl(:,1)                       ! intent(in   )
+            Interstitial(nt)%work3 = work3           ! intent(in   )
+            Interstitial(nt)%islmsk = islmsk         ! intent(in   )
+            !Tbd%phy_f2d(:,Model%num_p2d)            ! intent(in   )
+            Interstitial(nt)%flag_iter = flag_iter   ! intent(in   )
+            Interstitial(nt)%qss = qss               ! intent(inout)
+            !Diag%cmm                                ! intent(inout)
+            !Diag%chh                                ! intent(inout)
+            Interstitial(nt)%gflx = gflx             ! intent(inout)
+            Interstitial(nt)%evap = evap             ! intent(inout)
+            Interstitial(nt)%hflx = hflx             ! intent(inout)
+            Interstitial(nt)%ep1d = ep1d             ! intent(inout)
+            !cdata_block(nb,nt)%errmsg = errmsg      ! intent(  out)
+            !cdata_block(nb,nt)%errflg = errflg      ! intent(  out)
+            call ccpp_physics_run(cdata_block(nb,nt), scheme_name="sfc_ocean", ierr=ierr)
+            ! Copy intent(inout) and intent(out) interstitial variables to local variables in driver
+            qss  = Interstitial(nt)%qss
+            gflx = Interstitial(nt)%gflx
+            evap = Interstitial(nt)%evap
+            hflx = Interstitial(nt)%hflx
+            ep1d = Interstitial(nt)%ep1d
+            errmsg = trim(cdata_block(nb,nt)%errmsg)
+            errflg = cdata_block(nb,nt)%errflg
+            if (errflg/=0) then
+                write(0,*) 'Error in call to sfc_ocean: ' // trim(errmsg)
+                stop
+            end if
+#else
+            if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of sfc_ocean'
             call sfc_ocean                                                &
 !  ---  inputs:
              (im, Statein%pgr, Statein%ugrs, Statein%vgrs, Statein%tgrs,  &
@@ -1872,6 +1912,7 @@ module module_physics_driver
               work3, islmsk, Tbd%phy_f2d(1,Model%num_p2d), flag_iter,     &
 !  ---  outputs:
                qss, Diag%cmm, Diag%chh, gflx, evap, hflx, ep1d)
+#endif
 
          endif       ! if ( nstf_name(1) > 0 ) then
 
@@ -3955,48 +3996,48 @@ module module_physics_driver
 #endif
 
 !    Rayleigh damping  near the model top
-#ifdef CCPP
-      ! test for "if( .not. Model%lsidea .and. Model%ral_ts > 0.0) then" moved into the scheme
-      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling rayleigh_damp through option B'
-      ! Copy local variables from driver to appropriate interstitial variables
-      !Model%lsidea                          ! intent(in   )
-      !Interstitial(nt)%im     = im          ! intent(in   ) - set in Interstitial(nt)%create()
-      !Interstitial(nt)%ix     = ix          ! intent(in   ) - set in Interstitial(nt)%create()
-      !Model%levs                            ! intent(in   )
-      Interstitial(nt)%dvdt = dvdt           ! intent(inout)
-      Interstitial(nt)%dudt = dudt           ! intent(inout)
-      Interstitial(nt)%dtdt = dtdt           ! intent(inout)
-      !Statein%ugrs                          ! intent(in   )
-      !Statein%vgrs                          ! intent(in   )
-      !Model%dtp                             ! intent(in   )
-      !con_cp                                ! intent(in   ) - physical constant in physcons.F90
-      !Model%levr                            ! intent(in   )
-      !Statein%pgr                           ! intent(in   )
-      !Statein%prsl                          ! intent(in   )
-      !Model%prslrd0                         ! intent(in   )
-      !Model%ral_ts                          ! intent(in   )
-      !cdata_block(nb,nt)%errmsg = errmsg      ! intent(out)
-      !cdata_block(nb,nt)%errflg = errflg      ! intent(out)
-      call ccpp_physics_run(cdata_block(nb,nt), scheme_name="rayleigh_damp", ierr=ierr)
-      ! Copy back intent(inout) interstitial variables to local variables in driver
-      dvdt   = Interstitial(nt)%dvdt
-      dudt   = Interstitial(nt)%dudt
-      dtdt   = Interstitial(nt)%dtdt
-      errmsg = trim(cdata_block(nb,nt)%errmsg)
-      errflg = cdata_block(nb,nt)%errflg
-      if (errflg/=0) then
-        write(0,*) 'Error in call to rayleigh_damp: ' // trim(errmsg)
-        stop
-      end if
-#else
       if( .not. Model%lsidea .and. Model%ral_ts > 0.0) then
+#ifdef CCPP
+        ! test for "if( .not. Model%lsidea .and. Model%ral_ts > 0.0) then" also in scheme
+        if (Model%me==0) write(0,*) 'CCPP DEBUG: calling rayleigh_damp through option B'
+        ! Copy local variables from driver to appropriate interstitial variables
+        !Model%lsidea                          ! intent(in   )
+        !Interstitial(nt)%im     = im          ! intent(in   ) - set in Interstitial(nt)%create()
+        !Interstitial(nt)%ix     = ix          ! intent(in   ) - set in Interstitial(nt)%create()
+        !Model%levs                            ! intent(in   )
+        Interstitial(nt)%dvdt = dvdt           ! intent(inout)
+        Interstitial(nt)%dudt = dudt           ! intent(inout)
+        Interstitial(nt)%dtdt = dtdt           ! intent(inout)
+        !Statein%ugrs                          ! intent(in   )
+        !Statein%vgrs                          ! intent(in   )
+        !Model%dtp                             ! intent(in   )
+        !con_cp                                ! intent(in   ) - physical constant in physcons.F90
+        !Model%levr                            ! intent(in   )
+        !Statein%pgr                           ! intent(in   )
+        !Statein%prsl                          ! intent(in   )
+        !Model%prslrd0                         ! intent(in   )
+        !Model%ral_ts                          ! intent(in   )
+        !cdata_block(nb,nt)%errmsg = errmsg      ! intent(out)
+        !cdata_block(nb,nt)%errflg = errflg      ! intent(out)
+        call ccpp_physics_run(cdata_block(nb,nt), scheme_name="rayleigh_damp", ierr=ierr)
+        ! Copy back intent(inout) interstitial variables to local variables in driver
+        dvdt   = Interstitial(nt)%dvdt
+        dudt   = Interstitial(nt)%dudt
+        dtdt   = Interstitial(nt)%dtdt
+        errmsg = trim(cdata_block(nb,nt)%errmsg)
+        errflg = cdata_block(nb,nt)%errflg
+        if (errflg/=0) then
+          write(0,*) 'Error in call to rayleigh_damp: ' // trim(errmsg)
+          stop
+        end if
+#else
         if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of rayleigh_damp'
         call rayleigh_damp(im, ix, im, levs, dvdt, dudt, dtdt,      &
                            Statein%ugrs, Statein%vgrs, dtp, con_cp, &
                            Model%levr, Statein%pgr, Statein%prsl,   &
                            Model%prslrd0, Model%ral_ts)
-      endif
 #endif
+      endif
 
 !     if (lprnt) then
 !       write(0,*)' tgrs1=',(Statein%tgrs(ipr,k),k=1,10)

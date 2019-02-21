@@ -112,11 +112,11 @@ module CCPP_typedefs
      integer                             :: je
      integer                             :: jsd
      integer                             :: jed
+     integer                             :: ng
+     integer                             :: npz
      real(kind_dyn),  pointer            :: delp(:,:,:)
      real(kind_dyn),  pointer            :: delz(:,:,:)
      real(kind_grid), pointer            :: area(:,:)
-     integer                             :: ng
-     integer                             :: npz
      real(kind_dyn),  pointer            :: peln(:,:,:)
      real(kind_dyn),  pointer            :: phis(:,:)
      real(kind_dyn),  pointer            :: pkz(:,:,:)
@@ -220,7 +220,6 @@ contains
     real(kind_dyn),  target, intent(in) :: delp(:,:,:)
     real(kind_dyn),  target, intent(in) :: delz(:,:,:)
     real(kind_grid), target, intent(in) :: area(:,:)
-
     real(kind_dyn),  target, intent(in) :: peln(:,:,:)
     real(kind_dyn),  target, intent(in) :: phis(:,:)
     real(kind_dyn),  target, intent(in) :: pkz(:,:,:)
@@ -269,11 +268,12 @@ contains
     Interstitial%je         =  je
     Interstitial%jsd        =  jsd
     Interstitial%jed        =  jed
+    Interstitial%ng         =  ng
+    Interstitial%npz        =  npz
+    ! Set up links from CCPP_interstitial DDT to ATM DDT
     Interstitial%delp       => delp
     Interstitial%delz       => delz
     Interstitial%area       => area
-    Interstitial%ng         =  ng
-    Interstitial%npz        =  npz
     Interstitial%peln       => peln
     Interstitial%phis       => phis
     Interstitial%pkz        => pkz
@@ -284,7 +284,9 @@ contains
     Interstitial%qr         => qr
     Interstitial%qs         => qs
     Interstitial%qg         => qg
-    Interstitial%qc         => qc
+    if (do_qa) then
+       Interstitial%qc      => qc
+    end if
     Interstitial%q_con      => q_con
     !
     ! Calculate vertical pressure levels
@@ -390,7 +392,9 @@ contains
     write (0,*) 'sum(Interstitial%qr)           = ', Interstitial%qr
     write (0,*) 'sum(Interstitial%qs)           = ', Interstitial%qs
     write (0,*) 'sum(Interstitial%qg)           = ', Interstitial%qg
-    write (0,*) 'sum(Interstitial%qc)           = ', Interstitial%qc
+    if (associated(Interstitial%qc)) then
+       write (0,*) 'sum(Interstitial%qc)           = ', Interstitial%qc
+    end if
     write (0,*) 'sum(Interstitial%q_con)        = ', Interstitial%q_con
     write (0,*) 'Interstitial_print: end'
     !
