@@ -1096,7 +1096,10 @@ module GFS_diagnostics
       ExtDiag(idx)%data(nb)%var2 => IntDiag(nb)%ep(:)
     enddo
 
-#if defined(CCPP) || defined(TRANSITION)
+! DH* optimization - output certain diagnostics only if used/computed;
+! can't use if comparing to official baseline because of the way the
+! comparison is done (using cmp).
+#if 0
     if (Model%lssav) then
 #endif
       idx = idx + 1
@@ -1111,7 +1114,7 @@ module GFS_diagnostics
       do nb = 1,nblks
         ExtDiag(idx)%data(nb)%var2 => IntDiag(nb)%cldwrk(:)
       enddo
-#if defined(CCPP) || defined(TRANSITION)
+#if 0
     endif
 #endif
 
@@ -1153,7 +1156,10 @@ module GFS_diagnostics
       ExtDiag(idx)%data(nb)%var2 => IntDiag(nb)%psmean(:)
     enddo
 
-#if defined(CCPP) || defined(TRANSITION)
+! DH* optimization - output certain diagnostics only if used/computed;
+! can't use if comparing to official baseline because of the way the
+! comparison is done (using cmp).
+#if 0
     if (Model%lssav) then
 #endif
       idx = idx + 1
@@ -1195,7 +1201,7 @@ module GFS_diagnostics
       do nb = 1,nblks
         ExtDiag(idx)%data(nb)%var2 => IntDiag(nb)%cnvprcp(:)
       enddo
-#if defined(CCPP) || defined(TRANSITION)
+#if 0
     endif
 #endif
 
