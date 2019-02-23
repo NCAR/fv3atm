@@ -296,8 +296,8 @@ module GFS_typedefs
 !------------------------------------------------------------------
 #if 0
 !! \section arg_table_GFS_stateout_type
-!! | local_name                                         | standard_name                                                          | long_name                                                                                  | units   | rank | type    |    kind   | intent | optional |
-!! |----------------------------------------------------|------------------------------------------------------------------------|--------------------------------------------------------------------------------------------|---------|------|---------|-----------|--------|----------|
+!! | local_name                                                   | standard_name                                                          | long_name                                                                                  | units   | rank | type    |    kind   | intent | optional |
+!! |--------------------------------------------------------------|------------------------------------------------------------------------|--------------------------------------------------------------------------------------------|---------|------|---------|-----------|--------|----------|
 !! | GFS_Data(cdata%blk_no)%Stateout%gu0                          | x_wind_updated_by_physics                                              | zonal wind updated by physics                                                              | m s-1   |    2 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Stateout%gu0(:,1)                     | x_wind_at_lowest_model_layer_updated_by_physics                        | zonal wind at lowest model level updated by physics                                        | m s-1   |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Stateout%gv0                          | y_wind_updated_by_physics                                              | meridional wind updated by physics                                                         | m s-1   |    2 | real    | kind_phys | none   | F        |
@@ -894,6 +894,8 @@ module GFS_typedefs
 !! | GFS_Control%moist_adj                |                                                                               | flag for moist convective adjustment                    |               |    0 | logical   |           | none   | F        |
 !! | GFS_Control%cscnv                    | flag_for_Chikira_Sugiyama_deep_convection                                     | flag for Chikira-Sugiyama convection                    | flag          |    0 | logical   |           | none   | F        |
 !! | GFS_Control%satmedmf                 | flag_for_scale_aware_TKE_moist_EDMF_PBL                                       | flag for scale-aware TKE moist EDMF PBL scheme          | flag          |    0 | logical   |           | none   | F        |
+!! | GFS_Control%shinhong                 | flag_for_scale_aware_Shinhong_PBL                                             | flag for scale-aware Shinhong PBL scheme                | flag          |    0 | logical   |           | none   | F        |
+!! | GFS_Control%do_ysu                   | flag_for_ysu                                                                  | flag for YSU PBL scheme                                 | flag          |    0 | logical   |           | none   | F        |
 !! | GFS_Control%cal_pre                  | flag_for_precipitation_type_algorithm                                         | flag controls precip type algorithm                     | flag          |    0 | logical   |           | none   | F        |
 !! | GFS_Control%do_aw                    | flag_for_Arakawa_Wu_adjustment                                                | flag for Arakawa Wu scale-aware adjustment              | flag          |    0 | logical   |           | none   | F        |
 !! | GFS_Control%do_awdd                  | flag_arakawa_wu_downdraft                                                     | AW scale-aware option in cs convection downdraft        | flag          |    0 | logical   |           | none   | F        |
@@ -1278,6 +1280,8 @@ module GFS_typedefs
     logical              :: hybedmf         !< flag for hybrid edmf pbl scheme
     logical              :: satmedmf        !< flag for scale-aware TKE-based moist edmf
                                             !< vertical turbulent mixing scheme
+    logical              :: shinhong        !< flag for scale-aware Shinhong vertical turbulent mixing scheme
+    logical              :: do_ysu          !< flag for YSU turbulent mixing scheme
     logical              :: dspheat         !< flag for tke dissipative heating
     logical              :: cnvcld
     logical              :: random_clds     !< flag controls whether clouds are random
@@ -1574,8 +1578,8 @@ module GFS_typedefs
 !! | GFS_Data(cdata%blk_no)%Tbd%in_nm                            | in_number_concentration                                                                        | IN number concentration                                 | kg-1?         |    2 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Tbd%ccn_nm                           | ccn_number_concentration                                                                       | CCN number concentration                                | kg-1?         |    2 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Tbd%aer_nm                           | aerosol_number_concentration_from_gocart_aerosol_climatology                                   | GOCART aerosol climatology number concentration         | kg-1?         |    3 | real    | kind_phys | none   | F        |
-!! | GFS_Data(cdata%blk_no)%Tbd%imap                             |                                                                                                | map of local index ix to global index i for this block  | none          |    1 | integer |           | none   | F        |
-!! | GFS_Data(cdata%blk_no)%Tbd%jmap                             |                                                                                                | map of local index ix to global index j for this block  | none          |    1 | integer |           | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Tbd%imap                             | map_of_block_column_number_to_global_i_index                                                   | map of local index ix to global index i for this block  | none          |    1 | integer |           | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Tbd%jmap                             | map_of_block_column_number_to_global_j_index                                                   | map of local index ix to global index j for this block  | none          |    1 | integer |           | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Tbd%rann                             | random_number_array                                                                            | random number array (0-1)                               | none          |    2 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Tbd%acv                              | accumulated_lwe_thickness_of_convective_precipitation_amount_cnvc90                            | accumulated convective rainfall amount for cnvc90 only  | m             |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Tbd%acvb                             | smallest_cloud_base_vertical_index_encountered_thus_far                                        | smallest cloud base vertical index encountered thus far | index         |    1 | real    | kind_phys | none   | F        |
@@ -3342,6 +3346,8 @@ module GFS_typedefs
     logical              :: hybedmf        = .false.                  !< flag for hybrid edmf pbl scheme
     logical              :: satmedmf       = .false.                  !< flag for scale-aware TKE-based moist edmf
                                                                       !< vertical turbulent mixing scheme
+    logical              :: shinhong       = .false.                  !< flag for scale-aware Shinhong vertical turbulent mixing scheme
+    logical              :: do_ysu         = .false.                  !< flag for YSU vertical turbulent mixing scheme
     logical              :: dspheat        = .false.                  !< flag for tke dissipative heating
     logical              :: cnvcld         = .false.
     logical              :: random_clds    = .false.                  !< flag controls whether clouds are random
@@ -3350,12 +3356,16 @@ module GFS_typedefs
                                                                       !<     1: July 2010 version of mass-flux shallow conv scheme
                                                                       !<         current operational version as of 2016
                                                                       !<     2: scale- & aerosol-aware mass-flux shallow conv scheme (2017)
+                                                                      !<     3: scale- & aerosol-aware Grell-Freitas scheme (GSD)
+                                                                      !<     4: New Tiedtke scheme (CAPS)
                                                                       !<     0: modified Tiedtke's eddy-diffusion shallow conv scheme
                                                                       !<    -1: no shallow convection used
     integer              :: imfdeepcnv     =  1                       !< flag for mass-flux deep convection scheme
                                                                       !<     1: July 2010 version of SAS conv scheme
                                                                       !<           current operational version as of 2016
                                                                       !<     2: scale- & aerosol-aware mass-flux deep conv scheme (2017)
+                                                                      !<     3: scale- & aerosol-aware Grell-Freitas scheme (GSD)
+                                                                      !<     4: New Tiedtke scheme (CAPS)
     logical              :: do_deep        = .true.                   !< whether to do deep convection
 #ifdef CCPP
     logical              :: do_mynnedmf       = .false.               !< flag for MYNN-EDMF
@@ -3522,7 +3532,7 @@ module GFS_typedefs
                                bl_mynn_mixqt, icloud_bl, bl_mynn_tkeadvect,                 &
 #endif
                                h2o_phys, pdfcld, shcnvcw, redrag, hybedmf, satmedmf,        &
-                               dspheat, cnvcld,                                             &
+                               shinhong, do_ysu, dspheat, cnvcld,                           &
                                random_clds, shal_cnv, imfshalcnv, imfdeepcnv, do_deep, jcap,&
                                cs_parm, flgmin, cgwf, ccwf, cdmbgwd, sup, ctei_rm, crtrh,   &
                                dlqf, rbcr, shoc_parm, psauras, prauras, wminras,            &
@@ -3667,6 +3677,9 @@ module GFS_typedefs
     endif
     Model%iccn             = iccn
     if (Model%aero_in) Model%iccn = .false.
+    ! further down: set Model%iccn to .false.
+    ! for all microphysics schemes except
+    ! MG2/3 (these are the only ones using ICCN)
     Model%iflip            = iflip
     Model%isol             = isol
     Model%ico2             = ico2
@@ -3697,6 +3710,10 @@ module GFS_typedefs
 !--- microphysical switch
     Model%ncld             = ncld
     Model%imp_physics      = imp_physics
+    ! DH*
+    ! turn off ICCN interpolation when MG2/3 are not used
+    if (.not. Model%imp_physics==Model%imp_physics_mg) Model%iccn = .false.
+    ! *DH
 !--- Zhao-Carr MP parameters
     Model%psautco          = psautco
     Model%prautco          = prautco
@@ -3804,6 +3821,8 @@ module GFS_typedefs
     Model%redrag           = redrag
     Model%hybedmf          = hybedmf
     Model%satmedmf         = satmedmf
+    Model%shinhong         = shinhong
+    Model%do_ysu           = do_ysu
     Model%dspheat          = dspheat
     Model%cnvcld           = cnvcld
     Model%random_clds      = random_clds
@@ -4128,9 +4147,20 @@ module GFS_typedefs
         print *,' nstf_name(5)=',Model%nstf_name(5)
       endif
       if (Model%do_deep) then
-#ifndef CCPP
+#ifdef CCPP
+        ! Consistency check for NTDK convection: deep and shallow convection are bundled
+        ! and cannot be combined with any other deep or shallow convection scheme
+        if ( (Model%imfdeepcnv == 4 .or. Model%imfshalcnv == 4) .and. &
+            .not. (Model%imfdeepcnv == 4 .and. Model%imfshalcnv == 4) ) then
+            write(0,*) "Logic error: if NTDK deep convection is used, must also use NTDK shallow convection (and vice versa)"
+            stop
+        end if
+#else
         if (Model%imfdeepcnv == 3 .or. Model%imfshalcnv == 3) then
             write(0,*) "Error, GF convection scheme only available through CCPP"
+            stop
+        else if (Model%imfdeepcnv == 4 .or. Model%imfshalcnv == 4) then
+            write(0,*) "Error, NTDK convection scheme only available through CCPP"
             stop
         end if
 #endif
@@ -4146,7 +4176,9 @@ module GFS_typedefs
             elseif(Model%imfdeepcnv == 2) then
                print *,' scale & aerosol-aware mass-flux deep conv scheme'
             elseif(Model%imfdeepcnv == 3) then
-               print *,'Grell-Freitas scale & aerosol-aware mass-flux deep conv scheme'
+               print *,' Grell-Freitas scale & aerosol-aware mass-flux deep conv scheme'
+            elseif(Model%imfdeepcnv == 4) then
+               print *,' New Tiedtke cumulus scheme'
             endif
           endif
         else
@@ -4177,7 +4209,9 @@ module GFS_typedefs
         elseif (Model%imfshalcnv == 2) then
           print *,' scale- & aerosol-aware mass-flux shallow conv scheme (2017)'
         elseif (Model%imfshalcnv == 3) then
-          print *,'Grell-Freitas scale- & aerosol-aware mass-flux shallow conv scheme (2013)'
+          print *,' Grell-Freitas scale- & aerosol-aware mass-flux shallow conv scheme (2013)'
+        elseif (Model%imfshalcnv == 4) then
+          print *,' New Tiedtke cumulus scheme'
         else
           print *,' unknown mass-flux scheme in use - defaulting to no shallow convection'
           Model%imfshalcnv = -1
@@ -4366,7 +4400,7 @@ module GFS_typedefs
 
     Model%lmfshal  = (Model%shal_cnv .and. Model%imfshalcnv > 0)
 #ifdef CCPP
-    Model%lmfdeep2 = (Model%imfdeepcnv == 2 .or. Model%imfdeepcnv == 3)
+    Model%lmfdeep2 = (Model%imfdeepcnv == 2 .or. Model%imfdeepcnv == 3 .or. Model%imfdeepcnv == 4)
 #else
     Model%lmfdeep2 = (Model%imfdeepcnv == 2)
 #endif
@@ -4559,6 +4593,8 @@ module GFS_typedefs
       print *, ' redrag            : ', Model%redrag
       print *, ' hybedmf           : ', Model%hybedmf
       print *, ' satmedmf          : ', Model%satmedmf
+      print *, ' shinhong          : ', Model%shinhong
+      print *, ' do_ysu            : ', Model%do_ysu
       print *, ' dspheat           : ', Model%dspheat
       print *, ' cnvcld            : ', Model%cnvcld
       print *, ' random_clds       : ', Model%random_clds
@@ -4859,18 +4895,21 @@ module GFS_typedefs
     Tbd%htswc = clear_val
     Tbd%htsw0 = clear_val
 
-    if (Model%imfdeepcnv == 3) then
+    if (Model%imfdeepcnv == 3 .or. Model%imfdeepcnv == 4) then
        allocate(Tbd%forcet(IM, Model%levs))
        allocate(Tbd%forceq(IM, Model%levs))
        allocate(Tbd%prevst(IM, Model%levs))
        allocate(Tbd%prevsq(IM, Model%levs))
-       allocate(Tbd%cactiv(IM))
        Tbd%forcet = clear_val
        Tbd%forceq = clear_val
        Tbd%prevst = clear_val
        Tbd%prevsq = clear_val
-       Tbd%cactiv = zero
    end if
+
+   if (Model%imfdeepcnv == 3) then
+      allocate(Tbd%cactiv(IM))
+      Tbd%cactiv = zero
+  end if
 
    if (Model%lsm == Model%lsm_ruc) then
        allocate(Tbd%raincprv  (IM))

@@ -119,7 +119,7 @@ contains
 subroutine fv_sat_adj (mdt, zvir, is, ie, js, je, ng, hydrostatic, consv_te, &
         te0, qv, ql, qi, qr, qs, qg, hs, dpln, delz, pt, dp, q_con, cappa, &
         area, dtdt, out_dt, last_step, do_qa, qa)
-    
+
     implicit none
     
     integer, intent (in) :: is, ie, js, je, ng
