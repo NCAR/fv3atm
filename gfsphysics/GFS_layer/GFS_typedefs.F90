@@ -2246,7 +2246,7 @@ module GFS_typedefs
 !! | GFS_Interstitial(cdata%thrd_no)%ncpl                          | local_condesed_water_number_concentration                                                      | number concentration of condensed water local to physics                            | kg-1          |    2 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%ncpr                          | local_rain_number_concentration                                                                | number concentration of rain local to physics                                       | kg-1          |    2 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%ncps                          | local_snow_number_concentration                                                                | number concentration of snow local to physics                                       | kg-1          |    2 | real        | kind_phys | none   | F        |
-!! | GFS_Interstitial(cdata%thrd_no)%ntiwx                         | index_for_ntiwx_dh_todo_find_better_name                                                       | index for ntiwx DH* todo find better name                                           | index         |    0 | integer     |           | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%ntiwx                         | index_for_ice_cloud_condensate_vertical_diffusion_tracer                                       | index for ice cloud condensate n the vertically diffused tracer array               | index         |    0 | integer     |           | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%ntk                           | index_for_turbulent_kinetic_energy_convective_transport_tracer                                 | index for turbulent kinetic energy in the convectively transported tracer array     | index         |    0 | integer     |           | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%ntkev                         | index_for_turbulent_kinetic_energy_vertical_diffusion_tracer                                   | index for turbulent kinetic energy in the vertically diffused tracer array          | index         |    0 | integer     |           | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%nvdiff                        | number_of_vertical_diffusion_tracers                                                           | number of tracers to diffuse vertically                                             | count         |    0 | integer     |           | none   | F        |
@@ -5602,7 +5602,7 @@ module GFS_typedefs
     endif
 
     if (Interstitial%nvdiff == Model%ntrac) then
-      Interstitial%ntiwx = -999
+      Interstitial%ntiwx = Model%ntiw
     else
       if (Model%imp_physics == Model%imp_physics_wsm6) then
         Interstitial%ntiwx = 3
