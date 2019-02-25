@@ -1096,19 +1096,27 @@ module GFS_diagnostics
       ExtDiag(idx)%data(nb)%var2 => IntDiag(nb)%ep(:)
     enddo
 
-    idx = idx + 1
-    ExtDiag(idx)%axes = 2
-    ExtDiag(idx)%name = 'cwork_ave'
-    ExtDiag(idx)%desc = 'cloud work function (valid only with sas)'
-    ExtDiag(idx)%unit = 'J/kg'
-    ExtDiag(idx)%mod_name = 'gfs_phys'
-    ExtDiag(idx)%time_avg = .TRUE.
-    ExtDiag(idx)%intpl_method = 'bilinear'
-    allocate (ExtDiag(idx)%data(nblks))
-    do nb = 1,nblks
-      ExtDiag(idx)%data(nb)%var2 => IntDiag(nb)%cldwrk(:)
-    enddo
-
+! DH* optimization - output certain diagnostics only if used/computed;
+! can't use if comparing to official baseline because of the way the
+! comparison is done (using cmp).
+#if 0
+    if (Model%lssav) then
+#endif
+      idx = idx + 1
+      ExtDiag(idx)%axes = 2
+      ExtDiag(idx)%name = 'cwork_ave'
+      ExtDiag(idx)%desc = 'cloud work function (valid only with sas)'
+      ExtDiag(idx)%unit = 'J/kg'
+      ExtDiag(idx)%mod_name = 'gfs_phys'
+      ExtDiag(idx)%time_avg = .TRUE.
+      ExtDiag(idx)%intpl_method = 'bilinear'
+      allocate (ExtDiag(idx)%data(nblks))
+      do nb = 1,nblks
+        ExtDiag(idx)%data(nb)%var2 => IntDiag(nb)%cldwrk(:)
+      enddo
+#if 0
+    endif
+#endif
 
     idx = idx + 1
     ExtDiag(idx)%axes = 2
@@ -1148,45 +1156,54 @@ module GFS_diagnostics
       ExtDiag(idx)%data(nb)%var2 => IntDiag(nb)%psmean(:)
     enddo
 
-    idx = idx + 1
-    ExtDiag(idx)%axes = 2
-    ExtDiag(idx)%name = 'cnvprcp_ave'
-    ExtDiag(idx)%desc = 'averaged surface convective precipitation rate'
-    ExtDiag(idx)%unit = 'kg/m**2/s'
-    ExtDiag(idx)%mod_name = 'gfs_phys'
-    ExtDiag(idx)%cnvfac = cn_th
-    ExtDiag(idx)%time_avg = .TRUE.
-    ExtDiag(idx)%time_avg_kind = 'full'
-    ExtDiag(idx)%intpl_method = 'bilinear'
-    allocate (ExtDiag(idx)%data(nblks))
-    do nb = 1,nblks
-      ExtDiag(idx)%data(nb)%var2 => IntDiag(nb)%cnvprcp(:)
-    enddo
+! DH* optimization - output certain diagnostics only if used/computed;
+! can't use if comparing to official baseline because of the way the
+! comparison is done (using cmp).
+#if 0
+    if (Model%lssav) then
+#endif
+      idx = idx + 1
+      ExtDiag(idx)%axes = 2
+      ExtDiag(idx)%name = 'cnvprcp_ave'
+      ExtDiag(idx)%desc = 'averaged surface convective precipitation rate'
+      ExtDiag(idx)%unit = 'kg/m**2/s'
+      ExtDiag(idx)%mod_name = 'gfs_phys'
+      ExtDiag(idx)%cnvfac = cn_th
+      ExtDiag(idx)%time_avg = .TRUE.
+      ExtDiag(idx)%time_avg_kind = 'full'
+      ExtDiag(idx)%intpl_method = 'bilinear'
+      allocate (ExtDiag(idx)%data(nblks))
+      do nb = 1,nblks
+        ExtDiag(idx)%data(nb)%var2 => IntDiag(nb)%cnvprcp(:)
+      enddo
 
-    idx = idx + 1
-    ExtDiag(idx)%axes = 2
-    ExtDiag(idx)%name = 'cnvprcpb_ave'
-    ExtDiag(idx)%desc = 'averaged bucket surface convective precipitation rate'
-    ExtDiag(idx)%unit = 'kg/m**2/s'
-    ExtDiag(idx)%mod_name = 'gfs_phys'
-    ExtDiag(idx)%cnvfac = cn_th
-    ExtDiag(idx)%time_avg = .TRUE.
-    ExtDiag(idx)%intpl_method = 'bilinear'
-    allocate (ExtDiag(idx)%data(nblks))
-    do nb = 1,nblks
-      ExtDiag(idx)%data(nb)%var2 => IntDiag(nb)%cnvprcpb(:)
-    enddo
+      idx = idx + 1
+      ExtDiag(idx)%axes = 2
+      ExtDiag(idx)%name = 'cnvprcpb_ave'
+      ExtDiag(idx)%desc = 'averaged bucket surface convective precipitation rate'
+      ExtDiag(idx)%unit = 'kg/m**2/s'
+      ExtDiag(idx)%mod_name = 'gfs_phys'
+      ExtDiag(idx)%cnvfac = cn_th
+      ExtDiag(idx)%time_avg = .TRUE.
+      ExtDiag(idx)%intpl_method = 'bilinear'
+      allocate (ExtDiag(idx)%data(nblks))
+      do nb = 1,nblks
+        ExtDiag(idx)%data(nb)%var2 => IntDiag(nb)%cnvprcpb(:)
+      enddo
 
-    idx = idx + 1
-    ExtDiag(idx)%axes = 2
-    ExtDiag(idx)%name = 'cnvprcp'
-    ExtDiag(idx)%desc = 'surface convective precipitation rate'
-    ExtDiag(idx)%unit = 'kg/m**2/s'
-    ExtDiag(idx)%mod_name = 'gfs_phys'
-    allocate (ExtDiag(idx)%data(nblks))
-    do nb = 1,nblks
-      ExtDiag(idx)%data(nb)%var2 => IntDiag(nb)%cnvprcp(:)
-    enddo
+      idx = idx + 1
+      ExtDiag(idx)%axes = 2
+      ExtDiag(idx)%name = 'cnvprcp'
+      ExtDiag(idx)%desc = 'surface convective precipitation rate'
+      ExtDiag(idx)%unit = 'kg/m**2/s'
+      ExtDiag(idx)%mod_name = 'gfs_phys'
+      allocate (ExtDiag(idx)%data(nblks))
+      do nb = 1,nblks
+        ExtDiag(idx)%data(nb)%var2 => IntDiag(nb)%cnvprcp(:)
+      enddo
+#if 0
+    endif
+#endif
 
     idx = idx + 1
     ExtDiag(idx)%axes = 2
