@@ -301,8 +301,11 @@ subroutine update_atmos_radiation_physics (Atmos)
 
       call mpp_clock_begin(radClock)
 #ifdef CCPP
-      call IPD_CCPP_step (step="radiation", nblks=Atm_block%nblks, ierr=ierr)
-      if (ierr/=0)  call mpp_error(FATAL, 'Call to IPD-CCPP radiation step failed')
+      ! Performance improvement. Only enter if it is time to call the radiation physics.
+      if (IPD_Control%lsswr .or. IPD_Control%lslwr) then
+        call IPD_CCPP_step (step="radiation", nblks=Atm_block%nblks, ierr=ierr)
+        if (ierr/=0)  call mpp_error(FATAL, 'Call to IPD-CCPP radiation step failed')
+      endif
 #else
       Func0d => radiation_step1
 !$OMP parallel do default (none)       &
