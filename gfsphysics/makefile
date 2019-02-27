@@ -316,6 +316,8 @@ FFLAGS_LOPT2=$(subst CORE-AVX2,CORE-AVX-I,\
 	$(FC) $(CPPDEFS) $(FFLAGS_LOPT2) $(OTHER_FFLAGS) -c $< -o $@
 ./physics/cs_conv.o : ./physics/cs_conv.F90
 	$(FC) $(CPPDEFS) $(FFLAGS_LOPT2) $(OTHER_FFLAGS) -c $< -o $@
+./physics/gcm_shoc.o : ./physics/gcm_shoc.f90
+	$(FC) $(CPPDEFS) $(FFLAGS_LOPT2) $(OTHER_FFLAGS) -c $< -o $@
 endif
 
 # Do preprocessing of the GFS drivers in two steps to be able
