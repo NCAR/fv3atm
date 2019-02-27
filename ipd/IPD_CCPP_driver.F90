@@ -193,7 +193,7 @@ module IPD_CCPP_driver
       ! for all cdata structures independently), we can use cdata_domain here.
       call ccpp_physics_run(cdata_domain, group_name="time_vary", ierr=ierr)
       if (ierr/=0) then
-        write(0,'(2(a,i4))') "An error occurred in ccpp_physics_run for group time_vary"
+        write(0,'(a)') "An error occurred in ccpp_physics_run for group time_vary"
         write(0,'(a)') trim(cdata_domain%errmsg)
         return
       end if
