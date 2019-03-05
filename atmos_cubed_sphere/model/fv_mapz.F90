@@ -195,6 +195,10 @@ contains
   real, intent(inout)::   dtdt(is:ie,js:je,km)
   real, intent(out)::    pkz(is:ie,js:je,km)       !< layer-mean pk for converting t to pt
   real, intent(out)::     te(isd:ied,jsd:jed,km)
+#if !defined(CCPP) && defined(TRANSITION)
+  ! For bit-for-bit reproducibility
+  real, volatile:: volatile_var
+#endif
 
 ! !DESCRIPTION:
 !
@@ -577,25 +581,37 @@ contains
 1000  continue
 
 #if defined(CCPP) && defined(__GFORTRAN__)
-!$OMP parallel default(none) shared(is,ie,js,je,km,ptop,u,v,pe,ua,isd,ied,jsd,jed,kord_mt, &
-#else
+!$OMP parallel default(none) shared(is,ie,js,je,km,ptop,u,v,pe,ua,isd,ied,jsd,jed,kord_mt,     &
+!$OMP                               te_2d,te,delp,hydrostatic,hs,rg,pt,peln, adiabatic,        &
+!$OMP                               cp,delz,nwat,rainwat,liq_wat,ice_wat,snowwat,              &
+!$OMP                               graupel,q_con,r_vir,sphum,w,pk,pkz,last_step,consv,        &
+!$OMP                               do_adiabatic_init,zsum1,zsum0,te0_2d,domain,               &
+!$OMP                               ng,gridstruct,E_Flux,pdt,dtmp,reproduce_sum,q,             &
+!$OMP                               mdt,cld_amt,cappa,dtdt,out_dt,rrg,akap,do_sat_adj,         &
+!$OMP                               kord_tm,cdata,CCPP_interstitial)                           &
+!$OMP                       private(pe0,pe1,pe2,pe3,qv,cvm,gz,phis,kdelz,ierr)
+#elif defined(CCPP)
 !$OMP parallel default(none) shared(is,ie,js,je,km,kmp,ptop,u,v,pe,ua,isd,ied,jsd,jed,kord_mt, &
-#endif
-!$OMP                               te_2d,te,delp,hydrostatic,hs,rg,pt,peln, adiabatic, &
-!$OMP                               cp,delz,nwat,rainwat,liq_wat,ice_wat,snowwat,       &
-!$OMP                               graupel,q_con,r_vir,sphum,w,pk,pkz,last_step,consv, &
-!$OMP                               do_adiabatic_init,zsum1,zsum0,te0_2d,domain,        &
-!$OMP                               ng,gridstruct,E_Flux,pdt,dtmp,reproduce_sum,q,      &
-!$OMP                               mdt,cld_amt,cappa,dtdt,out_dt,rrg,akap,do_sat_adj,  &
-#ifdef CCPP
-#ifdef __GFORTRAN__
-!$OMP                               kord_tm,cdata, CCPP_interstitial)                   &
-#else
-!$OMP                               fast_mp_consv,kord_tm,cdata, CCPP_interstitial)     &
-#endif
+!$OMP                               te_2d,te,delp,hydrostatic,hs,rg,pt,peln, adiabatic,        &
+!$OMP                               cp,delz,nwat,rainwat,liq_wat,ice_wat,snowwat,              &
+!$OMP                               graupel,q_con,r_vir,sphum,w,pk,pkz,last_step,consv,        &
+!$OMP                               do_adiabatic_init,zsum1,zsum0,te0_2d,domain,               &
+!$OMP                               ng,gridstruct,E_Flux,pdt,dtmp,reproduce_sum,q,             &
+!$OMP                               mdt,cld_amt,cappa,dtdt,out_dt,rrg,akap,do_sat_adj,         &
+!$OMP                               fast_mp_consv,kord_tm,cdata, CCPP_interstitial)            &
 !$OMP                       private(pe0,pe1,pe2,pe3,qv,cvm,gz,phis,kdelz,ierr)
 #else
-!$OMP                               fast_mp_consv,kord_tm) &
+!$OMP parallel default(none) shared(is,ie,js,je,km,kmp,ptop,u,v,pe,ua,isd,ied,jsd,jed,kord_mt, &
+!$OMP                               te_2d,te,delp,hydrostatic,hs,rg,pt,peln, adiabatic,        &
+!$OMP                               cp,delz,nwat,rainwat,liq_wat,ice_wat,snowwat,              &
+!$OMP                               graupel,q_con,r_vir,sphum,w,pk,pkz,last_step,consv,        &
+!$OMP                               do_adiabatic_init,zsum1,zsum0,te0_2d,domain,               &
+!$OMP                               ng,gridstruct,E_Flux,pdt,dtmp,reproduce_sum,q,             &
+!$OMP                               mdt,cld_amt,cappa,dtdt,out_dt,rrg,akap,do_sat_adj,         &
+!$OMP                               fast_mp_consv,kord_tm)                                     &
+#ifdef TRANSITION
+!$OMP                       private(volatile_var)                                              &
+#endif
 !$OMP                       private(pe0,pe1,pe2,pe3,qv,cvm,gz,phis,kdelz,dpln)
 #endif
 
@@ -762,9 +778,19 @@ endif        ! end last_step check
                  do j=js,je
                     do i=is,ie
 #ifdef MOIST_CAPPA
+#ifdef TRANSITION
+                       volatile_var = log(rrg*delp(i,j,k)/delz(i,j,k)*pt(i,j,k))
+                       pkz(i,j,k) = exp(cappa(i,j,k)*volatile_var)
+#else
                        pkz(i,j,k) = exp(cappa(i,j,k)*log(rrg*delp(i,j,k)/delz(i,j,k)*pt(i,j,k)))
+#endif
+#else
+#ifdef TRANSITION
+                       volatile_var = log(rrg*delp(i,j,k)/delz(i,j,k)*pt(i,j,k))
+                       pkz(i,j,k) = exp(akap*volatile_var)
 #else
                        pkz(i,j,k) = exp(akap*log(rrg*delp(i,j,k)/delz(i,j,k)*pt(i,j,k)))
+#endif
 #endif
                     enddo
                  enddo

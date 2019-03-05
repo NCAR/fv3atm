@@ -189,7 +189,7 @@ use fv_nwp_nudge_mod,   only: fv_nwp_nudge_init, fv_nwp_nudge_end, do_adiabatic_
 use fv_regional_mod,    only: start_regional_restart, read_new_bc_data, &
                               a_step, p_step, current_time_in_seconds
 
-use mpp_domains_mod,    only:  mpp_get_data_domain, mpp_get_compute_domain
+use mpp_domains_mod,    only: mpp_get_data_domain, mpp_get_compute_domain
 
 implicit none
 private
@@ -265,18 +265,18 @@ contains
 !! and diagnostics.  
  subroutine atmosphere_init (Time_init, Time, Time_step, Grid_box, area)
 #ifdef CCPP
-   use iso_c_binding,     only: c_loc
 #ifdef STATIC
 ! For static builds, the ccpp_physics_{init,run,finalize} calls
 ! are not pointing to code in the CCPP framework, but to auto-generated
 ! ccpp_suite_cap and ccpp_group_*_cap modules behind a ccpp_static_api
-   use ccpp_api,          only: ccpp_init,           &
-                                ccpp_field_add
+   use ccpp_api,          only: ccpp_init
    use ccpp_static_api,   only: ccpp_physics_init
 #else
+   use iso_c_binding,     only: c_loc
    use ccpp_api,          only: ccpp_init,           &
                                 ccpp_physics_init,   &
-                                ccpp_field_add
+                                ccpp_field_add,      &
+                                ccpp_error
 #endif
    use CCPP_data,         only: ccpp_suite,          &
                                 cdata => cdata_tile, &
@@ -285,9 +285,11 @@ contains
 #ifdef OPENMP
    use omp_lib
 #endif
+#ifndef STATIC
 ! Begin include auto-generated list of modules for ccpp
 #include "ccpp_modules_fast_physics.inc"
 ! End include auto-generated list of modules for ccpp
+#endif
 #endif
    type (time_type),    intent(in)    :: Time_init, Time, Time_step
    type(grid_box_type), intent(inout) :: Grid_box
@@ -367,9 +369,6 @@ contains
    cld_amt = get_tracer_index (MODEL_ATMOS, 'cld_amt')
 #endif
 
-#ifdef CCPP
-   ! DH* do we have to handle Thompson aerosols here?
-#endif
    if (max(sphum,liq_wat,ice_wat,rainwat,snowwat,graupel) > Atm(mytile)%flagstruct%nwat) then
       call mpp_error (FATAL,' atmosphere_init: condensate species are not first in the list of &
                             &tracers defined in the field_table')
@@ -445,8 +444,13 @@ contains
    if (ierr/=0) then
       call mpp_error (FATAL,' atmosphere_dynamics: error in ccpp_init')
    end if
+   
+   ! For fast physics running over the entire domain, block and thread
+   ! number are not used; set to safe values
+   cdata%blk_no = 1
+   cdata%thrd_no = 1
 
-   ! Create shared data type for fast and slow physics
+   ! Create shared data type for fast and slow physics, one for each thread
 #ifdef OPENMP
    nthreads = omp_get_max_threads()
 #else
@@ -461,18 +465,22 @@ contains
    ! Create interstitial data type for fast physics
    call CCPP_interstitial%create(Atm(mytile)%bd%is, Atm(mytile)%bd%ie, Atm(mytile)%bd%isd, Atm(mytile)%bd%ied,   &
                                  Atm(mytile)%bd%js, Atm(mytile)%bd%je, Atm(mytile)%bd%jsd, Atm(mytile)%bd%jed,   &
-                                 Atm(mytile)%npz, dt_atmos, p_split, Atm(mytile)%flagstruct%k_split,             &
+                                 Atm(mytile)%npz, Atm(mytile)%ng,                                                &
+                                 dt_atmos, p_split, Atm(mytile)%flagstruct%k_split,                              &
                                  zvir, Atm(mytile)%flagstruct%p_ref, Atm(mytile)%ak, Atm(mytile)%bk,             &
-                                 cld_amt>0, kappa, Atm(mytile)%flagstruct%hydrostatic)
+                                 cld_amt>0, kappa, Atm(mytile)%flagstruct%hydrostatic,                           &
+                                 Atm(mytile)%flagstruct%do_sat_adj,                                              &
+                                 Atm(mytile)%delp, Atm(mytile)%delz, Atm(mytile)%gridstruct%area_64,             &
+                                 Atm(mytile)%peln, Atm(mytile)%phis, Atm(mytile)%pkz, Atm(mytile)%pt,            &
+                                 Atm(mytile)%q(:,:,:,sphum), Atm(mytile)%q(:,:,:,liq_wat),                       &
+                                 Atm(mytile)%q(:,:,:,ice_wat), Atm(mytile)%q(:,:,:,rainwat),                     &
+                                 Atm(mytile)%q(:,:,:,snowwat), Atm(mytile)%q(:,:,:,graupel),                     &
+                                 Atm(mytile)%q(:,:,:,cld_amt), Atm(mytile)%q_con)
 
+#ifndef STATIC
 ! Populate cdata structure with fields required to run fast physics (auto-generated).
-! Some of the shared data require an argument nt = thread (currently only 'hydrostatic'
-! and 'nthreads'. For the fast physics in FV3, it is sufficient to set nt = 1 and use
-! this value for all threads, since these fields are the same and do not change.
-   i = 1
-   associate(nt=>i)
 #include "ccpp_fields_fast_physics.inc"
-   end associate
+#endif
 
    if (Atm(mytile)%flagstruct%do_sat_adj) then
       ! Initialize fast physics

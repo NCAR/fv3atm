@@ -231,39 +231,39 @@ subroutine get_random_pattern_fv3_vect(rpattern,npatterns,&
                  gis_stochy%lats_nodes_a,gis_stochy%global_lats_a,gis_stochy%lonsperlat,&
                  gis_stochy%epsedn,gis_stochy%epsodn,gis_stochy%snnp1ev,gis_stochy%snnp1od,&
                  gis_stochy%plnev_a,gis_stochy%plnod_a,1)
-       do i=1,lonf
-          do j=1,gis_stochy%lats_node_a
-             lat=gis_stochy%global_lats_a(ipt_lats_node_a-1+j)
-             workgu(i,lat) = workgu(i,lat) + wrk2du(i,j,1)
-             workgv(i,lat) = workgv(i,lat) + wrk2dv(i,j,1)
+          do i=1,lonf
+             do j=1,gis_stochy%lats_node_a
+                lat=gis_stochy%global_lats_a(ipt_lats_node_a-1+j)
+                workgu(i,lat) = workgu(i,lat) + wrk2du(i,j,1)
+                workgv(i,lat) = workgv(i,lat) + wrk2dv(i,j,1)
+             enddo
           enddo
        enddo
-    enddo
-    call mp_reduce_sum(workgu,lonf,latg)
-    call mp_reduce_sum(workgv,lonf,latg)
+       call mp_reduce_sum(workgu,lonf,latg)
+       call mp_reduce_sum(workgv,lonf,latg)
 ! interpolate to cube grid
-    do blk=1,nblks
-       len=size(Grid(blk)%xlat,1)
-       pattern_1d = 0
-       allocate(SLMASK(len))
-       allocate(tlats(len))
-       allocate(tlons(len))
-       tlats=Grid(blk)%xlat*rad2deg
-       tlons=Grid(blk)%xlon*rad2deg
-       SLMASK = 0
-       call la2ga(workgu,lonf,latg,gg_lons,gg_lats,wlon,rnlat,inttyp,&
-                  pattern_1d(1:len),len,.false.,rslmsk,slmask,&
-                  tlats,tlons,me)
-       skebu_save(blk,:,k)=pattern_1d(:)
-       call la2ga(workgv,lonf,latg,gg_lons,gg_lats,wlon,rnlat,inttyp,&
-                  pattern_1d(1:len),len,.false.,rslmsk,slmask,&
-                  tlats,tlons,me)
-       skebv_save(blk,:,k)=-1*pattern_1d(:)
-       deallocate(SLMASK)
-       deallocate(tlats)
-       deallocate(tlons)
+       do blk=1,nblks
+          len=size(Grid(blk)%xlat,1)
+          pattern_1d = 0
+          allocate(SLMASK(len))
+          allocate(tlats(len))
+          allocate(tlons(len))
+          tlats=Grid(blk)%xlat*rad2deg
+          tlons=Grid(blk)%xlon*rad2deg
+          SLMASK = 0
+          call la2ga(workgu,lonf,latg,gg_lons,gg_lats,wlon,rnlat,inttyp,&
+                     pattern_1d(1:len),len,.false.,rslmsk,slmask,&
+                     tlats,tlons,me)
+          skebu_save(blk,:,k)=pattern_1d(:)
+          call la2ga(workgv,lonf,latg,gg_lons,gg_lats,wlon,rnlat,inttyp,&
+                     pattern_1d(1:len),len,.false.,rslmsk,slmask,&
+                     tlats,tlons,me)
+          skebv_save(blk,:,k)=-1*pattern_1d(:)
+          deallocate(SLMASK)
+          deallocate(tlats)
+          deallocate(tlons)
+       enddo
     enddo
-  enddo
  endif
  do k=1,skeblevs-1
     skebu_save(:,:,k)=skebu_save(:,:,k+1)

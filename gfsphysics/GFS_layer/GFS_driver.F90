@@ -139,11 +139,15 @@ module GFS_driver
     use micro_mg3_0,         only: micro_mg_init3_0 => micro_mg_init
     use aer_cloud,           only: aer_cloud_init
 #endif
+#if !defined(CCPP) || defined(HYBRID)
     use module_ras,          only: ras_init
+#endif
 #ifndef CCPP
     use module_mp_thompson,  only: thompson_init
 #endif
+#if !defined(CCPP) || defined(HYBRID)
     use module_mp_wsm6,      only: wsm6init
+#endif
 
     !--- interface variables
     type(GFS_control_type),   intent(inout) :: Model
@@ -196,8 +200,8 @@ module GFS_driver
                      Init_parm%tracer_names,                       &
 #ifdef CCPP
                      Init_parm%input_nml_file, Init_parm%ak,       &
-                     Init_parm%bk, Init_parm%blksz, communicator,  &
-                     ntasks)
+                     Init_parm%bk, Init_parm%blksz,                &
+                     Init_parm%restart, communicator, ntasks)
 #elif MEMCHECK
                      Init_parm%input_nml_file, communicator)
 #else
@@ -223,7 +227,7 @@ module GFS_driver
 ! For CCPP,  stochastic_physics_init is called automatically as part of CCPP physics init
 #ifndef CCPP
     !--- initializing stochastic physics
-    call init_stochastic_physics(Model,Init_parm,nblks,Grid)
+    call init_stochastic_physics(Model,Init_parm,nblks)
     if(Model%me == Model%master) print*,'do_skeb=',Model%do_skeb
 #endif
 
@@ -235,7 +239,11 @@ module GFS_driver
       call Sfcprop  (nb)%create (ix, Model)
       call Coupling (nb)%create (ix, Model)
       call Grid     (nb)%create (ix, Model)
+#if !defined(CCPP) || defined(HYBRID)
       call Tbd      (nb)%create (ix, nb, Model)
+#else
+      call Tbd      (nb)%create (ix, Model)
+#endif
       call Cldprop  (nb)%create (ix, Model)
       call Radtend  (nb)%create (ix, Model)
 !--- internal representation of diagnostics
@@ -395,12 +403,14 @@ module GFS_driver
       endif
 #endif
 !
+#if !defined(CCPP) || defined(HYBRID)
     elseif(Model%imp_physics == Model%imp_physics_wsm6) then        !--- initialize WSM6 Cloud microphysics
       if(Model%do_shoc) then
         print *,'SHOC is not currently compatible with WSM6 -- shutting down'
         stop
       endif
       call  wsm6init()
+#endif
 !
     else if(Model%imp_physics == Model%imp_physics_gfdl) then      !--- initialize GFDL Cloud microphysics
 ! For CCPP the GFDL MP init is called automatically as part of CCPP physics init
@@ -414,8 +424,10 @@ module GFS_driver
 #endif
     endif
 
+#if !defined(CCPP) || defined(HYBRID)
     !--- initialize ras
     if (Model%ras) call ras_init (Model%levs, Model%me)
+#endif
 
 ! DH* Even though this gets called through CCPP in lsm_noah_init, we also
 ! need to do this here as long as FV3GFS_io.F90 is calculating Sfcprop%sncovr

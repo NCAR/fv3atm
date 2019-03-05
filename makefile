@@ -19,6 +19,13 @@ endif
 
 FFLAGS   += -I$(FMS_DIR) -I$(PHYSP)physics -Iipd -Icpl -Iio -Iatmos_cubed_sphere
 
+# Flag to CCPP build for 32bit dynamics
+ifeq ($(32BIT),Y)
+  DYN32 = Y
+else
+  DYN32 = N
+endif
+
 FV3_EXE  = fv3.exe
 FV3CAP_LIB  = libfv3cap.a
 
@@ -33,10 +40,11 @@ nems: libs
 ifneq (,$(findstring CCPP,$(CPPDEFS)))
 libs:
 	$(MAKE) -C cpl                 $(MAKE_OPTS) FMS_DIR=$(FMS_DIR)
-	$(MAKE) -C $(PHYSP)physics     $(MAKE_OPTS) FMS_DIR=$(FMS_DIR) 32BIT=N  # force gfs physics to 64bit
+	$(MAKE) -C $(PHYSP)physics     $(MAKE_OPTS) FMS_DIR=$(FMS_DIR) 32BIT=N  DYN32=$(DYN32) # force gfs physics to 64bit, flag to CCPP build for 32bit dynamics
 	$(MAKE) -C ipd                 $(MAKE_OPTS) FMS_DIR=$(FMS_DIR) 32BIT=N  # force gfs physics to 64bit
 	$(MAKE) -C io                  $(MAKE_OPTS) FMS_DIR=$(FMS_DIR)
 	$(MAKE) -C atmos_cubed_sphere  $(MAKE_OPTS) FMS_DIR=$(FMS_DIR)
+	#$(MAKE) -C stochastic_physics  $(MAKE_OPTS) FMS_DIR=$(FMS_DIR) 32BIT=N  # force gfs physics to 64bit
 
 $(FV3_EXE): atmos_model.o coupler_main.o atmos_cubed_sphere/libfv3core.a io/libfv3io.a ipd/libipd.a $(PHYSP)physics/lib$(PHYSP)phys.a cpl/libfv3cpl.a
 	$(LD) -o $@ $^ $(NCEPLIBS) $(LDFLAGS)
