@@ -2678,7 +2678,6 @@ contains
 
           deallocate(a3)
        endif
-       if( allocated(wz) ) deallocate (wz)
 
 
 !-------------------------------------------------------
