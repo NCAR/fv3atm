@@ -34,7 +34,7 @@ module fv_regional_mod
                                 mpp_npes, mpp_root_pe, mpp_gather,      &
                                 mpp_get_current_pelist, NULL_PE
    use mpp_io_mod
-   use tracer_manager_mod,only: get_tracer_index
+   use tracer_manager_mod,only: get_tracer_index,get_tracer_names
    use field_manager_mod, only: MODEL_ATMOS
    use time_manager_mod,  only: get_time                                &
                                ,operator(-),operator(/)                 &
@@ -298,9 +298,9 @@ contains
 !
       call compute_regional_bc_indices(Atm%regional_bc_bounds)
 !
-      liq_water_index=get_tracer_index(MODEL_ATMOS, 'liq_wat')
-      o3mr_index     =get_tracer_index(MODEL_ATMOS, 'o3mr')
-      sphum_index    =get_tracer_index(MODEL_ATMOS, 'sphum')
+      liq_water_index = get_tracer_index(MODEL_ATMOS, 'liq_wat')
+      o3mr_index      = get_tracer_index(MODEL_ATMOS, 'o3mr')
+      sphum_index     = get_tracer_index(MODEL_ATMOS, 'sphum')
 !
 !-----------------------------------------------------------------------
 !***  Allocate the objects that will hold the boundary variables
@@ -1369,6 +1369,11 @@ contains
       character(len=50) :: file_name
 !
       integer,save :: kount1=0,kount2=0
+!
+      character(len=60) :: var_name_root
+      integer :: nt,index
+      logical :: required
+!
 !-----------------------------------------------------------------------
 !***********************************************************************
 !-----------------------------------------------------------------------
@@ -1439,47 +1444,8 @@ contains
                                 ,nlev                                   &
                                 ,ntracers                               &
 !                               ,Atm%regional_bc_bounds                 &
-                                ,'ps     '                              &
+                                ,'ps'                                   &
                                 ,array_3d=ps_input )                       !<-- ps is 2D but for simplicity here use a 3rd dim of 1
-!
-!-----------------------
-!***  Specific humidity
-!-----------------------
-!
-      nlev=klev_in
-      call read_regional_bc_file(is_input,ie_input,js_input,je_input    &
-                                ,nlev                                   &
-                                ,ntracers                               &
-!                               ,Atm%regional_bc_bounds                 &
-                                ,'sphum  '                              &
-                                ,array_4d=tracers_input                 &
-                                ,tlev=sphum_index )
-!
-!------------------
-!***  Liquid water
-!------------------
-!
-      nlev=klev_in
-      call read_regional_bc_file(is_input,ie_input,js_input,je_input    &
-                                ,nlev                                   &
-                                ,ntracers                               &
-!                               ,Atm%regional_bc_bounds                 &
-                                ,'liq_wat'                              &
-                                ,array_4d=tracers_input                 &
-                                ,tlev=liq_water_index )
-!
-!-----------
-!***  Ozone
-!-----------
-!
-      nlev=klev_in
-      call read_regional_bc_file(is_input,ie_input,js_input,je_input    &
-                                ,nlev                                   &
-                                ,ntracers                               &
-!                               ,Atm%regional_bc_bounds                 &
-                                ,'o3mr   '                              &
-                                ,array_4d=tracers_input                 &
-                                ,tlev=o3mr_index )
 !
 !-----------------------
 !***  Vertical velocity
@@ -1490,7 +1456,7 @@ contains
                                 ,nlev                                   &
                                 ,ntracers                               &
 !                               ,Atm%regional_bc_bounds                 &
-                                ,'w      '                              &
+                                ,'w'                                    &
                                 ,array_3d=w_input)
 !
 !-----------------------
@@ -1502,7 +1468,7 @@ contains
                                 ,nlev                                   &
                                 ,ntracers                               &
 !                               ,Atm%regional_bc_bounds                 &
-                                ,'zh     '                              &
+                                ,'zh'                                   &
                                 ,array_3d=zh_input)
 !
 !-----------------------------
@@ -1514,7 +1480,7 @@ contains
                                 ,nlev                                   &
                                 ,ntracers                               &
 !                               ,Atm%regional_bc_bounds                 &
-                                ,'u_s    '                              &
+                                ,'u_s'                                  &
                                 ,array_3d=u_s_input)
 !
 !-----------------------------
@@ -1526,7 +1492,7 @@ contains
                                 ,nlev                                   &
                                 ,ntracers                               &
 !                               ,Atm%regional_bc_bounds                 &
-                                ,'v_s    '                              &
+                                ,'v_s'                                  &
                                 ,array_3d=v_s_input)
 !
 !---------------------------
@@ -1538,7 +1504,7 @@ contains
                                 ,nlev                                   &
                                 ,ntracers                               &
 !                               ,Atm%regional_bc_bounds                 &
-                                ,'u_w    '                              &
+                                ,'u_w'                                  &
                                 ,array_3d=u_w_input)
 !
 !---------------------------
@@ -1550,8 +1516,38 @@ contains
                                 ,nlev                                   &
                                 ,ntracers                               &
 !                               ,Atm%regional_bc_bounds                 &
-                                ,'v_w    '                              &
+                                ,'v_w'                                  &
                                 ,array_3d=v_w_input)
+!----------------------
+!***   tracers
+!-----------------------
+
+      nlev=klev_in
+!
+!-----------------------------------------------------------------------
+!***  Read the tracers specified in the field_table.  If they are not
+!***  in the input data then print a warning and set them to 0 in the
+!***  boundary. Some tracers are mandatory to have, because they are 
+!***  used later for calculating virtual potential temperature etc.
+!-----------------------------------------------------------------------
+!
+      do nt = 1, ntracers 
+        call get_tracer_names(MODEL_ATMOS, nt, var_name_root)
+        index= get_tracer_index(MODEL_ATMOS,trim(var_name_root))
+        if (index==liq_water_index .or. index==o3mr_index &
+            .or. index==sphum_index) then
+          required = .true.
+        else
+          required = .false.
+        endif
+        call read_regional_bc_file(is_input,ie_input,js_input,je_input  &
+                                  ,nlev                                 &
+                                  ,ntracers                             &
+                                  ,var_name_root                        &
+                                  ,array_4d=tracers_input               &
+                                  ,tlev=index                           &
+                                  ,required=required )
+      enddo
 !
 !-----------------------------------------------------------------------
 !***  We now have the boundary variables from the BC file on the
@@ -2515,7 +2511,8 @@ contains
                                       ,var_name_root                    &
                                       ,array_3d                         &
                                       ,array_4d                         &
-                                      ,tlev )
+                                      ,tlev                             &
+                                      ,required )
 !-----------------------------------------------------------------------
 !***  Read the boundary data from the external file generated by
 !***  chgres.
@@ -2538,7 +2535,8 @@ contains
 !
       integer,intent(in),optional :: tlev                                  !<-- Position of current tracer among all of them
 !
-      character(len= 7),intent(in) :: var_name_root                        !<-- Root of variable name in the boundary file
+      character(len=*),intent(in) :: var_name_root                         !<-- Root of variable name in the boundary file
+      logical,intent(in),optional :: required
 !
 !------------
 !***  Output
@@ -2564,9 +2562,22 @@ contains
 !
       character(len=20) :: var_name                                        !<-- Variable name in the boundary NetCDF file
 !
+      integer :: status
+      logical :: required_local
+!
 !-----------------------------------------------------------------------
 !***********************************************************************
 !-----------------------------------------------------------------------
+!
+!-----------------------------------------------------------------------
+!***  Process optional argument required, default value is .true.
+!-----------------------------------------------------------------------
+!
+      if(present(required)) then
+        required_local=required
+      else
+        required_local=.true.
+      endif
 !
 !-----------------------------------------------------------------------
 !***  Set the dimension information for the given side of the domain.
@@ -2626,23 +2637,39 @@ contains
 !***  this 3-D or 4-D variable.
 !-----------------------------------------------------------------------
 !
-        call check(nf90_inq_varid(ncid,var_name,var_id))                   !<-- Get this variable's ID.
+        status = nf90_inq_varid(ncid,var_name,var_id)                   !<-- Get this variable's ID.
+        if (required_local) then
+          call check(status)
+        endif
 !
-        if(present(array_4d))then   !<-- 4-D variable
-          call check(nf90_get_var(ncid,var_id                                         &
-                                 ,array_4d(i_start_array:i_end_array                  &  !<-- Fill this task's domain boundary halo.
-                                          ,j_start_array:j_end_array                  &
-                                          ,1:nlev, tlev)                              &
-                                          ,start=(/i_start_data,j_start_data,1,tlev/) &  !<-- Start reading the data array here.
-                                          ,count=(/i_count,j_count,nlev,1/)))            !<-- Extent of data to read in each dimension.
+        if (status == nf90_noerr) then
+          if(present(array_4d))then   !<-- 4-D variable
+            call check(nf90_get_var(ncid,var_id                                         &
+                                   ,array_4d(i_start_array:i_end_array                  &  !<-- Fill this task's domain boundary halo.
+                                            ,j_start_array:j_end_array                  &
+                                            ,1:nlev, tlev)                              &
+                                            ,start=(/i_start_data,j_start_data,1,tlev/) &  !<-- Start reading the data array here.
+                                            ,count=(/i_count,j_count,nlev,1/)))            !<-- Extent of data to read in each dimension.
 !
-        else                         !<-- 3-D variable
-          call check(nf90_get_var(ncid,var_id                                    &
-                                 ,array_3d(i_start_array:i_end_array             &  !<-- Fill this task's domain boundary halo.
-                                          ,j_start_array:j_end_array             &
-                                          ,1:nlev)                               &
-                                          ,start=(/i_start_data,j_start_data,1/) &  !<-- Start reading the data array here.
-                                          ,count=(/i_count,j_count,nlev/)))         !<-- Extent of data to read in each dimension.
+          else                         !<-- 3-D variable
+            call check(nf90_get_var(ncid,var_id                                    &
+                                   ,array_3d(i_start_array:i_end_array             &  !<-- Fill this task's domain boundary halo.
+                                            ,j_start_array:j_end_array             &
+                                            ,1:nlev)                               &
+                                            ,start=(/i_start_data,j_start_data,1/) &  !<-- Start reading the data array here.
+                                            ,count=(/i_count,j_count,nlev/)))         !<-- Extent of data to read in each dimension.
+          endif
+        else
+          write(0,*)' read_regional_bc_file: optional variable ' // trim(var_name) // ' not found in file, set to zero'
+          if (present(array_4d))then   !<-- 4-D variable
+            array_4d(i_start_array:i_end_array                  &
+                    ,j_start_array:j_end_array                  &
+                    ,1:nlev, tlev) = 0.0
+          else                         !<-- 3-D variable
+            array_3d(i_start_array:i_end_array             &
+                    ,j_start_array:j_end_array             &
+                    ,1:nlev) = 0.0
+          endif
         endif
 !
       endif  ! north_bc
@@ -2692,23 +2719,40 @@ contains
 !***  this 3-D or 4-D variable.
 !-----------------------------------------------------------------------
 !
-        call check(nf90_inq_varid(ncid,var_name,var_id))                   !<-- Get this variable's ID.
+        status = nf90_inq_varid(ncid,var_name,var_id)                   !<-- Get this variable's ID.
+        if (required_local) then
+          call check(status)
+        endif
 !
-        if(present(array_4d))then   !<-- 4-D variable
-          call check(nf90_get_var(ncid,var_id                                         &
-                                 ,array_4d(i_start_array:i_end_array                  &  !<-- Fill this task's domain boundary halo.
-                                          ,j_start_array:j_end_array                  &
-                                          ,1:nlev, tlev)                              &
-                                          ,start=(/i_start_data,j_start_data,1,tlev/) &  !<-- Start reading the data array here.
-                                          ,count=(/i_count,j_count,nlev,1/)))            !<-- Extent of data to read in each dimension.
+        if (status == nf90_noerr) then
+          if(present(array_4d))then   !<-- 4-D variable
+            call check(nf90_get_var(ncid,var_id                                         &
+                                   ,array_4d(i_start_array:i_end_array                  &  !<-- Fill this task's domain boundary halo.
+                                            ,j_start_array:j_end_array                  &
+                                            ,1:nlev, tlev)                              &
+                                            ,start=(/i_start_data,j_start_data,1,tlev/) &  !<-- Start reading the data array here.
+                                            ,count=(/i_count,j_count,nlev,1/)))            !<-- Extent of data to read in each dimension.
 !
-        else                         !<-- 3-D variable
-          call check(nf90_get_var(ncid,var_id                                    &
-                                 ,array_3d(i_start_array:i_end_array             &  !<-- Fill this task's domain boundary halo.
-                                          ,j_start_array:j_end_array             &
-                                          ,1:nlev)                               &
-                                          ,start=(/i_start_data,j_start_data,1/) &  !<-- Start reading the data array here.
-                                          ,count=(/i_count,j_count,nlev/)))         !<-- Extent of data to read in each dimension.
+          else                         !<-- 3-D variable
+            call check(nf90_get_var(ncid,var_id                                    &
+                                   ,array_3d(i_start_array:i_end_array             &  !<-- Fill this task's domain boundary halo.
+                                            ,j_start_array:j_end_array             &
+                                            ,1:nlev)                               &
+                                            ,start=(/i_start_data,j_start_data,1/) &  !<-- Start reading the data array here.
+                                            ,count=(/i_count,j_count,nlev/)))         !<-- Extent of data to read in each dimension.
+          endif
+        ! DH* DEBUG
+        else
+          write(0,*)' read_regional_bc_file: optional variable ' // trim(var_name) // ' not found in file, set to zero'
+          if (present(array_4d))then   !<-- 4-D variable
+            array_4d(i_start_array:i_end_array                  &
+                    ,j_start_array:j_end_array                  &
+                    ,1:nlev, tlev) = 0.0
+          else                         !<-- 3-D variable
+            array_3d(i_start_array:i_end_array             &
+                    ,j_start_array:j_end_array             &
+                    ,1:nlev) = 0.0
+          endif
         endif
 !
       endif  ! south_bc
@@ -2789,23 +2833,39 @@ contains
 !***  Fill this task's subset of east boundary data.
 !-----------------------------------------------------------------------
 !
-        call check(nf90_inq_varid(ncid,var_name,var_id))                   !<-- Get this variable's ID.
+        status = nf90_inq_varid(ncid,var_name,var_id)                   !<-- Get this variable's ID.
+        if (required_local) then
+          call check(status)
+        endif
 !
-        if(present(array_4d))then    !<-- 4-D variable
-          call check(nf90_get_var(ncid,var_id                                         &
-                                 ,array_4d(i_start_array:i_end_array                  &  !<-- Fill this task's domain boundary halo.
-                                          ,j_start_array:j_end_array                  &
-                                          ,1:nlev, tlev)                              &
-                                          ,start=(/i_start_data,j_start_data,1,tlev/) &  !<-- Start reading the data array here.
-                                          ,count=(/i_count,j_count,nlev,1/)))            !<-- Extent of data to read in each dimension.
+        if (status == nf90_noerr) then
+          if(present(array_4d))then    !<-- 4-D variable
+            call check(nf90_get_var(ncid,var_id                                         &
+                                   ,array_4d(i_start_array:i_end_array                  &  !<-- Fill this task's domain boundary halo.
+                                            ,j_start_array:j_end_array                  &
+                                            ,1:nlev, tlev)                              &
+                                            ,start=(/i_start_data,j_start_data,1,tlev/) &  !<-- Start reading the data array here.
+                                            ,count=(/i_count,j_count,nlev,1/)))            !<-- Extent of data to read in each dimension.
 !
-        else                         !<-- 3-D variable
-          call check(nf90_get_var(ncid,var_id                                  &
-                                 ,array_3d(i_start_array:i_end_array           &  !<-- Fill this task's domain boundary halo.
-                                          ,j_start_array:j_end_array           &
-                                          ,1:nlev)                             &
-                                          ,start=(/i_start_data,j_start_data/) &  !<-- Start reading the data array here.
-                                          ,count=(/i_count,j_count,nlev/)))       !<-- Extent of data to read in each dimension.
+          else                         !<-- 3-D variable
+            call check(nf90_get_var(ncid,var_id                                  &
+                                   ,array_3d(i_start_array:i_end_array           &  !<-- Fill this task's domain boundary halo.
+                                            ,j_start_array:j_end_array           &
+                                            ,1:nlev)                             &
+                                            ,start=(/i_start_data,j_start_data/) &  !<-- Start reading the data array here.
+                                            ,count=(/i_count,j_count,nlev/)))       !<-- Extent of data to read in each dimension.
+          endif
+        else
+          write(0,*)' read_regional_bc_file: optional variable ' // trim(var_name) // ' not found in file, set to zero'
+          if (present(array_4d))then   !<-- 4-D variable
+            array_4d(i_start_array:i_end_array                  &
+                    ,j_start_array:j_end_array                  &
+                    ,1:nlev, tlev) = 0.0
+          else                         !<-- 3-D variable
+            array_3d(i_start_array:i_end_array             &
+                    ,j_start_array:j_end_array             &
+                    ,1:nlev) = 0.0
+          endif
         endif
 !
       endif  ! east_bc
@@ -2876,24 +2936,41 @@ contains
 !***  Fill this task's subset of east or west boundary data.
 !-----------------------------------------------------------------------
 !
-        call check(nf90_inq_varid(ncid,var_name,var_id))                   !<-- Get this variable's ID.
-!
-        if(present(array_4d))then   !<-- 4-D variable
-          call check(nf90_get_var(ncid,var_id                                         &
-                                 ,array_4d(i_start_array:i_end_array                  &  !<-- Fill this task's domain boundary halo.
-                                          ,j_start_array:j_end_array                  &
-                                          ,1:nlev, tlev)                              &
-                                          ,start=(/i_start_data,j_start_data,1,tlev/) &  !<-- Start reading the data array here.
-                                          ,count=(/i_count,j_count,nlev,1/)))            !<-- Extent of data to read in each dimension.
-!
-        else                         !<-- 3-D variable
-          call check(nf90_get_var(ncid,var_id                                  &
-                                 ,array_3d(i_start_array:i_end_array           &  !<-- Fill this task's domain boundary halo.
-                                          ,j_start_array:j_end_array           &
-                                          ,1:nlev)                             &
-                                          ,start=(/i_start_data,j_start_data/) &  !<-- Start reading the data array here.
-                                          ,count=(/i_count,j_count,nlev/)))       !<-- Extent of data to read in each dimension.
+        status = nf90_inq_varid(ncid,var_name,var_id)                   !<-- Get this variable's ID.
+        if (required_local) then
+          call check(status)
         endif
+!
+        if (status == nf90_noerr) then
+          if(present(array_4d))then   !<-- 4-D variable
+            call check(nf90_get_var(ncid,var_id                                         &
+                                   ,array_4d(i_start_array:i_end_array                  &  !<-- Fill this task's domain boundary halo.
+                                            ,j_start_array:j_end_array                  &
+                                            ,1:nlev, tlev)                              &
+                                            ,start=(/i_start_data,j_start_data,1,tlev/) &  !<-- Start reading the data array here.
+                                            ,count=(/i_count,j_count,nlev,1/)))            !<-- Extent of data to read in each dimension.
+!
+          else                         !<-- 3-D variable
+            call check(nf90_get_var(ncid,var_id                                  &
+                                   ,array_3d(i_start_array:i_end_array           &  !<-- Fill this task's domain boundary halo.
+                                            ,j_start_array:j_end_array           &
+                                            ,1:nlev)                             &
+                                            ,start=(/i_start_data,j_start_data/) &  !<-- Start reading the data array here.
+                                            ,count=(/i_count,j_count,nlev/)))       !<-- Extent of data to read in each dimension.
+          endif
+        else
+          write(0,*)' read_regional_bc_file: optional variable ' // trim(var_name) // ' not found in file, set to zero'
+          if (present(array_4d))then   !<-- 4-D variable
+            array_4d(i_start_array:i_end_array                  &
+                    ,j_start_array:j_end_array                  &
+                    ,1:nlev, tlev) = 0.0
+          else                         !<-- 3-D variable
+            array_3d(i_start_array:i_end_array             &
+                    ,j_start_array:j_end_array             &
+                    ,1:nlev) = 0.0
+          endif
+        endif
+
 !
       endif  ! west_bc
 !

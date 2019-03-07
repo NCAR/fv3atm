@@ -159,9 +159,9 @@ module GFS_typedefs
 !! | blksz          |                                                        | for explicit data blocking                              | count         |    1 | integer  |           | none   | F        |
 !! | ak             |                                                        | a parameter for sigma pressure level calculations       | Pa            |    1 | real     | kind_phys | none   | F        |
 !! | bk             |                                                        | b parameter for sigma pressure level calculations       | none          |    1 | real     | kind_phys | none   | F        |
-!! | xlon           |                                                        | column longitude for MPI rank                           | radians (???) |    2 | real     | kind_phys | none   | F        |
-!! | xlat           |                                                        | column latitude  for MPI rank                           | radians (???) |    2 | real     | kind_phys | none   | F        |
-!! | area           |                                                        | column area for length scale calculations               | m2 (???)      |    2 | real     | kind_phys | none   | F        |
+!! | xlon           |                                                        | column longitude for MPI rank                           | radians       |    2 | real     | kind_phys | none   | F        |
+!! | xlat           |                                                        | column latitude  for MPI rank                           | radians       |    2 | real     | kind_phys | none   | F        |
+!! | area           |                                                        | column area for length scale calculations               | m2            |    2 | real     | kind_phys | none   | F        |
 !! | tracer_names   |                                                        | tracers names to dereference tracer id                  | none          |    1 | charater | len=32    | none   | F        |
 !! | fn_nml         |                                                        | namelist filename                                       | none          |    0 | charater | len=65    | none   | F        |
 !! | input_nml_file |                                                        | namelist filename for internal file reads               | none          |    0 | charater | len=256   | none   | F        |
@@ -3106,7 +3106,7 @@ module GFS_typedefs
     endif
 
     !--- needed for Thompson's aerosol option
-    if(Model%imp_physics == Model%imp_physics_thompson .and. Model%ltaerosol) then
+    if(Model%imp_physics == Model%imp_physics_thompson) then
       allocate (Coupling%nwfa2d (IM))
       allocate (Coupling%nifa2d (IM))
       Coupling%nwfa2d   = clear_val
