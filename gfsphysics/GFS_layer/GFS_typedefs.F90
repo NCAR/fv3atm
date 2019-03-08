@@ -736,13 +736,13 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: qconvtend(:,:) => null()
     real (kind=kind_phys), pointer :: uconvtend(:,:) => null()
     real (kind=kind_phys), pointer :: vconvtend(:,:) => null()
-    real (kind=kind_phys), pointer :: ca_out (:) => null()  !
-    real (kind=kind_phys), pointer :: ca_deep (:) => null()  !
-    real (kind=kind_phys), pointer :: ca_turb (:) => null()  !
-    real (kind=kind_phys), pointer :: ca_shal (:) => null()  !
-    real (kind=kind_phys), pointer :: ca_rad (:) => null()  !
-    real (kind=kind_phys), pointer :: ca_micro (:) => null() !
-    real (kind=kind_phys), pointer :: cape  (:) => null() !
+    real (kind=kind_phys), pointer :: ca_out   (:)   => null()  !
+    real (kind=kind_phys), pointer :: ca_deep  (:)   => null()  !
+    real (kind=kind_phys), pointer :: ca_turb  (:)   => null()  !
+    real (kind=kind_phys), pointer :: ca_shal  (:)   => null()  !
+    real (kind=kind_phys), pointer :: ca_rad   (:)   => null()  !
+    real (kind=kind_phys), pointer :: ca_micro (:)   => null()  !
+    real (kind=kind_phys), pointer :: cape     (:)   => null()  !
     
     !--- stochastic physics
     real (kind=kind_phys), pointer :: shum_wts  (:,:)   => null()  !
@@ -2117,12 +2117,12 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: tdomip (:)     => null()   !< dominant accumulated sleet type
     real (kind=kind_phys), pointer :: tdoms  (:)     => null()   !< dominant accumulated snow type
 
-    real (kind=kind_phys), pointer :: ca_out     (:)    => null()   !< cellular automata fraction
-    real (kind=kind_phys), pointer :: ca_deep     (:)    => null()   !< cellular automata fraction
-    real (kind=kind_phys), pointer :: ca_turb     (:)    => null()   !< cellular automata fraction
-    real (kind=kind_phys), pointer :: ca_shal     (:)    => null()   !< cellular automata fraction
-    real (kind=kind_phys), pointer :: ca_rad     (:)    => null()   !< cellular automata fraction
-    real (kind=kind_phys), pointer :: ca_micro     (:)    => null()   !< cellular automata fraction
+    real (kind=kind_phys), pointer :: ca_out  (:)    => null()   !< cellular automata fraction
+    real (kind=kind_phys), pointer :: ca_deep (:)    => null()   !< cellular automata fraction
+    real (kind=kind_phys), pointer :: ca_turb (:)    => null()   !< cellular automata fraction
+    real (kind=kind_phys), pointer :: ca_shal (:)    => null()   !< cellular automata fraction
+    real (kind=kind_phys), pointer :: ca_rad  (:)    => null()   !< cellular automata fraction
+    real (kind=kind_phys), pointer :: ca_micro(:)    => null()   !< cellular automata fraction
 
     real (kind=kind_phys), pointer :: skebu_wts(:,:) => null()   !< 10 meter u wind speed
     real (kind=kind_phys), pointer :: skebv_wts(:,:) => null()   !< 10 meter v wind speed

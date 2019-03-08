@@ -642,8 +642,8 @@ module GFS_driver
     !--- local variables
     integer :: k, i
     real(kind=kind_phys) :: upert, vpert, tpert, qpert, qnew,sppt_vwt
-    real(kind=kind_phys),dimension(size(Statein%tgrs,1),size(Statein%tgrs,2)) :: tconvtend, &
-                         qconvtend,uconvtend,vconvtend    
+    !real(kind=kind_phys),dimension(size(Statein%tgrs,1),size(Statein%tgrs,2)) :: tconvtend, &
+    !                     qconvtend,uconvtend,vconvtend
 
      if (Model%do_sppt) then
        do k = 1,size(Statein%tgrs,2)
