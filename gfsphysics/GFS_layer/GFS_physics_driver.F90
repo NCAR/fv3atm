@@ -4874,15 +4874,15 @@ module module_physics_driver
 !           -----------------------------------
       if (Model%do_deep) then
  
-         if(Model%do_ca == .true.)then                                                                                                                                                         
-           do k=1,levs                                                                                                                                                                          
-            do i=1,im                                                                                                                                                                           
-             Stateout%gq0(i,k,1) = Stateout%gq0(i,k,1)*(1.0 + Coupling%ca_deep(i)/500.)                                                                                                         
-            enddo                                                                                                                                                                               
-           enddo                                                                                                                                                                                
+         if (Model%do_ca) then
+           do k=1,levs
+            do i=1,im
+             Stateout%gq0(i,k,1) = Stateout%gq0(i,k,1)*(1.0 + Coupling%ca_deep(i)/500.)
+            enddo
+           enddo
          endif   
  
-        if(Model%isppt_deep == .true.)then
+        if (Model%isppt_deep) then
            savet = Stateout%gt0
            saveq = Stateout%gq0(:,:,1)
            saveu = Stateout%gu0

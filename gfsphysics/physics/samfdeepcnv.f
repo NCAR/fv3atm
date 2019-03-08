@@ -2377,7 +2377,7 @@ c
 !
 !> - Then, calculate the reduction factor (scaldfunc) of the vertical convective eddy transport of mass flux as a function of updraft fraction from the studies by Arakawa and Wu (2013) \cite arakawa_and_wu_2013 (also see Han et al.'s (2017) \cite han_et_al_2017 equation 1 and 2). The final cloud base mass flux with scale-aware parameterization is obtained from the mass flux when sigmagfm << 1, multiplied by the reduction factor (Han et al.'s (2017) \cite han_et_al_2017 equation 2).
       do i = 1, im
-        if(cnvflg(i)) then
+        if (cnvflg(i)) then
           if (gdx(i) < dxcrtuf) then
             scaldfunc(i) = (1.-sigmagfm(i)) * (1.-sigmagfm(i))
             scaldfunc(i) = max(min(scaldfunc(i), 1.0), 0.)
@@ -2391,7 +2391,7 @@ c
 
 !If stochastic physics using cellular automata is .true. then perturb the mass-flux here:
 
-      if(do_ca == .true.)then
+      if (do_ca) then
         do i=1,im
          xmb(i) = xmb(i)*(1.0 + ca_deep(i)*5.)
         enddo
