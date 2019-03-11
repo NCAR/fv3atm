@@ -1231,7 +1231,7 @@ module GFS_typedefs
     real(kind=kind_phys) :: prautco(2)         !< [in] auto conversion coeff from cloud to rain
     real(kind=kind_phys) :: evpco              !< [in] coeff for evaporation of largescale rain
     real(kind=kind_phys) :: wminco(2)          !< [in] water and ice minimum threshold for Zhao
-
+    real(kind=kind_phys) :: avg_max_length     !< reset time in seconds for max hourly fields
     !--- M-G microphysical parameters
     integer              :: fprcp              !< no prognostic rain and snow (MG)
     integer              :: pdfflag            !< pdf flag for MG macrophysics
@@ -2061,6 +2061,9 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: u10mmax(:)     => null()   !< maximum u-wind
     real (kind=kind_phys), pointer :: v10mmax(:)     => null()   !< maximum v-wind
     real (kind=kind_phys), pointer :: wind10mmax(:)  => null()   !< maximum wind speed
+    real (kind=kind_phys), pointer :: u10max(:)      => null()   !< maximum u-wind used with avg_max_length
+    real (kind=kind_phys), pointer :: v10max(:)      => null()   !< maximum v-wind used with avg_max_length
+    real (kind=kind_phys), pointer :: spd10max(:)    => null()   !< maximum wind speed used with avg_max_length
     real (kind=kind_phys), pointer :: rain   (:)     => null()   !< total rain at this time step
     real (kind=kind_phys), pointer :: rainc  (:)     => null()   !< convective rain at this time step
     real (kind=kind_phys), pointer :: ice    (:)     => null()   !< ice fall at this time step
@@ -2139,15 +2142,20 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: dv3dt (:,:,:)  => null()   !< v momentum change due to physics
     real (kind=kind_phys), pointer :: dt3dt (:,:,:)  => null()   !< temperature change due to physics
     real (kind=kind_phys), pointer :: dq3dt (:,:,:)  => null()   !< moisture change due to physics
-
+    real (kind=kind_phys), pointer :: refdmax (:)    => null()   !< max hourly 1-km agl reflectivity
+    real (kind=kind_phys), pointer :: refdmax263k (:)=> null()   !< max hourly -10C reflectivity
+    real (kind=kind_phys), pointer :: t02max (:)     => null()   !< max hourly 2m T
+    real (kind=kind_phys), pointer :: t02min (:)     => null()   !< min hourly 2m T
+    real (kind=kind_phys), pointer :: rh02max (:)    => null()   !< max hourly 2m RH
+    real (kind=kind_phys), pointer :: rh02min (:)    => null()   !< min hourly 2m RH
 !--- accumulated quantities for 3D diagnostics
-    real (kind=kind_phys), pointer :: upd_mf (:,:)   => null()  !< instantaneous convective updraft mass flux
-    real (kind=kind_phys), pointer :: dwn_mf (:,:)   => null()  !< instantaneous convective downdraft mass flux
-    real (kind=kind_phys), pointer :: det_mf (:,:)   => null()  !< instantaneous convective detrainment mass flux
-    real (kind=kind_phys), pointer :: cldcov (:,:)   => null()  !< instantaneous 3D cloud fraction
+    real (kind=kind_phys), pointer :: upd_mf (:,:)   => null()   !< instantaneous convective updraft mass flux
+    real (kind=kind_phys), pointer :: dwn_mf (:,:)   => null()   !< instantaneous convective downdraft mass flux
+    real (kind=kind_phys), pointer :: det_mf (:,:)   => null()   !< instantaneous convective detrainment mass flux
+    real (kind=kind_phys), pointer :: cldcov (:,:)   => null()   !< instantaneous 3D cloud fraction
 
     !--- MP quantities for 3D diagnositics
-    real (kind=kind_phys), pointer :: refl_10cm(:,:) => null()  !< instantaneous refl_10cm
+    real (kind=kind_phys), pointer :: refl_10cm(:,:) => null()   !< instantaneous refl_10cm
 
     contains
       procedure :: create    => diag_create
@@ -3371,6 +3379,8 @@ module GFS_typedefs
     real(kind=kind_phys) :: prautco(2)     = (/1.0d-4,1.0d-4/)  !< [in] auto conversion coeff from cloud to rain
     real(kind=kind_phys) :: evpco          = 2.0d-5             !< [in] coeff for evaporation of largescale rain
     real(kind=kind_phys) :: wminco(2)      = (/1.0d-5,1.0d-5/)  !< [in] water and ice minimum threshold for Zhao
+!---Max hourly
+    real(kind=kind_phys) :: avg_max_length = 3600.              !< reset value in seconds for max hourly.
 
 !--- M-G microphysical parameters
     integer              :: fprcp             =  0                 !< no prognostic rain and snow (MG)
@@ -3644,6 +3654,8 @@ module GFS_typedefs
                                mg_ncnst, mg_ninst, mg_ngnst, sed_supersat, do_sb_physics,   &
                                mg_alf,   mg_qcmin, mg_do_ice_gmao, mg_do_liq_liu,           &
                                ltaerosol, lradar, ttendlim, lgfdlmprad,                     &
+                          !--- max hourly
+                               avg_max_length,                                              &
                           !--- land/surface model control
 #ifdef CCPP
                                lsm, lsoil, lsoil_lsm, nmtvr, ivegsrc, mom4ice, use_ufo,     &
@@ -3851,6 +3863,8 @@ module GFS_typedefs
     Model%prautco          = prautco
     Model%evpco            = evpco
     Model%wminco           = wminco
+!--- Max hourly
+    Model%avg_max_length   = avg_max_length
 !--- Morrison-Gettelman MP parameters
     Model%fprcp            = fprcp
     Model%pdfflag          = pdfflag
@@ -4497,6 +4511,7 @@ module GFS_typedefs
       Model%pdfcld  = .false.
       Model%shcnvcw = .false.
       Model%ncnd    = 5
+      if (Model%me == Model%master) print *,' avg_max_length=',Model%avg_max_length
       if (Model%me == Model%master) print *,' Using GFDL Cloud Microphysics'
     else
       if (Model%me == Model%master) print *,'Wrong imp_physics value. Job abort.'
@@ -5256,6 +5271,9 @@ module GFS_typedefs
     allocate (Diag%u10mmax (IM))
     allocate (Diag%v10mmax (IM))
     allocate (Diag%wind10mmax (IM))
+    allocate (Diag%u10max  (IM))
+    allocate (Diag%v10max  (IM))
+    allocate (Diag%spd10max (IM))
     allocate (Diag%rain    (IM))
     allocate (Diag%rainc   (IM))
     allocate (Diag%ice     (IM))
@@ -5333,6 +5351,14 @@ module GFS_typedefs
 #endif
     !--- 3D diagnostics for Thompson MP / GFDL MP
     allocate (Diag%refl_10cm(IM,Model%levs))
+
+    !--  New max hourly diag.
+    allocate (Diag%refdmax(IM))
+    allocate (Diag%refdmax263k(IM))
+    allocate (Diag%t02max(IM))
+    allocate (Diag%t02min(IM))
+    allocate (Diag%rh02max(IM))
+    allocate (Diag%rh02min(IM))
 
 #ifdef CCPP
     !--- MYNN variables:
@@ -5433,6 +5459,9 @@ module GFS_typedefs
     Diag%u10mmax    = zero
     Diag%v10mmax    = zero
     Diag%wind10mmax = zero
+    Diag%u10max     = zero
+    Diag%v10max     = zero
+    Diag%spd10max   = zero
     Diag%rain       = zero
     Diag%rainc      = zero
     Diag%ice        = zero
@@ -5501,6 +5530,15 @@ module GFS_typedefs
     endif
 
     Diag%refl_10cm = zero
+
+! max hourly diagnostics
+    Diag%refl_10cm = zero
+    Diag%refdmax = -35.
+    Diag%refdmax263k = -35.
+    Diag%t02max = -999.
+    Diag%t02min = 999.
+    Diag%rh02max = -999.
+    Diag%rh02min = 999.
 
     if (present(linit)) then
       if (linit) then

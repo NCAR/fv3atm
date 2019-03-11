@@ -189,11 +189,11 @@ logical :: debug        = .false.
 logical :: sync         = .false.
 integer, parameter     :: maxhr = 4096
 real, dimension(maxhr) :: fdiag = 0.
-real                   :: fhmax=384.0, fhmaxhf=120.0, fhout=3.0, fhouthf=1.0
+real                   :: fhmax=384.0, fhmaxhf=120.0, fhout=3.0, fhouthf=1.0, avg_max_length=3600.
 #ifdef CCPP
-namelist /atmos_model_nml/ blocksize, chksum_debug, dycore_only, debug, sync, fdiag, fhmax, fhmaxhf, fhout, fhouthf, ccpp_suite
+namelist /atmos_model_nml/ blocksize, chksum_debug, dycore_only, debug, sync, fdiag, fhmax, fhmaxhf, fhout, fhouthf, ccpp_suite, avg_max_length
 #else
-namelist /atmos_model_nml/ blocksize, chksum_debug, dycore_only, debug, sync, fdiag, fhmax, fhmaxhf, fhout, fhouthf
+namelist /atmos_model_nml/ blocksize, chksum_debug, dycore_only, debug, sync, fdiag, fhmax, fhmaxhf, fhout, fhouthf, avg_max_length
 #endif
 
 type (time_type) :: diag_time
@@ -868,6 +868,7 @@ subroutine update_atmos_model_state (Atmos)
 
     call get_time (Atmos%Time - diag_time, isec)
     call get_time (Atmos%Time - Atmos%Time_init, seconds)
+    call atmosphere_nggps_diag(Atmos%Time,ltavg=.true.,avg_max_length=avg_max_length)
     if (ANY(nint(fdiag(:)*3600.0) == seconds) .or. (IPD_Control%kdt == 1) ) then
       if (mpp_pe() == mpp_root_pe()) write(6,*) "---isec,seconds",isec,seconds
       time_int = real(isec)
