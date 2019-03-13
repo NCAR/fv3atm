@@ -86,15 +86,6 @@ else
   SIONLIB_LINK_FLAGS =
 endif
 
-ifneq (,$(findstring CCPP,$(CPPDEFS)))
-  ifneq (,$(findstring STATIC,$(CPPDEFS)))
-    CCPP_LINK_FLAGS = -L$(PATH_CCPP)/lib -lccppphys -lccpp $(NCEPLIBS) -lxml2
-  else
-    CCPP_LINK_FLAGS = -L$(PATH_CCPP)/lib -lccpp
-  endif
-endif
-
-
 # Remove stochastic_physics from CCPP build
 ifneq (,$(findstring CCPP,$(CPPDEFS)))
 esmf_make_fragment:
