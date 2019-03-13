@@ -41,6 +41,8 @@ SRCS_f = \
 	   ./physics/ideaca.f                                                        \
 	   ./physics/lrgsclr.f                                                       \
 	   ./physics/mersenne_twister.f                                              \
+	   ./physics/mfpbl.f                                                         \
+	   ./physics/moninedmf.f                                                     \
 	   ./physics/moninp.f                                                        \
 	   ./physics/moninp1.f                                                       \
 	   ./physics/moninq.f                                                        \
@@ -62,7 +64,8 @@ SRCS_f = \
 	   ./physics/sfc_ocean.f                                                     \
 	   ./physics/shalcnv.f                                                       \
 	   ./physics/shalcv.f                                                        \
-	   ./physics/shalcv_opr.f
+	   ./physics/shalcv_opr.f                                                    \
+	   ./physics/tridi2t3.f
 SRCS_f90 = \
 	   ./physics/funcphys.f90                                                    \
 	   ./physics/wam_f107_kp_mod.f90
