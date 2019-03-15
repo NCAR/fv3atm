@@ -272,23 +272,11 @@ $(LIBRARY): $(OBJS)
 # this is the place to override default (implicit) compilation rules
 # and create specific (explicit) rules
 
-# Reduce optimization (substitute xCORE-AVX2 or xHost with xCORE-AVX-I) for radiation_aerosols.f
-ifneq (,$(findstring xCORE-AVX2,$(FFLAGS)))
-FFLAGS_LOPT1=$(subst xCORE-AVX2,xCORE-AVX-I,$(FFLAGS))
+# Reduce optimization (substitute (x)CORE-AVX2 or xHOST with (x)CORE-AVX-I) for radiation_aerosols.f
+FFLAGS_LOPT1=$(subst CORE-AVX2,CORE-AVX-I,\
+               $(subst xHOST,xCORE-AVX-I,$(FFLAGS)))
 ./physics/radiation_aerosols.o : ./physics/radiation_aerosols.f
 	$(FC) $(CPPDEFS) $(FFLAGS_LOPT1) $(OTHER_FFLAGS) -c $< -o $@
-else ifneq (,$(findstring axSSE4.2,AVX,CORE-AVX2,$(FFLAGS)))
-FFLAGS_LOPT1=$(subst CORE-AVX2,CORE-AVX-I,$(FFLAGS))
-./physics/radiation_aerosols.o : ./physics/radiation_aerosols.f
-	$(FC) $(CPPDEFS) $(FFLAGS_LOPT1) $(OTHER_FFLAGS) -c $< -o $@
-else ifneq (,$(findstring xHOST,$(FFLAGS)))
-FFLAGS_LOPT1=$(subst xHOST,xCORE-AVX-I,$(FFLAGS))
-./physics/radiation_aerosols.o : ./physics/radiation_aerosols.f
-	$(FC) $(CPPDEFS) $(FFLAGS_LOPT1) $(OTHER_FFLAGS) -c $< -o $@
-else
-./physics/radiation_aerosols.o : ./physics/radiation_aerosols.f
-	$(FC) $(CPPDEFS) $(FFLAGS) $(OTHER_FFLAGS) -c $< -o $@
-endif
 
 # Reduce optimization (add -O0) for GFS_diagnsostics.F90
 ./GFS_layer/GFS_diagnostics.o : ./GFS_layer/GFS_diagnostics.F90
@@ -311,24 +299,29 @@ FFLAGS_LOPT2=$(subst -fp-model,-fimf-arch-consistency=true -fp-model,$(FFLAGS))
 	$(FC) $(CPPDEFS) $(FFLAGS_LOPT2) $(OTHER_FFLAGS) -c $< -o $@
 ./physics/micro_mg3_0.o : ./physics/micro_mg3_0.F90
 	$(FC) $(CPPDEFS) $(FFLAGS_LOPT2) $(OTHER_FFLAGS) -c $< -o $@
-endif
-
-# For CCPP acceptance: selective reduction of optimization flags, hopefully
-# to be removed once established that this is not a reasonable approach.
-# Reduce optimization (substitute xCORE-AVX2 or xHost with xCORE-AVX-I,
-# -no-prec-div with -prec-div, and -no-prec-sqrt with -prec-sqrt) for
-# gfdl_cloud_microphys.F90, sflx.f
-ifneq (,$(findstring TRANSITION,$(CPPDEFS)))
-FFLAGS_LOPT3=$(subst no-prec-div,prec-div,\
+else ifneq (,$(findstring TRANSITION,$(CPPDEFS)))
+FFLAGS_LOPT2=$(subst CORE-AVX2,CORE-AVX-I,\
                $(subst no-prec-sqrt,prec-sqrt,\
-                 $(subst CORE-AVX2,CORE-AVX-I,$(FFLAGS))))
+                 $(subst no-prec-div,prec-div,$(FFLAGS))))
+./physics/micro_mg2_0.o : ./physics/micro_mg2_0.F90
+	$(FC) $(CPPDEFS) $(FFLAGS_LOPT2) $(OTHER_FFLAGS) -c $< -o $@
+./physics/micro_mg3_0.o : ./physics/micro_mg3_0.F90
+	$(FC) $(CPPDEFS) $(FFLAGS_LOPT2) $(OTHER_FFLAGS) -c $< -o $@
+./physics/aer_cloud.o : ./physics/aer_cloud.F
+	$(FC) $(CPPDEFS) $(FFLAGS_LOPT2) $(OTHER_FFLAGS) -c $< -o $@
+./physics/cldmacro.o : ./physics/cldmacro.F
+	$(FC) $(CPPDEFS) $(FFLAGS_LOPT2) $(OTHER_FFLAGS) -c $< -o $@
 ./physics/sflx.o : ./physics/sflx.f
-	$(FC) $(CPPDEFS) $(FFLAGS_LOPT3) $(OTHER_FFLAGS) -c $< -o $@
+	$(FC) $(CPPDEFS) $(FFLAGS_LOPT2) $(OTHER_FFLAGS) -c $< -o $@
 ./physics/gfdl_cloud_microphys.o: ./physics/gfdl_cloud_microphys.F90
-	$(FC) $(CPPDEFS) $(FFLAGS_LOPT3) $(OTHER_FFLAGS) -c $< -o $@
+	$(FC) $(CPPDEFS) $(FFLAGS_LOPT2) $(OTHER_FFLAGS) -c $< -o $@
 ./physics/satmedmfvdif.o : ./physics/satmedmfvdif.f
-	$(FC) $(CPPDEFS) $(FFLAGS_LOPT3) $(OTHER_FFLAGS) -c $< -o $@
-endif # (,$(findstring TRANSITION,$(CPPDEFS)))
+	$(FC) $(CPPDEFS) $(FFLAGS_LOPT2) $(OTHER_FFLAGS) -c $< -o $@
+./physics/cs_conv.o : ./physics/cs_conv.F90
+	$(FC) $(CPPDEFS) $(FFLAGS_LOPT2) $(OTHER_FFLAGS) -c $< -o $@
+./physics/gcm_shoc.o : ./physics/gcm_shoc.f90
+	$(FC) $(CPPDEFS) $(FFLAGS_LOPT2) $(OTHER_FFLAGS) -c $< -o $@
+endif
 
 # Do preprocessing of the GFS drivers in two steps to be able
 # to look at the actual .f90 file that is compiled
