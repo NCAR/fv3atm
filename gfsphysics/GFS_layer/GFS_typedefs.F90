@@ -5339,13 +5339,13 @@ module GFS_typedefs
 #endif
       allocate (Diag%du3dt  (IM,Model%levs,4))
       allocate (Diag%dv3dt  (IM,Model%levs,4))
-      allocate (Diag%dt3dt  (IM,Model%levs,6))
-      allocate (Diag%dq3dt  (IM,Model%levs,9))
+      allocate (Diag%dt3dt  (IM,Model%levs,7))
+!      allocate (Diag%dq3dt  (IM,Model%levs,oz_coeff+5))
 !--- needed to allocate GoCart coupling fields
-      allocate (Diag%upd_mf (IM,Model%levs))
-      allocate (Diag%dwn_mf (IM,Model%levs))
-      allocate (Diag%det_mf (IM,Model%levs))
-      allocate (Diag%cldcov (IM,Model%levs))
+!      allocate (Diag%upd_mf (IM,Model%levs))
+!      allocate (Diag%dwn_mf (IM,Model%levs))
+!      allocate (Diag%det_mf (IM,Model%levs))
+!      allocate (Diag%cldcov (IM,Model%levs))
 #ifndef CCPP
     endif
 #endif
@@ -5523,10 +5523,10 @@ module GFS_typedefs
       Diag%du3dt   = zero
       Diag%dv3dt   = zero
       Diag%dt3dt   = zero
-      Diag%dq3dt   = zero
-      Diag%upd_mf  = zero
-      Diag%dwn_mf  = zero
-      Diag%det_mf  = zero
+!      Diag%dq3dt   = zero
+!      Diag%upd_mf  = zero
+!      Diag%dwn_mf  = zero
+!      Diag%det_mf  = zero
     endif
 
     Diag%refl_10cm = zero
