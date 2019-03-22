@@ -287,19 +287,7 @@ FFLAGS_LOPT1=$(subst CORE-AVX2,CORE-AVX-I,\
 # gamma function differ for the non-CCPP and CCPP version (Theia/Intel 18).
 # Note this is only required with dynamic CCPP builds (hybrid, standalone),
 # not with static CCPP builds.
-ifneq (,$(findstring DEBUG,$(CPPDEFS)))
-FFLAGS_LOPT2=$(subst -fp-model,-fimf-arch-consistency=true -fp-model,$(FFLAGS))
-./physics/micro_mg2_0.o : ./physics/micro_mg2_0.F90
-	$(FC) $(CPPDEFS) $(FFLAGS_LOPT2) $(OTHER_FFLAGS) -c $< -o $@
-./physics/micro_mg3_0.o : ./physics/micro_mg3_0.F90
-	$(FC) $(CPPDEFS) $(FFLAGS_LOPT2) $(OTHER_FFLAGS) -c $< -o $@
-else ifneq (,$(findstring REPRO,$(CPPDEFS)))
-FFLAGS_LOPT2=$(subst -fp-model,-fimf-arch-consistency=true -fp-model,$(FFLAGS))
-./physics/micro_mg2_0.o : ./physics/micro_mg2_0.F90
-	$(FC) $(CPPDEFS) $(FFLAGS_LOPT2) $(OTHER_FFLAGS) -c $< -o $@
-./physics/micro_mg3_0.o : ./physics/micro_mg3_0.F90
-	$(FC) $(CPPDEFS) $(FFLAGS_LOPT2) $(OTHER_FFLAGS) -c $< -o $@
-else ifneq (,$(findstring TRANSITION,$(CPPDEFS)))
+ifneq (,$(findstring TRANSITION,$(CPPDEFS)))
 FFLAGS_LOPT2=$(subst CORE-AVX2,CORE-AVX-I,\
                $(subst no-prec-sqrt,prec-sqrt,\
                  $(subst no-prec-div,prec-div,$(FFLAGS))))
