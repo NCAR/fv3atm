@@ -86,15 +86,6 @@ else
   SIONLIB_LINK_FLAGS =
 endif
 
-ifneq (,$(findstring CCPP,$(CPPDEFS)))
-  ifneq (,$(findstring STATIC,$(CPPDEFS)))
-    CCPP_LINK_FLAGS = -L$(PATH_CCPP)/lib -lccppphys -lccpp $(NCEPLIBS) -lxml2
-  else
-    CCPP_LINK_FLAGS = -L$(PATH_CCPP)/lib -lccpp
-  endif
-endif
-
-
 # Remove stochastic_physics from CCPP build
 ifneq (,$(findstring CCPP,$(CPPDEFS)))
 esmf_make_fragment:
@@ -109,7 +100,7 @@ esmf_make_fragment:
 	#@echo "ESMF_DEP_INCPATH   = $(PWD)/nems_dir" >> fv3.mk
 	@echo "ESMF_DEP_INCPATH   = $(PWD) $(addprefix $(PWD)/, nems_dir atmos_cubed_sphere io gfsphysics cpl ipd)" >> fv3.mk
 	@echo "ESMF_DEP_CMPL_OBJS ="                 >> fv3.mk
-	@echo "ESMF_DEP_LINK_OBJS = $(addprefix $(PWD)/nems_dir/, libfv3cap.a libfv3core.a libfv3io.a libipd.a lib$(PHYSP)phys.a libfv3cpl.a) $(CCPP_LINK_FLAGS) $(SIONLIB_LINK_FLAGS)"  >> fv3.mk
+	@echo "ESMF_DEP_LINK_OBJS = $(addprefix $(PWD)/nems_dir/, libfv3cap.a libfv3core.a libfv3io.a libipd.a lib$(PHYSP)phys.a libfv3cpl.a) $(SIONLIB_LINK_FLAGS)" >> fv3.mk
 	@echo "ESMF_DEP_SHRD_PATH ="                 >> fv3.mk
 	@echo "ESMF_DEP_SHRD_LIBS ="                 >> fv3.mk
 	@echo
@@ -128,7 +119,7 @@ esmf_make_fragment:
 	#@echo "ESMF_DEP_INCPATH   = $(PWD)/nems_dir" >> fv3.mk
 	@echo "ESMF_DEP_INCPATH   = $(PWD) $(addprefix $(PWD)/, nems_dir atmos_cubed_sphere io gfsphysics cpl ipd)" >> fv3.mk
 	@echo "ESMF_DEP_CMPL_OBJS ="                 >> fv3.mk
-	@echo "ESMF_DEP_LINK_OBJS = $(addprefix $(PWD)/nems_dir/, libfv3cap.a libfv3core.a libfv3io.a libipd.a lib$(PHYSP)phys.a libfv3cpl.a libstochastic_physics.a) $(SIONLIB_LINK_FLAGS)"  >> fv3.mk
+	@echo "ESMF_DEP_LINK_OBJS = $(addprefix $(PWD)/nems_dir/, libfv3cap.a libfv3core.a libfv3io.a libipd.a lib$(PHYSP)phys.a libfv3cpl.a libstochastic_physics.a) $(SIONLIB_LINK_FLAGS)" >> fv3.mk
 	@echo "ESMF_DEP_SHRD_PATH ="                 >> fv3.mk
 	@echo "ESMF_DEP_SHRD_LIBS ="                 >> fv3.mk
 	@echo
