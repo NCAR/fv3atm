@@ -1,5 +1,9 @@
 module module_physics_driver
 
+! # - define DHDEBUG
+
+#include "debug_bitforbit_module_use.inc"
+
   use machine,               only: kind_phys
   use physcons,              only: con_cp, con_fvirt, con_g, con_rd,    &
                                    con_rv, con_hvap, con_hfus,          &
@@ -753,6 +757,8 @@ module module_physics_driver
       Stateout%gv0(:,:)   = Statein%vgrs(:,:)
       Stateout%gq0(:,:,:) = Statein%qgrs(:,:,:)
 #endif
+
+#include "debug_bitforbit_diagtoscreen.inc"
 
 !
 !===> ...  begin here
@@ -1637,6 +1643,8 @@ module module_physics_driver
 
       do iter=1,2
 
+#include "debug_bitforbit_diagtoscreen.inc"
+
 !  --- ...  surface exchange coefficients
 !
 !     if (lprnt) write(0,*)' tsfc=',Sfcprop%tsfc(ipr),' tsurf=',tsurf(ipr),iter
@@ -1975,6 +1983,7 @@ module module_physics_driver
          !Radtend%sfalb                         ! intent(in)
          Interstitial(nt)%flag_iter = flag_iter ! intent(in)
          Interstitial(nt)%flag_guess= flag_guess! intent(in)
+         !Model%lheatstrg                       ! intent(in)
          !Model%isot                            ! intent(in)
          !Model%ivegsrc                         ! intent(in)
          Interstitial(nt)%bexp1d = bexp1d       ! intent(in)
@@ -2051,17 +2060,17 @@ module module_physics_driver
             Model%isot, Model%ivegsrc,                                 &
             bexp1d, xlai1d, vegf1d, Model%pertvegf,                    &
 !  ---  in/outs:
-             Sfcprop%weasd, Sfcprop%snowd, Sfcprop%tsfc, Sfcprop%tprcp, &
-             Sfcprop%srflag, Sfcprop%smc, Sfcprop%stc, Sfcprop%slc,     &
-             Sfcprop%canopy, trans, tsurf, Sfcprop%zorl,                &
+            Sfcprop%weasd, Sfcprop%snowd, Sfcprop%tsfc, Sfcprop%tprcp, &
+            Sfcprop%srflag, Sfcprop%smc, Sfcprop%stc, Sfcprop%slc,     &
+            Sfcprop%canopy, trans, tsurf, Sfcprop%zorl,                &
 !  ---  outputs:
-             Sfcprop%sncovr, qss, gflx, drain, evap, hflx, ep1d, runof, &
-             Diag%cmm, Diag%chh, evbs, evcw, sbsno, snowc, Diag%soilm,  &
-             snohf, Diag%smcwlt2, Diag%smcref2, Sfcprop%wet1)
+            Sfcprop%sncovr, qss, gflx, drain, evap, hflx, ep1d, runof, &
+            Diag%cmm, Diag%chh, evbs, evcw, sbsno, snowc, Diag%soilm,  &
+            snohf, Diag%smcwlt2, Diag%smcref2, Sfcprop%wet1)
+
 #endif
 !     if (lprnt) write(0,*)' tseae=',tsea(ipr),' tsurf=',tsurf(ipr),iter &
 !    &,' phy_f2d=',phy_f2d(ipr,num_p2d)
-
 
         elseif (Model%lsm == Model%lsm_ruc) then
 #ifdef CCPP  
@@ -2345,6 +2354,8 @@ module module_physics_driver
 
       enddo   ! end iter_loop
 
+#include "debug_bitforbit_diagtoscreen.inc"
+
 #ifdef CCPP
       if (Model%me==0) write(0,*) 'CCPP DEBUG: calling dcyc2t3_post through option B'
       ! Copy local variables from driver to appropriate interstitial variables
@@ -2461,6 +2472,7 @@ module module_physics_driver
       !Interstitial(nt)%im = im               ! intent(in) - set in Interstitial(nt)%create()
       !Model%cplflx                           ! intent(in)
       !Model%lssav                            ! intent(in)
+      !Model%cplwav                           ! intent(in)
       Interstitial(nt)%islmsk = islmsk        ! intent(in)
       !Model%dtf                              ! intent(in)
       Interstitial(nt)%ep1d = ep1d            ! intent(in)
@@ -4873,7 +4885,11 @@ module module_physics_driver
 !  --- ...  calling convective parameterization
 !           -----------------------------------
       if (Model%do_deep) then
- 
+
+! For CCPP compliant physics, this code is in GFS_DCNV_generic_pre;
+! for non-CCPP compliant physics (RAS only, this code is copied to
+! before/after rascnv)
+#ifndef CCPP
          if (Model%do_ca) then
            do k=1,levs
             do i=1,im
@@ -4881,13 +4897,14 @@ module module_physics_driver
             enddo
            enddo
          endif   
- 
+
         if (Model%isppt_deep) then
            savet = Stateout%gt0
            saveq = Stateout%gq0(:,:,1)
            saveu = Stateout%gu0
            savev = Stateout%gv0
         endif
+#endif
 
         if (.not. Model%ras .and. .not. Model%cscnv) then
 
@@ -4931,6 +4948,8 @@ module module_physics_driver
             !Stateout%gt0                         ! intent(inout)
             !Stateout%gu0                         ! intent(inout)
             !Stateout%gv0                         ! intent(inout)
+            !Model%do_ca                          ! intent(in)
+            !Coupling%ca_deep                     ! intent(in)
             Interstitial(nt)%cld1d = cld1d        ! intent(out)
             Interstitial(nt)%raincd = rain1       ! intent(out)
             Interstitial(nt)%kbot = kbot          ! intent(out)
@@ -5197,14 +5216,12 @@ module module_physics_driver
 !           if (lprnt) print *,' rain1=',rain1(ipr),' rann=',rann(ipr,1)
           endif
 
-
-        if(Model%do_ca) then
-        Coupling%cape(:)=cld1d(:)
-        endif
-
 !
 #ifndef CCPP
           ! For CCPP, this is in GFS_DCNV_generic_post
+          if(Model%do_ca) then
+            Coupling%cape(:)=cld1d(:)
+          endif
           if (Model%npdf3d == 3 .and. Model%num_p3d == 4) then
             do k=1,levs
               do i=1,im
@@ -5462,6 +5479,26 @@ module module_physics_driver
 
           else      ! ras version 2
 
+! For CCPP compliant physics, this code is in GFS_DCNV_generic_pre;
+! for the non-CCPP compliant RAS, this must be executed before the
+! call to RAS in CCPP (hybrid) mode
+#ifdef CCPP
+            if (Model%do_ca) then
+              do k=1,levs
+               do i=1,im
+                Stateout%gq0(i,k,1) = Stateout%gq0(i,k,1)*(1.0 + Coupling%ca_deep(i)/500.)
+               enddo
+              enddo
+            endif
+
+            if (Model%isppt_deep) then
+               savet = Stateout%gt0
+               saveq = Stateout%gq0(:,:,1)
+               saveu = Stateout%gu0
+               savev = Stateout%gv0
+            endif
+#endif
+
             if (Model%ccwf(1) >= 0.0 .or. Model%ccwf(2) >= 0) then
               do i=1,im
                 ccwfac(i)  = Model%ccwf(1)*work1(i)    + Model%ccwf(2)*work2(i)
@@ -5516,6 +5553,50 @@ module module_physics_driver
 !          if (lprnt) write(0,*)' gq04=',Stateout%gq0(ipr,1:60,1)
 !          if (lprnt) write(0,*)'aftrastke=',clw(ipr,1:25,ntk)
 
+! For CCPP compliant physics, this code is in GFS_DCNV_generic_post;
+! for the non-CCPP compliant RAS, this must be executed after the
+! call to RAS in CCPP (hybrid) mode
+#ifdef CCPP
+            cld1d = 0
+
+            if (Model%ldiag3d .or. Model%lgocart) then
+              do k=1,levs
+                do i=1,im
+                  Coupling%upd_mfi(i,k) = 0.
+                  Coupling%dwn_mfi(i,k) = 0.
+                  Coupling%det_mfi(i,k) = 0.
+                enddo
+              enddo
+            endif
+            if (Model%lgocart) then
+              do k=1,levs
+                do i=1,im
+                  Coupling%dqdti(i,k)  = 0.
+                  Coupling%cnvqci(i,k) = 0.
+                enddo
+              enddo
+            endif
+
+            if (Model%lgocart) then
+              do k=1,levs
+                do i=1,im
+                  Coupling%upd_mfi(i,k)  = Coupling%upd_mfi(i,k)  + ud_mf(i,k) * frain
+                  Coupling%dwn_mfi(i,k)  = Coupling%dwn_mfi(i,k)  + dd_mf(i,k) * frain
+                  Coupling%det_mfi(i,k)  = Coupling%det_mfi(i,k)  + dt_mf(i,k) * frain
+                  Coupling%cnvqci (i,k)  = Coupling%cnvqci (i,k)  + (clw(i,k,1)+clw(i,k,2) - &
+                                          Stateout%gq0(i,k,ntcw)) * frain
+                enddo
+              enddo
+            endif ! if (lgocart)
+
+            if(Model%isppt_deep)then
+               Coupling%tconvtend = Stateout%gt0 - savet
+               Coupling%qconvtend = Stateout%gq0(:,:,1) - saveq
+               Coupling%uconvtend = Stateout%gu0 - saveu
+               Coupling%vconvtend = Stateout%gv0 - savev
+            endif
+#endif
+
           endif
 
 !     write(1000+me,*)' at latitude = ',lat
@@ -5528,6 +5609,10 @@ module module_physics_driver
 !    &,' cnv_prc3sum=',sum(cnv_prc3(ipr,1:levs))
 !     if (lprnt) write(0,*)' gt04=',gt0(ipr,1:10)
 
+! For CCPP compliant physics, this code is in GFS_DCNV_generic_post;
+! for non-CCPP compliant physics (RAS only, this code is copied to
+! before/after rascnv)
+#ifndef CCPP
           cld1d = 0
 
           if (Model%ldiag3d .or. Model%lgocart) then
@@ -5559,15 +5644,21 @@ module module_physics_driver
               enddo
             enddo
           endif ! if (lgocart)
+#endif
 
         endif   ! end if_not_ras
 
+! For CCPP compliant physics, this code is in GFS_DCNV_generic_post;
+! for non-CCPP compliant physics (RAS only, this code is copied to
+! before/after rascnv)
+#ifndef CCPP
         if(Model%isppt_deep)then
            Coupling%tconvtend = Stateout%gt0 - savet
            Coupling%qconvtend = Stateout%gq0(:,:,1) - saveq
            Coupling%uconvtend = Stateout%gu0 - saveu
            Coupling%vconvtend = Stateout%gv0 - savev
         endif
+#endif
 
       else      ! no parameterized deep convection
         cld1d = 0.
@@ -7454,6 +7545,14 @@ module module_physics_driver
           !Model%dtp                                   ! intent(in)
           !CCPP_shared(nt)%hydrostatic                 ! intent(in) - set in CCPP_shared(nt)%create
           !CCPP_shared(nt)%phys_hydrostatic            ! intent(in) - set in CCPP_shared(nt)%create
+          !Model%lradar                                ! intent(in)
+          !Diag%refl_10cm                              ! intent(inout)
+          !Model%effr_in                               ! intent(in)
+          !Tbd%phy_f3d(1:im,1:levs,1)                  ! intent(inout)
+          !Tbd%phy_f3d(1:im,1:levs,2)                  ! intent(inout)
+          !Tbd%phy_f3d(1:im,1:levs,3)                  ! intent(inout)
+          !Tbd%phy_f3d(1:im,1:levs,4)                  ! intent(inout)
+          !Tbd%phy_f3d(1:im,1:levs,5)                  ! intent(inout)
           !cdata_block(nb,nt)%errmsg = errmsg          ! intent(out)
           !cdata_block(nb,nt)%errflg = errflg          ! intent(out)
           !
@@ -7550,6 +7649,15 @@ module module_physics_driver
               Sfcprop%sr(i) = 0.0
             endif
           enddo
+#ifndef WORKAROUND_SRFLAG
+          ! DH* Convert rain0, ice0, graupel0 and snow0 from mm/day to m/physics-timestep
+          ! for later use (approx. lines 7970, calculation of srflag)
+          rain0 = tem*rain0
+          ice0  = tem*ice0
+          snow0 = tem*snow0
+          graupel0 = tem*graupel0
+          ! *DH
+#endif
           do k = 1, levs
             kk = levs-k+1
             do i=1,im
