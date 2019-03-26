@@ -622,8 +622,8 @@ contains
    endif
 
    do psc=1,abs(p_split)
-     p_step = psc
-     call timing_on('fv_dynamics')
+      p_step = psc
+      call timing_on('fv_dynamics')
 !uc/vc only need be same on coarse grid? However BCs do need to be the same
       call fv_dynamics(npx, npy, npz, nq, Atm(n)%ng, dt_atmos/real(abs(p_split)),&
                        Atm(n)%flagstruct%consv_te, Atm(n)%flagstruct%fill,       &

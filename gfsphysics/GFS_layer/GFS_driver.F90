@@ -202,9 +202,9 @@ module GFS_driver
                      Init_parm%input_nml_file, Init_parm%tile_num  &
 #ifdef CCPP
                     ,Init_parm%ak, Init_parm%bk, Init_parm%blksz,  &
-                     Init_parm%restart, communicator, ntasks
+                     Init_parm%restart, communicator, ntasks       &
 #elif MEMCHECK
-                    ,communicator
+                    ,communicator                                  &
 #endif
                      )
 
@@ -444,6 +444,15 @@ module GFS_driver
       !--- NEED TO get the logic from the old phys/gloopb.f initialization area
     endif
 
+! For CCPP, this is called automatically as part of CCPP_physics_init
+#ifdef CCPP
+    if(Model%do_ca)then
+      print *,'Cellular automata cannot be used when CCPP is turned on until'
+      print *,'the stochastic physics pattern generation code has been pulled'
+      print *,'out of the FV3 repository and updated with the CCPP version.'
+      stop
+    endif
+#else
     !--- Initialize cellular automata
     if(Model%do_ca)then
     blocksize=size(Grid(1)%xlon)
@@ -452,6 +461,7 @@ module GFS_driver
             Model%nseed,Model%nthresh,Model%ca_global,Model%ca_sgs,Model%iseed_ca,&
             Model%ca_smooth,Model%nspinup,blocksize)
     endif
+#endif
 
     !--- sncovr may not exist in ICs from chgres.
     !--- FV3GFS handles this as part of the IC ingest

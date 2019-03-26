@@ -242,8 +242,6 @@ module fv_arrays_mod
 
   end type fv_grid_type
 
-
-
   type fv_flags_type
 
      !! FOR EACH VARIABLE IN FV_FLAGS:
