@@ -48,8 +48,6 @@ module IPD_driver
 #ifdef CCPP
   subroutine IPD_initialize (IPD_Control, IPD_Data, IPD_Diag, IPD_Restart, &
                              IPD_Interstitial, communicator, ntasks, IPD_init_parm)
-#elif MEMCHECK
-  subroutine IPD_initialize (IPD_Control, IPD_Data, IPD_Diag, IPD_Restart, communicator, IPD_init_parm)
 #else
   subroutine IPD_initialize (IPD_Control, IPD_Data, IPD_Diag, IPD_Restart, IPD_init_parm)
 #endif
@@ -61,8 +59,6 @@ module IPD_driver
     type(IPD_interstitial_type), intent(inout) :: IPD_Interstitial(:)
     integer, intent(in)                   :: communicator
     integer, intent(in)                   :: ntasks
-#elif MEMCHECK
-    integer, intent(in)                   :: communicator
 #endif
     type(IPD_init_type),    intent(in)    :: IPD_init_parm
 
@@ -73,8 +69,6 @@ module IPD_driver
 #ifdef CCPP
                      IPD_Data(:)%Intdiag, IPD_Interstitial(:), communicator,      &
                      ntasks, IPD_init_parm)
-#elif MEMCHECK
-                     IPD_Data(:)%Intdiag, communicator, IPD_init_parm)
 #else
                      IPD_Data(:)%Intdiag, IPD_init_parm)
 #endif

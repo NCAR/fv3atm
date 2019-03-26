@@ -122,8 +122,6 @@ module GFS_driver
 #ifdef CCPP
                              Diag, Interstitial, communicator,      &
                              ntasks, Init_parm)
-#elif MEMCHECK
-                             Diag, communicator, Init_parm)
 #else
                              Diag, Init_parm)
 #endif
@@ -164,8 +162,6 @@ module GFS_driver
     type(GFS_interstitial_type), intent(inout) :: Interstitial(:)
     integer,                  intent(in)    :: communicator
     integer,                  intent(in)    :: ntasks
-#elif MEMCHECK
-    integer,                  intent(in)    :: communicator
 #endif
     type(GFS_init_type),      intent(in)    :: Init_parm
 
@@ -203,8 +199,6 @@ module GFS_driver
 #ifdef CCPP
                     ,Init_parm%ak, Init_parm%bk, Init_parm%blksz,  &
                      Init_parm%restart, communicator, ntasks       &
-#elif MEMCHECK
-                    ,communicator                                  &
 #endif
                      )
 
