@@ -1,4 +1,4 @@
-module IPD_CCPP_driver
+module CCPP_driver
 
 #ifdef STATIC
 ! For static builds, the ccpp_physics_{init,run,finalize} calls
@@ -47,15 +47,15 @@ module IPD_CCPP_driver
 ! Public Entities
 !----------------
 ! functions
-  public IPD_CCPP_step
+  public CCPP_step
 
   CONTAINS
 !*******************************************************************************************
 
 !-------------------------------
-!  IPD step generalized for CCPP
+!  CCPP step
 !-------------------------------
-  subroutine IPD_CCPP_step (step, nblks, ierr)
+  subroutine CCPP_step (step, nblks, ierr)
 
 #ifdef OPENMP
     use omp_lib
@@ -277,12 +277,12 @@ module IPD_CCPP_driver
 
     else
 
-      write(0,'(2a)') 'Error, undefined IPD step ', trim(step)
+      write(0,'(2a)') 'Error, undefined CCPP step ', trim(step)
       ierr = 1
       return
 
     end if
 
-  end subroutine IPD_CCPP_step
+  end subroutine CCPP_step
 
-end module IPD_CCPP_driver
+end module CCPP_driver
