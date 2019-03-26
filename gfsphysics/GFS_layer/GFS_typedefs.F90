@@ -616,17 +616,17 @@ module GFS_typedefs
 !! | GFS_Data(cdata%blk_no)%Coupling%psurfi_cpl     | instantaneous_surface_air_pressure_for_coupling                                                | instantaneous sfc pressure                             | Pa            |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Coupling%oro_cpl        |                                                                                                | orography                                              |               |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Coupling%slmsk_cpl      |                                                                                                | land/sea/ice mask                                      |               |    1 | real    | kind_phys | none   | F        |
-!! | GFS_Data(cdata%blk_no)%Coupling%tconvtend      |                                                                                                |                                                        |               |    2 | real    | kind_phys | none   | F        |
-!! | GFS_Data(cdata%blk_no)%Coupling%qconvtend      |                                                                                                |                                                        |               |    2 | real    | kind_phys | none   | F        |
-!! | GFS_Data(cdata%blk_no)%Coupling%uconvtend      |                                                                                                |                                                        |               |    2 | real    | kind_phys | none   | F        |
-!! | GFS_Data(cdata%blk_no)%Coupling%vconvtend      |                                                                                                |                                                        |               |    2 | real    | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Coupling%tconvtend      | tendency_of_air_temperature_due_to_deep_convection_for_coupling_on_physics_timestep            | tendency of air temperature due to deep convection     | K             |    2 | real    | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Coupling%qconvtend      | tendency_of_water_vapor_specific_humidity_due_to_deep_convection_for_coupling_on_physics_timestep | tendency of specific humidity due to deep convection| kg kg-1       |    2 | real    | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Coupling%uconvtend      | tendency_of_x_wind_due_to_deep_convection_for_coupling_on_physics_timestep                     | tendency_of_x_wind_due_to_deep_convection              | m s-1         |    2 | real    | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Coupling%vconvtend      | tendency_of_y_wind_due_to_deep_convection_for_coupling_on_physics_timestep                     | tendency_of_y_wind_due_to_deep_convection              | m s-1         |    2 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Coupling%ca_out         |                                                                                                |                                                        |               |    1 | real    | kind_phys | none   | F        |
-!! | GFS_Data(cdata%blk_no)%Coupling%ca_deep        |                                                                                                |                                                        |               |    1 | real    | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Coupling%ca_deep        | fraction_of_cellular_automata_for_deep_convection                                              | fraction of cellular automata for deep convection      | frac          |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Coupling%ca_turb        |                                                                                                |                                                        |               |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Coupling%ca_shal        |                                                                                                |                                                        |               |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Coupling%ca_rad         |                                                                                                |                                                        |               |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Coupling%ca_micro       |                                                                                                |                                                        |               |    1 | real    | kind_phys | none   | F        |
-!! | GFS_Data(cdata%blk_no)%Coupling%cape           |                                                                                                |                                                        |               |    1 | real    | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Coupling%cape           | convective_available_potential_energy_for_coupling                                             | convective available potential energy for coupling DH* CHECK THIS DOESN'T MAKE SENSE!!! *DH | m2 s-2        |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Coupling%shum_wts       | weights_for_stochastic_shum_perturbation                                                       | weights for stochastic shum perturbation               | none          |    2 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Coupling%sppt_wts       | weights_for_stochastic_sppt_perturbation                                                       | weights for stochastic sppt perturbation               | none          |    2 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Coupling%skebu_wts      | weights_for_stochastic_skeb_perturbation_of_x_wind                                             | weights for stochastic skeb perturbation of x wind     | none          |    2 | real    | kind_phys | none   | F        |
@@ -813,7 +813,7 @@ module GFS_typedefs
 !! | GFS_Control%blksz(cdata%blk_no)      | horizontal_dimension                                                          | horizontal dimension                                    | count         |    0 | integer   |           | none   | F        |
 !! | GFS_Control%tile_num                 | number_of_tile                                                                | tile number                                             | none          |    0 | integer   |           | none   | F        |
 !! | GFS_Control%cplflx                   | flag_for_flux_coupling                                                        | flag controlling cplflx collection (default off)        | flag          |    0 | logical   |           | none   | F        |
-!! | GFS_Control%cplwav                   |                                                                               | flag controlling cplwav collection (default off)        | flag          |    0 | logical   |           | none   | F        |
+!! | GFS_Control%cplwav                   | flag_for_wave_coupling                                                        | flag controlling cplwav collection (default off)        | flag          |    0 | logical   |           | none   | F        |
 !! | GFS_Control%cplchm                   | flag_for_chemistry_coupling                                                   | flag controlling cplchm collection (default off)        | flag          |    0 | logical   |           | none   | F        |
 !! | GFS_Control%lsidea                   | flag_idealized_physics                                                        | flag for idealized physics                              | flag          |    0 | logical   |           | none   | F        |
 !! | GFS_Control%dtp                      | time_step_for_physics                                                         | physics timestep                                        | s             |    0 | real      | kind_phys | none   | F        |
@@ -876,23 +876,23 @@ module GFS_typedefs
 !! | GFS_Control%mg_qcmin(1)              | mg_minimum_cloud_condensed_water_mixing_ratio                                 | minimum cloud condensed water mixing ratio in MG macro clouds                 | kg kg-1 |    0 | real       | kind_phys | none   | F        |
 !! | GFS_Control%mg_qcmin(2)              | mg_minimum_ice_mixing_ratio                                                   | minimum ice mixing ratio in MG macro clouds                                   | kg kg-1 |    0 | real       | kind_phys | none   | F        |
 !! | GFS_Control%mg_precip_frac_method    | mg_type_of_precip_fraction_method                                             | type of precip fraction method for MG microphysics (in_cloud or max_overlap)  | none    |    0 | character  | len=16    | none   | F        |
-!! | GFS_Control%tf                       | frozen_cloud_threshold_temperature                                            | threshold temperature below which all cloud is ice      | K             |    0 | real      | kind_phys | none   | F        |
-!! | GFS_Control%tcr                      | cloud_phase_transition_threshold_temperature                                  | threshold temperature below which cloud starts to freeze| K             |    0 | real      | kind_phys | none   | F        |
-!! | GFS_Control%tcrf                     | cloud_phase_transition_denominator                                            | denominator in cloud phase transition = 1/(tcr-tf)      | K-1           |    0 | real      | kind_phys | none   | F        |
-!! | GFS_Control%effr_in                  |                                                                               | eg to turn on ffective radii for MG                     |               |    0 | logical   |           | none   | F        |
-!! | GFS_Control%microp_uniform           | mg_flag_for_uniform_subcolumns                                                | flag for uniform subcolumns for MG microphysics         | flag          |    0 | logical   |           | none   | F        |
-!! | GFS_Control%do_cldliq                |                                                                               |                                                         |               |    0 | logical   |           | none   | F        |
-!! | GFS_Control%do_cldice                | mg_flag_for_cloud_ice_processes                                               | flag for cloud ice processes for MG microphysics                  | flag  |    0 | logical |           | none   | F        |
-!! | GFS_Control%hetfrz_classnuc          | mg_flag_for_heterogeneous_freezing                                            | flag for heterogeneous freezing for MG microphysics               | flag  |    0 | logical |           | none   | F        |
-!! | GFS_Control%mg_nccons                | mg_flag_drop_concentration_constant                                           | flag for constant droplet concentration for MG microphysics       | flag  |    0 | logical |           | none   | F        |
-!! | GFS_Control%mg_nicons                | mg_flag_ice_concentration_constant                                            | flag for constant ice concentration for MG microphysics           | flag  |    0 | logical |           | none   | F        |
-!! | GFS_Control%mg_ngcons                | mg_flag_graupel_concentration_constant                                        | flag for constant graupel concentration for MG microphysics       | flag  |    0 | logical |           | none   | F        |
-!! | GFS_Control%sed_supersat             | mg_allow_supersat_after_sed                                                   | allow supersaturation after sedimentation for MG microphysics     | flag  |    0 | logical |           | none   | F        |
-!! | GFS_Control%do_sb_physics            | mg_flag_for_sb2001_autoconversion                                             | flag for SB 2001 autoconversion or accretion for MG microphysics  | flag  |    0 | logical |           | none   | F        |
-!! | GFS_Control%mg_do_graupel            | mg_flag_for_graupel                                                           | flag for graupel for MG microphysics (hail possible if false)     | flag  |    0 | logical |           | none   | F        |
-!! | GFS_Control%mg_do_hail               | mg_flag_for_hail                                                              | flag for hail for MG microphysics (graupel possible if false)     | flag  |    0 | logical |           | none   | F        |
-!! | GFS_Control%mg_do_ice_gmao           | mg_flag_for_gmao_ice_formulation                                              | flag for gmao ice formulation                                     | flag  |    0 | logical |           | none   | F        |
-!! | GFS_Control%mg_do_liq_liu            | mg_flag_for_liu_liquid_treatment                                              | flag for liu liquid treatment                                     | flag  |    0 | logical |           | none   | F        |
+!! | GFS_Control%tf                       | frozen_cloud_threshold_temperature                                            | threshold temperature below which all cloud is ice                            | K       |    0 | real       | kind_phys | none   | F        |
+!! | GFS_Control%tcr                      | cloud_phase_transition_threshold_temperature                                  | threshold temperature below which cloud starts to freeze                      | K       |    0 | real       | kind_phys | none   | F        |
+!! | GFS_Control%tcrf                     | cloud_phase_transition_denominator                                            | denominator in cloud phase transition = 1/(tcr-tf)                            | K-1     |    0 | real       | kind_phys | none   | F        |
+!! | GFS_Control%effr_in                  | flag_for_cloud_effective_radii                                                | flag for cloud effective radii calculations in microphysics                   |         |    0 | logical    |           | none   | F        |
+!! | GFS_Control%microp_uniform           | mg_flag_for_uniform_subcolumns                                                | flag for uniform subcolumns for MG microphysics                               | flag    |    0 | logical    |           | none   | F        |
+!! | GFS_Control%do_cldliq                |                                                                               |                                                                               |         |    0 | logical    |           | none   | F        |
+!! | GFS_Control%do_cldice                | mg_flag_for_cloud_ice_processes                                               | flag for cloud ice processes for MG microphysics                              | flag    |    0 | logical    |           | none   | F        |
+!! | GFS_Control%hetfrz_classnuc          | mg_flag_for_heterogeneous_freezing                                            | flag for heterogeneous freezing for MG microphysics                           | flag    |    0 | logical    |           | none   | F        |
+!! | GFS_Control%mg_nccons                | mg_flag_drop_concentration_constant                                           | flag for constant droplet concentration for MG microphysics                   | flag    |    0 | logical    |           | none   | F        |
+!! | GFS_Control%mg_nicons                | mg_flag_ice_concentration_constant                                            | flag for constant ice concentration for MG microphysics                       | flag    |    0 | logical    |           | none   | F        |
+!! | GFS_Control%mg_ngcons                | mg_flag_graupel_concentration_constant                                        | flag for constant graupel concentration for MG microphysics                   | flag    |    0 | logical    |           | none   | F        |
+!! | GFS_Control%sed_supersat             | mg_allow_supersat_after_sed                                                   | allow supersaturation after sedimentation for MG microphysics                 | flag    |    0 | logical    |           | none   | F        |
+!! | GFS_Control%do_sb_physics            | mg_flag_for_sb2001_autoconversion                                             | flag for SB 2001 autoconversion or accretion for MG microphysics              | flag    |    0 | logical    |           | none   | F        |
+!! | GFS_Control%mg_do_graupel            | mg_flag_for_graupel                                                           | flag for graupel for MG microphysics (hail possible if false)                 | flag    |    0 | logical    |           | none   | F        |
+!! | GFS_Control%mg_do_hail               | mg_flag_for_hail                                                              | flag for hail for MG microphysics (graupel possible if false)                 | flag    |    0 | logical    |           | none   | F        |
+!! | GFS_Control%mg_do_ice_gmao           | mg_flag_for_gmao_ice_formulation                                              | flag for gmao ice formulation                                                 | flag    |    0 | logical    |           | none   | F        |
+!! | GFS_Control%mg_do_liq_liu            | mg_flag_for_liu_liquid_treatment                                              | flag for liu liquid treatment                                                 | flag    |    0 | logical    |           | none   | F        |
 !! | GFS_Control%shoc_parm(1)             | shoc_tke_dissipatation_pressure_threshold                                     | pressure below which extra TKE diss. is applied in SHOC | Pa            |    0 | real      | kind_phys | none   | F        |
 !! | GFS_Control%shoc_parm(2)             | shoc_tke_dissipation_tunable_parameter                                        | mult. tuning parameter for TKE diss. in SHOC            | none          |    0 | real      | kind_phys | none   | F        |
 !! | GFS_Control%shoc_parm(3)             | shoc_tke_dissipation_tunable_parameter_near_surface                           | mult. tuning parameter for TKE diss. at surface in SHOC | none          |    0 | real      | kind_phys | none   | F        |
@@ -939,7 +939,7 @@ module GFS_typedefs
 !! | GFS_Control%redrag                   | flag_for_reduced_drag_coefficient_over_sea                                    | flag for reduced drag coeff. over sea                   | flag          |    0 | logical   |           | none   | F        |
 !! | GFS_Control%hybedmf                  | flag_for_hedmf                                                                | flag for hybrid edmf pbl scheme (moninedmf)             | flag          |    0 | logical   |           | none   | F        |
 !! | GFS_Control%dspheat                  | flag_TKE_dissipation_heating                                                  | flag for tke dissipative heating                        | flag          |    0 | logical   |           | none   | F        |
-!! | GFS_Control%lheatstrg                | flag_for_canopy_heat_storage_parameterization                                 |                                                         |               |    0 | logical   |           | none   | F        |
+!! | GFS_Control%lheatstrg                | flag_for_canopy_heat_storage                                                  | flag for canopy heat storage parameterization           | flag          |    0 | logical   |           | none   | F        |
 !! | GFS_Control%cnvcld                   |                                                                               |                                                         |               |    0 | logical   |           | none   | F        |
 !! | GFS_Control%random_clds              |                                                                               | flag controls whether clouds are random                 |               |    0 | logical   |           | none   | F        |
 !! | GFS_Control%shal_cnv                 | flag_for_shallow_convection                                                   | flag for calling shallow convection                     | flag          |    0 | logical   |           | none   | F        |
@@ -994,19 +994,19 @@ module GFS_typedefs
 !! | GFS_Control%nstf_name(5)             | vertical_temperature_average_range_upper_bound                                | zsea2 in mm                                                          | mm            |    0 | integer   |           | none   | F        |
 !! | GFS_Control%xkzminv                  | atmosphere_heat_diffusivity_background_maximum                                | maximum background value of heat diffusivity                         | m2 s-1        |    0 | real      | kind_phys | none   | F        |
 !! | GFS_Control%moninq_fac               | atmosphere_diffusivity_coefficient_factor                                     | multiplicative constant for atmospheric diffusivities                | none          |    0 | real      | kind_phys | none   | F        |
-!! | GFS_Control%nca                      |                                                                               | number of independent cellular automata                              |               |    0 | integer   |           | none   | F        |
-!! | GFS_Control%nlives                   |                                                                               | cellular automata lifetime                                           |               |    0 | integer   |           | none   | F        |
-!! | GFS_Control%ncells                   |                                                                               | cellular automata finer grid                                         |               |    0 | integer   |           | none   | F        |
-!! | GFS_Control%nfracseed                |                                                                               | cellular automata seed probability                                   |               |    0 | real      | kind_phys | none   | F        |
-!! | GFS_Control%nseed                    |                                                                               | cellular automata seed frequency                                     |               |    0 | integer   |           | none   | F        |
-!! | GFS_Control%do_ca                    |                                                                               | cellular automata main switch                                        |               |    0 | logical   |           | none   | F        |
-!! | GFS_Control%ca_sgs                   |                                                                               | switch for sgs ca                                                    |               |    0 | logical   |           | none   | F        |
-!! | GFS_Control%ca_global                |                                                                               | switch for global ca                                                 |               |    0 | logical   |           | none   | F        |
-!! | GFS_Control%ca_smooth                |                                                                               | switch for gaussian spatial filter                                   |               |    0 | logical   |           | none   | F        |
-!! | GFS_Control%isppt_deep               |                                                                               | switch for combination with isppt_deep.                              |               |    0 | logical   |           | none   | F        |
-!! | GFS_Control%iseed_ca                 |                                                                               | seed for random number generation in ca scheme                       |               |    0 | integer   |           | none   | F        |
-!! | GFS_Control%nspinup                  |                                                                               | number of iterations to spin up the ca                               |               |    0 | integer   |           | none   | F        |
-!! | GFS_Control%nthresh                  |                                                                               | threshold used for perturbed vertical velocity                       |               |    0 | real      | kind_phys | none   | F        |
+!! | GFS_Control%nca                      | number_of_independent_cellular_automata                                       | number of independent cellular automata                              | count         |    0 | integer   |           | none   | F        |
+!! | GFS_Control%nlives                   | cellular_automata_lifetime                                                    | cellular automata lifetime                                           | count         |    0 | integer   |           | none   | F        |
+!! | GFS_Control%ncells                   | cellular_automata_finer_grid                                                  | cellular automata finer grid                                         | count         |    0 | integer   |           | none   | F        |
+!! | GFS_Control%nfracseed                | cellular_automata_seed_probability                                            | cellular automata seed probability                                   | fraction      |    0 | real      | kind_phys | none   | F        |
+!! | GFS_Control%nseed                    | cellular_automata_seed_frequency                                              | cellular automata seed frequency in units of time steps              | count         |    0 | integer   |           | none   | F        |
+!! | GFS_Control%do_ca                    | flag_for_cellular_automata                                                    | cellular automata main switch                                        | flag          |    0 | logical   |           | none   | F        |
+!! | GFS_Control%ca_sgs                   | flag_for_sgs_cellular_automata                                                | switch for sgs ca                                                    | flag          |    0 | logical   |           | none   | F        |
+!! | GFS_Control%ca_global                | flag_for_global_cellular_automata                                             | switch for global ca                                                 | flag          |    0 | logical   |           | none   | F        |
+!! | GFS_Control%ca_smooth                | flag_for_gaussian_spatial_filter                                              | switch for gaussian spatial filter                                   | flag          |    0 | logical   |           | none   | F        |
+!! | GFS_Control%isppt_deep               | flag_for_combination_of_sppt_with_isppt_deep                                  | switch for combination with isppt_deep.                              | flag          |    0 | logical   |           | none   | F        |
+!! | GFS_Control%iseed_ca                 | seed_for_random_number_generation_in_cellular_automata_scheme                 | seed for random number generation in ca scheme                       | none          |    0 | integer   |           | none   | F        |
+!! | GFS_Control%nspinup                  | number_of_iterations_to_spin_up_cellular_automata                             | number of iterations to spin up the ca                               | count         |    0 | integer   |           | none   | F        |
+!! | GFS_Control%nthresh                  | threshold_for_perturbed_vertical_velocity                                     | threshold used for perturbed vertical velocity                       | m s-1         |    0 | real      | kind_phys | none   | F        |
 !! | GFS_Control%do_sppt                  | flag_for_stochastic_surface_physics_perturbations                             | flag for stochastic surface physics perturbations                    | flag          |    0 | logical   |           | none   | F        |
 !! | GFS_Control%use_zmtnblck             | flag_for_mountain_blocking                                                    | flag for mountain blocking                                           | flag          |    0 | logical   |           | none   | F        |
 !! | GFS_Control%do_shum                  | flag_for_stochastic_shum_option                                               | flag for stochastic shum option                                      | flag          |    0 | logical   |           | none   | F        |
@@ -1327,7 +1327,7 @@ module GFS_typedefs
     logical              :: do_ysu          !< flag for YSU turbulent mixing scheme
     logical              :: dspheat         !< flag for tke dissipative heating
     logical              :: lheatstrg       !< flag for canopy heat storage parameterization
-    logical              :: cnvcld        
+    logical              :: cnvcld
     logical              :: random_clds     !< flag controls whether clouds are random
     logical              :: shal_cnv        !< flag for calling shallow convection
     logical              :: do_deep         !< whether to do deep convection
@@ -3228,9 +3228,9 @@ module GFS_typedefs
                                  input_nml_file, tile_num           &
 #ifdef CCPP
                                 ,ak, bk, blksz,                     &
-                                 restart, communicator, ntasks
+                                 restart, communicator, ntasks      &
 #elif MEMCHECK
-                                ,communicator
+                                ,communicator                       &
 #endif
                                  )
 
@@ -4476,7 +4476,14 @@ module GFS_typedefs
     elseif (Model%imp_physics == Model%imp_physics_gfdl) then !GFDL microphysics
       Model%npdf3d  = 0
       Model%num_p3d = 1 
-      if(Model%effr_in) Model%num_p3d = 5
+      if(Model%effr_in) then
+         Model%num_p3d = 5
+         Model%nleffr = 1
+         Model%nieffr = 2
+         Model%nreffr = 3
+         Model%nseffr = 4
+         Model%ngeffr = 5
+      endif
       Model%num_p2d = 1
       Model%pdfcld  = .false.
       Model%shcnvcw = .false.
@@ -4995,6 +5002,8 @@ module GFS_typedefs
     Tbd%aer_nm = clear_val
 
 #ifdef CCPP
+! DH* TODO - MOVE THIS TO a block-vector dependent structure in GFS_control?
+! e.g. GFS_Control%imap(blk), GFS_Control%jmap(blk), or ii instead if imap etc? *DH
 !--- maps of local index ix to global indices i and j for this block
     allocate (Tbd%imap (IM))
     allocate (Tbd%jmap (IM))
