@@ -1,3 +1,4 @@
+! # - def DHDEBUG
 !***********************************************************************
 !*                   GNU Lesser General Public License                 
 !*
@@ -164,6 +165,25 @@ implicit none
 private
 public :: fv_dynamics
 
+! DH*
+#ifdef DHDEBUG
+
+#define PRINT_CHKSUM
+
+interface print_var
+  module procedure print_logic_0d
+  module procedure print_int_0d
+  module procedure print_int_1d
+  module procedure print_real_0d
+  module procedure print_real_1d
+  module procedure print_real_2d
+  module procedure print_real_3d
+  module procedure print_real_4d
+end interface
+
+#endif
+! *DH
+
 contains
 
 !-----------------------------------------------------------------------
@@ -288,6 +308,19 @@ contains
 #ifdef CCPP
       integer :: ierr
 #endif
+
+! DH*
+#ifdef DHDEBUG
+      write(0,*) "DH DEBUG: calling MY_DIAGTOSCREEN at top of fv_dynamics"
+      call MY_DIAGTOSCREEN(npx, npy, npz, nq_tot,  ng, bdt, consv_te, fill,                &
+                             reproduce_sum, kappa, cp_air, zvir, ptop, ks, ncnst, n_split, &
+                             q_split, u, v, w, delz, hydrostatic, pt, delp, q,             &
+                             ps, pe, pk, peln, pkz, phis, q_con, omga, ua, va, uc, vc,     &
+                             ak, bk, mfx, mfy, cx, cy, ze0, hybrid_z,                      &
+                             gridstruct, flagstruct, neststruct, idiag, bd,                &
+                             parent_grid, domain, diss_est, time_total)
+#endif
+! *DH
 
 #ifdef CCPP
       ccpp_associate: associate( cappa     => CCPP_interstitial%cappa,     &
@@ -956,6 +989,19 @@ contains
   end associate ccpp_associate
 #endif
 
+! DH*
+#ifdef DHDEBUG
+      write(0,*) "DH DEBUG: calling MY_DIAGTOSCREEN at bottom of fv_dynamics"
+      call MY_DIAGTOSCREEN(npx, npy, npz, nq_tot,  ng, bdt, consv_te, fill,                &
+                             reproduce_sum, kappa, cp_air, zvir, ptop, ks, ncnst, n_split, &
+                             q_split, u, v, w, delz, hydrostatic, pt, delp, q,             &
+                             ps, pe, pk, peln, pkz, phis, q_con, omga, ua, va, uc, vc,     &
+                             ak, bk, mfx, mfy, cx, cy, ze0, hybrid_z,                      &
+                             gridstruct, flagstruct, neststruct, idiag, bd,                &
+                             parent_grid, domain, diss_est, time_total)
+#endif
+! *DH
+
   end subroutine fv_dynamics
 
 #ifdef USE_RF_FAST
@@ -1434,5 +1480,366 @@ contains
   enddo
 
  end subroutine compute_aam
+
+ ! DH*
+#ifdef DHDEBUG
+   subroutine MY_DIAGTOSCREEN(npx, npy, npz, nq_tot,  ng, bdt, consv_te, fill,             &
+                             reproduce_sum, kappa, cp_air, zvir, ptop, ks, ncnst, n_split, &
+                             q_split, u, v, w, delz, hydrostatic, pt, delp, q,             &
+                             ps, pe, pk, peln, pkz, phis, q_con, omga, ua, va, uc, vc,     &
+                             ak, bk, mfx, mfy, cx, cy, ze0, hybrid_z,                      &
+                             gridstruct, flagstruct, neststruct, idiag, bd,                &
+                             parent_grid, domain, diss_est, time_total)
+
+      use mpi
+
+      implicit none
+
+      real, intent(IN) :: bdt  !< Large time-step
+      real, intent(IN) :: consv_te
+      real, intent(IN) :: kappa, cp_air
+      real, intent(IN) :: zvir, ptop
+      real, intent(IN), optional :: time_total
+
+      integer, intent(IN) :: npx
+      integer, intent(IN) :: npy
+      integer, intent(IN) :: npz
+      integer, intent(IN) :: nq_tot             !< transported tracers
+      integer, intent(IN) :: ng
+      integer, intent(IN) :: ks
+      integer, intent(IN) :: ncnst
+      integer, intent(IN) :: n_split        !< small-step horizontal dynamics
+      integer, intent(IN) :: q_split        !< tracer
+      logical, intent(IN) :: fill
+      logical, intent(IN) :: reproduce_sum
+      logical, intent(IN) :: hydrostatic
+      logical, intent(IN) :: hybrid_z       !< Using hybrid_z for remapping
+
+      type(fv_grid_bounds_type), intent(IN) :: bd
+      real, intent(in), dimension(bd%isd:bd%ied  ,bd%jsd:bd%jed+1,npz) :: u !< D grid zonal wind (m/s)
+      real, intent(in), dimension(bd%isd:bd%ied+1,bd%jsd:bd%jed  ,npz) :: v !< D grid meridional wind (m/s)
+      real, intent(in) :: w(   bd%isd:  ,bd%jsd:  ,1:) !<  W (m/s)
+      real, intent(in) :: pt(  bd%isd:bd%ied  ,bd%jsd:bd%jed  ,npz)  !< temperature (K)
+      real, intent(in) :: delp(bd%isd:bd%ied  ,bd%jsd:bd%jed  ,npz)  !< pressure thickness (pascal)
+      real, intent(in) :: q(   bd%isd:bd%ied  ,bd%jsd:bd%jed  ,npz, ncnst) !< specific humidity and constituents
+      real, intent(in) :: delz(bd%isd:,bd%jsd:,1:)   !< delta-height (m); non-hydrostatic only
+      real, intent(in) ::  ze0(bd%is:, bd%js: ,1:) !< height at edges (m); non-hydrostatic
+      real, intent(in), dimension(bd%isd:bd%ied  ,bd%jsd:bd%jed,npz) :: diss_est! diffusion estimate for SKEB
+  ! ze0 no longer used
+
+  !-----------------------------------------------------------------------
+  ! Auxilliary pressure arrays:    
+  ! The 5 vars below can be re-computed from delp and ptop.
+  !-----------------------------------------------------------------------
+  ! dyn_aux:
+      real, intent(in) :: ps  (bd%isd:bd%ied  ,bd%jsd:bd%jed)           !< Surface pressure (pascal)
+      real, intent(in) :: pe  (bd%is-1:bd%ie+1, npz+1,bd%js-1:bd%je+1)  !< edge pressure (pascal)
+      real, intent(in) :: pk  (bd%is:bd%ie,bd%js:bd%je, npz+1)          !< pe**kappa
+      real, intent(in) :: peln(bd%is:bd%ie,npz+1,bd%js:bd%je)           !< ln(pe)
+      real, intent(in) :: pkz (bd%is:bd%ie,bd%js:bd%je,npz)             !< finite-volume mean pk
+      real, intent(in) :: q_con(bd%isd:, bd%jsd:, 1:)
+    
+  !-----------------------------------------------------------------------
+  ! Others:
+  !-----------------------------------------------------------------------
+      real, intent(in) :: phis(bd%isd:bd%ied,bd%jsd:bd%jed)       !< Surface geopotential (g*Z_surf)
+      real, intent(in) :: omga(bd%isd:bd%ied,bd%jsd:bd%jed,npz)   !< Vertical pressure velocity (pa/s)
+      real, intent(in) :: uc(bd%isd:bd%ied+1,bd%jsd:bd%jed  ,npz) !< (uc,vc) mostly used as the C grid winds
+      real, intent(in) :: vc(bd%isd:bd%ied  ,bd%jsd:bd%jed+1,npz)
+
+      real, intent(in), dimension(bd%isd:bd%ied ,bd%jsd:bd%jed ,npz):: ua, va
+      real, intent(in),    dimension(npz+1):: ak, bk
+
+  ! Accumulated Mass flux arrays: the "Flux Capacitor"
+      real, intent(in) ::  mfx(bd%is:bd%ie+1, bd%js:bd%je,   npz)
+      real, intent(in) ::  mfy(bd%is:bd%ie  , bd%js:bd%je+1, npz)
+  ! Accumulated Courant number arrays
+      real, intent(in) ::  cx(bd%is:bd%ie+1, bd%jsd:bd%jed, npz)
+      real, intent(in) ::  cy(bd%isd:bd%ied ,bd%js:bd%je+1, npz)
+
+      type(fv_grid_type),  intent(in) :: gridstruct
+      type(fv_flags_type), intent(IN) :: flagstruct
+      type(fv_nest_type),  intent(IN) :: neststruct
+      type(domain2d),      intent(IN) :: domain
+      type(fv_atmos_type), intent(IN) :: parent_grid
+      type(fv_diag_type),  intent(IN) :: idiag
+
+      !--- local variables
+      integer :: impi, iomp, ierr, n
+      integer :: mpirank, mpisize, mpicomm
+      integer, parameter :: omprank = 0
+
+      mpicomm = MPI_COMM_WORLD
+      call MPI_COMM_RANK(mpicomm, mpirank, ierr)
+      call MPI_COMM_SIZE(mpicomm, mpisize, ierr)
+
+      do impi=0,mpisize-1
+         if (mpirank==impi) then
+             call print_var(mpirank,omprank, 1, 'bdt          ', bdt          )
+             call print_var(mpirank,omprank, 1, 'consv_te     ', consv_te     )
+             call print_var(mpirank,omprank, 1, 'kappa        ', kappa        )
+             call print_var(mpirank,omprank, 1, 'cp_air       ', cp_air       )
+             call print_var(mpirank,omprank, 1, 'zvir         ', zvir         )
+             call print_var(mpirank,omprank, 1, 'ptop         ', ptop         )
+             if (present(time_total)) &
+             call print_var(mpirank,omprank, 1, 'time_total   ', time_total   )
+             call print_var(mpirank,omprank, 1, 'bd%isd       ', bd%isd       )
+             call print_var(mpirank,omprank, 1, 'bd%ied       ', bd%ied       )
+             call print_var(mpirank,omprank, 1, 'bd%jsd       ', bd%jsd       )
+             call print_var(mpirank,omprank, 1, 'bd%jed       ', bd%jed       )
+             call print_var(mpirank,omprank, 1, 'bd%is        ', bd%is        )
+             call print_var(mpirank,omprank, 1, 'bd%ie        ', bd%ie        )
+             call print_var(mpirank,omprank, 1, 'bd%js        ', bd%js        )
+             call print_var(mpirank,omprank, 1, 'bd%je        ', bd%je        )
+             call print_var(mpirank,omprank, 1, 'npx          ', npx          )
+             call print_var(mpirank,omprank, 1, 'npy          ', npy          )
+             call print_var(mpirank,omprank, 1, 'npz          ', npz          )
+             call print_var(mpirank,omprank, 1, 'nq_tot       ', nq_tot       )
+             call print_var(mpirank,omprank, 1, 'ng           ', ng           )
+             call print_var(mpirank,omprank, 1, 'ks           ', ks           )
+             call print_var(mpirank,omprank, 1, 'ncnst        ', ncnst        )
+             call print_var(mpirank,omprank, 1, 'n_split      ', n_split      )
+             call print_var(mpirank,omprank, 1, 'q_split      ', q_split      )
+             call print_var(mpirank,omprank, 1, 'fill         ', fill         )
+             call print_var(mpirank,omprank, 1, 'reproduce_sum', reproduce_sum)
+             call print_var(mpirank,omprank, 1, 'hydrostatic  ', hydrostatic  )
+             call print_var(mpirank,omprank, 1, 'hybrid_z     ', hybrid_z     )
+             call print_var(mpirank,omprank, 1, 'u            ', u            )
+             call print_var(mpirank,omprank, 1, 'v            ', v            )
+             call print_var(mpirank,omprank, 1, 'w            ', w            )
+             call print_var(mpirank,omprank, 1, 'pt           ', pt           )
+             call print_var(mpirank,omprank, 1, 'delp         ', delp         )
+             call print_var(mpirank,omprank, 1, 'q            ', q            )
+             call print_var(mpirank,omprank, 1, 'delz         ', delz         )
+             call print_var(mpirank,omprank, 1, 'ze0          ', ze0          )
+             call print_var(mpirank,omprank, 1, 'diss_est     ', diss_est     )
+             call print_var(mpirank,omprank, 1, 'ps           ', ps           )
+             call print_var(mpirank,omprank, 1, 'pe           ', pe           )
+             call print_var(mpirank,omprank, 1, 'pk           ', pk           )
+             call print_var(mpirank,omprank, 1, 'peln         ', peln         )
+             call print_var(mpirank,omprank, 1, 'pkz          ', pkz          )
+             call print_var(mpirank,omprank, 1, 'q_con        ', q_con        )
+             call print_var(mpirank,omprank, 1, 'phis         ', phis         )
+             call print_var(mpirank,omprank, 1, 'omga         ', omga         )
+             call print_var(mpirank,omprank, 1, 'uc           ', uc           )
+             call print_var(mpirank,omprank, 1, 'vc           ', vc           )
+             call print_var(mpirank,omprank, 1, 'ua           ', ua           )
+             call print_var(mpirank,omprank, 1, 'va           ', va           )
+             call print_var(mpirank,omprank, 1, 'ak           ', ak           )
+             call print_var(mpirank,omprank, 1, 'bk           ', bk           )
+             call print_var(mpirank,omprank, 1, 'mfx          ', mfx          )
+             call print_var(mpirank,omprank, 1, 'mfy          ', mfy          )
+             call print_var(mpirank,omprank, 1, 'cx           ', cx           )
+             call print_var(mpirank,omprank, 1, 'cy           ', cy           )
+         end if
+      end do
+
+   end subroutine MY_DIAGTOSCREEN
+
+      subroutine print_logic_0d(mpirank,omprank,blkno,name,var)
+
+          implicit none
+
+          integer, intent(in) :: mpirank, omprank, blkno
+          character(len=*), intent(in) :: name
+          logical, intent(in) :: var
+
+          write(0,'(2a,3i6,1x,l)') 'XXX: ', trim(name), mpirank, omprank, blkno, var
+
+      end subroutine print_logic_0d
+
+      subroutine print_int_0d(mpirank,omprank,blkno,name,var)
+
+          implicit none
+
+          integer, intent(in) :: mpirank, omprank, blkno
+          character(len=*), intent(in) :: name
+          integer, intent(in) :: var
+
+          write(0,'(2a,3i6,i15)') 'XXX: ', trim(name), mpirank, omprank, blkno, var
+
+      end subroutine print_int_0d
+
+      subroutine print_int_1d(mpirank,omprank,blkno,name,var)
+
+          implicit none
+
+          integer, intent(in) :: mpirank, omprank, blkno
+          character(len=*), intent(in) :: name
+          integer, intent(in) :: var(:)
+
+          integer :: i
+
+#ifdef PRINT_SUM
+          write(0,'(2a,3i6,3i15)') 'XXX: ', trim(name), mpirank, omprank, blkno, sum(var), minval(var), maxval(var)
+#elif defined(PRINT_CHKSUM)
+          write(0,'(2a,3i6,i20,2i15)') 'XXX: ', trim(name), mpirank, omprank, blkno, chksum_int(size(var),var), minval(var), maxval(var)
+#else
+          do i=ISTART,min(IEND,size(var(:)))
+              write(0,'(2a,3i6,i6,i15)') 'XXX: ', trim(name), mpirank, omprank, blkno, i, var(i)
+          end do
+#endif
+
+      end subroutine print_int_1d
+
+      subroutine print_real_0d(mpirank,omprank,blkno,name,var)
+
+          implicit none
+
+          integer, intent(in) :: mpirank, omprank, blkno
+          character(len=*), intent(in) :: name
+          real, intent(in) :: var
+
+          write(0,'(2a,3i6,e35.25)') 'XXX: ', trim(name), mpirank, omprank, blkno, var
+
+      end subroutine print_real_0d
+
+      subroutine print_real_1d(mpirank,omprank,blkno,name,var)
+
+          implicit none
+
+          integer, intent(in) :: mpirank, omprank, blkno
+          character(len=*), intent(in) :: name
+          real, intent(in) :: var(:)
+
+          integer :: i
+
+#ifdef PRINT_SUM
+          write(0,'(2a,3i6,3e35.25)') 'XXX: ', trim(name), mpirank, omprank, blkno, sum(var), minval(var), maxval(var)
+#elif defined(PRINT_CHKSUM)
+          write(0,'(2a,3i6,i20,2e35.25)') 'XXX: ', trim(name), mpirank, omprank, blkno, chksum_real(size(var),var), minval(var), maxval(var)
+#else
+          do i=ISTART,min(IEND,size(var(:)))
+              write(0,'(2a,3i6,i6,e35.25)') 'XXX: ', trim(name), mpirank, omprank, blkno, i, var(i)
+          end do
+#endif
+
+      end subroutine print_real_1d
+
+      subroutine print_real_2d(mpirank,omprank,blkno,name,var)
+
+          implicit none
+
+          integer, intent(in) :: mpirank, omprank, blkno
+          character(len=*), intent(in) :: name
+          real, intent(in) :: var(:,:)
+      
+          integer :: k, i
+
+#ifdef PRINT_SUM
+          write(0,'(2a,3i6,3e35.25)') 'XXX: ', trim(name), mpirank, omprank, blkno, sum(var), minval(var), maxval(var)
+#elif defined(PRINT_CHKSUM)
+          write(0,'(2a,3i6,i20,2e35.25)') 'XXX: ', trim(name), mpirank, omprank, blkno, chksum_real(size(var),reshape(var,(/size(var)/))), minval(var), maxval(var)
+#else
+          do i=ISTART,min(IEND,size(var(:,1)))
+              do k=KSTART,min(KEND,size(var(1,:)))
+                  write(0,'(2a,3i6,2i6,e35.25)') 'XXX: ', trim(name), mpirank, omprank, blkno, i, k, var(i,k)
+              end do
+          end do
+#endif
+
+      end subroutine print_real_2d
+
+      subroutine print_real_3d(mpirank,omprank,blkno,name,var)
+
+          implicit none
+
+          integer, intent(in) :: mpirank, omprank, blkno
+          character(len=*), intent(in) :: name
+          real, intent(in) :: var(:,:,:)
+
+          integer :: k, i, l
+
+#ifdef PRINT_SUM
+          write(0,'(2a,3i6,3e35.25)') 'XXX: ', trim(name), mpirank, omprank, blkno, sum(var), minval(var), maxval(var)
+#elif defined(PRINT_CHKSUM)
+          write(0,'(2a,3i6,i20,2e35.25)') 'XXX: ', trim(name), mpirank, omprank, blkno, chksum_real(size(var),reshape(var,(/size(var)/))), minval(var), maxval(var)
+#else
+          do i=ISTART,min(IEND,size(var(:,1,1)))
+              do k=KSTART,min(KEND,size(var(1,:,1)))
+                  do l=1,size(var(1,1,:))
+                      write(0,'(2a,3i6,3i6,e35.25)') 'XXX: ', trim(name), mpirank, omprank, blkno, i, k, l, var(i,k,l)
+                  end do
+              end do
+          end do
+#endif
+
+      end subroutine print_real_3d
+
+      subroutine print_real_4d(mpirank,omprank,blkno,name,var)
+
+          implicit none
+
+          integer, intent(in) :: mpirank, omprank, blkno
+          character(len=*), intent(in) :: name
+          real, intent(in) :: var(:,:,:,:)
+
+          integer :: k, i, l, m
+
+#ifdef PRINT_SUM
+          write(0,'(2a,3i6,3e35.25)') 'XXX: ', trim(name), mpirank, omprank, blkno, sum(var), minval(var), maxval(var)
+#elif defined(PRINT_CHKSUM)
+          write(0,'(2a,3i6,i20,2e35.25)') 'XXX: ', trim(name), mpirank, omprank, blkno, chksum_real(size(var),reshape(var,(/size(var)/))), minval(var), maxval(var)
+#else
+          do i=ISTART,min(IEND,size(var(:,1,1,1)))
+              do k=KSTART,min(KEND,size(var(1,:,1,1)))
+                  do l=1,size(var(1,1,:,1))
+                      do m=1,size(var(1,1,1,:))
+                         write(0,'(2a,3i6,4i6,e35.25)') 'XXX: ', trim(name), mpirank, omprank, blkno, i, k, l, m, var(i,k,l,m)
+                      end do
+                  end do
+              end do
+          end do
+#endif
+
+      end subroutine print_real_4d
+
+      function chksum_int(N, var) result(hash)
+          implicit none
+          integer, intent(in) :: N
+          integer, dimension(1:N), intent(in) :: var
+          integer*8, dimension(1:N) :: int_var
+          integer*8 :: a, b, i, hash
+          integer*8, parameter :: mod_adler=65521
+
+          a=1
+          b=0
+          i=1
+          hash = 0
+          int_var = TRANSFER(var, a, N)
+
+          do i= 1, N
+              a = MOD(a + int_var(i), mod_adler)
+              b = MOD(b+a, mod_adler)
+          end do
+
+          hash = ior(b * 65536, a)
+
+      end function chksum_int
+
+      function chksum_real(N, var) result(hash)
+          implicit none
+          integer, intent(in) :: N
+          real, dimension(1:N), intent(in) :: var
+          integer*8, dimension(1:N) :: int_var
+          integer*8 :: a, b, i, hash
+          integer*8, parameter :: mod_adler=65521
+
+          a=1
+          b=0
+          i=1
+          hash = 0
+          int_var = TRANSFER(var, a, N)
+
+          do i= 1, N
+              a = MOD(a + int_var(i), mod_adler)
+              b = MOD(b+a, mod_adler)
+          end do
+
+          hash = ior(b * 65536, a)
+
+     end function chksum_real
+#endif
+! *DH
 
 end module fv_dynamics_mod
