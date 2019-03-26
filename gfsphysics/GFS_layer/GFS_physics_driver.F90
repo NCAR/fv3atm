@@ -5233,7 +5233,9 @@ module module_physics_driver
         else        ! ras or cscnv
 ! cs_conv_pre and ras_pre
 #ifndef CCPP
-          fscav(:) = 0.0
+          fscav = 0
+#else
+          cld1d = 0
 #endif
           if (Model%cscnv) then    ! Chikira-Sugiyama  convection scheme (via CSU)
 #ifdef CCPP
