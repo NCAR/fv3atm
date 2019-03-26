@@ -1223,6 +1223,7 @@ module module_physics_driver
           tsea_cice(i)   = Sfcprop%tsfc(i)
           fice_cice(i)   = Sfcprop%fice(i)
           hice_cice(i)   = Sfcprop%hice(i)
+          if(flag_cice(i))Sfcprop%tsfc(i) = fice_cice(i)*tisfc_cice(i) + (1.0 - fice_cice(i))*tsea_cice(i)
         enddo
       endif
 
@@ -3731,7 +3732,6 @@ module module_physics_driver
 #else
                     cice(i) = fice_cice(i)
 #endif
-            Sfcprop%tsfc(i) = tsea_cice(i)
                   dusfc1(i) = dusfc_cice(i)
                   dvsfc1(i) = dvsfc_cice(i)
                   dqsfc1(i) = dqsfc_cice(i)
