@@ -280,8 +280,7 @@ contains
 #endif
    use CCPP_data,         only: ccpp_suite,          &
                                 cdata => cdata_tile, &
-                                CCPP_interstitial,   &
-                                CCPP_shared
+                                CCPP_interstitial
 #ifdef OPENMP
    use omp_lib
 #endif
@@ -456,26 +455,20 @@ contains
 #else
    nthreads = 1
 #endif
-   allocate(CCPP_shared(1:nthreads))
-   do i=1,nthreads
-      call CCPP_shared(i)%create(Atm(mytile)%flagstruct%hydrostatic, &
-                                 Atm(mytile)%flagstruct%phys_hydrostatic)
-   end do
-
    ! Create interstitial data type for fast physics
-   call CCPP_interstitial%create(Atm(mytile)%bd%is, Atm(mytile)%bd%ie, Atm(mytile)%bd%isd, Atm(mytile)%bd%ied,   &
-                                 Atm(mytile)%bd%js, Atm(mytile)%bd%je, Atm(mytile)%bd%jsd, Atm(mytile)%bd%jed,   &
-                                 Atm(mytile)%npz, Atm(mytile)%ng,                                                &
-                                 dt_atmos, p_split, Atm(mytile)%flagstruct%k_split,                              &
-                                 zvir, Atm(mytile)%flagstruct%p_ref, Atm(mytile)%ak, Atm(mytile)%bk,             &
-                                 cld_amt>0, kappa, Atm(mytile)%flagstruct%hydrostatic,                           &
-                                 Atm(mytile)%flagstruct%do_sat_adj,                                              &
-                                 Atm(mytile)%delp, Atm(mytile)%delz, Atm(mytile)%gridstruct%area_64,             &
-                                 Atm(mytile)%peln, Atm(mytile)%phis, Atm(mytile)%pkz, Atm(mytile)%pt,            &
-                                 Atm(mytile)%q(:,:,:,sphum), Atm(mytile)%q(:,:,:,liq_wat),                       &
-                                 Atm(mytile)%q(:,:,:,ice_wat), Atm(mytile)%q(:,:,:,rainwat),                     &
-                                 Atm(mytile)%q(:,:,:,snowwat), Atm(mytile)%q(:,:,:,graupel),                     &
-                                 Atm(mytile)%q(:,:,:,cld_amt), Atm(mytile)%q_con)
+   call CCPP_interstitial%create(Atm(mytile)%bd%is, Atm(mytile)%bd%ie, Atm(mytile)%bd%isd, Atm(mytile)%bd%ied, &
+                                 Atm(mytile)%bd%js, Atm(mytile)%bd%je, Atm(mytile)%bd%jsd, Atm(mytile)%bd%jed, &
+                                 Atm(mytile)%npz, Atm(mytile)%ng,                                              &
+                                 dt_atmos, p_split, Atm(mytile)%flagstruct%k_split,                            &
+                                 zvir, Atm(mytile)%flagstruct%p_ref, Atm(mytile)%ak, Atm(mytile)%bk,           &
+                                 cld_amt>0, kappa, Atm(mytile)%flagstruct%hydrostatic,                         &
+                                 Atm(mytile)%flagstruct%do_sat_adj,                                            &
+                                 Atm(mytile)%delp, Atm(mytile)%delz, Atm(mytile)%gridstruct%area_64,           &
+                                 Atm(mytile)%peln, Atm(mytile)%phis, Atm(mytile)%pkz, Atm(mytile)%pt,          &
+                                 Atm(mytile)%q(:,:,:,sphum), Atm(mytile)%q(:,:,:,liq_wat),                     &
+                                 Atm(mytile)%q(:,:,:,ice_wat), Atm(mytile)%q(:,:,:,rainwat),                   &
+                                 Atm(mytile)%q(:,:,:,snowwat), Atm(mytile)%q(:,:,:,graupel),                   &
+                                 Atm(mytile)%q(:,:,:,cld_amt), Atm(mytile)%q_con, nthreads)
 
 #ifndef STATIC
 ! Populate cdata structure with fields required to run fast physics (auto-generated).
