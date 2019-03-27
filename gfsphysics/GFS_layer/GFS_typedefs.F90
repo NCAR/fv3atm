@@ -157,6 +157,7 @@ module GFS_typedefs
 !! | dt_dycore      |                                                        | dynamics time step in seconds                           | s             |    0 | real     | kind_phys | none   | F        |
 !! | dt_phys        |                                                        | physics  time step in seconds                           | s             |    0 | real     | kind_phys | none   | F        |
 !! | restart        |                                                        | flag for restart (warmstart) or coldstart               | flag          |    0 | logical  |           | none   | F        |
+!! | hydrostatic    |                                                        | flag for hydrostatic solver from dynamics               | flag          |    0 | logical  |           | none   | F        |
 !! | blksz          |                                                        | for explicit data blocking                              | count         |    1 | integer  |           | none   | F        |
 !! | ak             |                                                        | a parameter for sigma pressure level calculations       | Pa            |    1 | real     | kind_phys | none   | F        |
 !! | bk             |                                                        | b parameter for sigma pressure level calculations       | none          |    1 | real     | kind_phys | none   | F        |
@@ -192,6 +193,8 @@ module GFS_typedefs
 #ifdef CCPP
 !--- restart information
     logical :: restart                           !< flag whether this is a coldstart (.false.) or a warmstart/restart (.true.)
+!--- hydrostatic/non-hydrostatic flag
+    logical :: hydrostatic                       !< flag whether this is a hydrostatic or non-hydrostatic run
 #endif
 !--- blocking data
     integer, pointer :: blksz(:)                 !< for explicit data blocking
@@ -784,6 +787,7 @@ module GFS_typedefs
 !! | GFS_Control%master                   | mpi_root                                                                      | master MPI-rank                                         | index         |    0 | integer   |           | none   | F        |
 !! | GFS_Control%communicator             | mpi_comm                                                                      | MPI communicator                                        | index         |    0 | integer   |           | none   | F        |
 !! | GFS_Control%ntasks                   | mpi_size                                                                      | number of MPI tasks in communicator                     | count         |    0 | integer   |           | none   | F        |
+!! | GFS_Control%nthreads                 | omp_threads                                                                   | number of OpenMP threads available for physics schemes  | count         |    0 | integer   |           | none   | F        |
 !! | GFS_Control%nlunit                   | iounit_namelist                                                               | fortran unit number for file opens                      | none          |    0 | integer   |           | none   | F        |
 !! | GFS_Control%fn_nml                   | namelist_filename                                                             | namelist filename                                       | none          |    0 | character | len=64    | none   | F        |
 !! | GFS_Control%input_nml_file           | namelist_filename_for_internal_file_reads                                     | namelist filename for internal file reads               | none          |    1 | character | len=256   | none   | F        |
@@ -1076,6 +1080,7 @@ module GFS_typedefs
 !! | GFS_Control%kdt                      | index_of_time_step                                                            | current forecast iteration                                           | index         |    0 | integer   |           | none   | F        |
 !! | GFS_Control%first_time_step          | flag_for_first_time_step                                                      | flag for first time step for time integration loop (cold/warmstart)  | flag          |    0 | logical   |           | none   | F        |
 !! | GFS_Control%restart                  | flag_for_restart                                                              | flag for restart (warmstart) or coldstart                            | flag          |    0 | logical   |           | none   | F        |
+!! | GFS_Control%hydrostatic              | flag_for_hydrostatic_solver                                                   | flag for hydrostatic solver from dynamics                            | flag          |    0 | logical   |           | none   | F        |
 !! | GFS_Control%jdat                     | forecast_date_and_time                                                        | current forecast date and time                                       | none          |    1 | integer   |           | none   | F        |
 !! | GFS_Control%iccn                     | flag_for_in_ccn_forcing_for_morrison_gettelman_microphysics                   | flag for IN and CCN forcing for morrison gettelman microphysics      | flag          |    0 | logical   |           | none   | F        |
 !! | GFS_Control%sec                      | seconds_elapsed_since_model_initialization                                    | seconds elapsed since model initialization                           | s             |    0 | real      | kind_phys | none   | F        |
@@ -1111,6 +1116,7 @@ module GFS_typedefs
 #ifdef CCPP
     integer              :: communicator    !< MPI communicator
     integer              :: ntasks          !< MPI size in communicator
+    integer              :: nthreads        !< OpenMP threads available for physics
 #endif
     integer              :: nlunit          !< unit for namelist
     character(len=64)    :: fn_nml          !< namelist filename for surface data cycling
@@ -1531,6 +1537,7 @@ module GFS_typedefs
 #ifdef CCPP
     logical              :: first_time_step !< flag signaling first time step for time integration routine
     logical              :: restart         !< flag whether this is a coldstart (.false.) or a warmstart/restart (.true.)
+    logical              :: hydrostatic     !< flag whether this is a hydrostatic or non-hydrostatic run
 #endif
     integer              :: jdat(1:8)       !< current forecast date and time
                                             !< (yr, mon, day, t-zone, hr, min, sec, mil-sec)
@@ -2327,6 +2334,7 @@ module GFS_typedefs
 !! | GFS_Interstitial(cdata%thrd_no)%otspt                         | flag_convective_tracer_transport                                                               | flag to enable tracer transport by updrafts/downdrafts[(:,1)] or subsidence [(:,2)] | flag          |    2 | logical     |           | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%oz_coeff                      | number_of_coefficients_in_ozone_forcing_data                                                   | number of coefficients in ozone forcing data                                        | index         |    0 | integer     |           | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%oz_pres                       | natural_log_of_ozone_forcing_data_pressure_levels                                              | natural log of ozone forcing data pressure levels                                   | log(Pa)       |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%phys_hydrostatic              | flag_for_hydrostatic_heating_from_physics                                                      | flag for use of hydrostatic heating in physics                                      | flag          |    0 | logical     |           | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%plvl                          | air_pressure_at_interface_for_radiation_in_hPa                                                 | air pressure at vertical interface for radiation calculation                        | hPa           |    2 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%plyr                          | air_pressure_at_layer_for_radiation_in_hPa                                                     | air pressure at vertical layer for radiation calculation                            | hPa           |    2 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%prnum                         | prandtl_number                                                                                 | turbulent Prandtl number                                                            | none          |    2 | real        | kind_phys | none   | F        |
@@ -2538,6 +2546,7 @@ module GFS_typedefs
     logical              , pointer      :: otspt(:,:)       => null()  !<
     integer                             :: oz_coeff                    !<
     real (kind=kind_phys), pointer      :: oz_pres(:)       => null()  !<
+    logical                             :: phys_hydrostatic            !<
     real (kind=kind_phys), pointer      :: plvl(:,:)        => null()  !<
     real (kind=kind_phys), pointer      :: plyr(:,:)        => null()  !<
     real (kind=kind_phys), pointer      :: prcpmp(:)        => null()  !<
@@ -2608,6 +2617,9 @@ module GFS_typedefs
     real (kind=kind_phys), pointer      :: xmu(:)           => null()  !<
     real (kind=kind_phys), pointer      :: z01d(:)          => null()  !<
     real (kind=kind_phys), pointer      :: zt1d(:)          => null()  !<
+#ifdef HYBRID
+    logical                             :: non_uniform_blocks          !< flag to indicate non-uniform blocks are used, only for CCPP hybrid
+#endif
 
     contains
       procedure :: create      => interstitial_create     !<   allocate array data
@@ -3226,7 +3238,8 @@ module GFS_typedefs
                                  input_nml_file, tile_num           &
 #ifdef CCPP
                                 ,ak, bk, blksz,                     &
-                                 restart, communicator, ntasks      &
+                                 restart, hydrostatic,              &
+                                 communicator, ntasks, nthreads     &
 #endif
                                  )
 
@@ -3275,8 +3288,10 @@ module GFS_typedefs
     real(kind=kind_phys), dimension(:), intent(in) :: bk
     integer,                intent(in) :: blksz(:)
     logical,                intent(in) :: restart
+    logical,                intent(in) :: hydrostatic
     integer,                intent(in) :: communicator
     integer,                intent(in) :: ntasks
+    integer,                intent(in) :: nthreads
 #endif
     !--- local variables
     integer :: n
@@ -3716,6 +3731,7 @@ module GFS_typedefs
 #ifdef CCPP
     Model%communicator     = communicator
     Model%ntasks           = ntasks
+    Model%nthreads         = nthreads
 #endif
     Model%nlunit           = nlunit
     Model%fn_nml           = fn_nml
@@ -4143,6 +4159,7 @@ module GFS_typedefs
 #ifdef CCPP
     Model%first_time_step  = .true.
     Model%restart          = restart
+    Model%hydrostatic      = hydrostatic
 #endif
     Model%jdat(1:8)        = jdat(1:8)
 #ifdef CCPP
@@ -4879,6 +4896,7 @@ module GFS_typedefs
       print *, ' si                : ', Model%si
       print *, ' first_time_step   : ', Model%first_time_step
       print *, ' restart           : ', Model%restart
+      print *, ' hydrostatic       : ', Model%hydrostatic
 #endif
     endif
 
@@ -5501,12 +5519,19 @@ module GFS_typedefs
   !-------------------------
   ! GFS_interstitial_type%create
   !-------------------------
+#ifdef HYBRID
+  subroutine interstitial_create (Interstitial, IM, non_uniform_blocks, Model)
+#else
   subroutine interstitial_create (Interstitial, IM, Model)
+#endif
     !
     implicit none
     !
     class(GFS_interstitial_type)       :: Interstitial
     integer,                intent(in) :: IM
+#ifdef HYBRID
+    logical,                intent(in) :: non_uniform_blocks
+#endif
     type(GFS_control_type), intent(in) :: Model
     !
     allocate (Interstitial%otspt      (Model%ntracp1,2))
@@ -5706,6 +5731,15 @@ module GFS_typedefs
     Interstitial%oz_pres      = clear_val
     !
     Interstitial%skip_macro   = .false.
+    ! The value phys_hydrostatic from dynamics does not match the
+    ! hardcoded value for calling GFDL MP in GFS_physics_driver.F90,
+    ! which is set to .true.
+    Interstitial%phys_hydrostatic = .true.
+    !
+#ifdef HYBRID
+    Interstitial%non_uniform_blocks = non_uniform_blocks
+#endif
+    !
     ! Reset all other variables
     call Interstitial%rad_reset ()
     call Interstitial%phys_reset (Model)
@@ -6045,24 +6079,28 @@ module GFS_typedefs
     ! Print static variables
     write (0,'(a,3i6)') 'Interstitial_print for mpirank, omprank, blkno: ', mpirank, omprank, blkno
     write (0,*) 'Interstitial_print: values that do not change'
-    write (0,*) 'Interstitial%h2o_coeff     = ', Interstitial%h2o_coeff
-    write (0,*) 'sum(Interstitial%h2o_pres) = ', sum(Interstitial%h2o_pres)
-    write (0,*) 'Interstitial%im            = ', Interstitial%im
-    write (0,*) 'Interstitial%ipr           = ', Interstitial%ipr
-    write (0,*) 'Interstitial%ix            = ', Interstitial%ix
-    write (0,*) 'Interstitial%latidxprnt    = ', Interstitial%latidxprnt
-    write (0,*) 'Interstitial%levi          = ', Interstitial%levi
-    write (0,*) 'Interstitial%levh2o        = ', Interstitial%levh2o
-    write (0,*) 'Interstitial%levozp        = ', Interstitial%levozp
-    write (0,*) 'Interstitial%lm            = ', Interstitial%lm
-    write (0,*) 'Interstitial%lmk           = ', Interstitial%lmk
-    write (0,*) 'Interstitial%lmp           = ', Interstitial%lmp
-    write (0,*) 'Interstitial%nsamftrac     = ', Interstitial%nsamftrac
-    write (0,*) 'Interstitial%ntiwx         = ', Interstitial%ntiwx
-    write (0,*) 'Interstitial%nvdiff        = ', Interstitial%nvdiff
-    write (0,*) 'Interstitial%oz_coeff      = ', Interstitial%oz_coeff
-    write (0,*) 'sum(Interstitial%oz_pres)  = ', sum(Interstitial%oz_pres)
-    write (0,*) 'Interstitial%skip_macro    = ', Interstitial%skip_macro
+    write (0,*) 'Interstitial%h2o_coeff         = ', Interstitial%h2o_coeff
+    write (0,*) 'sum(Interstitial%h2o_pres)     = ', sum(Interstitial%h2o_pres)
+    write (0,*) 'Interstitial%im                = ', Interstitial%im
+    write (0,*) 'Interstitial%ipr               = ', Interstitial%ipr
+    write (0,*) 'Interstitial%ix                = ', Interstitial%ix
+    write (0,*) 'Interstitial%latidxprnt        = ', Interstitial%latidxprnt
+    write (0,*) 'Interstitial%levi              = ', Interstitial%levi
+    write (0,*) 'Interstitial%levh2o            = ', Interstitial%levh2o
+    write (0,*) 'Interstitial%levozp            = ', Interstitial%levozp
+    write (0,*) 'Interstitial%lm                = ', Interstitial%lm
+    write (0,*) 'Interstitial%lmk               = ', Interstitial%lmk
+    write (0,*) 'Interstitial%lmp               = ', Interstitial%lmp
+    write (0,*) 'Interstitial%nsamftrac         = ', Interstitial%nsamftrac
+    write (0,*) 'Interstitial%ntiwx             = ', Interstitial%ntiwx
+    write (0,*) 'Interstitial%nvdiff            = ', Interstitial%nvdiff
+    write (0,*) 'Interstitial%oz_coeff          = ', Interstitial%oz_coeff
+    write (0,*) 'sum(Interstitial%oz_pres)      = ', sum(Interstitial%oz_pres)
+    write (0,*) 'Interstitial%phys_hydrostatic  = ', Interstitial%phys_hydrostatic
+    write (0,*) 'Interstitial%skip_macro        = ', Interstitial%skip_macro
+#ifdef HYBRID
+    write (0,*) 'Interstitial%non_uniform_blocks= ', Interstitial%non_uniform_blocks
+#endif
     ! Print all other variables
     write (0,*) 'Interstitial_print: values that change'
     write (0,*) 'sum(Interstitial%adjnirbmd   ) = ', sum(Interstitial%adjnirbmd   )
