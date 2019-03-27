@@ -684,6 +684,13 @@ module module_physics_driver
 #else
       nt = 1
 #endif
+      ! If this run uses non-uniform block sizes and the last block is being
+      ! computed, then switch from the current Interstitial DDT element to the
+      ! additional/special last element of the Interstitial DDT, which has
+      ! the correct (smaller) blocksize for this block.
+      if (Interstitial(nt)%non_uniform_blocks .and. nb==size(Model%blksz)) then
+         nt = size(Interstitial(:))
+      end if
 #endif
 
       ! Initialize local variables (mainly for debugging purposes, because the
@@ -1004,9 +1011,19 @@ module module_physics_driver
         enddo
 !
       else
+#ifdef CCPP
+        ! Need to allocate those as for MG microphysics to be able to compile
+        ! the CCPP hybrid code in DEBUG mode
+        allocate (qlcn(im,levs),      qicn(im,levs),    w_upi(im,levs),     &
+                  cf_upi(im,levs),    CNV_MFD(im,levs),                     &
+                  CNV_DQLDT(im,levs), clcn(im,levs),    cnv_fice(im,levs),  &
+                  cnv_ndrop(im,levs), cnv_nice(im,levs))
+#else
         allocate (qlcn(1,1),    qicn(1,1),     w_upi(1,1),    cf_upi(1,1),  &
                   CNV_MFD(1,1),                CNV_DQLDT(1,1),              &
                   clcn(1,1),    cnv_fice(1,1), cnv_ndrop(1,1), cnv_nice(1,1))
+#endif
+
 #ifndef CCPP
         if (imp_physics == Model%imp_physics_gfdl) then       ! GFDL MP
           allocate (delp(im,1,levs),  dz(im,1,levs),    uin(im,1,levs),                    &
@@ -7534,8 +7551,8 @@ module module_physics_driver
           !Interstitial(nt)%prcpmp                     ! intent(out)
           !Sfcprop%sr                                  ! intent(out)
           !Model%dtp                                   ! intent(in)
-          !CCPP_shared(nt)%hydrostatic                 ! intent(in) - set in CCPP_shared(nt)%create
-          !CCPP_shared(nt)%phys_hydrostatic            ! intent(in) - set in CCPP_shared(nt)%create
+          !Model%hydrostatic                           ! intent(in)
+          !Interstitial(nt)%phys_hydrostatic           ! intent(in) - set in Interstitial(nt)%create
           !Model%lradar                                ! intent(in)
           !Diag%refl_10cm                              ! intent(inout)
           !Model%effr_in                               ! intent(in)
