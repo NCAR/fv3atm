@@ -171,6 +171,7 @@ module GFS_driver
 #ifdef CCPP
     integer :: nt
     integer :: nthrds
+    logical :: non_uniform_blocks
 #endif
     integer :: ntrac
     integer :: ix
@@ -185,6 +186,14 @@ module GFS_driver
     allocate (blksz(nblks))
     blksz(:) = Init_parm%blksz(:)
 
+#ifdef CCPP
+#ifdef OPENMP
+    nthrds = omp_get_max_threads()
+#else
+    nthrds = 1
+#endif
+#endif
+
     !--- set control properties (including namelist read)
     call Model%init (Init_parm%nlunit, Init_parm%fn_nml,           &
                      Init_parm%me, Init_parm%master,               &
@@ -198,7 +207,8 @@ module GFS_driver
                      Init_parm%input_nml_file, Init_parm%tile_num  &
 #ifdef CCPP
                     ,Init_parm%ak, Init_parm%bk, Init_parm%blksz,  &
-                     Init_parm%restart, communicator, ntasks       &
+                     Init_parm%restart, Init_parm%hydrostatic,     &
+                     communicator, ntasks, nthrds                  &
 #endif
                      )
 
@@ -246,21 +256,46 @@ module GFS_driver
 
 #ifdef CCPP
 
-#ifdef OPENMP
-    nthrds = omp_get_max_threads()
-#else
-    nthrds = 1
-#endif
+! This logic deals with non-uniform block sizes for CCPP. When non-uniform block sizes
+! are used, it is required that only the last block has a different (smaller) size than
+! all other blocks. This is the standard in FV3. If this is the case, set non_uniform_blocks
+! to .true. and initialize nthreads+1 elements of the interstitial array. The extra element
+! will be used by the thread that runs over the last, smaller block.
+! Additional logic is required when non-uniform blocks are used in the CCPP hybrid mode.
+! In order to detect in GFS_physics_driver if the last block has a different size, we
+! need to pass the flag non_uniform_blocks as component of GFS_interstitial to the CCPP.
+
+    if (minval(Init_parm%blksz)==maxval(Init_parm%blksz)) then
+       non_uniform_blocks = .false.
+    elseif (all(minloc(Init_parm%blksz)==(/size(Init_parm%blksz)/))) then
+       non_uniform_blocks = .true.
+    else
+       write(0,'(2a)') 'For non-uniform blocksizes, only the last element ', &
+                       'in Init_parm%blksz can be different from the others'
+       stop
+    endif
 
 ! Initialize the Interstitial data type in parallel so that
-! each thread creates (touches) its Interstitial(nt) first
+! each thread creates (touches) its Interstitial(nt) first.
 !$OMP parallel do default (shared) &
 !$OMP            schedule (static,1) &
 !$OMP            private  (nt)
     do nt=1,nthrds
+#ifdef HYBRID
+      call Interstitial (nt)%create (maxval(Init_parm%blksz), non_uniform_blocks, Model)
+#else
       call Interstitial (nt)%create (maxval(Init_parm%blksz), Model)
+#endif
     enddo
 !$OMP end parallel do
+
+    if (non_uniform_blocks) then
+#ifdef HYBRID
+      call Interstitial (nthrds+1)%create (Init_parm%blksz(nblks), non_uniform_blocks, Model)
+#else
+      call Interstitial (nthrds+1)%create (Init_parm%blksz(nblks), Model)
+#endif
+    end if
 #endif
 
     !--- populate the grid components
