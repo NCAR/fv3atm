@@ -5,7 +5,6 @@ module CCPP_typedefs
 !! | local_name                      | standard_name                             | long_name                                         | units         | rank | type                   |    kind   | intent | optional |
 !! |---------------------------------|-------------------------------------------|---------------------------------------------------|---------------|------|------------------------|-----------|--------|----------|
 !! | CCPP_interstitial_type          | CCPP_interstitial_type                    | definition of type CCPP_interstitial_type         | DDT           |    0 | CCPP_interstitial_type |           | none   | F        |
-!! | CCPP_shared_type                | CCPP_shared_type                          | definition of type CCPP_shared_type               | DDT           |    0 | CCPP_shared_type       |           | none   | F        |
 !!
 #endif
 
@@ -15,30 +14,7 @@ module CCPP_typedefs
 
     private
 
-    public CCPP_shared_type, CCPP_interstitial_type
-
-#if 0
-!! \section arg_table_CCPP_shared_type Argument Table
-!! | local_name                                        | standard_name                                                 | long_name                                                                | units   | rank | type                   |    kind   | intent | optional |
-!! |---------------------------------------------------|---------------------------------------------------------------|--------------------------------------------------------------------------|---------|------|------------------------|-----------|--------|----------|
-!! | CCPP_shared(cdata%thrd_no)%hydrostatic            | flag_for_hydrostatic_solver                                   | flag for use the hydrostatic or nonhydrostatic solver                    | flag    |    0 | logical                |           | none   | F        |
-!! | CCPP_shared(cdata%thrd_no)%nthreads               | omp_threads                                                   | number of OpenMP threads available for physics schemes                   | count   |    0 | integer                |           | none   | F        |
-!! | CCPP_shared(cdata%thrd_no)%phys_hydrostatic       | flag_for_hydrostatic_heating_from_physics                     | flag for use of hydrostatic heating in physics                           | flag    |    0 | logical                |           | none   | F        |
-!!
-#endif
-  type CCPP_shared_type
-
-     logical                             :: hydrostatic
-     integer                             :: nthreads
-     logical                             :: phys_hydrostatic
-
-  contains
-
-    procedure :: create  => shared_create     !<   allocate/set data
-    procedure :: reset   => shared_reset      !<   reset data
-    procedure :: mprint  => shared_print      !<   print data
-
-  end type CCPP_shared_type
+    public CCPP_interstitial_type
 
 #if 0
 !! \section arg_table_CCPP_interstitial_type Argument Table
@@ -84,6 +60,8 @@ module CCPP_typedefs
 !! | CCPP_interstitial%qg                              | cloud_graupel_specific_humidity_at_Lagrangian_surface         | cloud graupel specific humidity updated by fast physics at Lagrangian surface         | kg kg-1   |    3 | real      | kind_dyn  | none   | F        |
 !! | CCPP_interstitial%qc                              | cloud_fraction_at_Lagrangian_surface                          | cloud fraction at Lagrangian surface                                                  | none      |    3 | real      | kind_dyn  | none   | F        |
 !! | CCPP_interstitial%q_con                           | cloud_condensed_water_specific_humidity_at_Lagrangian_surface | cloud condensed water specific humidity updated by fast physics at Lagrangian surface | kg kg-1   |    3 | real      | kind_dyn  | none   | F        |
+!! | CCPP_interstitial%nthreads                        | omp_threads_for_fast_physics                                  | number of OpenMP threads available for fast physics schemes                           | count     |    0 | integer   |           | none   | F        |
+!! | CCPP_interstitial%hydrostatic                     | flag_for_hydrostatic_solver_for_fast_physics                  | flag for use the hydrostatic or nonhydrostatic solver for fast physics schemes        | flag      |    0 | logical   |           | none   | F        |
 !!
 #endif
   type CCPP_interstitial_type
@@ -129,6 +107,8 @@ module CCPP_typedefs
      real(kind_dyn),  pointer            :: qg(:,:,:)
      real(kind_dyn),  pointer            :: qc(:,:,:)
      real(kind_dyn),  pointer            :: q_con(:,:,:)
+     integer                             :: nthreads
+     logical                             :: hydrostatic
 
   contains
 
@@ -141,57 +121,14 @@ module CCPP_typedefs
 contains
 
 !-----------------------------
-! CCPP_shared_type
-!-----------------------------
-  subroutine shared_create (Shared, hydrostatic, phys_hydrostatic)
-    !
-    implicit none
-    !
-    class(CCPP_shared_type) :: Shared
-    logical, intent(in) :: hydrostatic
-    logical, intent(in) :: phys_hydrostatic
-    !
-    Shared%hydrostatic = hydrostatic
-    ! Number of OpenMP threads available for schemes, default only one
-    Shared%nthreads = 1
-    ! The input phys_hydrostatic from Atm does not match the
-    ! hardcoded value for calling GFDL MP in GFS_physics_driver.F90
-    !Shared%phys_hydrostatic = phys_hydrostatic
-    Shared%phys_hydrostatic = .true.
-    !
-    call Shared%reset()
-    !
-  end subroutine shared_create
-
-  subroutine shared_reset (Shared)
-    !
-    implicit none
-    !
-    class(CCPP_shared_type) :: Shared
-    !
-  end subroutine shared_reset
-
-  subroutine shared_print(Shared)
-    !
-    implicit none
-    !
-    class(CCPP_shared_type) :: Shared
-    !
-    write (0,'(a)') 'Shared_print'
-    write (0,*) 'Shared%hydrostatic       = ', Shared%hydrostatic
-    write (0,*) 'Shared%nthreads          = ', Shared%nthreads
-    write (0,*) 'Shared%phys_hydrostatic  = ', Shared%phys_hydrostatic
-    write (0,*) 'Shared_print: end'
-    !
-  end subroutine shared_print
-
-!-----------------------------
 ! CCPP_interstitial_type
 !-----------------------------
   subroutine interstitial_create (Interstitial, is, ie, isd, ied, js, je, jsd, jed, npz, ng, &
                                   dt_atmos, p_split, k_split, zvir, p_ref, ak, bk, do_qa,    &
                                   kappa, hydrostatic, do_sat_adj,                            &
-                                  delp, delz, area, peln, phis, pkz, pt, qv, ql, qi, qr, qs, qg, qc, q_con)
+                                  delp, delz, area, peln, phis, pkz, pt,                     &
+                                  qv, ql, qi, qr, qs, qg, qc, q_con,                         &
+                                  nthreads)
     !
     implicit none
     !
@@ -232,6 +169,7 @@ contains
     real(kind_dyn),  target, intent(in) :: qg(:,:,:)
     real(kind_dyn),  target, intent(in) :: qc(:,:,:)
     real(kind_dyn),  target, intent(in) :: q_con(:,:,:)
+    integer, intent(in) :: nthreads
     !
 #ifdef MOIST_CAPPA
     allocate (Interstitial%cappa  (isd:ied, jsd:jed, 1:npz) )
@@ -252,11 +190,15 @@ contains
     Interstitial%bdt       = dt_atmos/real(abs(p_split))
     Interstitial%do_qa     = do_qa
     Interstitial%mdt       = Interstitial%bdt/real(k_split)
+    !
+    ! Flag for hydrostatic/non-hydrostatic physics
+    Interstitial%hydrostatic = hydrostatic
     if (hydrostatic) then
        Interstitial%npzdelz = 1
     else
        Interstitial%npzdelz = npz
     end if
+    !
     Interstitial%zvir      = zvir
     !
     Interstitial%do_sat_adj =  do_sat_adj
@@ -288,6 +230,9 @@ contains
        Interstitial%qc      => qc
     end if
     Interstitial%q_con      => q_con
+    !
+    ! Number of OpenMP threads available for schemes
+    Interstitial%nthreads   = nthreads
     !
     ! Calculate vertical pressure levels
     call interstitital_calculate_pressure_levels(Interstitial, npz, p_ref, ak, bk)
@@ -396,6 +341,8 @@ contains
        write (0,*) 'sum(Interstitial%qc)           = ', Interstitial%qc
     end if
     write (0,*) 'sum(Interstitial%q_con)        = ', Interstitial%q_con
+    write (0,*) 'Interstitial%hydrostatic       = ', Interstitial%hydrostatic
+    write (0,*) 'Interstitial%nthreads          = ', Interstitial%nthreads
     write (0,*) 'Interstitial_print: end'
     !
   end subroutine interstitial_print
