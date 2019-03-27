@@ -99,7 +99,7 @@ use CCPP_data,          only: ccpp_suite,                      &
                               IPD_data => GFS_data,            &
                               IPD_interstitial => GFS_interstitial
 use IPD_driver,         only: IPD_initialize, IPD_step, IPD_finalize
-use CCPP_driver,        only: CCPP_step
+use CCPP_driver,        only: CCPP_step, non_uniform_blocks
 #ifdef HYBRID
 use physics_abstraction_layer, only: physics_step1
 #endif
@@ -567,7 +567,27 @@ subroutine atmos_model_init (Atmos, Time_init, Time, Time_step)
 #else
    nthrds = 1
 #endif
-   allocate(IPD_Interstitial(nthrds))
+
+   ! This logic deals with non-uniform block sizes for CCPP.
+   ! When non-uniform block sizes are used, it is required
+   ! that only the last block has a different (smaller)
+   ! size than all other blocks. This is the standard in
+   ! FV3. If this is the case, set non_uniform_blocks (a
+   ! variable imported from CCPP_driver) to .true. and
+   ! allocate nthreads+1 elements of the interstitial array.
+   ! The extra element will be used by the thread that
+   ! runs over the last, smaller block.
+   if (minval(Atm_block%blksz)==maxval(Atm_block%blksz)) then
+      non_uniform_blocks = .false.
+      allocate(IPD_Interstitial(nthrds))
+   else if (all(minloc(Atm_block%blksz)==(/size(Atm_block%blksz)/))) then
+      non_uniform_blocks = .true.
+      allocate(IPD_Interstitial(nthrds+1))
+   else
+      call mpp_error(FATAL, 'For non-uniform blocksizes, only the last element ' // &
+                            'in Atm_block%blksz can be different from the others')
+   end if
+
 #endif
 
 !--- update IPD_Control%jdat(8)
@@ -609,7 +629,8 @@ subroutine atmos_model_init (Atmos, Time_init, Time, Time_step)
    Init_parm%area            => Atmos%area
    Init_parm%tracer_names    => tracer_names
 #ifdef CCPP
-   Init_parm%restart         =  Atm(mytile)%flagstruct%warm_start
+   Init_parm%restart         = Atm(mytile)%flagstruct%warm_start
+   Init_parm%hydrostatic     = Atm(mytile)%flagstruct%hydrostatic
 #endif
 
 #ifdef INTERNAL_FILE_NML
