@@ -4484,15 +4484,15 @@ module GFS_typedefs
 
     elseif (Model%imp_physics == Model%imp_physics_gfdl) then !GFDL microphysics
       Model%npdf3d  = 0
-      Model%num_p3d = 1 
+      Model%num_p3d = 1
       if(Model%effr_in) then
          Model%num_p3d = 5
-         Model%nleffr = 1
-         Model%nieffr = 2
-         Model%nreffr = 3
-         Model%nseffr = 4
-         Model%ngeffr = 5
       endif
+      Model%nleffr = 1
+      Model%nieffr = 2
+      Model%nreffr = 3
+      Model%nseffr = 4
+      Model%ngeffr = 5
       Model%num_p2d = 1
       Model%pdfcld  = .false.
       Model%shcnvcw = .false.
