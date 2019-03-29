@@ -143,6 +143,7 @@ module external_ic_mod
 !   </tr>
 ! </table>
 
+   use netcdf
    use external_sst_mod,   only: i_sst, j_sst, sst_ncep
    use fms_mod,            only: file_exist, read_data, field_exist, write_version_number
    use fms_mod,            only: open_namelist_file, check_nml_error, close_file
@@ -165,7 +166,7 @@ module external_ic_mod
    use fv_io_mod,         only: fv_io_read_tracers 
    use fv_mapz_mod,       only: mappm
 
-   use fv_regional_mod,   only: dump_field, H_STAGGER, U_STAGGER, V_STAGGER
+   use fv_regional_mod,   only: dump_field, H_STAGGER, U_STAGGER, V_STAGGER, get_data_source
    use fv_mp_mod,         only: ng, is_master, fill_corners, YDir, mp_reduce_min, mp_reduce_max
    use fv_regional_mod,   only: start_regional_cold_start
    use fv_surf_map_mod,   only: surfdrv, FV3_zs_filter
@@ -192,7 +193,7 @@ module external_ic_mod
    real, parameter:: zvir = rvgas/rdgas - 1.
    real(kind=R_GRID), parameter :: cnst_0p20=0.20d0
    real :: deg2rad
-
+   character (len = 80) :: source   ! This tells what the input source was for the data
    public get_external_ic, get_cubed_sphere_terrain
 
 ! version number of this module
@@ -440,7 +441,7 @@ contains
 ! local:
       real, dimension(:), allocatable:: ak, bk
       real, dimension(:,:), allocatable:: wk2, ps, oro_g
-      real, dimension(:,:,:), allocatable:: ud, vd, u_w, v_w, u_s, v_s, omga
+      real, dimension(:,:,:), allocatable:: ud, vd, u_w, v_w, u_s, v_s, omga, temp
       real, dimension(:,:,:), allocatable:: zh(:,:,:)  ! 3D height at 65 edges
       real, dimension(:,:,:,:), allocatable:: q
       real, dimension(:,:), allocatable :: phis_coarse ! lmh
@@ -694,16 +695,9 @@ contains
       endif
       call mpp_error(NOTE,'==> External_ic::get_nggps_ic: using tiled data file '//trim(fn_gfs_ics)//' for NGGPS IC')
 
-      ! DH* if aerosol aware and use Thompson aerosol climatology?
-      !if (.not. file_exist('INPUT/'//trim(fn_aero_ics), domain=Atm(1)%domain)) then
-      !  call mpp_error(NOTE,'==> External_ic::get_nggps_ic: tiled file '//trim(fn_aero_ics)//' for NGGPS IC does not exist, not reading in initial aerosol data')
-      !  read_aero = .false.
-      !else
-      !  call mpp_error(NOTE,'==> External_ic::get_nggps_ic: using tiled data file '//trim(fn_aero_ics)//' for NGGPS IC')
-      !  read_aero = .true.
-      !endif
-      ! *DH
-
+!
+      call get_data_source(source,Atm(1)%flagstruct%regional)
+!
       allocate (zh(is:ie,js:je,levp+1))   ! SJL
       allocate (ps(is:ie,js:je))
       allocate (omga(is:ie,js:je,levp))
@@ -712,6 +706,7 @@ contains
       allocate ( v_w(is:ie+1, js:je, 1:levp) )
       allocate ( u_s(is:ie, js:je+1, 1:levp) )
       allocate ( v_s(is:ie, js:je+1, 1:levp) )
+      allocate (temp(is:ie,js:je,levp))
 
       do n = 1,size(Atm(:))
 
@@ -770,7 +765,9 @@ contains
         id_res = register_restart_field (GFS_restart, fn_gfs_ics, 'w', omga, domain=Atm(n)%domain)
         ! GFS grid height at edges (including surface height)
         id_res = register_restart_field (GFS_restart, fn_gfs_ics, 'ZH', zh, domain=Atm(n)%domain)
-
+        ! real temperature (K)
+        id_res = register_restart_field (GFS_restart, fn_gfs_ics, 't', temp, mandatory=.false., &
+                                         domain=Atm(n)%domain)
         ! prognostic tracers
         do nt = 1, ntracers
           call get_tracer_names(MODEL_ATMOS, nt, tracer_name)
@@ -840,7 +837,7 @@ contains
 !
 !***  Remap the variables in the compute domain.
 !
-        call remap_scalar_nggps(Atm(n), levp, npz, ntracers, ak, bk, ps, q, omga, zh)
+        call remap_scalar_nggps(Atm(n), levp, npz, ntracers, ak, bk, ps, temp, q, omga, zh)
 
         allocate ( ud(is:ie,  js:je+1, 1:levp) )
         allocate ( vd(is:ie+1,js:je,   1:levp) )
@@ -948,6 +945,26 @@ contains
         snowwat = get_tracer_index(MODEL_ATMOS, 'snowwat')
         graupel = get_tracer_index(MODEL_ATMOS, 'graupel')
         ntclamt = get_tracer_index(MODEL_ATMOS, 'cld_amt')
+        if (trim(source) == 'FV3GFS GAUSSIAN NEMSIO FILE') then
+         do k=1,npz
+           do j=js,je
+             do i=is,ie
+              wt = Atm(n)%delp(i,j,k)
+              if ( Atm(n)%flagstruct%nwat == 6 ) then
+                 qt = wt*(1. + Atm(n)%q(i,j,k,liq_wat) + &
+                               Atm(n)%q(i,j,k,ice_wat) + &
+                               Atm(n)%q(i,j,k,rainwat) + &
+                               Atm(n)%q(i,j,k,snowwat) + &
+                               Atm(n)%q(i,j,k,graupel))
+              else   ! all other values of nwat
+                 qt = wt*(1. + sum(Atm(n)%q(i,j,k,2:Atm(n)%flagstruct%nwat)))
+              endif
+              Atm(n)%delp(i,j,k) = qt
+              if (ntclamt > 0) Atm(n)%q(i,j,k,ntclamt) = 0.0    ! Moorthi
+            enddo
+          enddo
+        enddo
+       else         
 !--- Add cloud condensate from GFS to total MASS
 ! 20160928: Adjust the mixing ratios consistently...
         do k=1,npz
@@ -972,6 +989,7 @@ contains
             enddo
           enddo
         enddo
+      endif   !end trim(source) test
 
 !--- reset the tracers beyond condensate to a checkerboard pattern 
         if (checker_tr) then
@@ -989,6 +1007,8 @@ contains
       deallocate (bk)
       deallocate (ps)
       deallocate (q )
+      deallocate (temp)
+      deallocate (omga)
 
   end subroutine get_nggps_ic
 !------------------------------------------------------------------
@@ -2481,11 +2501,12 @@ contains
  end subroutine remap_scalar
 
 
- subroutine remap_scalar_nggps(Atm, km, npz, ncnst, ak0, bk0, psc, qa, omga, zh)
+ subroutine remap_scalar_nggps(Atm, km, npz, ncnst, ak0, bk0, psc, t_in, qa, omga, zh)
   type(fv_atmos_type), intent(inout) :: Atm
   integer, intent(in):: km, npz, ncnst
   real,    intent(in):: ak0(km+1), bk0(km+1)
   real,    intent(in), dimension(Atm%bd%is:Atm%bd%ie,Atm%bd%js:Atm%bd%je):: psc
+  real,    intent(in), dimension(Atm%bd%is:Atm%bd%ie,Atm%bd%js:Atm%bd%je,km):: t_in
   real,    intent(in), dimension(Atm%bd%is:Atm%bd%ie,Atm%bd%js:Atm%bd%je,km):: omga
   real,    intent(in), dimension(Atm%bd%is:Atm%bd%ie,Atm%bd%js:Atm%bd%je,km,ncnst):: qa
   real,    intent(in), dimension(Atm%bd%is:Atm%bd%ie,Atm%bd%js:Atm%bd%je,km+1):: zh
@@ -2543,9 +2564,9 @@ contains
 #endif
 
 !$OMP parallel do default(none) &
-!$OMP             shared(sphum,liq_wat,rainwat,ice_wat,snowwat,graupel,liq_aero,ice_aero,&
-!$OMP                    cld_amt,ncnst,npz,is,ie,js,je,km,k2,ak0,bk0,psc,zh,omga,qa,Atm,z500) &
-!$OMP             private(l,m,pst,pn,gz,pe0,pn0,pe1,pn1,dp2,qp,qn1,gz_fv)
+!$OMP             shared(sphum,liq_wat,rainwat,ice_wat,snowwat,graupel,liq_aero,ice_aero,source,   &
+!$OMP                    cld_amt,ncnst,npz,is,ie,js,je,km,k2,ak0,bk0,psc,t_in,zh,omga,qa,Atm,z500) &
+!$OMP             private(l,m,pst,pn,gz,pe0,pn0,pe1,pn1,dp2,qp,qn1,gz_fv) 
   do 5000 j=js,je
      do k=1,km+1
         do i=is,ie
@@ -2608,7 +2629,7 @@ contains
         enddo
      enddo
 
-! map shpum, o3mr, liq_wat tracers
+! map tracers
       do iq=1,ncnst
          do k=1,km
             do i=is,ie
@@ -2682,10 +2703,28 @@ contains
          Atm%peln(i,k,j) = pn1(i,k)
       enddo
 
+!----------------------------------------------------
 ! Compute true temperature using hydrostatic balance
-      do k=1,npz
-         Atm%pt(i,j,k) = (gz_fv(k)-gz_fv(k+1))/( rdgas*(pn1(i,k+1)-pn1(i,k))*(1.+zvir*Atm%q(i,j,k,sphum)) )
-      enddo
+!----------------------------------------------------
+      if (trim(source) /= 'FV3GFS GAUSSIAN NEMSIO FILE') then
+        do k=1,npz
+           Atm%pt(i,j,k) = (gz_fv(k)-gz_fv(k+1))/( rdgas*(pn1(i,k+1)-pn1(i,k))*(1.+zvir*Atm%q(i,j,k,sphum)) )
+        enddo
+!------------------------------
+! Remap input T linearly in p.
+!------------------------------
+      else
+        do k=1,km
+            qp(i,k) = t_in(i,j,k)
+        enddo
+
+        call mappm(km, pe0, qp, npz, pe1, qn1, is,ie, 2, 4, Atm%ptop)
+
+        do k=1,npz
+            Atm%pt(i,j,k) = qn1(i,k)
+        enddo
+      endif
+
       if ( .not. Atm%flagstruct%hydrostatic ) then
          do k=1,npz
             Atm%delz(i,j,k) = (gz_fv(k+1) - gz_fv(k)) / grav
@@ -2698,7 +2737,8 @@ contains
 ! seperate cloud water and cloud ice
 ! From Jan-Huey Chen's HiRAM code
 !-----------------------------------------------------------------------
-
+  if (cld_amt .gt. 0) Atm%q(:,:,:,cld_amt) = 0.
+  if (trim(source) /= 'FV3GFS GAUSSIAN NEMSIO FILE') then
    if ( Atm%flagstruct%nwat .eq. 6 ) then
       do k=1,npz
          do i=is,ie
@@ -2706,7 +2746,7 @@ contains
             Atm%q(i,j,k,rainwat) = 0.
             Atm%q(i,j,k,snowwat) = 0.
             Atm%q(i,j,k,graupel) = 0.
-            if (cld_amt .gt. 0) Atm%q(i,j,k,cld_amt) = 0.
+!            if (cld_amt .gt. 0) Atm%q(i,j,k,cld_amt) = 0.
             if ( Atm%pt(i,j,k) > 273.16 ) then       ! > 0C all liq_wat
                Atm%q(i,j,k,liq_wat) = qn1(i,k)
                Atm%q(i,j,k,ice_wat) = 0.
@@ -2742,7 +2782,11 @@ contains
          enddo
       enddo
    endif
+  endif ! data source /= FV3GFS GAUSSIAN NEMSIO FILE
 
+! For GFS spectral input, omega in pa/sec is stored as w in the input data so actual w(m/s) is calculated
+! For GFS nemsio input, omega is 0, so best not to use for input since boundary data will not exist for w
+! For FV3GFS NEMSIO input, w is already in m/s (but the code reads in as omga) and just needs to be remapped
 !-------------------------------------------------------------
 ! map omega
 !------- ------------------------------------------------------
@@ -2753,13 +2797,21 @@ contains
          enddo
       enddo
       call mappm(km, pe0, qp, npz, pe1, qn1, is,ie, -1, 4, Atm%ptop)
+    if (trim(source) == 'FV3GFS GAUSSIAN NEMSIO FILE') then
       do k=1,npz
+         do i=is,ie
+            atm%w(i,j,k) = qn1(i,k)
+         enddo
+      enddo
+
+    else
+     do k=1,npz
          do i=is,ie
             atm%w(i,j,k) = qn1(i,k)/atm%delp(i,j,k)*atm%delz(i,j,k)
          enddo
       enddo
-   endif
-
+    endif
+   endif   !.not. Atm%flagstruct%hydrostatic
 5000 continue
 
 ! Add some diagnostics:

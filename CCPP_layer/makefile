@@ -11,19 +11,21 @@ else
         $(error "../conf/configure.fv3 file is missing. Run ./configure")
     endif
     $(info )
-    $(info Build standalone FV3 gfsphysics ...)
+    $(info Build CCPP layer ...)
     $(info )
 endif
 
-LIBRARY  = libipd.a
+CCPP_DRIVER = CCPP_driver.F90
 
-FFLAGS   += -I$(FMS_DIR) -I../gfsphysics -I../namphysics
+LIBRARY  = libccppdriver.a
 
-CPPDEFS += -DNEW_TAUCTMAX -DSMALL_PE -DNEMS_GSM -DINTERNAL_FILE_NML
+# Needed for ccpp_data.mod, fv_arrays_mod.mod, ...
+FFLAGS   += -I$(FMS_DIR) -I../gfsphysics -I../atmos_cubed_sphere
+
+#CPPDEFS += -DNEW_TAUCTMAX -DSMALL_PE -DNEMS_GSM -DINTERNAL_FILE_NML
 
 SRCS_F90 = \
-	   ./IPD_driver.F90 \
-	   ./IPD_typedefs.F90
+	   CCPP_driver.F90
 
 SRCS_c   =
 
@@ -42,19 +44,17 @@ all default: depend $(LIBRARY)
 $(LIBRARY): $(OBJS)
 	$(AR) $(ARFLAGS) $@ $?
 
-# Do preprocessing of the IPD-CCPP driver in two steps to be
+# Do preprocessing of the CCPP driver in two steps to be
 # able to look at the actual .f90 file that gets compiled
-ifneq (,$(findstring CCPP,$(CPPDEFS)))
-./IPD_CCPP_driver.o: ./IPD_CCPP_driver.F90
+./CCPP_driver.o: ./CCPP_driver.F90
 	$(CPP) $(CPPDEFS) $(CPPFLAGS) $< > $*.tmp.f90
 	$(FC) $(FFLAGS) $(OTHER_FFLAGS) -c $*.tmp.f90 -o $@
-endif
 
 .PHONY: clean
 clean:
-	@echo "Cleaning ipd  ... "
+	@echo "Cleaning CCPP_layer  ... "
 	@echo
-	$(RM) -f $(LIBRARY) *__genmod.f90 *.o */*.o *.mod *.i90 *.lst *.i depend
+	$(RM) -f $(LIBRARY) *__genmod.f90 *.tmp.f90 *.o */*.o *.mod *.i90 *.lst *.i depend
 
 MKDEPENDS = ../mkDepends.pl
 include ../conf/make.rules

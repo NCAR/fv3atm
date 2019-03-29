@@ -1,4 +1,4 @@
-module IPD_CCPP_driver
+module CCPP_driver
 
 #ifdef STATIC
 ! For static builds, the ccpp_physics_{init,run,finalize} calls
@@ -27,7 +27,7 @@ module IPD_CCPP_driver
                                 cdata_domain,                        &
                                 cdata_block,                         &
                                 ccpp_suite,                          &
-                                CCPP_shared
+                                GFS_control
 
 #ifndef STATIC
 ! Begin include auto-generated list of modules for ccpp
@@ -38,24 +38,34 @@ module IPD_CCPP_driver
 
   implicit none
 
-!------------------------------------------------------!
-!  Pointer to CCPP containers defined in CCPP_data     !
-!------------------------------------------------------!
+!--------------------------------------------------------!
+!  Pointer to CCPP containers defined in CCPP_data       !
+!--------------------------------------------------------!
   type(ccpp_t), pointer :: cdata => null()
+
+!--------------------------------------------------------!
+!  Flag for non-uniform block sizes (last block smaller) !
+!  and number of OpenMP threads (with special thread     !
+!  number nthrdsX in case of non-uniform block sizes)    !
+!--------------------------------------------------------!
+  logical :: non_uniform_blocks
+  integer :: nthrds, nthrdsX
 
 !----------------
 ! Public Entities
 !----------------
 ! functions
-  public IPD_CCPP_step
+  public CCPP_step
+! module variables
+  public non_uniform_blocks
 
   CONTAINS
 !*******************************************************************************************
 
 !-------------------------------
-!  IPD step generalized for CCPP
+!  CCPP step
 !-------------------------------
-  subroutine IPD_CCPP_step (step, nblks, ierr)
+  subroutine CCPP_step (step, nblks, ierr)
 
 #ifdef OPENMP
     use omp_lib
@@ -67,19 +77,28 @@ module IPD_CCPP_driver
     integer,          target, intent(in)  :: nblks
     integer,                  intent(out) :: ierr
     ! Local variables
-    integer :: nb
-    integer :: nthrds, nt
+    integer :: nb, nt, ntX
     integer :: ierr2
 
     ierr = 0
 
+    if (trim(step)=="init") then
+
+      ! Get and set number of OpenMP threads (module
+      ! variable) that are available to run physics
 #ifdef OPENMP
-    nthrds = omp_get_max_threads()
+      nthrds = omp_get_max_threads()
 #else
-    nthrds = 1
+      nthrds = 1
 #endif
 
-    if (trim(step)=="init") then
+      ! For non-uniform blocksizes, we use index nthrds+1
+      ! for the interstitial data type with different length
+      if (non_uniform_blocks) then
+        nthrdsX = nthrds+1
+      else
+        nthrdsX = nthrds
+      end if
 
       !--- Initialize CCPP framework, if cdata_tile for fast physics
       !    is already initialized, use its suite to avoid reading the
@@ -111,10 +130,10 @@ module IPD_CCPP_driver
 #endif
 
       ! Allocate cdata structures for blocks and threads
-      allocate(cdata_block(1:nblks,1:nthrds))
+      allocate(cdata_block(1:nblks,1:nthrdsX))
 
       ! Loop over all blocks and threads
-      do nt=1,nthrds
+      do nt=1,nthrdsX
         do nb=1,nblks
           !--- Initialize CCPP framework for blocks/threads, use suite from scalar cdata
           !    to avoid reading the SDF multiple times. If cdata_tile is initialized, use
@@ -152,7 +171,7 @@ module IPD_CCPP_driver
       ! Loop over blocks, don't use threading on the outside but allowing threading
       ! inside the initialization, because physics initialization code does a lot of
       ! reading/writing data from disk, allocating fields, etc.
-      CCPP_shared(:)%nthreads = nthrds
+      GFS_control%nthreads = nthrds
 
       ! DH* TODO - I believe that they way this works in FV3, physics init can only
       ! affect block- and thread-independent data - hence, it would be sufficient to
@@ -177,16 +196,13 @@ module IPD_CCPP_driver
         end if
       end do
 
-      ! Reset number of threads available to physics schemes to default value
-      CCPP_shared(:)%nthreads = 1
-
    else if (trim(step)=="time_vary") then
 
       ! Loop over blocks, don't use threading on the outside but allowing threading
       ! inside the time_vary routines. This is because the time_vary routines contain
       ! calls to gcycle.f90 and sfcsub.F, which do a lot of I/O and are highly
       !inefficient if executed nthread times.
-      CCPP_shared%nthreads = nthrds
+      GFS_control%nthreads = nthrds
 
       ! Since the time_vary steps only use data structures for all blocks (except the
       ! CCPP-internal variables ccpp_error_flag and ccpp_error_message, which are defined
@@ -198,40 +214,55 @@ module IPD_CCPP_driver
         return
       end if
 
-      ! Reset number of threads available to physics schemes to default value
-      CCPP_shared%nthreads = 1
-
     ! Radiation and stochastic physics
    else if (trim(step)=="radiation" .or. trim(step)=="physics" .or. trim(step)=="stochastics") then
 
-!$OMP parallel do num_threads (nthrds) &
-!$OMP          schedule (dynamic,1),   &
-!$OMP          default (shared)        &
-!$OMP          private (nb,nt,ierr2)   &
+      ! Set number of threads available to physics schemes to one,
+      ! because threads are used on the outside for blocking
+      GFS_control%nthreads = 1
+
+!$OMP parallel num_threads (nthrds)      &
+!$OMP          default (shared)          &
+!$OMP          private (nb,nt,ntX,ierr2) &
 !$OMP          reduction (+:ierr)
-      do nb = 1,nblks
 #ifdef OPENMP
-        nt = omp_get_thread_num()+1
+      nt = omp_get_thread_num()+1
 #else
-        nt = 1
+      nt = 1
 #endif
+!$OMP do schedule (dynamic,1)
+      do nb = 1,nblks
+        ! For non-uniform blocks, the last block has a different (shorter)
+        ! length than the other blocks; use special CCPP_Interstitial(nthrdsX)
+        if (non_uniform_blocks .and. nb==nblks) then
+            ntX = nthrdsX
+        else
+            ntX = nt
+        end if
         !--- Call CCPP radiation/physics/stochastics group
-        call ccpp_physics_run(cdata_block(nb,nt), group_name=trim(step), ierr=ierr2)
+        call ccpp_physics_run(cdata_block(nb,ntX), group_name=trim(step), ierr=ierr2)
         if (ierr2/=0) then
-           write(0,'(a,i4,a,i4)') "An error occurred in ccpp_physics_run for group " // trim(step) // ", block ", nb, " and thread ", nt
+           write(0,'(2a,3(a,i4),a)') "An error occurred in ccpp_physics_run for group ", trim(step), &
+                                     ", block ", nb, " and thread ", nt, " (ntX=", ntX, ")"
            write(0,'(a)') trim(cdata_block(nb,nt)%errmsg)
            ierr = ierr + ierr2
         end if
       end do
-!$OMP end parallel do
+!$OMP end do
+
+!$OMP end parallel
       if (ierr/=0) return
 
    ! Finalize
    else if (trim(step)=="finalize") then
 
+      ! Loop over blocks, don't use threading on the outside but allowing threading
+      ! inside the finalization, similar to what is done for the initialization
+      GFS_control%nthreads = nthrds
+
       ! Fast physics are finalized in atmosphere_end, loop over
       ! all blocks and threads to finalize all other physics
-      do nt=1,nthrds
+      do nt=1,nthrdsX
         do nb=1,nblks
           !--- Finalize CCPP physics
           call ccpp_physics_finalize(cdata_block(nb,nt), ierr=ierr)
@@ -268,17 +299,14 @@ module IPD_CCPP_driver
          end if
       end if
 
-      ! Deallocate shared CCPP data
-      if (allocated(CCPP_shared)) deallocate(CCPP_shared)
-
     else
 
-      write(0,'(2a)') 'Error, undefined IPD step ', trim(step)
+      write(0,'(2a)') 'Error, undefined CCPP step ', trim(step)
       ierr = 1
       return
 
     end if
 
-  end subroutine IPD_CCPP_step
+  end subroutine CCPP_step
 
-end module IPD_CCPP_driver
+end module CCPP_driver
