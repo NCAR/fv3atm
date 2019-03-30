@@ -38,7 +38,7 @@
 !            sfcemis, dlwflx, dswsfc, snet, delt, tg3, cm, ch,          !
 !            prsl1, prslki, zf, islimsk, ddvel, slopetyp,               !
 !            shdmin, shdmax, snoalb, sfalb, flag_iter, flag_guess,      !
-!            isot, ivegsrc,                                             !
+!            lheatstrg, isot, ivegsrc,                                  !
 !  ---  in/outs:                                                        !
 !            weasd, snwdph, tskin, tprcp, srflag, smc, stc, slc,        !
 !            canopy, trans, tsurf, zorl,                                !
@@ -92,6 +92,8 @@
 !     sfalb    - real, mean sfc diffused sw albedo (fractional)    im   !
 !     flag_iter- logical,                                          im   !
 !     flag_guess-logical,                                          im   !
+!     lheatstrg- logical, flag for canopy heat storage             1    !
+!                         parameterization                              !
 !     isot     - integer, sfc soil type data source zobler or statsgo   !
 !     ivegsrc  - integer, sfc veg type data source umd or igbp          !
 !                                                                       !
@@ -140,8 +142,8 @@
      &       sfcemis, dlwflx, dswsfc, snet, delt, tg3, cm, ch,          &
      &       prsl1, prslki, zf, islimsk, ddvel, slopetyp,               &
      &       shdmin, shdmax, snoalb, sfalb, flag_iter, flag_guess,      &
-     &       isot, ivegsrc,                                             &
-     &       bexppert, xlaipert, vegfpert,pertvegf,                     &  ! sfc perts, mgehne
+     &       lheatstrg, isot, ivegsrc,                                  &
+     &       bexppert, xlaipert, vegfpert, pertvegf,                    &  ! sfc perts, mgehne
 !  ---  in/outs:
      &       weasd, snwdph, tskin, tprcp, srflag, smc, stc, slc,        &
      &       canopy, trans, tsurf, zorl,                                &
@@ -177,7 +179,7 @@
 
 !  ---  input:
       integer, intent(in) :: im, km, isot, ivegsrc
-      real (kind=kind_phys), dimension(6), intent(in) :: pertvegf
+      real (kind=kind_phys), dimension(5), intent(in) :: pertvegf
 
       integer, dimension(im), intent(in) :: soiltyp, vegtype, slopetyp
 
@@ -191,6 +193,8 @@
       real (kind=kind_phys),  intent(in) :: delt
 
       logical, dimension(im), intent(in) :: flag_iter, flag_guess
+
+      logical, intent(in) :: lheatstrg
 
 !  ---  in/out:
       real (kind=kind_phys), dimension(im), intent(inout) :: weasd,     &
@@ -312,7 +316,7 @@
 !   1. configuration information (c):
 !      ------------------------------
 !    couple  - couple-uncouple flag (=1: coupled, =0: uncoupled) 
-!    ffrozp  - flag for snow-rain detection (1.=snow, 0.=rain)                
+!    ffrozp  - flag for snow-rain detection (1.=all snow, 0.=all rain, 0-1 mixed)
 !    ice     - sea-ice flag (=1: sea-ice, =0: land)
 !    dt      - timestep (sec) (dt should not exceed 3600 secs) = delt
 !    zlvl    - height (m) above ground of atmospheric forcing variables
@@ -320,12 +324,13 @@
 !    sldpth  - the thickness of each soil layer (m)
 
           couple = 1                      ! run noah lsm in 'couple' mode
-
-          if     (srflag(i) == 1.0) then  ! snow phase
-            ffrozp = 1.0
-          elseif (srflag(i) == 0.0) then  ! rain phase
-            ffrozp = 0.0
-          endif
+! use srflag directly to allow fractional rain/snow
+!          if     (srflag(i) == 1.0) then  ! snow phase
+!            ffrozp = 1.0
+!          elseif (srflag(i) == 0.0) then  ! rain phase
+!            ffrozp = 0.0
+!          endif
+          ffrozp = srflag(i)
           ice = 0
 
           zlvl = zf(i)
@@ -457,6 +462,7 @@
      &       sfcspd, prcp, q2, q2sat, dqsdt2, th2, ivegsrc,             &
      &       vtype, stype, slope, shdmin1d, alb, snoalb1d,              &
      &       bexpp, xlaip,                                              & ! sfc-perts, mgehne
+     &       lheatstrg,                                                 &
 !  ---  input/outputs:
      &       tbot, cmc, tsea, stsoil, smsoil, slsoil, sneqv, chx, cmx,  &
      &       z0,                                                        &
