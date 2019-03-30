@@ -2179,8 +2179,8 @@ module module_physics_driver
               !Diag%srunoff                          ! intent(inout)
               !Diag%soilm                            ! intent(out)
               !Sfcprop%wet1                          ! intent(out)
-              !Diag%acsnow                           ! intent(out)
-              !Diag%snowfallac                       ! intent(out)
+              !Sfcprop%acsnow                        ! intent(out)
+              !Sfcprop%snowfallac                    ! intent(out)
               !cdata_block(nb,nt)%errmsg = errmsg    ! intent(out)
               !cdata_block(nb,nt)%errflg = errflg    ! intent(out)
 

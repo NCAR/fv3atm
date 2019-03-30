@@ -418,7 +418,7 @@ module FV3GFS_io_mod
     nvar_s2m = 32
     nvar_s2o = 18
 #ifdef CCPP
-    nvar_s2r = 5
+    nvar_s2r = 7
     if (Model%lsm == Model%lsm_ruc .and. warm_start) then
       nvar_s3  = 5
     else
@@ -586,6 +586,8 @@ module FV3GFS_io_mod
       sfc_name2(53) = 'qwv_surf'
       sfc_name2(54) = 'tsnow'
       sfc_name2(55) = 'sr'
+      sfc_name2(56) = 'snowfall_acc'
+      sfc_name2(57) = 'swe_snowfall_acc'
 #endif
 
       !--- register the 2D fields
@@ -767,11 +769,13 @@ module FV3GFS_io_mod
 #ifdef CCPP
         if (Model%lsm == Model%lsm_ruc .and. warm_start) then
           !--- Extra RUC variables
-          Sfcprop(nb)%wet1(ix)    = sfc_var2(i,j,51)
-          Sfcprop(nb)%clw_surf(ix)= sfc_var2(i,j,52)
-          Sfcprop(nb)%qwv_surf(ix)= sfc_var2(i,j,53)
-          Sfcprop(nb)%tsnow(ix)   = sfc_var2(i,j,54)
-          Sfcprop(nb)%sr(ix)      = sfc_var2(i,j,55)
+          Sfcprop(nb)%wet1(ix)       = sfc_var2(i,j,51)
+          Sfcprop(nb)%clw_surf(ix)   = sfc_var2(i,j,52)
+          Sfcprop(nb)%qwv_surf(ix)   = sfc_var2(i,j,53)
+          Sfcprop(nb)%tsnow(ix)      = sfc_var2(i,j,54)
+          Sfcprop(nb)%sr(ix)         = sfc_var2(i,j,55)
+          Sfcprop(nb)%snowfallac(ix) = sfc_var2(i,j,56)
+          Sfcprop(nb)%acsnow(ix)     = sfc_var2(i,j,57)
         endif
 #endif
 
@@ -905,7 +909,7 @@ module FV3GFS_io_mod
     nvar2m = 32
     nvar2o = 18
 #ifdef CCPP
-    nvar2r = 5
+    nvar2r = 7
     if (Model%lsm == Model%lsm_ruc) then
       nvar3  = 5
     else
@@ -1018,6 +1022,8 @@ module FV3GFS_io_mod
       sfc_name2(53) = 'qwv_surf'
       sfc_name2(54) = 'tsnow'
       sfc_name2(55) = 'sr'
+      sfc_name2(56) = 'snowfall_acc'
+      sfc_name2(57) = 'swe_snowfall_acc'
 #endif
 
       !--- register the 2D fields
@@ -1192,6 +1198,8 @@ module FV3GFS_io_mod
           sfc_var2(i,j,53) = Sfcprop(nb)%qwv_surf(ix)
           sfc_var2(i,j,54) = Sfcprop(nb)%tsnow(ix)
           sfc_var2(i,j,55) = Sfcprop(nb)%sr(ix)
+          sfc_var2(i,j,56) = Sfcprop(nb)%snowfallac(ix)
+          sfc_var2(i,j,57) = Sfcprop(nb)%acsnow(ix)
         endif
 #endif
 

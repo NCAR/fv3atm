@@ -2221,6 +2221,32 @@ module GFS_diagnostics
       ExtDiag(idx)%data(nb)%var2 => Sfcprop(nb)%snowd(:)
     enddo
 
+#ifdef CCPP
+    if (Model%lsm == Model%lsm_ruc) then
+      idx = idx + 1
+      ExtDiag(idx)%axes = 2
+      ExtDiag(idx)%name = 'snowfall_acc'
+      ExtDiag(idx)%desc = 'total accumulated frozen precipitation'
+      ExtDiag(idx)%unit = 'kg m-2'
+      ExtDiag(idx)%mod_name = 'gfs_sfc'
+      allocate (ExtDiag(idx)%data(nblks))
+      do nb = 1,nblks
+        ExtDiag(idx)%data(nb)%var2 => Sfcprop(nb)%snowfallac(:)
+      enddo
+
+      idx = idx + 1
+      ExtDiag(idx)%axes = 2
+      ExtDiag(idx)%name = 'swe_snowfall_acc'
+      ExtDiag(idx)%desc = 'accumulated water equivalent of frozen precipitation'
+      ExtDiag(idx)%unit = 'kg m-2'
+      ExtDiag(idx)%mod_name = 'gfs_sfc'
+      allocate (ExtDiag(idx)%data(nblks))
+      do nb = 1,nblks
+        ExtDiag(idx)%data(nb)%var2 => Sfcprop(nb)%acsnow(:)
+      enddo
+    endif
+#endif
+
     idx = idx + 1
     ExtDiag(idx)%axes = 2
     ExtDiag(idx)%name = 'crain'

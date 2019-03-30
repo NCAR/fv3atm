@@ -358,7 +358,7 @@ module GFS_typedefs
 !! | GFS_Data(cdata%blk_no)%Sfcprop%fice        | sea_ice_concentration                                                  | ice fraction over open water                           | frac          |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Sfcprop%hprim       |                                                                        | topographic standard deviation                         | m             |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Sfcprop%hprime      | statistical_measures_of_subgrid_orography                              | orographic metrics                                     | various       |    2 | real    | kind_phys | none   | F        |
-!! | GFS_Data(cdata%blk_no)%Sfcprop%sncovr      | surface_snow_area_fraction_for_diagnostics                             | surface snow area fraction                             | frac          |    1 | real    | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Sfcprop%sncovr      | surface_snow_area_fraction                                             | surface snow area fraction                             | frac          |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Sfcprop%snoalb      | upper_bound_on_max_albedo_over_deep_snow                               | maximum snow albedo                                    | frac          |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Sfcprop%alvsf       |                                                                        | mean vis albedo with strong cosz dependency            | frac          |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Sfcprop%alnsf       |                                                                        | mean nir albedo with strong cosz dependency            | frac          |    1 | real    | kind_phys | none   | F        |
@@ -422,6 +422,8 @@ module GFS_typedefs
 !! | GFS_Data(cdata%blk_no)%Sfcprop%flag_frsoil | flag_for_frozen_soil_physics                                           | flag for frozen soil physics (RUC)                     | flag          |    2 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Sfcprop%rhofr       | density_of_frozen_precipitation                                        | density of frozen precipitation                        | kg m-3        |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Sfcprop%tsnow       | snow_temperature_bottom_first_layer                                    | snow temperature at the bottom of the first snow layer | K             |    1 | real    | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Sfcprop%snowfallac  | total_accumulated_snowfall                                             | run-total snow accumulation on the ground              | kg m-2        |    1 | real    | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Sfcprop%acsnow      | accumulated_water_equivalent_of_frozen_precip                          | snow water equivalent of run-total frozen precip       | kg m-2        |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Sfcprop%ustm        | surface_friction_velocity_drag                                         | friction velocity isolated for momentum only           | m s-1         |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Sfcprop%zol         | surface_stability_parameter                                            | monin obukhov surface stability parameter              | none          |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Sfcprop%mol         | theta_star                                                             | temperature flux divided by ustar (temperature scale)  | K             |    1 | real    | kind_phys | none   | F        |
@@ -529,6 +531,9 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: cndm_surf(:)     => null()  !< RUC LSM: surface condensation mass
     real (kind=kind_phys), pointer :: rhofr(:)         => null()  !< RUC LSM: density of frozen precipitation
     real (kind=kind_phys), pointer :: tsnow(:)         => null()  !< RUC LSM: snow temperature at the bottom of the first soil layer
+    real (kind=kind_phys), pointer :: snowfallac(:)    => null()  !< ruc lsm diagnostics
+    real (kind=kind_phys), pointer :: acsnow(:)        => null()  !< ruc lsm diagnostics
+
     !  MYNN surface layer
     real (kind=kind_phys), pointer :: ustm (:)         => null()  !u* including drag
     real (kind=kind_phys), pointer :: zol(:)           => null()  !surface stability parameter
@@ -1952,8 +1957,6 @@ module GFS_typedefs
 !! | GFS_Data(cdata%blk_no)%Intdiag%tdomzr               | dominant_freezing_rain_type                                             | dominant freezing rain type                                     | none          |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Intdiag%tdomip               | dominant_sleet_type                                                     | dominant sleet type                                             | none          |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Intdiag%tdoms                | dominant_snow_type                                                      | dominant snow type                                              | none          |    1 | real        | kind_phys | none   | F        |
-!! | GFS_Data(cdata%blk_no)%Intdiag%snowfallac           | total_accumulated_snowfall                                              | run-total snow accumulation on the ground                       | kg m-2        |    1 | real        | kind_phys | none   | F        |
-!! | GFS_Data(cdata%blk_no)%Intdiag%acsnow               | accumulated_water_equivalent_of_frozen_precip                           | snow water equivalent of run-total frozen precip                | kg m-2        |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Intdiag%ca_out               |                                                                         | cellular automata fraction                                      |               |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Intdiag%ca_deep              |                                                                         | cellular automata fraction                                      |               |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Intdiag%ca_turb              |                                                                         | cellular automata fraction                                      |               |    1 | real        | kind_phys | none   | F        |
@@ -2031,10 +2034,6 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: transa (:)     => null()   !< noah lsm diagnostics
     real (kind=kind_phys), pointer :: sbsnoa (:)     => null()   !< noah lsm diagnostics
     real (kind=kind_phys), pointer :: snowca (:)     => null()   !< noah lsm diagnostics
-#ifdef CCPP
-    real (kind=kind_phys), pointer :: snowfallac (:) => null()   !< ruc lsm diagnostics
-    real (kind=kind_phys), pointer :: acsnow     (:) => null()   !< ruc lsm diagnostics
-#endif
     real (kind=kind_phys), pointer :: soilm  (:)     => null()   !< soil moisture
     real (kind=kind_phys), pointer :: tmpmin (:)     => null()   !< min temperature at 2m height (k)
     real (kind=kind_phys), pointer :: tmpmax (:)     => null()   !< max temperature at 2m height (k)
@@ -2378,7 +2377,6 @@ module GFS_typedefs
 !! | GFS_Interstitial(cdata%thrd_no)%sigmatot                      | convective_updraft_area_fraction_at_model_interfaces                                           | convective updraft area fraction at model interfaces                                | frac          |    2 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%skip_macro                    | flag_skip_macro                                                                                | flag to skip cloud macrophysics in Morrison scheme                                  | flag          |    0 | logical     |           | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%slopetype                     | surface_slope_classification                                                                   | surface slope type at each grid cell                                                | index         |    1 | integer     |           | none   | F        |
-!! | GFS_Interstitial(cdata%thrd_no)%snowc                         | surface_snow_area_fraction                                                                     | surface snow area fraction                                                          | frac          |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%snohf                         | snow_freezing_rain_upward_latent_heat_flux                                                     | latent heat flux due to snow and frz rain                                           | W m-2         |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%snowmp                        | lwe_thickness_of_snow_amount                                                                   | explicit snow fall on physics timestep                                              | m             |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%snowmt                        | surface_snow_melt                                                                              | snow melt during timestep                                                           | m             |    1 | real        | kind_phys | none   | F        |
@@ -2583,7 +2581,6 @@ module GFS_typedefs
     real (kind=kind_phys), pointer      :: sigmatot(:,:)    => null()  !<
     logical                             :: skip_macro                  !<
     integer, pointer                    :: slopetype(:)     => null()  !<
-    real (kind=kind_phys), pointer      :: snowc(:)         => null()  !<
     real (kind=kind_phys), pointer      :: snohf(:)         => null()  !<
     real (kind=kind_phys), pointer      :: snowmp(:)        => null()  !<
     real (kind=kind_phys), pointer      :: snowmt(:)        => null()  !<
@@ -2599,7 +2596,6 @@ module GFS_typedefs
     real (kind=kind_phys), pointer      :: tseal(:)         => null()  !<
     real (kind=kind_phys), pointer      :: tsfa(:)          => null()  !<
     real (kind=kind_phys), pointer      :: tsfg(:)          => null()  !<
-    real (kind=kind_phys), pointer      :: tsnow(:)         => null()  !<
     real (kind=kind_phys), pointer      :: tsurf(:)         => null()  !<
     real (kind=kind_phys), pointer      :: ud_mf(:,:)       => null()  !<
     real (kind=kind_phys), pointer      :: ulwsfc_cice(:)   => null()  !<
@@ -2921,6 +2917,8 @@ module GFS_typedefs
        allocate (Sfcprop%cndm_surf   (IM))
        allocate (Sfcprop%rhofr       (IM))
        allocate (Sfcprop%tsnow       (IM))
+       allocate (Sfcprop%snowfallac  (IM))
+       allocate (Sfcprop%acsnow      (IM))
        !
        Sfcprop%sh2o        = clear_val
        Sfcprop%keepsmfr    = clear_val
@@ -2933,6 +2931,8 @@ module GFS_typedefs
        Sfcprop%flag_frsoil = clear_val
        Sfcprop%rhofr       = clear_val
        Sfcprop%tsnow       = clear_val
+       Sfcprop%snowfallac  = clear_val
+       Sfcprop%acsnow      = clear_val
     end if
     if (Model%do_mynnsfclay) then
     ! For MYNN surface layer scheme
@@ -5226,10 +5226,6 @@ module GFS_typedefs
     allocate (Diag%transa  (IM))
     allocate (Diag%sbsnoa  (IM))
     allocate (Diag%snowca  (IM))
-#ifdef CCPP
-    allocate (Diag%snowfallac  (IM))
-    allocate (Diag%acsnow      (IM))
-#endif
     allocate (Diag%soilm   (IM))
     allocate (Diag%tmpmin  (IM))
     allocate (Diag%tmpmax  (IM))
@@ -5407,10 +5403,6 @@ module GFS_typedefs
     Diag%transa     = zero
     Diag%sbsnoa     = zero
     Diag%snowca     = zero
-#ifdef CCPP
-    Diag%snowfallac = zero
-    Diag%acsnow     = zero
-#endif
     Diag%soilm      = zero
     Diag%tmpmin     = huge
     Diag%tmpmax     = zero
@@ -5661,7 +5653,6 @@ module GFS_typedefs
     allocate (Interstitial%sigmafrac  (IM,Model%levs))
     allocate (Interstitial%sigmatot   (IM,Model%levs))
     allocate (Interstitial%slopetype  (IM))
-    allocate (Interstitial%snowc      (IM))
     allocate (Interstitial%snohf      (IM))
     allocate (Interstitial%snowmt     (IM))
     allocate (Interstitial%soiltype   (IM))
@@ -6019,7 +6010,6 @@ module GFS_typedefs
     Interstitial%sigmafrac    = clear_val
     Interstitial%sigmatot     = clear_val
     Interstitial%slopetype    = 0
-    Interstitial%snowc        = clear_val
     Interstitial%snohf        = clear_val
     Interstitial%snowmt       = clear_val
     Interstitial%soiltype     = 0
@@ -6237,7 +6227,6 @@ module GFS_typedefs
     write (0,*) 'sum(Interstitial%sigmafrac   ) = ', sum(Interstitial%sigmafrac   )
     write (0,*) 'sum(Interstitial%sigmatot    ) = ', sum(Interstitial%sigmatot    )
     write (0,*) 'sum(Interstitial%slopetype   ) = ', sum(Interstitial%slopetype   )
-    write (0,*) 'sum(Interstitial%snowc       ) = ', sum(Interstitial%snowc       )
     write (0,*) 'sum(Interstitial%snohf       ) = ', sum(Interstitial%snohf       )
     write (0,*) 'sum(Interstitial%snowmt      ) = ', sum(Interstitial%snowmt      )
     write (0,*) 'sum(Interstitial%soiltype    ) = ', sum(Interstitial%soiltype    )
