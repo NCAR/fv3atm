@@ -1,9 +1,5 @@
 module module_physics_driver
 
-! # - define DHDEBUG
-
-#include "debug_bitforbit_module_use.inc"
-
   use machine,               only: kind_phys
   use physcons,              only: con_cp, con_fvirt, con_g, con_rd,    &
                                    con_rv, con_hvap, con_hfus,          &
@@ -768,8 +764,6 @@ module module_physics_driver
       Stateout%gq0(:,:,:) = Statein%qgrs(:,:,:)
 #endif
 
-#include "debug_bitforbit_diagtoscreen.inc"
-
 !
 !===> ...  begin here
 
@@ -1209,6 +1203,7 @@ module module_physics_driver
 #endif
       enddo
 !
+! DH* note: this block is not yet in CCPP
       if (Model%cplflx) then
         do i=1,im
           islmsk_cice(i) = nint(Coupling%slimskin_cpl(i))
@@ -1226,6 +1221,7 @@ module module_physics_driver
           if(flag_cice(i))Sfcprop%tsfc(i) = fice_cice(i)*tisfc_cice(i) + (1.0 - fice_cice(i))*tsea_cice(i)
         enddo
       endif
+! *DH
 
 #ifndef CCPP
       do k=1,levs
@@ -1667,8 +1663,6 @@ module module_physics_driver
 !  --- ...  lu: iter-loop over (sfc_diff,sfc_drv,sfc_ocean,sfc_sice)
 
       do iter=1,2
-
-#include "debug_bitforbit_diagtoscreen.inc"
 
 !  --- ...  surface exchange coefficients
 !
@@ -2378,8 +2372,6 @@ module module_physics_driver
 #endif
 
       enddo   ! end iter_loop
-
-#include "debug_bitforbit_diagtoscreen.inc"
 
 #ifdef CCPP
       if (Model%me==0) write(0,*) 'CCPP DEBUG: calling dcyc2t3_post through option B'
@@ -3724,6 +3716,7 @@ module module_physics_driver
         deallocate(vdftra, dvdftra)
       endif
 
+! DH* note: this block is not yet in CCPP
       if (Model%cplflx) then
         do i=1,im
           if (flag_cice(i)) then
@@ -3753,6 +3746,7 @@ module module_physics_driver
         Coupling%dkt     (:,:) = dkt (:,:)
 #endif
       endif
+! *DH
 
 !     if (lprnt) then
 !       write(0,*) ' dusfc1=',dusfc1(ipr),' kdt=',kdt,' lat=',lat
@@ -3935,6 +3929,11 @@ module module_physics_driver
       Interstitial(nt)%sigma    = sigma       ! intent(out)
       Interstitial(nt)%gamma    = gamma       ! intent(out)
       Interstitial(nt)%elvmax   = elvmax      ! intent(out)
+      !Model%lssav                            ! intent(in)
+      !Model%ldiag3d                          ! intent(in)
+      Interstitial(nt)%dtdt = dtdt            ! intent(in)
+      !Diag%dt3dt(:,:,7)                      ! intent(inout)
+      !Model%dtf                              ! intent(in)
       !cdata_block(nb,nt)%errmsg = errmsg     ! intent(out)
       !cdata_block(nb,nt)%errflg = errflg     ! intent(out)
       call ccpp_physics_run(cdata_block(nb,nt), scheme_name="gwdps_pre", ierr=ierr)
@@ -4002,6 +4001,22 @@ module module_physics_driver
         elvmax = 0
 
       endif   ! end if_nmtvr
+
+      if (Model%lssav) then
+        if (Model%ldiag3d) then
+          do k=1,levs
+            do i=1,im
+
+#ifdef WORKAROUND_DT3DT7
+              Diag%dt3dt(i,k,7) = Diag%dt3dt(i,k,7) - dtdt(i,k)
+#else
+              Diag%dt3dt(i,k,7) = Diag%dt3dt(i,k,7) - dtdt(i,k)*dtf
+#endif
+            enddo
+         enddo
+        endif
+      endif
+
 #endif
 
 #ifdef CCPP
@@ -4051,16 +4066,6 @@ module module_physics_driver
       end if
 #else
       if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of gwdps'
-
-      if (Model%lssav) then
-        if (Model%ldiag3d) then
-          do k=1,levs
-            do i=1,im
-              Diag%dt3dt(i,k,7) = Diag%dt3dt(i,k,7) - dtdt(i,k)
-            enddo
-         enddo
-        endif
-      endif
 
       call gwdps(im, ix, im, levs, dvdt, dudt, dtdt,        &
                  Statein%ugrs, Statein%vgrs, Statein%tgrs,  &
@@ -5638,9 +5643,8 @@ module module_physics_driver
 !    &,' cnv_prc3sum=',sum(cnv_prc3(ipr,1:levs))
 !     if (lprnt) write(0,*)' gt04=',gt0(ipr,1:10)
 
-! For CCPP compliant physics, this code is in GFS_DCNV_generic_post;
-! for non-CCPP compliant physics (RAS only, this code is copied to
-! before/after rascnv)
+! For CCPP compliant physics, this code is partially in GFS_DCNV_generic_post;
+! for non-CCPP compliant physics (RAS only, this code is copied to before/after rascnv)
 #ifndef CCPP
           cld1d = 0
 
@@ -5677,9 +5681,8 @@ module module_physics_driver
 
         endif   ! end if_not_ras
 
-! For CCPP compliant physics, this code is in GFS_DCNV_generic_post;
-! for non-CCPP compliant physics (RAS only, this code is copied to
-! before/after rascnv)
+! For CCPP compliant physics, this code is partially in GFS_DCNV_generic_post;
+! for non-CCPP compliant physics (RAS only, this code is copied to before/after rascnv)
 #ifndef CCPP
         if(Model%isppt_deep)then
            Coupling%tconvtend = Stateout%gt0 - savet
@@ -6758,6 +6761,7 @@ module module_physics_driver
                    Tbd%acv, Tbd%acvb, Tbd%acvt, Cldprop%cv, Cldprop%cvb, Cldprop%cvt)
 #endif
 
+! DH* - this block is not yet in CCPP
       if (Model%moist_adj) then       ! moist convective adjustment
 !                                     ---------------------------
 !
@@ -6802,13 +6806,16 @@ module module_physics_driver
           if (Model%ldiag3d) then
             do k=1,levs
               do i=1,im
-                Diag%dt3dt(i,k,8) = Diag%dt3dt(i,k,8) + (Stateout%gt0(i,k)  -dtdt(i,k)  ) * frain
+! DH* dt3dt has last dim 1:7 only (GFS_typedefs.F90)
+!                 Diag%dt3dt(i,k,8) = Diag%dt3dt(i,k,8) + (Stateout%gt0(i,k)  -dtdt(i,k)  ) * frain
+! *DH
 !                Diag%dq3dt(i,k,2) = Diag%dq3dt(i,k,2) + (Stateout%gq0(i,k,1)-dqdt(i,k,1)) * frain
               enddo
             enddo
           endif
         endif
       endif               !       moist convective adjustment over
+! *DH
 !
 #ifdef CCPP
 ! OPTION B - works with all compilers
@@ -7710,22 +7717,24 @@ module module_physics_driver
               enddo
             endif 
           enddo
-!Calculate hourly max 1-km agl and -10C reflectivity
-          if(Model%lradar .and. (imp_physics == 11 .or. imp_physics == 8))then
-            allocate(refd(im))
-            allocate(refd263k(im))
-            call max_fields(Statein%phil,Diag%refl_10cm,con_g,im,levs,refd,Stateout%gt0,refd263k)
-            do i=1,im
-              if(mod(kdtminus1,nsteps_per_reset)==0)then
-                Diag%refdmax(I) = -35.
-                Diag%refdmax263k(I) = -35.
-              endif
-              Diag%refdmax(i) = max(Diag%refdmax(i),refd(i))
-              Diag%refdmax263k(i) = max(Diag%refdmax263k(i),refd263k(i))
-            enddo
-            deallocate (refd) 
-            deallocate (refd263k)
-          endif
+! DH* moved this down to the other maximum hourly diagnpstics calculations
+!!Calculate hourly max 1-km agl and -10C reflectivity
+!          if(Model%lradar .and. (imp_physics == 11 .or. imp_physics == 8))then
+!            allocate(refd(im))
+!            allocate(refd263k(im))
+!            call max_fields(Statein%phil,Diag%refl_10cm,con_g,im,levs,refd,Stateout%gt0,refd263k)
+!            do i=1,im
+!              if(mod(kdtminus1,nsteps_per_reset)==0)then
+!                Diag%refdmax(I) = -35.
+!                Diag%refdmax263k(I) = -35.
+!              endif
+!              Diag%refdmax(i) = max(Diag%refdmax(i),refd(i))
+!              Diag%refdmax263k(i) = max(Diag%refdmax263k(i),refd263k(i))
+!            enddo
+!            deallocate (refd) 
+!            deallocate (refd263k)
+!          endif
+! *DH
 !
           if(Model%effr_in) then 
             call cloud_diagnosis (1, im, 1, levs, den(1:im,1:levs),             & 
@@ -8345,7 +8354,65 @@ module module_physics_driver
       endif
 #endif
 
-#ifndef CCPP
+#ifdef CCPP
+         if (Model%me==0) write(0,*) 'CCPP DEBUG: calling maximum_hourly_diagnostics through option B'
+         ! Copy local variables from driver to appropriate interstitial variables
+         !Interstitial(nt)%im               ! intent(in) - set in Interstitial(nt)%create
+         !Model%levs                        ! intent(in)
+         !Model%kdt                         ! intent(in)
+         !Interstitial(nt)%nsteps_per_reset ! intent(in) - set in Interstitial(nt)%create
+         !Model%lradar                      ! intent(in)
+         !Model%imp_physics                 ! intent(in)
+         !Model%imp_physics_gfdl            ! intent(in)
+         !Model%imp_physics_thompson        ! intent(in)
+         !con_g                             ! intent(in)
+         !Statein%phil                      ! intent(in)
+         !Stateout%gt0                      ! intent(in)
+         !Diag%refl_10cm                    ! intent(in)
+         !Diag%refdmax                      ! intent(inout)
+         !Diag%refdmax263k                  ! intent(inout)
+         !Diag%u10m                         ! intent(in)
+         !Diag%v10m                         ! intent(in)
+         !Diag%u10max                       ! intent(inout)
+         !Diag%v10max                       ! intent(inout)
+         !Diag%spd10max                     ! intent(inout)
+         !Statein%pgr                       ! intent(in)
+         !Sfcprop%t2m                       ! intent(in)
+         !Sfcprop%q2m                       ! intent(in)
+         !Diag%t02max                       ! intent(inout)
+         !Diag%t02min                       ! intent(inout)
+         !Diag%rh02max                      ! intent(inout)
+         !Diag%rh02min                      ! intent(inout)
+         cdata_block(nb,nt)%errmsg = errmsg ! intent(out)
+         cdata_block(nb,nt)%errflg = errflg ! intent(out)
+         call ccpp_physics_run(cdata_block(nb,nt), scheme_name="maximum_hourly_diagnostics",ierr=ierr)
+        ! Copy back intent(inout) interstitial variables to local variables in driver
+         errmsg = trim(cdata_block(nb,nt)%errmsg)
+         errflg = cdata_block(nb,nt)%errflg
+         if (errflg/=0) then
+             write(0,*) 'Error in call to maximum_hourly_diagnostics: '//trim(errmsg)
+             stop
+         end if
+#else
+         if (Model%me==0) write(0,*) 'CCPP DEBUG: calling non-CCPP compliant version of maximum_hourly_diagnostics'
+! DH* moved here from inside "if (imp_physics == Model%imp_physics_gfdl)" block
+!Calculate hourly max 1-km agl and -10C reflectivity
+         if(Model%lradar .and. (imp_physics == Model%imp_physics_gfdl .or. imp_physics == Model%imp_physics_thompson))then
+           allocate(refd(im))
+           allocate(refd263k(im))
+           call max_fields(Statein%phil,Diag%refl_10cm,con_g,im,levs,refd,Stateout%gt0,refd263k)
+           do i=1,im
+             if(mod(kdtminus1,nsteps_per_reset)==0)then
+               Diag%refdmax(I) = -35.
+               Diag%refdmax263k(I) = -35.
+             endif
+             Diag%refdmax(i) = max(Diag%refdmax(i),refd(i))
+             Diag%refdmax263k(i) = max(Diag%refdmax263k(i),refd263k(i))
+           enddo
+           deallocate (refd) 
+           deallocate (refd263k)
+         endif
+! *DH
          do i=1, im
 ! find max hourly wind speed then decompose
             tem = sqrt(Diag%u10m(i)*Diag%u10m(i) + Diag%v10m(i)*Diag%v10m(i))
@@ -8390,6 +8457,7 @@ module module_physics_driver
 !-----------------------------------
 
 
+#ifndef CCPP
       subroutine max_fields(phil,ref3D,grav,im,levs,refd,tk,refd263k)
       use machine, only : kind_phys
       integer, intent(in)               :: im,levs
@@ -8474,6 +8542,7 @@ module module_physics_driver
          refd263K(I)=dbz1avg
       enddo
       end subroutine max_fields
+#endif
 
  subroutine moist_bud(im,ix,ix2,levs,me,kdt,grav,dtp,delp,rain, &
                            qv0,ql0,qi0,qv1,ql1,qi1,comp, xlon, xlat)
