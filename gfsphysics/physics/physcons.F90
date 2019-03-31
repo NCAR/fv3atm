@@ -170,10 +170,10 @@
 
 #ifndef CCPP
   real(kind=kind_phys) :: dxmax, dxmin, dxinv, rhc_max
-#endif
 
 ! For min/max hourly rh02m and t02m
   real(kind=kind_phys),parameter ::PQ0=379.90516E0,A2A=17.2693882,A3=273.16,A4=35.86,RHmin=1.0E-6 
+#endif
 
 !........................................!
       end module physcons                !
