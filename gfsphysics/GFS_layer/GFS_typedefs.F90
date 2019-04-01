@@ -865,6 +865,7 @@ module GFS_typedefs
 !! | GFS_Control%prautco                  | coefficient_from_cloud_water_to_rain                                          | auto conversion coeff from cloud to rain                | none          |    1 | real      | kind_phys | none   | F        |
 !! | GFS_Control%evpco                    | coefficient_for_evaporation_of_rainfall                                       | coeff for evaporation of largescale rain                | none          |    0 | real      | kind_phys | none   | F        |
 !! | GFS_Control%wminco                   | cloud_condensed_water_conversion_threshold                                    | water and ice minimum threshold for Zhao                | none          |    1 | real      | kind_phys | none   | F        |
+!! | GFS_Control%avg_max_length           | time_interval_for_maximum_hourly_fields                                       | reset time interval for maximum hourly fields           | s             |    0 | real      | kind_phys | none   | F        |
 !! | GFS_Control%fprcp                    | number_of_frozen_precipitation_species                                        | number of frozen precipitation species                  | count         |    0 | integer   |           | none   | F        |
 !! | GFS_Control%pdfflag                  | flag_for_pdf_for_morrison_gettelman_microphysics_scheme                       | pdf flag for MG macrophysics                            | flag          |    0 | integer   |           | none   | F        |
 !! | GFS_Control%mg_dcs                   | mg_autoconversion_size_threshold_ice_snow                                     | autoconversion size threshold for cloud ice to snow for MG microphysics       | um      |    0 | real       | kind_phys | none   | F        |
@@ -1231,7 +1232,7 @@ module GFS_typedefs
     real(kind=kind_phys) :: prautco(2)         !< [in] auto conversion coeff from cloud to rain
     real(kind=kind_phys) :: evpco              !< [in] coeff for evaporation of largescale rain
     real(kind=kind_phys) :: wminco(2)          !< [in] water and ice minimum threshold for Zhao
-
+    real(kind=kind_phys) :: avg_max_length     !< reset time in seconds for max hourly fields
     !--- M-G microphysical parameters
     integer              :: fprcp              !< no prognostic rain and snow (MG)
     integer              :: pdfflag            !< pdf flag for MG macrophysics
@@ -1917,6 +1918,9 @@ module GFS_typedefs
 !! | GFS_Data(cdata%blk_no)%Intdiag%u10mmax              | maximum_x_wind_at_10m                                                   | maximum x wind at 10 m                                          | m s-1         |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Intdiag%v10mmax              | maximum_y_wind_at_10m                                                   | maximum y wind at 10 m                                          | m s-1         |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Intdiag%wind10mmax           | maximum_wind_at_10m                                                     | maximum wind speed at 10 m                                      | m s-1         |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Intdiag%u10max               | maximum_u_wind_at_10m_over_maximum_hourly_time_interval                 | maximum u wind at 10m over maximum hourly time interval         | m s-1         |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Intdiag%v10max               | maximum_v_wind_at_10m_over_maximum_hourly_time_interval                 | maximum v wind at 10m over maximum hourly time interval         | m s-1         |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Intdiag%spd10max             | maximum_wind_at_10m_over_maximum_hourly_time_interval                   | maximum wind at 10m over maximum hourly time interval           | m s-1         |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Intdiag%rain                 | lwe_thickness_of_precipitation_amount_on_dynamics_timestep              | total rain at this time step                                    | m             |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Intdiag%rainc                | lwe_thickness_of_convective_precipitation_amount_on_dynamics_timestep   | convective rain at this time step                               | m             |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Intdiag%ice                  | lwe_thickness_of_ice_amount_on_dynamics_timestep                        | ice fall at this time step                                      | m             |    1 | real        | kind_phys | none   | F        |
@@ -1977,11 +1981,12 @@ module GFS_typedefs
 !! | GFS_Data(cdata%blk_no)%Intdiag%dv3dt(:,:,4)         | cumulative_change_in_y_wind_due_to_convective_gravity_wave_drag         | cumulative change in y wind due to convective gravity wave drag | m s-1         |    2 | real        | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Intdiag%dt3dt                |                                                                         | temperature change due to physics                               |               |    3 | real        | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Intdiag%dt3dt(:,:,1)         | cumulative_change_in_temperature_due_to_longwave_radiation              | cumulative change in temperature due to longwave radiation      | K             |    2 | real        | kind_phys | none   | F        |
-!! | GFS_Data(cdata%blk_no)%Intdiag%dt3dt(:,:,2)         | cumulative_change_in_temperature_due_to_shortwave_radiation_and_orographic_gravity_wave_drag | cumulative change in temperature due to SW rad and oro. GWD | K     |    2 | real        | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Intdiag%dt3dt(:,:,2)         | cumulative_change_in_temperature_due_to_shortwave_radiation             | cumulative change in temperature due to shortwave radiation     | K             |    2 | real        | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Intdiag%dt3dt(:,:,3)         | cumulative_change_in_temperature_due_to_PBL                               | cumulative change in temperature due to PBL                            | K             |    2 | real        | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Intdiag%dt3dt(:,:,4)         | cumulative_change_in_temperature_due_to_deep_convection                   | cumulative change in temperature due to deep conv.                     | K             |    2 | real        | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Intdiag%dt3dt(:,:,5)         | cumulative_change_in_temperature_due_to_shal_convection                   | cumulative change in temperature due to shal conv.                     | K             |    2 | real        | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Intdiag%dt3dt(:,:,6)         | cumulative_change_in_temperature_due_to_microphysics                      | cumulative change in temperature due to microphysics                   | K             |    2 | real        | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Intdiag%dt3dt(:,:,7)         | cumulative_change_in_temperature_due_to_orographic_gravity_wave_drag      | cumulative change in temperature due to orographic gravity wave drag   | K             |    2 | real        | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Intdiag%dq3dt                | cumulative_change_in_water_vapor_specific_humidity_due_to_physics         | cumulative change in water vapor specific humidity due to physics      | kg kg-1       |    3 | real        | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Intdiag%dq3dt(:,:,1)         | cumulative_change_in_water_vapor_specific_humidity_due_to_PBL             | cumulative change in water vapor specific humidity due to PBL          | kg kg-1       |    2 | real        | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Intdiag%dq3dt(:,:,2)         | cumulative_change_in_water_vapor_specific_humidity_due_to_deep_convection | cumulative change in water vapor specific humidity due to deep conv.   | kg kg-1       |    2 | real        | kind_phys | none   | F        |
@@ -1992,6 +1997,12 @@ module GFS_typedefs
 !! | GFS_Data(cdata%blk_no)%Intdiag%dq3dt(:,:,7)         | cumulative_change_in_ozone_concentration_due_to_ozone_mixing_ratio        | cumulative change in ozone concentration due to ozone mixing ratio     | kg kg-1       |    2 | real        | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Intdiag%dq3dt(:,:,8)         | cumulative_change_in_ozone_concentration_due_to_temperature               | cumulative change in ozone concentration due to temperature            | kg kg-1       |    2 | real        | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Intdiag%dq3dt(:,:,9)         | cumulative_change_in_ozone_concentration_due_to_overhead_ozone_column     | cumulative change in ozone concentration due to overhead ozone column  | kg kg-1       |    2 | real        | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Intdiag%refdmax              | maximum_reflectivity_at_1km_agl_over_maximum_hourly_time_interval         | maximum reflectivity at 1km agl over maximum hourly time interval      | dBZ           |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Intdiag%refdmax263k          | maximum_reflectivity_at_minus10c_over_maximum_hourly_time_interval        | maximum reflectivity at minus10c over maximum hourly time interval     | dBZ           |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Intdiag%t02max               | maximum_temperature_at_2m_over_maximum_hourly_time_interval               | maximum temperature at 2m over maximum hourly time interval            | K             |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Intdiag%t02min               | minimum_temperature_at_2m_over_maximum_hourly_time_interval               | minumum temperature at 2m over maximum hourly time interval            | K             |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Intdiag%rh02max              | maximum_relative_humidity_at_2m_over_maximum_hourly_time_interval         | maximum relative humidity at 2m over maximum hourly time interval      | %             |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Intdiag%rh02min              | minimum_relative_humidity_at_2m_over_maximum_hourly_time_interval         | minumum relative humidity at 2m over maximum hourly time interval      | %             |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Intdiag%upd_mf               | cumulative_atmosphere_updraft_convective_mass_flux                        | cumulative updraft mass flux                                           | Pa            |    2 | real        | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Intdiag%dwn_mf               | cumulative_atmosphere_downdraft_convective_mass_flux                      | cumulative downdraft mass flux                                         | Pa            |    2 | real        | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Intdiag%det_mf               | cumulative_atmosphere_detrainment_convective_mass_flux                    | cumulative detrainment mass flux                                       | Pa            |    2 | real        | kind_phys | none   | F        |
@@ -2061,6 +2072,9 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: u10mmax(:)     => null()   !< maximum u-wind
     real (kind=kind_phys), pointer :: v10mmax(:)     => null()   !< maximum v-wind
     real (kind=kind_phys), pointer :: wind10mmax(:)  => null()   !< maximum wind speed
+    real (kind=kind_phys), pointer :: u10max(:)      => null()   !< maximum u-wind used with avg_max_length
+    real (kind=kind_phys), pointer :: v10max(:)      => null()   !< maximum v-wind used with avg_max_length
+    real (kind=kind_phys), pointer :: spd10max(:)    => null()   !< maximum wind speed used with avg_max_length
     real (kind=kind_phys), pointer :: rain   (:)     => null()   !< total rain at this time step
     real (kind=kind_phys), pointer :: rainc  (:)     => null()   !< convective rain at this time step
     real (kind=kind_phys), pointer :: ice    (:)     => null()   !< ice fall at this time step
@@ -2139,15 +2153,20 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: dv3dt (:,:,:)  => null()   !< v momentum change due to physics
     real (kind=kind_phys), pointer :: dt3dt (:,:,:)  => null()   !< temperature change due to physics
     real (kind=kind_phys), pointer :: dq3dt (:,:,:)  => null()   !< moisture change due to physics
-
+    real (kind=kind_phys), pointer :: refdmax (:)    => null()   !< max hourly 1-km agl reflectivity
+    real (kind=kind_phys), pointer :: refdmax263k (:)=> null()   !< max hourly -10C reflectivity
+    real (kind=kind_phys), pointer :: t02max (:)     => null()   !< max hourly 2m T
+    real (kind=kind_phys), pointer :: t02min (:)     => null()   !< min hourly 2m T
+    real (kind=kind_phys), pointer :: rh02max (:)    => null()   !< max hourly 2m RH
+    real (kind=kind_phys), pointer :: rh02min (:)    => null()   !< min hourly 2m RH
 !--- accumulated quantities for 3D diagnostics
-    real (kind=kind_phys), pointer :: upd_mf (:,:)   => null()  !< instantaneous convective updraft mass flux
-    real (kind=kind_phys), pointer :: dwn_mf (:,:)   => null()  !< instantaneous convective downdraft mass flux
-    real (kind=kind_phys), pointer :: det_mf (:,:)   => null()  !< instantaneous convective detrainment mass flux
-    real (kind=kind_phys), pointer :: cldcov (:,:)   => null()  !< instantaneous 3D cloud fraction
+    real (kind=kind_phys), pointer :: upd_mf (:,:)   => null()   !< instantaneous convective updraft mass flux
+    real (kind=kind_phys), pointer :: dwn_mf (:,:)   => null()   !< instantaneous convective downdraft mass flux
+    real (kind=kind_phys), pointer :: det_mf (:,:)   => null()   !< instantaneous convective detrainment mass flux
+    real (kind=kind_phys), pointer :: cldcov (:,:)   => null()   !< instantaneous 3D cloud fraction
 
     !--- MP quantities for 3D diagnositics
-    real (kind=kind_phys), pointer :: refl_10cm(:,:) => null()  !< instantaneous refl_10cm
+    real (kind=kind_phys), pointer :: refl_10cm(:,:) => null()   !< instantaneous refl_10cm
 
     contains
       procedure :: create    => diag_create
@@ -2324,6 +2343,7 @@ module GFS_typedefs
 !! | GFS_Interstitial(cdata%thrd_no)%ncpl                          | local_condesed_water_number_concentration                                                      | number concentration of condensed water local to physics                            | kg-1          |    2 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%ncpr                          | local_rain_number_concentration                                                                | number concentration of rain local to physics                                       | kg-1          |    2 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%ncps                          | local_snow_number_concentration                                                                | number concentration of snow local to physics                                       | kg-1          |    2 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%nsteps_per_reset              | number_of_time_steps_per_maximum_hourly_time_interval                                          | number_of_time_steps_per_maximum_hourly_time_interval                               | count         |    0 | integer     |           | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%ntiwx                         | index_for_ice_cloud_condensate_vertical_diffusion_tracer                                       | index for ice cloud condensate n the vertically diffused tracer array               | index         |    0 | integer     |           | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%ntk                           | index_for_turbulent_kinetic_energy_convective_transport_tracer                                 | index for turbulent kinetic energy in the convectively transported tracer array     | index         |    0 | integer     |           | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%ntkev                         | index_for_turbulent_kinetic_energy_vertical_diffusion_tracer                                   | index for turbulent kinetic energy in the vertically diffused tracer array          | index         |    0 | integer     |           | none   | F        |
@@ -2536,6 +2556,7 @@ module GFS_typedefs
     integer                             :: nn                          !<
     integer                             :: nncl                        !<
     integer                             :: nsamftrac                   !<
+    integer                             :: nsteps_per_reset            !<
     integer                             :: ntiwx                       !<
     integer                             :: ntk                         !<
     integer                             :: ntkev                       !<
@@ -3371,6 +3392,8 @@ module GFS_typedefs
     real(kind=kind_phys) :: prautco(2)     = (/1.0d-4,1.0d-4/)  !< [in] auto conversion coeff from cloud to rain
     real(kind=kind_phys) :: evpco          = 2.0d-5             !< [in] coeff for evaporation of largescale rain
     real(kind=kind_phys) :: wminco(2)      = (/1.0d-5,1.0d-5/)  !< [in] water and ice minimum threshold for Zhao
+!---Max hourly
+    real(kind=kind_phys) :: avg_max_length = 3600.              !< reset value in seconds for max hourly.
 
 !--- M-G microphysical parameters
     integer              :: fprcp             =  0                 !< no prognostic rain and snow (MG)
@@ -3644,6 +3667,8 @@ module GFS_typedefs
                                mg_ncnst, mg_ninst, mg_ngnst, sed_supersat, do_sb_physics,   &
                                mg_alf,   mg_qcmin, mg_do_ice_gmao, mg_do_liq_liu,           &
                                ltaerosol, lradar, ttendlim, lgfdlmprad,                     &
+                          !--- max hourly
+                               avg_max_length,                                              &
                           !--- land/surface model control
 #ifdef CCPP
                                lsm, lsoil, lsoil_lsm, nmtvr, ivegsrc, mom4ice, use_ufo,     &
@@ -3851,6 +3876,8 @@ module GFS_typedefs
     Model%prautco          = prautco
     Model%evpco            = evpco
     Model%wminco           = wminco
+!--- Max hourly
+    Model%avg_max_length   = avg_max_length
 !--- Morrison-Gettelman MP parameters
     Model%fprcp            = fprcp
     Model%pdfflag          = pdfflag
@@ -4497,6 +4524,7 @@ module GFS_typedefs
       Model%pdfcld  = .false.
       Model%shcnvcw = .false.
       Model%ncnd    = 5
+      if (Model%me == Model%master) print *,' avg_max_length=',Model%avg_max_length
       if (Model%me == Model%master) print *,' Using GFDL Cloud Microphysics'
     else
       if (Model%me == Model%master) print *,'Wrong imp_physics value. Job abort.'
@@ -5256,6 +5284,9 @@ module GFS_typedefs
     allocate (Diag%u10mmax (IM))
     allocate (Diag%v10mmax (IM))
     allocate (Diag%wind10mmax (IM))
+    allocate (Diag%u10max  (IM))
+    allocate (Diag%v10max  (IM))
+    allocate (Diag%spd10max (IM))
     allocate (Diag%rain    (IM))
     allocate (Diag%rainc   (IM))
     allocate (Diag%ice     (IM))
@@ -5321,18 +5352,32 @@ module GFS_typedefs
 #endif
       allocate (Diag%du3dt  (IM,Model%levs,4))
       allocate (Diag%dv3dt  (IM,Model%levs,4))
-      allocate (Diag%dt3dt  (IM,Model%levs,6))
+      allocate (Diag%dt3dt  (IM,Model%levs,7))
+      ! DH*
+      if (Model%me==0) then
+         write(0,*) "DH WARNING: TEMPORARY ALLOCATE Diag%dq3dt with size (IM,Model%levs,9) to avoid crash on MacOSX/GNU (and others?) in PROD mode"
+      end if
       allocate (Diag%dq3dt  (IM,Model%levs,9))
+      ! *DH
+!      allocate (Diag%dq3dt  (IM,Model%levs,oz_coeff+5))
 !--- needed to allocate GoCart coupling fields
-      allocate (Diag%upd_mf (IM,Model%levs))
-      allocate (Diag%dwn_mf (IM,Model%levs))
-      allocate (Diag%det_mf (IM,Model%levs))
-      allocate (Diag%cldcov (IM,Model%levs))
+!      allocate (Diag%upd_mf (IM,Model%levs))
+!      allocate (Diag%dwn_mf (IM,Model%levs))
+!      allocate (Diag%det_mf (IM,Model%levs))
+!      allocate (Diag%cldcov (IM,Model%levs))
 #ifndef CCPP
     endif
 #endif
     !--- 3D diagnostics for Thompson MP / GFDL MP
     allocate (Diag%refl_10cm(IM,Model%levs))
+
+    !--  New max hourly diag.
+    allocate (Diag%refdmax(IM))
+    allocate (Diag%refdmax263k(IM))
+    allocate (Diag%t02max(IM))
+    allocate (Diag%t02min(IM))
+    allocate (Diag%rh02max(IM))
+    allocate (Diag%rh02min(IM))
 
 #ifdef CCPP
     !--- MYNN variables:
@@ -5433,6 +5478,9 @@ module GFS_typedefs
     Diag%u10mmax    = zero
     Diag%v10mmax    = zero
     Diag%wind10mmax = zero
+    Diag%u10max     = zero
+    Diag%v10max     = zero
+    Diag%spd10max   = zero
     Diag%rain       = zero
     Diag%rainc      = zero
     Diag%ice        = zero
@@ -5494,13 +5542,22 @@ module GFS_typedefs
       Diag%du3dt   = zero
       Diag%dv3dt   = zero
       Diag%dt3dt   = zero
-      Diag%dq3dt   = zero
-      Diag%upd_mf  = zero
-      Diag%dwn_mf  = zero
-      Diag%det_mf  = zero
+!      Diag%dq3dt   = zero
+!      Diag%upd_mf  = zero
+!      Diag%dwn_mf  = zero
+!      Diag%det_mf  = zero
     endif
 
     Diag%refl_10cm = zero
+
+! max hourly diagnostics
+    Diag%refl_10cm = zero
+    Diag%refdmax = -35.
+    Diag%refdmax263k = -35.
+    Diag%t02max = -999.
+    Diag%t02min = 999.
+    Diag%rh02max = -999.
+    Diag%rh02min = 999.
 
     if (present(linit)) then
       if (linit) then
@@ -5712,25 +5769,27 @@ module GFS_typedefs
        allocate (Interstitial%ncpl (IM,Model%levs))
     end if
     ! Set components that do not change
-    Interstitial%h2o_coeff    = h2o_coeff
-    Interstitial%im           = IM
-    Interstitial%ipr          = min(IM,10)
-    Interstitial%ix           = IM
-    Interstitial%latidxprnt   = 1
-    Interstitial%levi         = Model%levs+1
-    Interstitial%levh2o       = levh2o
-    Interstitial%levozp       = levozp
-    Interstitial%lm           = Model%levr
-    Interstitial%lmk          = Model%levr+LTP
-    Interstitial%lmp          = Model%levr+1+LTP
-    Interstitial%oz_coeff     = oz_coeff
+
+    Interstitial%im               = IM
+    Interstitial%ipr              = min(IM,10)
+    Interstitial%ix               = IM
+    Interstitial%latidxprnt       = 1
+    Interstitial%levi             = Model%levs+1
+    Interstitial%nsteps_per_reset = nint(Model%avg_max_length/Model%dtp)
+    Interstitial%levh2o           = levh2o
+    Interstitial%levozp           = levozp
+    Interstitial%lm               = Model%levr
+    Interstitial%lmk              = Model%levr+LTP
+    Interstitial%lmp              = Model%levr+1+LTP
+    Interstitial%h2o_coeff        = h2o_coeff
+    Interstitial%oz_coeff         = oz_coeff
     ! h2o_pres and oz_pres do not change during the run, but
     ! need to be set later in GFS_phys_time_vary_init (after
     ! h2o_pres/oz_pres are read in read_h2odata/read_o3data)
-    Interstitial%h2o_pres     = clear_val
-    Interstitial%oz_pres      = clear_val
+    Interstitial%h2o_pres         = clear_val
+    Interstitial%oz_pres          = clear_val
     !
-    Interstitial%skip_macro   = .false.
+    Interstitial%skip_macro       = .false.
     ! The value phys_hydrostatic from dynamics does not match the
     ! hardcoded value for calling GFDL MP in GFS_physics_driver.F90,
     ! which is set to .true.
@@ -6092,6 +6151,7 @@ module GFS_typedefs
     write (0,*) 'Interstitial%lmk               = ', Interstitial%lmk
     write (0,*) 'Interstitial%lmp               = ', Interstitial%lmp
     write (0,*) 'Interstitial%nsamftrac         = ', Interstitial%nsamftrac
+    write (0,*) 'Interstitial%nsteps_per_reset  = ', Interstitial%nsteps_per_reset
     write (0,*) 'Interstitial%ntiwx             = ', Interstitial%ntiwx
     write (0,*) 'Interstitial%nvdiff            = ', Interstitial%nvdiff
     write (0,*) 'Interstitial%oz_coeff          = ', Interstitial%oz_coeff
