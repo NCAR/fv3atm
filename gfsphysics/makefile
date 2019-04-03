@@ -272,9 +272,10 @@ $(LIBRARY): $(OBJS)
 # this is the place to override default (implicit) compilation rules
 # and create specific (explicit) rules
 
-# Reduce optimization (substitute (x)CORE-AVX2 or xHOST with (x)CORE-AVX-I) for radiation_aerosols.f
-FFLAGS_LOPT1=$(subst CORE-AVX2,CORE-AVX-I,\
-               $(subst xHOST,xCORE-AVX-I,$(FFLAGS)))
+# Reduce optimization (substitute (x)CORE-AVX2, (x)CORE-AVX512 or xHOST with (x)CORE-AVX-I) for radiation_aerosols.f
+FFLAGS_LOPT1=$(subst CORE-AVX512,CORE-AVX-I,\
+               $(subst CORE-AVX2,CORE-AVX-I,\
+                 $(subst xHOST,xCORE-AVX-I,$(FFLAGS))))
 ./physics/radiation_aerosols.o : ./physics/radiation_aerosols.f
 	$(FC) $(CPPDEFS) $(FFLAGS_LOPT1) $(OTHER_FFLAGS) -c $< -o $@
 
