@@ -5350,9 +5350,9 @@ module GFS_typedefs
       allocate (Diag%dv3dt  (IM,Model%levs,4))
       allocate (Diag%dt3dt  (IM,Model%levs,7))
       ! DH*
-      if (Model%me==0) then
-         write(0,*) "DH WARNING: TEMPORARY ALLOCATE Diag%dq3dt with size (IM,Model%levs,9) to avoid crash on MacOSX/GNU (and others?) in PROD mode"
-      end if
+      !if (Model%me==0) then
+      !   write(0,*) "DH WARNING: TEMPORARY ALLOCATE Diag%dq3dt with size (IM,Model%levs,9) to avoid crash on MacOSX/GNU (and others?) in PROD mode"
+      !end if
       allocate (Diag%dq3dt  (IM,Model%levs,9))
       ! *DH
 !      allocate (Diag%dq3dt  (IM,Model%levs,oz_coeff+5))
