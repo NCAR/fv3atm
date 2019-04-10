@@ -26,6 +26,7 @@ module CCPP_typedefs
 !! | CCPP_interstitial%dtdt                            | tendency_of_air_temperature_at_Lagrangian_surface             | air temperature tendency due to fast physics at Lagrangian surface                    | K s-1     |    3 | real      | kind_dyn  | none   | F        |
 !! | CCPP_interstitial%do_qa                           | flag_for_inline_cloud_fraction_calculation                    | flag for the inline cloud fraction calculation                                        | flag      |    0 | logical   |           | none   | F        |
 !! | CCPP_interstitial%fast_mp_consv                   | flag_for_fast_microphysics_energy_conservation                | flag for fast microphysics energy conservation                                        | flag      |    0 | logical   |           | none   | F        |
+!! | CCPP_interstitial%kapad                           | kappa_for_multigas_at_Lagrangian_surface_DHTODO_FIX_NAME      | kappa for multigas at Lagrangian surface DHTODO FIX NAME                              | none      |    3 | real      | kind_dyn  | none   | F        |
 !! | CCPP_interstitial%kmp                             | top_layer_index_for_fast_physics                              | top_layer_inder_for_gfdl_mp                                                           | index     |    0 | integer   |           | none   | F        |
 !! | CCPP_interstitial%last_step                       | flag_for_the_last_step_of_k_split_remapping                   | flag for the last step of k-split remapping                                           | flag      |    0 | logical   |           | none   | F        |
 !! | CCPP_interstitial%mdt                             | time_step_for_remapping_for_fast_physics                      | remapping time step                                                                   | s         |    0 | real      | kind_dyn  | none   | F        |
@@ -72,6 +73,7 @@ module CCPP_typedefs
      logical                             :: do_qa
      real(kind_dyn), pointer             :: dtdt(:,:,:)
      logical                             :: fast_mp_consv
+     real(kind_dyn), pointer             :: kapad(:,:,:)
      integer                             :: kmp
      logical                             :: last_step
      real(kind_dyn)                      :: mdt
@@ -175,6 +177,10 @@ contains
     allocate (Interstitial%cappa  (isd:ied, jsd:jed, 1:npz) )
 #else
     allocate (Interstitial%cappa  (isd:isd, jsd:jsd, 1)     )
+#endif
+#ifdef MULTI_GASES
+    allocate (Interstitial%kapad  (isd:ied, jsd:jed, 1:npz) )
+    kapad = kappa
 #endif
     allocate (Interstitial%dtdt   (is:ie, js:je, 1:npz)     )
     allocate (Interstitial%pfull  (1:npz)                   )
@@ -321,6 +327,9 @@ contains
     write (0,*) 'sum(Interstitial%cappa)        = ', sum(Interstitial%cappa)
     write (0,*) 'sum(Interstitial%dtdt)         = ', sum(Interstitial%dtdt)
     write (0,*) 'Interstitial%fast_mp_consv     = ', Interstitial%fast_mp_consv
+#ifdef MULTI_GASES
+    write (0,*) 'Interstitial%kapad             = ', Interstitial%kapad
+#endif
     write (0,*) 'Interstitial%last_step         = ', Interstitial%last_step
     write (0,*) 'Interstitial%out_dt            = ', Interstitial%out_dt
     write (0,*) 'sum(Interstitial%te0_2d)       = ', sum(Interstitial%te0_2d)
