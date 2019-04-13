@@ -439,7 +439,7 @@ contains
 #ifdef CCPP
    ! Do CCPP fast physics initialization before call to adiabatic_init (since this calls fv_dynamics)
 
-   ! Initialize the cdata structure 
+   ! Initialize the cdata structure
    call ccpp_init(trim(ccpp_suite), cdata, ierr)
    if (ierr/=0) then
       call mpp_error (FATAL,' atmosphere_dynamics: error in ccpp_init')
@@ -484,7 +484,11 @@ contains
 
    if (Atm(mytile)%flagstruct%do_sat_adj) then
       ! Initialize fast physics
+#ifdef STATIC
+      call ccpp_physics_init(cdata, suite_name=trim(ccpp_suite), group_name="fast_physics", ierr=ierr)
+#else
       call ccpp_physics_init(cdata, group_name="fast_physics", ierr=ierr)
+#endif
       if (ierr/=0) then
          call mpp_error (FATAL,' atmosphere_dynamics: error in ccpp_physics_init')
       end if
@@ -705,6 +709,7 @@ contains
 ! are not pointing to code in the CCPP framework, but to auto-generated
 ! ccpp_suite_cap and ccpp_group_*_cap modules behind a ccpp_static_api
    use ccpp_static_api,   only: ccpp_physics_finalize
+   use CCPP_data,         only: ccpp_suite
 #else
    use ccpp_api,          only: ccpp_physics_finalize
 #endif
@@ -718,7 +723,11 @@ contains
 
    if (Atm(mytile)%flagstruct%do_sat_adj) then
       ! Finalize fast physics
+#ifdef STATIC
+      call ccpp_physics_finalize(cdata, suite_name=trim(ccpp_suite), group_name="fast_physics", ierr=ierr)
+#else
       call ccpp_physics_finalize(cdata, group_name="fast_physics", ierr=ierr)
+#endif
       if (ierr/=0) then
         write(0,'(a)') "An error occurred in ccpp_physics_finalize for group fast_physics"
         return

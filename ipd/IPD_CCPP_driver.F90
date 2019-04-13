@@ -169,7 +169,11 @@ module IPD_CCPP_driver
       nt = 1
       do nb=1,nblks
         !--- Initialize CCPP physics
+#ifdef STATIC
+        call ccpp_physics_init(cdata_block(nb,nt), suite_name=trim(ccpp_suite), ierr=ierr)
+#else
         call ccpp_physics_init(cdata_block(nb,nt), ierr=ierr)
+#endif
         if (ierr/=0) then
           write(0,'(2(a,i4))') "An error occurred in ccpp_physics_init for block ", nb, " and thread ", nt
           write(0,'(a)') trim(cdata_block(nb,nt)%errmsg)
@@ -191,7 +195,12 @@ module IPD_CCPP_driver
       ! Since the time_vary steps only use data structures for all blocks (except the
       ! CCPP-internal variables ccpp_error_flag and ccpp_error_message, which are defined
       ! for all cdata structures independently), we can use cdata_domain here.
+
+#ifdef STATIC
+      call ccpp_physics_run(cdata_domain, suite_name=trim(ccpp_suite), group_name="time_vary", ierr=ierr)
+#else
       call ccpp_physics_run(cdata_domain, group_name="time_vary", ierr=ierr)
+#endif
       if (ierr/=0) then
         write(0,'(a)') "An error occurred in ccpp_physics_run for group time_vary"
         write(0,'(a)') trim(cdata_domain%errmsg)
@@ -216,7 +225,11 @@ module IPD_CCPP_driver
         nt = 1
 #endif
         !--- Call CCPP radiation/physics/stochastics group
+#ifdef STATIC
+        call ccpp_physics_run(cdata_block(nb,nt), suite_name=trim(ccpp_suite), group_name=trim(step), ierr=ierr2)
+#else
         call ccpp_physics_run(cdata_block(nb,nt), group_name=trim(step), ierr=ierr2)
+#endif
         if (ierr2/=0) then
            write(0,'(a,i4,a,i4)') "An error occurred in ccpp_physics_run for group " // trim(step) // ", block ", nb, " and thread ", nt
            write(0,'(a)') trim(cdata_block(nb,nt)%errmsg)
@@ -234,7 +247,11 @@ module IPD_CCPP_driver
       do nt=1,nthrds
         do nb=1,nblks
           !--- Finalize CCPP physics
+#ifdef STATIC
+          call ccpp_physics_finalize(cdata_block(nb,nt), suite_name=trim(ccpp_suite), ierr=ierr)
+#else
           call ccpp_physics_finalize(cdata_block(nb,nt), ierr=ierr)
+#endif
           if (ierr/=0) then
             write(0,'(a,i4,a,i4)') "An error occurred in ccpp_physics_finalize for block ", nb, " and thread ", nt
             write(0,'(a)') trim(cdata_block(nb,nt)%errmsg)

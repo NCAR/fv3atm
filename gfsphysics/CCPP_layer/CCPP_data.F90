@@ -78,8 +78,8 @@ module CCPP_data
     type(ccpp_t),                 dimension(:,:), allocatable, save, target :: cdata_block
 
     !------------------------------------------------------!
-    !  CCPP suite definition file                          !
+    !  CCPP suite name                                     !
     !------------------------------------------------------!
-    character(len=256)      :: ccpp_suite='undefined.xml'
+    character(len=256)      :: ccpp_suite='undefined'
 
 end module CCPP_data
