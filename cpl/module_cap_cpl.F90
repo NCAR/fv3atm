@@ -71,7 +71,8 @@ module module_cap_cpl
       ! local variables
       character(len=80)               :: fieldName
       type(ESMF_ArraySpec)            :: arrayspec
-      integer                         :: i
+      integer                         :: i, localrc
+      logical                         :: isConnected
       real(ESMF_KIND_R8), pointer     :: fptr(:,:)
 
       if (present(rc)) rc = ESMF_SUCCESS
@@ -79,53 +80,66 @@ module module_cap_cpl
       fieldName = standardName  ! use standard name as field name
 
       !! Create fields using wam2dmesh if they are WAM fields
-      if (NUOPC_IsConnected(state, fieldName=fieldName)) then
+      isConnected = NUOPC_IsConnected(state, fieldName=fieldName, rc=localrc)
+      if (ESMF_LogFoundError(rcToCheck=localrc, msg=ESMF_LOGERR_PASSTHRU, &
+        line=__LINE__, &
+        file=__FILE__, &
+        rcToReturn=rc)) return  ! bail out
 
-        field = ESMF_FieldCreate(grid, ESMF_TYPEKIND_R8, name=fieldName, rc=rc)
-        if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-          line=__LINE__, &
-          file=__FILE__)) &
-          return  ! bail out
-        call NUOPC_Realize(state, field=field, rc=rc)
-        if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-          line=__LINE__, &
-          file=__FILE__)) &
-          return
+      if (isConnected) then
 
-        call ESMF_FieldGet(field, farrayPtr=fptr, rc=rc)
-        if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
+        field = ESMF_FieldCreate(grid, ESMF_TYPEKIND_R8, name=fieldName, rc=localrc)
+        if (ESMF_LogFoundError(rcToCheck=localrc, msg=ESMF_LOGERR_PASSTHRU, &
           line=__LINE__, &
-          file=__FILE__)) &
-          return  ! bail out
+          file=__FILE__, &
+          rcToReturn=rc)) return  ! bail out
+        call NUOPC_Realize(state, field=field, rc=localrc)
+        if (ESMF_LogFoundError(rcToCheck=localrc, msg=ESMF_LOGERR_PASSTHRU, &
+          line=__LINE__, &
+          file=__FILE__, &
+          rcToReturn=rc)) return
+
+        call ESMF_FieldGet(field, farrayPtr=fptr, rc=localrc)
+        if (ESMF_LogFoundError(rcToCheck=localrc, msg=ESMF_LOGERR_PASSTHRU, &
+          line=__LINE__, &
+          file=__FILE__, &
+          rcToReturn=rc)) return  ! bail out
 
         fptr=0.d0 ! zero out the entire field
-        call NUOPC_SetAttribute(field, name="Updated", value="true", rc=rc)
-        if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
+        call NUOPC_SetAttribute(field, name="Updated", value="true", rc=localrc)
+        if (ESMF_LogFoundError(rcToCheck=localrc, msg=ESMF_LOGERR_PASSTHRU, &
           line=__LINE__, &
-          file=__FILE__)) &
-          return  ! bail out
+          file=__FILE__, &
+          rcToReturn=rc)) return  ! bail out
 
       else
         ! remove a not connected Field from State
-        call ESMF_StateRemove(state, (/fieldName/), rc=rc)
-        if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
+        call ESMF_StateRemove(state, (/fieldName/), rc=localrc)
+        if (ESMF_LogFoundError(rcToCheck=localrc, msg=ESMF_LOGERR_PASSTHRU, &
           line=__LINE__, &
-          file=__FILE__)) &
-          return  ! bail out
+          file=__FILE__, &
+          rcToReturn=rc)) return  ! bail out
       endif
 
     end subroutine realizeConnectedInternCplField
 
   !-----------------------------------------------------------------------------
 
-    subroutine realizeConnectedCplFields(state, grid, &
-      numLevels, numSoilLayers, numTracers, fieldNames, fieldTypes, fieldList, rc)
+    subroutine realizeConnectedCplFields(state, grid,                       &
+      numLevels, numSoilLayers, numTracers, num_diag_sfc_emis_flux,         &
+      num_diag_down_flux, num_diag_type_down_flux, num_diag_burn_emis_flux, &
+      num_diag_cmass, fieldNames, fieldTypes, fieldList, rc)
 
       type(ESMF_State),            intent(inout)  :: state
       type(ESMF_Grid),                intent(in)  :: grid
       integer,                        intent(in)  :: numLevels
       integer,                        intent(in)  :: numSoilLayers
       integer,                        intent(in)  :: numTracers
+      integer,                        intent(in)  :: num_diag_sfc_emis_flux
+      integer,                        intent(in)  :: num_diag_down_flux
+      integer,                        intent(in)  :: num_diag_type_down_flux
+      integer,                        intent(in)  :: num_diag_burn_emis_flux
+      integer,                        intent(in)  :: num_diag_cmass
       character(len=*), dimension(:), intent(in)  :: fieldNames
       character(len=*), dimension(:), intent(in)  :: fieldTypes
       type(ESMF_Field), dimension(:), intent(out) :: fieldList
@@ -133,6 +147,7 @@ module module_cap_cpl
 
       ! local variables
       integer          :: item
+      logical          :: isConnected
       type(ESMF_Field) :: field
 
       ! begin
@@ -146,7 +161,10 @@ module module_cap_cpl
       end if
 
       do item = 1, size(fieldNames)
-        if (NUOPC_IsConnected(state, fieldName=trim(fieldNames(item)))) then
+        isConnected = NUOPC_IsConnected(state, fieldName=trim(fieldNames(item)), rc=rc)
+        if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
+          line=__LINE__, file=__FILE__)) return  ! bail out
+        if (isConnected) then
           select case (fieldTypes(item))
             case ('l','layer')
               field = ESMF_FieldCreate(grid, typekind=ESMF_TYPEKIND_R8, &
@@ -163,7 +181,32 @@ module module_cap_cpl
             case ('t','tracer')
               field = ESMF_FieldCreate(grid, typekind=ESMF_TYPEKIND_R8, &
                 name=trim(fieldNames(item)), &
-                ungriddedLBound=(/1,1/), ungriddedUBound=(/numLevels, numTracers/), rc=rc)
+                ungriddedLBound=(/1, 1/), ungriddedUBound=(/numLevels, numTracers/), rc=rc)
+              if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
+                line=__LINE__, file=__FILE__)) return  ! bail out
+            case ('u','tracer_up_flux')
+              field = ESMF_FieldCreate(grid, typekind=ESMF_TYPEKIND_R8, &
+                name=trim(fieldNames(item)), &
+                ungriddedLBound=(/1/), ungriddedUBound=(/num_diag_sfc_emis_flux/), rc=rc)
+              if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
+                line=__LINE__, file=__FILE__)) return  ! bail out
+            case ('d','tracer_down_flx')
+              field = ESMF_FieldCreate(grid, typekind=ESMF_TYPEKIND_R8, &
+                name=trim(fieldNames(item)), &
+                ungriddedLBound=(/1, 1/),    &
+                ungriddedUBound=(/num_diag_down_flux, num_diag_type_down_flux/), rc=rc)
+              if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
+                line=__LINE__, file=__FILE__)) return  ! bail out
+            case ('b','tracer_anth_biom_emission')
+              field = ESMF_FieldCreate(grid, typekind=ESMF_TYPEKIND_R8, &
+                name=trim(fieldNames(item)), &
+                ungriddedLBound=(/1/), ungriddedUBound=(/num_diag_burn_emis_flux/), rc=rc)
+              if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
+                line=__LINE__, file=__FILE__)) return  ! bail out
+            case ('c','tracer_column_mass_density')
+              field = ESMF_FieldCreate(grid, typekind=ESMF_TYPEKIND_R8, &
+                name=trim(fieldNames(item)), &
+                ungriddedLBound=(/1/), ungriddedUBound=(/num_diag_cmass/), rc=rc)
               if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
                 line=__LINE__, file=__FILE__)) return  ! bail out
             case ('s','surface')
@@ -188,6 +231,12 @@ module module_cap_cpl
             line=__LINE__, &
             file=__FILE__)) &
             return
+          ! -- zero out field 
+          call ESMF_FieldFill(field, dataFillScheme="const", const1=0._ESMF_KIND_R8, rc=rc)
+          if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
+            line=__LINE__, &
+            file=__FILE__)) &
+            return  ! bail out
           ! -- save field
           fieldList(item) = field
         else
@@ -275,7 +324,8 @@ module module_cap_cpl
 
       rc = ESMF_SUCCESS
 
-      outGrid = ESMF_GridCreate1PeriDimUfrm( maxIndex=(/180,360/), &
+      ! 1degx1deg
+      outGrid = ESMF_GridCreate1PeriDimUfrm( maxIndex=(/360,180/), &
         minCornerCoord=(/0.0_ESMF_KIND_R8,-90.0_ESMF_KIND_R8/), &
         maxCornerCoord=(/360.0_ESMF_KIND_R8,90.0_ESMF_KIND_R8/), &
         staggerLocList=(/ESMF_STAGGERLOC_CORNER, ESMF_STAGGERLOC_CENTER/), rc=rc)
@@ -335,7 +385,8 @@ module module_cap_cpl
       integer,          intent(in)             :: timeslice
       integer,          intent(inout)          :: rc
 
-      ! local arguments
+      ! local variables
+      integer                                  :: srcTermProcessing
       type(ESMF_Routehandle)                   :: rh
       type(ESMF_Field)                         :: outField
 
@@ -345,10 +396,13 @@ module module_cap_cpl
         file=__FILE__)) &
         return  ! bail out
 
+      ! Perform entire regridding arithmetic on the destination PET
+      srcTermProcessing = 0
       ! For other options for the regrid operation, please refer to:
       ! http://www.earthsystemmodeling.org/esmf_releases/last_built/ESMF_refdoc/node5.html#SECTION050366000000000000000
       call ESMF_FieldRegridStore(inField, outField, regridMethod=regridMethod, &
         unmappedaction=ESMF_UNMAPPEDACTION_IGNORE, &
+        srcTermProcessing=srcTermProcessing, &
         Routehandle=rh, &
         rc=rc)
       if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
@@ -356,7 +410,10 @@ module module_cap_cpl
         file=__FILE__)) &
         return  ! bail out
 
-      call ESMF_FieldRegrid(inField, outField, Routehandle=rh, rc=rc)
+      ! Use fixed ascending order for the sum terms based on their source
+      ! sequence index to ensure bit-for-bit reproducibility
+      call ESMF_FieldRegrid(inField, outField, Routehandle=rh, &
+        termorderflag=ESMF_TERMORDER_SRCSEQ, rc=rc)
       if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
         line=__LINE__, &
         file=__FILE__)) &

@@ -6,8 +6,6 @@ module CCPP_data
 !! |---------------------------------|----------------------------------------------------------|---------------------------------------------------------|---------|------|------------------------|-----------|--------|----------|
 !! | cdata                           | ccpp_t_instance                                          | instance of derived data type ccpp_t                    | DDT     |    0 | ccpp_t                 |           | none   | F        |
 !! | CCPP_interstitial               | CCPP_interstitial_type_instance                          | instance of derived type CCPP_interstitial_type         | DDT     |    0 | CCPP_interstitial_type |           | none   | F        |
-!! | CCPP_shared(cdata%thrd_no)      | CCPP_shared_type_instance                                | instance of derived type CCPP_shared_type               | DDT     |    0 | CCPP_shared_type       |           | none   | F        |
-!! | CCPP_shared(:)                  | CCPP_shared_type_instance_all_threads                    | instance of derived type CCPP_shared_type               | DDT     |    1 | CCPP_shared_type       |           | none   | F        |
 !! | GFS_Control                     | GFS_control_type_instance                                | instance of derived type GFS_control_type               | DDT     |    0 | GFS_control_type       |           | none   | F        |
 !! | GFS_Data(cdata%blk_no)          | GFS_data_type_instance                                   | instance of derived type GFS_data_type                  | DDT     |    0 | GFS_data_type          |           | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Cldprop  | GFS_cldprop_type_instance                                | instance of derived type GFS_cldprop_type               | DDT     |    0 | GFS_cldprop_type       |           | none   | F        |
@@ -33,8 +31,7 @@ module CCPP_data
 #endif
 
     use ccpp_types,    only: ccpp_t
-    use CCPP_typedefs, only: CCPP_interstitial_type, &
-                             CCPP_shared_type
+    use CCPP_typedefs, only: CCPP_interstitial_type
     use GFS_typedefs,  only: GFS_control_type,       &
                              GFS_data_type,          &
                              GFS_interstitial_type
@@ -48,7 +45,6 @@ module CCPP_data
            cdata_block,            &
            ccpp_suite,             &
            CCPP_interstitial,      &
-           CCPP_shared,            &
            GFS_control,            &
            GFS_data,               &
            GFS_interstitial
@@ -62,11 +58,9 @@ module CCPP_data
     type(GFS_interstitial_type),  dimension(:),   allocatable, save, target :: GFS_interstitial
 
     !------------------------------------------------------!
-    !  CCPP data containers for dynamics and shared data,  !
-    !  CCPP_shared has dimension nthreads                  !
+    !  CCPP data containers for dynamics (fast physics)    !
     !------------------------------------------------------!
     type(CCPP_interstitial_type),                              save, target :: CCPP_interstitial
-    type(CCPP_shared_type),       dimension(:),   allocatable, save, target :: CCPP_shared
 
     !------------------------------------------------------!
     !  CCPP containers for the six tiles used in dynamics, !

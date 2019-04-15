@@ -246,7 +246,7 @@ contains
     type(fv_flags_type), intent(INOUT) :: flagstruct
     type(fv_nest_type),  intent(INOUT) :: neststruct
     type(domain2d),      intent(INOUT) :: domain
-    type(fv_atmos_type), intent(INOUT) :: parent_grid
+    type(fv_atmos_type), pointer, intent(IN) :: parent_grid
     type(fv_diag_type),  intent(IN)    :: idiag
 
 ! Local Arrays
@@ -382,7 +382,7 @@ contains
 #ifdef MOIST_CAPPA
                ,cappa                                             &
 #endif
-               ,q,u,v,uc,vc, bd, npz, ncnst, reg_bc_update_time )
+               ,q,u,v,uc,vc, bd, npz, reg_bc_update_time )
 
         call timing_off('Regional_BCs')
       endif

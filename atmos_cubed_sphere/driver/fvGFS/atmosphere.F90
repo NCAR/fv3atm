@@ -179,7 +179,7 @@ use fv_fill_mod,        only: fill_gfs
 use fv_dynamics_mod,    only: fv_dynamics
 use fv_nesting_mod,     only: twoway_nesting
 use fv_diagnostics_mod, only: fv_diag_init, fv_diag, fv_time, prt_maxmin, prt_height
-use fv_nggps_diags_mod, only: fv_nggps_diag_init, fv_nggps_diag
+use fv_nggps_diags_mod, only: fv_nggps_diag_init, fv_nggps_diag, fv_nggps_tavg
 use fv_restart_mod,     only: fv_restart, fv_write_restart
 use fv_timing_mod,      only: timing_on, timing_off
 use fv_mp_mod,          only: switch_current_Atm
@@ -280,8 +280,7 @@ contains
 #endif
    use CCPP_data,         only: ccpp_suite,          &
                                 cdata => cdata_tile, &
-                                CCPP_interstitial,   &
-                                CCPP_shared
+                                CCPP_interstitial
 #ifdef OPENMP
    use omp_lib
 #endif
@@ -456,26 +455,20 @@ contains
 #else
    nthreads = 1
 #endif
-   allocate(CCPP_shared(1:nthreads))
-   do i=1,nthreads
-      call CCPP_shared(i)%create(Atm(mytile)%flagstruct%hydrostatic, &
-                                 Atm(mytile)%flagstruct%phys_hydrostatic)
-   end do
-
    ! Create interstitial data type for fast physics
-   call CCPP_interstitial%create(Atm(mytile)%bd%is, Atm(mytile)%bd%ie, Atm(mytile)%bd%isd, Atm(mytile)%bd%ied,   &
-                                 Atm(mytile)%bd%js, Atm(mytile)%bd%je, Atm(mytile)%bd%jsd, Atm(mytile)%bd%jed,   &
-                                 Atm(mytile)%npz, Atm(mytile)%ng,                                                &
-                                 dt_atmos, p_split, Atm(mytile)%flagstruct%k_split,                              &
-                                 zvir, Atm(mytile)%flagstruct%p_ref, Atm(mytile)%ak, Atm(mytile)%bk,             &
-                                 cld_amt>0, kappa, Atm(mytile)%flagstruct%hydrostatic,                           &
-                                 Atm(mytile)%flagstruct%do_sat_adj,                                              &
-                                 Atm(mytile)%delp, Atm(mytile)%delz, Atm(mytile)%gridstruct%area_64,             &
-                                 Atm(mytile)%peln, Atm(mytile)%phis, Atm(mytile)%pkz, Atm(mytile)%pt,            &
-                                 Atm(mytile)%q(:,:,:,sphum), Atm(mytile)%q(:,:,:,liq_wat),                       &
-                                 Atm(mytile)%q(:,:,:,ice_wat), Atm(mytile)%q(:,:,:,rainwat),                     &
-                                 Atm(mytile)%q(:,:,:,snowwat), Atm(mytile)%q(:,:,:,graupel),                     &
-                                 Atm(mytile)%q(:,:,:,cld_amt), Atm(mytile)%q_con)
+   call CCPP_interstitial%create(Atm(mytile)%bd%is, Atm(mytile)%bd%ie, Atm(mytile)%bd%isd, Atm(mytile)%bd%ied, &
+                                 Atm(mytile)%bd%js, Atm(mytile)%bd%je, Atm(mytile)%bd%jsd, Atm(mytile)%bd%jed, &
+                                 Atm(mytile)%npz, Atm(mytile)%ng,                                              &
+                                 dt_atmos, p_split, Atm(mytile)%flagstruct%k_split,                            &
+                                 zvir, Atm(mytile)%flagstruct%p_ref, Atm(mytile)%ak, Atm(mytile)%bk,           &
+                                 cld_amt>0, kappa, Atm(mytile)%flagstruct%hydrostatic,                         &
+                                 Atm(mytile)%flagstruct%do_sat_adj,                                            &
+                                 Atm(mytile)%delp, Atm(mytile)%delz, Atm(mytile)%gridstruct%area_64,           &
+                                 Atm(mytile)%peln, Atm(mytile)%phis, Atm(mytile)%pkz, Atm(mytile)%pt,          &
+                                 Atm(mytile)%q(:,:,:,sphum), Atm(mytile)%q(:,:,:,liq_wat),                     &
+                                 Atm(mytile)%q(:,:,:,ice_wat), Atm(mytile)%q(:,:,:,rainwat),                   &
+                                 Atm(mytile)%q(:,:,:,snowwat), Atm(mytile)%q(:,:,:,graupel),                   &
+                                 Atm(mytile)%q(:,:,:,cld_amt), Atm(mytile)%q_con, nthreads)
 
 #ifndef STATIC
 ! Populate cdata structure with fields required to run fast physics (auto-generated).
@@ -626,8 +619,8 @@ contains
    endif
 
    do psc=1,abs(p_split)
-     p_step = psc
-     call timing_on('fv_dynamics')
+      p_step = psc
+      call timing_on('fv_dynamics')
 !uc/vc only need be same on coarse grid? However BCs do need to be the same
       call fv_dynamics(npx, npy, npz, nq, Atm(n)%ng, dt_atmos/real(abs(p_split)),&
                        Atm(n)%flagstruct%consv_te, Atm(n)%flagstruct%fill,       &
@@ -795,17 +788,19 @@ contains
  end subroutine atmosphere_pref
 
 
- subroutine atmosphere_control_data (i1, i2, j1, j2, kt, p_hydro, hydro)
+ subroutine atmosphere_control_data (i1, i2, j1, j2, kt, p_hydro, hydro, tile_num)
    integer, intent(out)           :: i1, i2, j1, j2, kt
    logical, intent(out), optional :: p_hydro, hydro
+   integer, intent(out), optional :: tile_num
    i1 = Atm(mytile)%bd%isc
    i2 = Atm(mytile)%bd%iec
    j1 = Atm(mytile)%bd%jsc
    j2 = Atm(mytile)%bd%jec
    kt = Atm(mytile)%npz
 
-   if (present(p_hydro)) p_hydro = Atm(mytile)%flagstruct%phys_hydrostatic
-   if (present(  hydro))   hydro = Atm(mytile)%flagstruct%hydrostatic
+   if (present(tile_num)) tile_num = Atm(mytile)%tile
+   if (present(p_hydro)) p_hydro   = Atm(mytile)%flagstruct%phys_hydrostatic
+   if (present(  hydro))   hydro   = Atm(mytile)%flagstruct%hydrostatic
 
  end subroutine atmosphere_control_data
 
@@ -859,16 +854,21 @@ contains
 !! the "domain2d" variable associated with the coupling grid and the 
 !! decomposition for the current cubed-sphere tile.
 !>@detail Coupling is done using the mass/temperature grid with no halos.
- subroutine atmosphere_domain ( fv_domain, layout, regional )
+ subroutine atmosphere_domain ( fv_domain, layout, regional, nested, pelist )
    type(domain2d), intent(out) :: fv_domain
    integer, intent(out) :: layout(2)
    logical, intent(out) :: regional
+   logical, intent(out) :: nested
+   integer, pointer, intent(out) :: pelist(:)
 !  returns the domain2d variable associated with the coupling grid
 !  note: coupling is done using the mass/temperature grid with no halos
 
    fv_domain = Atm(mytile)%domain_for_coupler
    layout(1:2) =  Atm(mytile)%layout(1:2)
    regional = Atm(mytile)%flagstruct%regional
+   nested = ngrids > 1
+   call set_atmosphere_pelist()
+   pelist => Atm(mytile)%pelist
 
  end subroutine atmosphere_domain
 
@@ -1082,10 +1082,10 @@ contains
 !! NCEP/EMC format.
 !>@details  If register is present and set to .true., will make the initialization call.
 !! Can output 3D prognostic fields via either NCEP 'write_component' or GFDL/FMS 'diag_manager'.
- subroutine atmosphere_nggps_diag (Time, init)
+ subroutine atmosphere_nggps_diag (Time, init, ltavg,avg_max_length)
    type(time_type),   intent(in) :: Time
-   logical, optional, intent(in) :: init
-
+   logical, optional, intent(in) :: init, ltavg
+   real, optional, intent(in) :: avg_max_length
    if (PRESENT(init)) then
      if (init) then
        call fv_nggps_diag_init(Atm(mytile:mytile), Atm(mytile)%atmos_axes, Time)
@@ -1094,9 +1094,14 @@ contains
        call mpp_error(FATAL, 'atmosphere_nggps_diag - calling with init present, but set to .false.')
      endif
    endif
-
-   call fv_nggps_diag(Atm(mytile:mytile), zvir, Time)
-
+   if (PRESENT(ltavg)) then
+     if (ltavg) then
+       call fv_nggps_tavg(Atm(mytile:mytile), Time_step_atmos,avg_max_length,zvir)
+       return
+     endif
+   else
+      call fv_nggps_diag(Atm(mytile:mytile), zvir, Time)
+   endif
  end subroutine atmosphere_nggps_diag
 
 
