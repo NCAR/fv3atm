@@ -8081,6 +8081,29 @@ module module_physics_driver
         enddo
       endif
 
+!  --- ...  calculate column precipitable water "pwat"
+      Diag%pwat(:) = 0.0
+      do k = 1, levs
+        do i=1,im
+          work1(i) = 0.0
+        enddo
+        if (ncld > 0) then
+          do ic = ntcw, ntcw+nncl-1
+            do i=1,im
+              work1(i) = work1(i) + Stateout%gq0(i,k,ic)
+            enddo
+          enddo
+        endif
+        do i=1,im
+          Diag%pwat(i) = Diag%pwat(i) + del(i,k)*(Stateout%gq0(i,k,1)+work1(i))
+        enddo
+!     if (lprnt .and. i == ipr) write(0,*)' gq0=',
+!    &gq0(i,k,1),' qgrs=',qgrs(i,k,1),' work2=',work2(i),' k=',k
+      enddo
+      do i=1,im
+        Diag%pwat(i) = Diag%pwat(i) * onebg
+      enddo
+
 !  --- ...  end coupling insertion
 #endif
 
