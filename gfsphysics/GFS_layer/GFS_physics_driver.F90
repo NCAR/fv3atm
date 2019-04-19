@@ -850,6 +850,10 @@ module module_physics_driver
         endif
       endif
 
+      if (imp_physics == 99) then
+        if (Model%cplchm) nvdiff = 3
+      end if
+
       ntkev = nvdiff
 #endif
 
@@ -3327,6 +3331,17 @@ module module_physics_driver
             enddo
           enddo
           ntiwx = 3
+        elseif (imp_physics == 99) then
+! Zhao/Carr/Sundqvist
+          if (Model%cplchm) then
+            do k=1,levs
+              do i=1,im
+                vdftra(i,k,1) = Statein%qgrs(i,k,1)
+                vdftra(i,k,2) = Statein%qgrs(i,k,ntcw)
+                vdftra(i,k,3) = Statein%qgrs(i,k,ntoz)
+              enddo
+            enddo
+          endif
         endif
 
         if (Model%satmedmf) then
@@ -3702,6 +3717,17 @@ module module_physics_driver
               dqdt(i,k,ntoz) = dvdftra(i,k,7)
             enddo
           enddo
+
+        elseif (imp_physics == 99) then
+          if (Model%cplchm) then
+            do k=1,levs
+              do i=1,im
+                dqdt(i,k,1)    = dvdftra(i,k,1)
+                dqdt(i,k,ntcw) = dvdftra(i,k,2)
+                dqdt(i,k,ntoz) = dvdftra(i,k,3)
+              enddo
+            enddo
+          endif
         endif
 
         if (Model%satmedmf) then
@@ -4006,12 +4032,7 @@ module module_physics_driver
         if (Model%ldiag3d) then
           do k=1,levs
             do i=1,im
-
-#ifdef WORKAROUND_DT3DT7
-              Diag%dt3dt(i,k,7) = Diag%dt3dt(i,k,7) - dtdt(i,k)
-#else
               Diag%dt3dt(i,k,7) = Diag%dt3dt(i,k,7) - dtdt(i,k)*dtf
-#endif
             enddo
          enddo
         endif
@@ -6803,16 +6824,14 @@ module module_physics_driver
 !              enddo
 !            enddo
 !          endif
-          if (Model%ldiag3d) then
-            do k=1,levs
-              do i=1,im
-! DH* dt3dt has last dim 1:7 only (GFS_typedefs.F90)
-!                 Diag%dt3dt(i,k,8) = Diag%dt3dt(i,k,8) + (Stateout%gt0(i,k)  -dtdt(i,k)  ) * frain
-! *DH
-!                Diag%dq3dt(i,k,2) = Diag%dq3dt(i,k,2) + (Stateout%gq0(i,k,1)-dqdt(i,k,1)) * frain
-              enddo
-            enddo
-          endif
+!          if (Model%ldiag3d) then
+!            do k=1,levs
+!              do i=1,im
+!                Diag%dt3dt(i,k,8) = Diag%dt3dt(i,k,8) + (Stateout%gt0(i,k)  -dtdt(i,k)  ) * frain
+!!                Diag%dq3dt(i,k,2) = Diag%dq3dt(i,k,2) + (Stateout%gq0(i,k,1)-dqdt(i,k,1)) * frain
+!              enddo
+!            enddo
+!          endif
         endif
       endif               !       moist convective adjustment over
 ! *DH
@@ -8046,7 +8065,7 @@ module module_physics_driver
 
 !  --- ...  coupling insertion
 
-      if (Model%cplflx) then
+      if (Model%cplflx .or. Model%cplchm) then
         do i = 1, im
           if (t850(i) > 273.16) then
             Coupling%rain_cpl(i) = Coupling%rain_cpl(i) + Diag%rain(i)
@@ -8056,9 +8075,8 @@ module module_physics_driver
         enddo
       endif
 
-      if (Model%cplchm.and. .not. Model%cplflx) then
+      if (Model%cplchm) then
         do i = 1, im
-          Coupling%rain_cpl(i)  = Coupling%rain_cpl(i)  + Diag%rain(i)
           Coupling%rainc_cpl(i) = Coupling%rainc_cpl(i) + Diag%rainc(i)
         enddo
       endif
@@ -8085,8 +8103,9 @@ module module_physics_driver
       do i=1,im
         Diag%pwat(i) = Diag%pwat(i) * onebg
       enddo
-#endif
+
 !  --- ...  end coupling insertion
+#endif
 
 !!! update surface diagnosis fields at the end of phys package
 !!! this change allows gocart to use filtered wind fields

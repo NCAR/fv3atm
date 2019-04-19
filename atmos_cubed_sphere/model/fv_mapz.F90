@@ -100,6 +100,7 @@ module fv_mapz_mod
 ! ccpp_suite_cap and ccpp_group_*_cap modules behind a ccpp_static_api
   use ccpp_api,          only: ccpp_initialized
   use ccpp_static_api,   only: ccpp_physics_run
+  use CCPP_data,         only: ccpp_suite
 #else
   use ccpp_api,          only: ccpp_initialized, ccpp_physics_run
 #endif
@@ -589,6 +590,9 @@ contains
 !$OMP                               ng,gridstruct,E_Flux,pdt,dtmp,reproduce_sum,q,             &
 !$OMP                               mdt,cld_amt,cappa,dtdt,out_dt,rrg,akap,do_sat_adj,         &
 !$OMP                               kord_tm,cdata,CCPP_interstitial)                           &
+#ifdef STATIC
+!$OMP                        shared(ccpp_suite)                                                &
+#endif
 !$OMP                       private(pe0,pe1,pe2,pe3,qv,cvm,gz,phis,kdelz,ierr)
 #elif defined(CCPP)
 !$OMP parallel default(none) shared(is,ie,js,je,km,kmp,ptop,u,v,pe,ua,isd,ied,jsd,jed,kord_mt, &
@@ -599,6 +603,9 @@ contains
 !$OMP                               ng,gridstruct,E_Flux,pdt,dtmp,reproduce_sum,q,             &
 !$OMP                               mdt,cld_amt,cappa,dtdt,out_dt,rrg,akap,do_sat_adj,         &
 !$OMP                               fast_mp_consv,kord_tm,cdata, CCPP_interstitial)            &
+#ifdef STATIC
+!$OMP                        shared(ccpp_suite)                                                &
+#endif
 !$OMP                       private(pe0,pe1,pe2,pe3,qv,cvm,gz,phis,kdelz,ierr)
 #else
 !$OMP parallel default(none) shared(is,ie,js,je,km,kmp,ptop,u,v,pe,ua,isd,ied,jsd,jed,kord_mt, &
@@ -750,7 +757,11 @@ endif        ! end last_step check
     call timing_on('sat_adj2')
 #ifdef CCPP
     if (ccpp_initialized(cdata)) then
+#ifdef STATIC
+      call ccpp_physics_run(cdata, suite_name=trim(ccpp_suite), group_name='fast_physics', ierr=ierr)
+#else
       call ccpp_physics_run(cdata, group_name='fast_physics', ierr=ierr)
+#endif
       if (ierr/=0) call mpp_error(FATAL, "Call to ccpp_physics_run for group 'fast_physics' failed")
     else
       call mpp_error (FATAL, 'Lagrangian_to_Eulerian: can not call CCPP fast physics because cdata not initialized')
