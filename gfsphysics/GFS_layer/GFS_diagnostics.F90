@@ -1934,17 +1934,6 @@ module GFS_diagnostics
 
     idx = idx + 1
     ExtDiag(idx)%axes = 3
-    ExtDiag(idx)%name = 'sppt_wts'
-    ExtDiag(idx)%desc = 'perturbation velocity'
-    ExtDiag(idx)%unit = 'm/s'
-    ExtDiag(idx)%mod_name = 'gfs_phys'
-    allocate (ExtDiag(idx)%data(nblks))
-    do nb = 1,nblks
-      ExtDiag(idx)%data(nb)%var3 => IntDiag(nb)%sppt_wts(:,:)
-    enddo
-
-    idx = idx + 1
-    ExtDiag(idx)%axes = 3
     ExtDiag(idx)%name = 'shum_wts'
     ExtDiag(idx)%desc = 'perturbation velocity'
     ExtDiag(idx)%unit = 'm/s'
