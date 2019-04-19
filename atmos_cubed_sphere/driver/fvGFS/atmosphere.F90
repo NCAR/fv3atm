@@ -188,7 +188,7 @@ use fv_sg_mod,          only: fv_subgrid_z
 use fv_update_phys_mod, only: fv_update_phys
 use fv_nwp_nudge_mod,   only: fv_nwp_nudge_init, fv_nwp_nudge_end, do_adiabatic_init
 #ifdef MULTI_GASES
-use multi_gases_mod,  only: virq, virq_max, num_gas
+use multi_gases_mod,    only: virq, virq_max, num_gas, ri, cpi
 #endif
 use fv_regional_mod,    only: start_regional_restart, read_new_bc_data, &
                               a_step, p_step, current_time_in_seconds
@@ -459,7 +459,8 @@ contains
 #else
    nthreads = 1
 #endif
-   ! Create interstitial data type for fast physics
+   ! Create interstitial data type for fast physics; for multi-gases physics,
+   ! pass q(:,:,:,1:num_gas) to qvi, otherwise pass q(:,:,:,1:1) as 4D array
    call CCPP_interstitial%create(Atm(mytile)%bd%is, Atm(mytile)%bd%ie, Atm(mytile)%bd%isd, Atm(mytile)%bd%ied, &
                                  Atm(mytile)%bd%js, Atm(mytile)%bd%je, Atm(mytile)%bd%jsd, Atm(mytile)%bd%jed, &
                                  Atm(mytile)%npz, Atm(mytile)%ng,                                              &
@@ -469,10 +470,20 @@ contains
                                  Atm(mytile)%flagstruct%do_sat_adj,                                            &
                                  Atm(mytile)%delp, Atm(mytile)%delz, Atm(mytile)%gridstruct%area_64,           &
                                  Atm(mytile)%peln, Atm(mytile)%phis, Atm(mytile)%pkz, Atm(mytile)%pt,          &
+#ifdef MULTI_GASES
+                                 Atm(mytile)%q(:,:,:,1:max(1,num_gas)),                                        &
+#else
+                                 Atm(mytile)%q(:,:,:,1:1),                                                     &
+#endif
                                  Atm(mytile)%q(:,:,:,sphum), Atm(mytile)%q(:,:,:,liq_wat),                     &
                                  Atm(mytile)%q(:,:,:,ice_wat), Atm(mytile)%q(:,:,:,rainwat),                   &
                                  Atm(mytile)%q(:,:,:,snowwat), Atm(mytile)%q(:,:,:,graupel),                   &
-                                 Atm(mytile)%q(:,:,:,cld_amt), Atm(mytile)%q_con, nthreads)
+                                 Atm(mytile)%q(:,:,:,cld_amt), Atm(mytile)%q_con, nthreads,                    &
+                                 Atm(mytile)%flagstruct%nwat,                                                  &
+#ifdef MULTI_GASES
+                                 ngas=num_gas, rilist=ri, cpilist=cpi,                                         &
+#endif
+                                 mpirank=mpp_pe(), mpiroot=mpp_root_pe())
 
 #ifndef STATIC
 ! Populate cdata structure with fields required to run fast physics (auto-generated).

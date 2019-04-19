@@ -632,10 +632,13 @@ contains
 #ifdef STATIC
 !$OMP                        shared(ccpp_suite)                                                &
 #endif
+#ifdef MULTI_GASES
+!$OMP                        shared(num_gas)                                                   &
+#endif
 !$OMP                       private(pe0,pe1,pe2,pe3,qv,cvm,gz,phis,kdelz,ierr)
 #elif defined(CCPP)
 !$OMP parallel default(none) shared(is,ie,js,je,km,kmp,ptop,u,v,pe,ua,isd,ied,jsd,jed,kord_mt, &
-<$OMP                               te_2d,te,delp,hydrostatic,hs,rg,pt,peln, adiabatic,        &
+!$OMP                               te_2d,te,delp,hydrostatic,hs,rg,pt,peln, adiabatic,        &
 !$OMP                               cp,delz,nwat,rainwat,liq_wat,ice_wat,snowwat,              &
 !$OMP                               graupel,q_con,r_vir,sphum,w,pk,pkz,last_step,consv,        &
 !$OMP                               do_adiabatic_init,zsum1,zsum0,te0_2d,domain,               &
@@ -644,6 +647,9 @@ contains
 !$OMP                               fast_mp_consv,kord_tm,cdata, CCPP_interstitial)            &
 #ifdef STATIC
 !$OMP                        shared(ccpp_suite)                                                &
+#endif
+#ifdef MULTI_GASES
+!$OMP                        shared(num_gas)                                                   &
 #endif
 !$OMP                       private(pe0,pe1,pe2,pe3,qv,cvm,gz,phis,kdelz,ierr)
 #else
@@ -852,13 +858,19 @@ endif        ! end last_step check
 #endif
 #else
 #ifdef TRANSITION
+#ifdef MULTI_GASES
+                       volatile_var = log(rrg*delp(i,j,k)/delz(i,j,k)*pt(i,j,k))
+                       pkz(i,j,k) = exp(akap*(virqd(q(i,j,k,1:num_gas))/vicpqd(q(i,j,k,1:num_gas))*volatile_var)
+#else
                        volatile_var = log(rrg*delp(i,j,k)/delz(i,j,k)*pt(i,j,k))
                        pkz(i,j,k) = exp(akap*volatile_var)
+#endif
 #else
 #ifdef MULTI_GASES
                        pkz(i,j,k) = exp(akap*(virqd(q(i,j,k,1:num_gas))/vicpqd(q(i,j,k,1:num_gas))*log(rrg*delp(i,j,k)/delz(i,j,k)*pt(i,j,k)))
 #else
                        pkz(i,j,k) = exp(akap*log(rrg*delp(i,j,k)/delz(i,j,k)*pt(i,j,k)))
+#endif
 #endif
 #endif
                     enddo

@@ -265,9 +265,9 @@ contains
       real, dimension(bd%is:bd%ie):: cvm
 #ifndef CCPP
       real, allocatable :: dp1(:,:,:), dtdt_m(:,:,:), cappa(:,:,:)
+#endif
 #ifdef MULTI_GASES
       real, allocatable :: kapad(:,:,:)
-#endif
 #endif
       real:: akap, rdg, ph1, ph2, mdt, gam, amdt, u0
       real:: recip_k_split,reg_bc_update_time
@@ -292,9 +292,6 @@ contains
 
 #ifdef CCPP
       ccpp_associate: associate( cappa     => CCPP_interstitial%cappa,     &
-#ifdef MULTI_GASES
-                                 kapad     => CCPP_interstitial%kapad,     &
-#endif
                                  dp1       => CCPP_interstitial%te0,       &
                                  dtdt_m    => CCPP_interstitial%dtdt,      &
                                  last_step => CCPP_interstitial%last_step, &
@@ -334,10 +331,6 @@ contains
 
       allocate ( dp1(isd:ied, jsd:jed, 1:npz) )
       call init_ijk_mem(isd,ied, jsd,jed, npz, dp1, 0.)
-#ifdef MULTI_GASES
-      allocate ( kapad(isd:ied, jsd:jed, npz) )
-      call init_ijk_mem(isd,ied, jsd,jed, npz, kapad, kappa)
-#endif
 
 #ifdef MOIST_CAPPA
       allocate ( cappa(isd:ied,jsd:jed,npz) )
@@ -346,6 +339,11 @@ contains
       allocate ( cappa(isd:isd,jsd:jsd,1) )
       cappa = 0.
 #endif
+#endif
+
+#ifdef MULTI_GASES
+      allocate ( kapad(isd:ied, jsd:jed, npz) )
+      call init_ijk_mem(isd,ied, jsd,jed, npz, kapad, kappa)
 #endif
 
       !We call this BEFORE converting pt to virtual potential temperature, 
@@ -460,12 +458,12 @@ contains
 !$OMP parallel do default(none) shared(is,ie,js,je,isd,ied,jsd,jed,npz,dp1,zvir,q,q_con,sphum,liq_wat, &
 #endif
 !$OMP                                  rainwat,ice_wat,snowwat,graupel,pkz,flagstruct, &
-#if defined(CCPP) && defined(__GFORTRAN__)
-!$OMP                                  kappa,rdg,delp,pt,delz,nwat)                    &
-#else
 #ifdef MULTI_GASES
 !$OMP                                  kapad,                                          &
 #endif
+#if defined(CCPP) && defined(__GFORTRAN__)
+!$OMP                                  kappa,rdg,delp,pt,delz,nwat)                    &
+#else
 !$OMP                                  cappa,kappa,rdg,delp,pt,delz,nwat)              &
 #endif
 !$OMP                          private(cvm,i,j,k)
@@ -966,10 +964,10 @@ contains
 911  call cubed_to_latlon(u, v, ua, va, gridstruct, &
           npx, npy, npz, 1, gridstruct%grid_type, domain, gridstruct%nested, flagstruct%c2l_ord, bd)
 
-#ifndef CCPP
 #ifdef MULTI_GASES
   deallocate(kapad)
 #endif
+#ifndef CCPP
   deallocate(dp1)
   deallocate(cappa)
 #endif
