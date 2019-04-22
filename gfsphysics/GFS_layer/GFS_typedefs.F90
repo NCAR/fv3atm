@@ -1,3 +1,5 @@
+#undef MULTI_GASES
+
 module GFS_typedefs
 
        use machine,                  only: kind_phys
@@ -4136,7 +4138,13 @@ module GFS_typedefs
 #ifdef CCPP
     Model%ntqv             = 1
 #endif
+#ifdef MULTI_GASES
+    Model%nto              = get_tracer_index(Model%tracer_names, 'spfo',        Model%me, Model%master, Model%debug)
+    Model%nto2             = get_tracer_index(Model%tracer_names, 'spfo2',       Model%me, Model%master, Model%debug)
+    Model%ntoz             = get_tracer_index(Model%tracer_names, 'spfo3',       Model%me, Model%master, Model%debug)
+#else
     Model%ntoz             = get_tracer_index(Model%tracer_names, 'o3mr',       Model%me, Model%master, Model%debug)
+#endif
     Model%ntcw             = get_tracer_index(Model%tracer_names, 'liq_wat',    Model%me, Model%master, Model%debug)
     Model%ntiw             = get_tracer_index(Model%tracer_names, 'ice_wat',    Model%me, Model%master, Model%debug)
     Model%ntrw             = get_tracer_index(Model%tracer_names, 'rainwat',    Model%me, Model%master, Model%debug)

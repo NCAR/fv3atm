@@ -675,7 +675,13 @@ module module_physics_driver
       integer :: ierr
       character(len=512) :: errmsg
       integer            :: errflg
+#endif
 
+#ifdef TRANSITION
+      real(kind=kind_phys), volatile :: volatile_var
+#endif
+
+#ifdef CCPP
       errmsg = ''
       errflg = 0
 
@@ -7693,13 +7699,23 @@ module module_physics_driver
               graupel0(i,1) = 0.0
             endif
 
+#ifdef TRANSITION
+            volatile_var    = rain0(i,1)+snow0(i,1)+ice0(i,1)+graupel0(i,1)
+            rain1(i)        = volatile_var * tem
+#else
             rain1(i)        = (rain0(i,1)+snow0(i,1)+ice0(i,1)+graupel0(i,1)) * tem
+#endif
             Diag%ice(i)     = ice0    (i,1) * tem
             Diag%snow(i)    = snow0   (i,1) * tem
             Diag%graupel(i) = graupel0(i,1) * tem
+#ifdef TRANSITION
+            if ( volatile_var * tem > rainmin ) then
+              Sfcprop%sr(i) = (snow0(i,1) + ice0(i,1)  + graupel0(i,1)) / volatile_var
+#else
             if ( rain1(i) > rainmin ) then
               Sfcprop%sr(i) = (snow0(i,1) + ice0(i,1)  + graupel0(i,1)) &
                             / (rain0(i,1) + snow0(i,1) + ice0(i,1) + graupel0(i,1))
+#endif
             else
               Sfcprop%sr(i) = 0.0
             endif
