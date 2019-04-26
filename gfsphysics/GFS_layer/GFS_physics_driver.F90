@@ -7720,14 +7720,13 @@ module module_physics_driver
               Sfcprop%sr(i) = 0.0
             endif
           enddo
-#ifndef WORKAROUND_SRFLAG
-          ! DH* Convert rain0, ice0, graupel0 and snow0 from mm/day to m/physics-timestep
+#ifdef TRANSITION
+          ! Convert rain0, ice0, graupel0 and snow0 from mm/day to m/physics-timestep
           ! for later use (approx. lines 7970, calculation of srflag)
           rain0 = tem*rain0
           ice0  = tem*ice0
           snow0 = tem*snow0
           graupel0 = tem*graupel0
-          ! *DH
 #endif
           do k = 1, levs
             kk = levs-k+1
@@ -8064,10 +8063,19 @@ module module_physics_driver
 !            Sfcprop%srflag(i) = 1.                   ! clu: set srflag to 'snow' (i.e. 1)
 !          endif
 ! compute fractional srflag
+#ifdef TRANSITION
+          ! For bit-for-bit identical results with CCPP code, snow0/ice0/graupel0/rain0
+          ! are converted from mm per day to m per physics timestep previously in the code
           total_precip = snow0(i,1)+ice0(i,1)+graupel0(i,1)+rain0(i,1)+Diag%rainc(i)
-          if (total_precip*tem > rainmin) then
+          if (total_precip > rainmin) then
             Sfcprop%srflag(i) = (snow0(i,1)+ice0(i,1)+graupel0(i,1)+csnow)/total_precip
           endif
+#else
+          total_precip = (snow0(i,1)+ice0(i,1)+graupel0(i,1)+rain0(i,1))*tem+Diag%rainc(i)
+          if (total_precip > rainmin) then
+            Sfcprop%srflag(i) = ((snow0(i,1)+ice0(i,1)+graupel0(i,1))*tem+csnow)/total_precip
+          endif
+#endif
         enddo
       elseif( .not. Model%cal_pre) then
         do i = 1, im
