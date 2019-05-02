@@ -797,12 +797,12 @@ module GFS_typedefs
 !! | GFS_Control%fn_nml                   | namelist_filename                                                             | namelist filename                                       | none          |    0 | character | len=64    | none   | F        |
 !! | GFS_Control%input_nml_file           | namelist_filename_for_internal_file_reads                                     | namelist filename for internal file reads               | none          |    1 | character | len=256   | none   | F        |
 !! | GFS_Control%logunit                  | iounit_log                                                                    | fortran unit number for logfile                         | none          |    0 | integer   |           | none   | F        |
-!! | GFS_Control%fhzero                   |                                                                               | seconds between clearing of diagnostic buckets          | s             |    0 | real      | kind_phys | none   | F        |
+!! | GFS_Control%fhzero                   |                                                                               | hours between clearing of diagnostic buckets            | h             |    0 | real      | kind_phys | none   | F        |
 !! | GFS_Control%ldiag3d                  | flag_diagnostics_3D                                                           | flag for 3d diagnostic fields                           | flag          |    0 | logical   |           | none   | F        |
 !! | GFS_Control%lssav                    | flag_diagnostics                                                              | logical flag for storing diagnostics                    | flag          |    0 | logical   |           | none   | F        |
-!! | GFS_Control%fhcyc                    |                                                                               | frequency for surface data cycling (secs)               | s             |    0 | real      | kind_phys | none   | F        |
+!! | GFS_Control%fhcyc                    |                                                                               | frequency for surface data cycling (hours)              | h             |    0 | real      | kind_phys | none   | F        |
 !! | GFS_Control%lgocart                  | flag_gocart                                                                   | flag for 3d diagnostic fields for gocart 1              | flag          |    0 | logical   |           | none   | F        |
-!! | GFS_Control%fhgoc3d                  |                                                                               | seconds between calls to gocart                         | s             |    0 | real      | kind_phys | none   | F        |
+!! | GFS_Control%fhgoc3d                  |                                                                               | hours between calls to gocart                           | h             |    0 | real      | kind_phys | none   | F        |
 !! | GFS_Control%thermodyn_id             |                                                                               | valid for GFS only for get_prs/phi                      | index         |    0 | integer   |           | none   | F        |
 !! | GFS_Control%sfcpress_id              |                                                                               | valid for GFS only for get_prs/phi                      | index         |    0 | integer   |           | none   | F        |
 !! | GFS_Control%gen_coord_hybrid         |                                                                               | flag for Henry's gen coord                              | flag          |    0 | logical   |           | none   | F        |
@@ -1135,12 +1135,12 @@ module GFS_typedefs
 #ifdef CCPP
     integer              :: logunit
 #endif
-    real(kind=kind_phys) :: fhzero          !< seconds between clearing of diagnostic buckets
+    real(kind=kind_phys) :: fhzero          !< hours between clearing of diagnostic buckets
     logical              :: ldiag3d         !< flag for 3d diagnostic fields
     logical              :: lssav           !< logical flag for storing diagnostics
-    real(kind=kind_phys) :: fhcyc           !< frequency for surface data cycling (secs)
+    real(kind=kind_phys) :: fhcyc           !< frequency for surface data cycling (hours)
     logical              :: lgocart         !< flag for 3d diagnostic fields for gocart 1
-    real(kind=kind_phys) :: fhgoc3d         !< seconds between calls to gocart
+    real(kind=kind_phys) :: fhgoc3d         !< hours between calls to gocart
     integer              :: thermodyn_id    !< valid for GFS only for get_prs/phi
     integer              :: sfcpress_id     !< valid for GFS only for get_prs/phi
     logical              :: gen_coord_hybrid!< for Henry's gen coord
@@ -3355,12 +3355,12 @@ module GFS_typedefs
 #endif
 
 !--- BEGIN NAMELIST VARIABLES
-    real(kind=kind_phys) :: fhzero         = 0.0             !< seconds between clearing of diagnostic buckets
+    real(kind=kind_phys) :: fhzero         = 0.0             !< hours between clearing of diagnostic buckets
     logical              :: ldiag3d        = .false.         !< flag for 3d diagnostic fields
     logical              :: lssav          = .false.         !< logical flag for storing diagnostics
-    real(kind=kind_phys) :: fhcyc          = 0.              !< frequency for surface data cycling (secs)
+    real(kind=kind_phys) :: fhcyc          = 0.              !< frequency for surface data cycling (hours)
     logical              :: lgocart        = .false.         !< flag for 3d diagnostic fields for gocart 1
-    real(kind=kind_phys) :: fhgoc3d        = 0.0             !< seconds between calls to gocart
+    real(kind=kind_phys) :: fhgoc3d        = 0.0             !< hours between calls to gocart
     integer              :: thermodyn_id   =  1              !< valid for GFS only for get_prs/phi
     integer              :: sfcpress_id    =  1              !< valid for GFS only for get_prs/phi
 
@@ -3836,7 +3836,7 @@ module GFS_typedefs
 !--- calendars and time parameters and activation triggers
     Model%dtp              = dt_phys
     Model%dtf              = dt_dycore
-    Model%nscyc            = nint(fhcyc*3600./Model%dtp)
+    Model%nscyc            = nint(Model%fhcyc*con_hr/Model%dtp)
     Model%nszero           = nint(Model%fhzero*con_hr/Model%dtp)
     Model%idat(1:8)        = idat(1:8)
     Model%idate            = 0
