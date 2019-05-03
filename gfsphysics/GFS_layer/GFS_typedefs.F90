@@ -7,7 +7,8 @@ module GFS_typedefs
        use physcons,                 only: con_cp, con_fvirt, con_g, &
                                            con_hvap, con_hfus, con_pi, con_rd, con_rv, &
                                            con_t0c, con_cvap, con_cliq, con_eps, &
-                                           con_epsm1, con_ttp
+                                           con_epsm1, con_ttp, rlapse, con_jcal, con_rhw0, &
+                                           con_sbc, con_tice, cimin
        use module_radsw_parameters,  only: topfsw_type, sfcfsw_type, cmpfsw_type, NBDSW
        use module_radlw_parameters,  only: topflw_type, sfcflw_type, NBDLW
 #else
@@ -81,6 +82,12 @@ module GFS_typedefs
 !! | con_rv                          | gas_constant_water_vapor                                 | ideal gas constant for water vapor                      | J kg-1 K-1    |    0 | real                  | kind_phys | none   | F        |
 !! | con_t0c                         | temperature_at_zero_celsius                              | temperature at 0 degrees Celsius                        | K             |    0 | real                  | kind_phys | none   | F        |
 !! | con_ttp                         | triple_point_temperature_of_water                        | triple point temperature of water                       | K             |    0 | real                  | kind_phys | none   | F        |
+!! | cimin                           | minimum_sea_ice_concentration                            | minimum sea ice concentration                           | frac          |    0 | real                  | kind_phys | none   | F        |
+!! | rlapse                          | air_temperature_lapse_rate_constant                      | environmental air temperature lapse rate constant       | K m-1         |    0 | real                  | kind_phys | none   | F        |
+!! | con_jcal                        | joules_per_calorie_constant                              | joules per calorie constant                             | J cal-1       |    0 | real                  | kind_phys | none   | F        |
+!! | con_rhw0                        | sea_water_reference_density                              | sea water reference density                             | kg m-3        |    0 | real                  | kind_phys | none   | F        |
+!! | con_sbc                         | steffan_boltzmann_constant                               | Steffan-Boltzmann constant                              | W m-2 K-4     |    0 | real                  | kind_phys | none   | F        |
+!! | con_tice                        | freezing_point_temperature_of_seawater                   | freezing point temperature of seawater                  | K             |    0 | real                  | kind_phys | none   | F        |
 !!
 #endif
 
@@ -89,7 +96,7 @@ module GFS_typedefs
 
        !--- parameter constants used for default initializations
        real(kind=kind_phys), parameter :: zero      = 0.0_kind_phys
-       real(kind=kind_phys), parameter :: huge      = 9.9999D15
+       real(kind=kind_phys), parameter :: huge      = 9.9692099683868690E36 ! NetCDF float FillValue
        real(kind=kind_phys), parameter :: clear_val = zero
       !real(kind=kind_phys), parameter :: clear_val = -9.9999e80
        real(kind=kind_phys), parameter :: rann_init = 0.6_kind_phys
@@ -352,11 +359,17 @@ module GFS_typedefs
 !! | local_name                                 | standard_name                                                          | long_name                                              | units         | rank | type    |    kind   | intent | optional |
 !! |--------------------------------------------|------------------------------------------------------------------------|--------------------------------------------------------|---------------|------|---------|-----------|--------|----------|
 !! | GFS_Data(cdata%blk_no)%Sfcprop%slmsk       | sea_land_ice_mask_real                                                 | landmask: sea/land/ice=0/1/2                           | flag          |    1 | real    | kind_phys | none   | F        |
-!! | GFS_Data(cdata%blk_no)%Sfcprop%lakemsk     | lake_mask_real                                                         | lake mask: non-lake/lake=0/1                           | flag          |    1 | real    | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Sfcprop%oceanfrac   | sea_area_fraction                                                      | fraction of horizontal grid area occupied by ocean     | frac          |    1 | real    | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Sfcprop%landfrac    | land_area_fraction                                                     | fraction of horizontal grid area occupied by land      | frac          |    1 | real    | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Sfcprop%lakefrac    | lake_area_fraction                                                     | fraction of horizontal grid area occupied by lake      | frac          |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Sfcprop%tsfc        | surface_skin_temperature                                               | surface skin temperature                               | K             |    1 | real    | kind_phys | none   | F        |
-!! | GFS_Data(cdata%blk_no)%Sfcprop%tisfc       | sea_ice_temperature                                                    | sea uce surface skin temperature                       | K             |    1 | real    | kind_phys | none   | F        |
-!! | GFS_Data(cdata%blk_no)%Sfcprop%snowd       | surface_snow_thickness_water_equivalent                                | water equivalent snow depth over land                  | mm            |    1 | real    | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Sfcprop%tsfco       | sea_surface_temperature                                                | sea surface temperature                                | K             |    1 | real    | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Sfcprop%tsfcl       | surface_skin_temperature_over_land                                     | surface skin temperature over land                     | K             |    1 | real    | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Sfcprop%tisfc       | sea_ice_temperature                                                    | sea ice surface skin temperature                       | K             |    1 | real    | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Sfcprop%snowd       | surface_snow_thickness_water_equivalent                                | water equivalent snow depth                            | mm            |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Sfcprop%zorl        | surface_roughness_length                                               | surface roughness length                               | cm            |    1 | real    | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Sfcprop%zorlo       | surface_roughness_length_over_ocean                                    | surface roughness length over ocean                    | cm            |    1 | real    | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Sfcprop%zorll       | surface_roughness_length_over_land                                     | surface roughness length over land                     | cm            |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Sfcprop%fice        | sea_ice_concentration                                                  | ice fraction over open water                           | frac          |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Sfcprop%hprim       |                                                                        | topographic standard deviation                         | m             |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Sfcprop%hprime      | statistical_measures_of_subgrid_orography                              | orographic metrics                                     | various       |    2 | real    | kind_phys | none   | F        |
@@ -441,12 +454,18 @@ module GFS_typedefs
 
 !--- In (radiation and physics)
     real (kind=kind_phys), pointer :: slmsk  (:)   => null()  !< sea/land mask array (sea:0,land:1,sea-ice:2)
-    real (kind=kind_phys), pointer :: lakemsk(:)   => null()  !< lake mask array (lake:1, non-lake:0)
-    real (kind=kind_phys), pointer :: tsfc   (:)   => null()  !< surface temperature in k
+    real (kind=kind_phys), pointer :: oceanfrac(:) => null()  !< ocean fraction [0:1]
+    real (kind=kind_phys), pointer :: landfrac(:)  => null()  !<  land fraction [0:1]
+    real (kind=kind_phys), pointer :: lakefrac(:)  => null()  !<  lake fraction [0:1]
+    real (kind=kind_phys), pointer :: tsfc   (:)   => null()  !< surface air temperature in K
                                                               !< [tsea in gbphys.f]
+    real (kind=kind_phys), pointer :: tsfco  (:)   => null()  !< sst in K
+    real (kind=kind_phys), pointer :: tsfcl  (:)   => null()  !< surface land temperature in K
     real (kind=kind_phys), pointer :: tisfc  (:)   => null()  !< surface temperature over ice fraction
     real (kind=kind_phys), pointer :: snowd  (:)   => null()  !< snow depth water equivalent in mm ; same as snwdph
-    real (kind=kind_phys), pointer :: zorl   (:)   => null()  !< surface roughness in cm
+    real (kind=kind_phys), pointer :: zorl   (:)   => null()  !< composite surface roughness in cm
+    real (kind=kind_phys), pointer :: zorlo  (:)   => null()  !< ocean surface roughness in cm
+    real (kind=kind_phys), pointer :: zorll  (:)   => null()  !< land surface roughness in cm
     real (kind=kind_phys), pointer :: fice   (:)   => null()  !< ice fraction over open water grid
     real (kind=kind_phys), pointer :: hprim  (:)   => null()  !< topographic standard deviation in m
     real (kind=kind_phys), pointer :: hprime (:,:) => null()  !< orographic metrics
@@ -753,7 +772,7 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: ca_rad   (:)   => null()  !
     real (kind=kind_phys), pointer :: ca_micro (:)   => null()  !
     real (kind=kind_phys), pointer :: cape     (:)   => null()  !
-    
+
     !--- stochastic physics
     real (kind=kind_phys), pointer :: shum_wts  (:,:)   => null()  !
     real (kind=kind_phys), pointer :: sppt_wts  (:,:)   => null()  !
@@ -1439,7 +1458,7 @@ module GFS_typedefs
 
 !--- near surface temperature model
     logical              :: nst_anl         !< flag for NSSTM analysis in gcycle/sfcsub
-    integer              :: lsea           
+    integer              :: lsea
     integer              :: nstf_name(5)    !< flag 0 for no nst  1 for uncoupled nst  and 2 for coupled NST
                                             !< nstf_name contains the NSST related parameters
                                             !< nstf_name(1) : 0 = NSSTM off, 1 = NSSTM on but uncoupled
@@ -2226,7 +2245,16 @@ module GFS_typedefs
 !! | GFS_Interstitial(cdata%thrd_no)%alb1d                         | surface_albedo_perturbation                                                                    | surface albedo perturbation                                                         | frac          |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%bexp1d                        | perturbation_of_soil_type_b_parameter                                                          | perturbation of soil type "b" parameter                                             | frac          |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%cd                            | surface_drag_coefficient_for_momentum_in_air                                                   | surface exchange coeff for momentum                                                 | none          |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%cd_ocean                      | surface_drag_coefficient_for_momentum_in_air_over_ocean                                        | surface exchange coeff for momentum over ocean                                      | none          |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%cd_land                       | surface_drag_coefficient_for_momentum_in_air_over_land                                         | surface exchange coeff for momentum over land                                       | none          |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%cd_ice                        | surface_drag_coefficient_for_momentum_in_air_over_ice                                          | surface exchange coeff for momentum over ice                                        | none          |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%cdq                           | surface_drag_coefficient_for_heat_and_moisture_in_air                                          | surface exchange coeff heat & moisture                                              | none          |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%cdq_ocean                     | surface_drag_coefficient_for_heat_and_moisture_in_air_over_ocean                               | surface exchange coeff heat & moisture over ocean                                   | none          |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%cdq_land                      | surface_drag_coefficient_for_heat_and_moisture_in_air_over_land                                | surface exchange coeff heat & moisture over land                                    | none          |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%cdq_ice                       | surface_drag_coefficient_for_heat_and_moisture_in_air_over_ice                                 | surface exchange coeff heat & moisture over ice                                     | none          |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%chh_ocean                     | surface_drag_mass_flux_for_heat_and_moisture_in_air_over_ocean                                 | thermal exchange coefficient over ocean                                             | kg m-2 s-1    |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%chh_land                      | surface_drag_mass_flux_for_heat_and_moisture_in_air_over_land                                  | thermal exchange coefficient over land                                              | kg m-2 s-1    |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%chh_ice                       | surface_drag_mass_flux_for_heat_and_moisture_in_air_over_ice                                   | thermal exchange coefficient over ice                                               | kg m-2 s-1    |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%cf_upi                        | convective_cloud_fraction_for_microphysics                                                     | convective cloud fraction for microphysics                                          | frac          |    2 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%clcn                          | convective_cloud_volume_fraction                                                               | convective cloud volume fraction                                                    | frac          |    2 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%cldf                          | cloud_area_fraction                                                                            | fraction of grid box area in which updrafts occur                                   | frac          |    1 | real        | kind_phys | none   | F        |
@@ -2249,6 +2277,9 @@ module GFS_typedefs
 !! | GFS_Interstitial(cdata%thrd_no)%clw(:,:,2)                    | cloud_condensed_water_mixing_ratio_convective_transport_tracer | moist (dry+vapor, no condensates) mixing ratio of cloud water (condensate) in the convectively transported tracer array | kg kg-1   |    2 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%clw(:,:,GFS_Interstitial(cdata%thrd_no)%ntk) | turbulent_kinetic_energy_convective_transport_tracer                            | turbulent kinetic energy in the convectively transported tracer array               | m2 s-2        |    2 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%clx                           | fraction_of_grid_box_with_subgrid_orography_higher_than_critical_height                        | frac. of grid box with by subgrid orography higher than critical height             | frac          |    2 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%cmm_ocean                     | surface_drag_wind_speed_for_momentum_in_air_over_ocean                                         | momentum exchange coefficient over ocean                                            | m s-1         |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%cmm_land                      | surface_drag_wind_speed_for_momentum_in_air_over_land                                          | momentum exchange coefficient over land                                             | m s-1         |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%cmm_ice                       | surface_drag_wind_speed_for_momentum_in_air_over_ice                                           | momentum exchange coefficient over ice                                              | m s-1         |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%cnv_dqldt                     | tendency_of_cloud_water_due_to_convective_microphysics                                         | tendency of cloud water due to convective microphysics                              | kg m-2 s-1    |    2 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%cnv_fice                      | ice_fraction_in_convective_tower                                                               | ice fraction in convective tower                                                    | frac          |    2 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%cnv_mfd                       | detrained_mass_flux                                                                            | detrained mass flux                                                                 | kg m-2 s-1    |    2 | real        | kind_phys | none   | F        |
@@ -2263,7 +2294,7 @@ module GFS_typedefs
 !! | GFS_Interstitial(cdata%thrd_no)%de_lgth                       | cloud_decorrelation_length                                                                     | cloud decorrelation length                                                          | km            |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%del                           | air_pressure_difference_between_midlayers                                                      | air pressure difference between midlayers                                           | Pa            |    2 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%del_gz                        | geopotential_difference_between_midlayers_divided_by_midlayer_virtual_temperature              | difference between mid-layer geopotentials divided by mid-layer virtual temperature | m2 s-2 K-1    |    2 | real        | kind_phys | none   | F        |
-!! | GFS_Interstitial(cdata%thrd_no)%delr                          | layer_pressure_thickness_for_radiation                                                         | layer pressure thickness on radiation levels                                        | hPa           |    2 | real        | kind_phys | none   | F        | 
+!! | GFS_Interstitial(cdata%thrd_no)%delr                          | layer_pressure_thickness_for_radiation                                                         | layer pressure thickness on radiation levels                                        | hPa           |    2 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%dkt                           | atmosphere_heat_diffusivity                                                                    | diffusivity for heat                                                                | m2 s-1        |    2 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%dlength                       | characteristic_grid_length_scale                                                               | representative horizontal length scale of grid box                                  | m             |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%dqdt                          | tendency_of_tracers_due_to_model_physics                                                       | updated tendency of the tracers due to model physics                                | kg kg-1 s-1   |    3 | real        | kind_phys | none   | F        |
@@ -2296,7 +2327,13 @@ module GFS_typedefs
 !! | GFS_Interstitial(cdata%thrd_no)%dzlyr                         | layer_thickness_for_radiation                                                                  | layer thickness on radiation levels                                                 | km            |    2 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%elvmax                        | maximum_subgrid_orography                                                                      | maximum of subgrid orography                                                        | m             |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%ep1d                          | surface_upward_potential_latent_heat_flux                                                      | surface upward potential latent heat flux                                           | W m-2         |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%ep1d_ocean                    | surface_upward_potential_latent_heat_flux_over_ocean                                           | surface upward potential latent heat flux over ocean                                | W m-2         |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%ep1d_land                     | surface_upward_potential_latent_heat_flux_over_land                                            | surface upward potential latent heat flux over land                                 | W m-2         |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%ep1d_ice                      | surface_upward_potential_latent_heat_flux_over_ice                                             | surface upward potential latent heat flux over ice                                  | W m-2         |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%evap                          | kinematic_surface_upward_latent_heat_flux                                                      | kinematic surface upward latent heat flux                                           | kg kg-1 m s-1 |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%evap_ocean                    | kinematic_surface_upward_latent_heat_flux_over_ocean                                           | kinematic surface upward latent heat flux over ocean                                | kg kg-1 m s-1 |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%evap_land                     | kinematic_surface_upward_latent_heat_flux_over_land                                            | kinematic surface upward latent heat flux over land                                 | kg kg-1 m s-1 |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%evap_ice                      | kinematic_surface_upward_latent_heat_flux_over_ice                                             | kinematic surface upward latent heat flux over ice                                  | kg kg-1 m s-1 |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%evbs                          | soil_upward_latent_heat_flux                                                                   | soil upward latent heat flux                                                        | W m-2         |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%evcw                          | canopy_upward_latent_heat_flux                                                                 | canopy upward latent heat flux                                                      | W m-2         |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%faerlw                        | aerosol_optical_properties_for_longwave_bands_01-16                                            | aerosol optical properties for longwave bands 01-16                                 | various       |    4 | real        | kind_phys | none   | F        |
@@ -2307,13 +2344,25 @@ module GFS_typedefs
 !! | GFS_Interstitial(cdata%thrd_no)%faersw(:,:,:,1)               | aerosol_optical_depth_for_shortwave_bands_01-16                                                | aerosol optical depth for shortwave bands 01-16                                     | none          |    3 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%faersw(:,:,:,2)               | aerosol_single_scattering_albedo_for_shortwave_bands_01-16                                     | aerosol single scattering albedo for shortwave bands 01-16                          | frac          |    3 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%faersw(:,:,:,3)               | aerosol_asymmetry_parameter_for_shortwave_bands_01-16                                          | aerosol asymmetry parameter for shortwave bands 01-16                               | none          |    3 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%ffhh_ocean                    | Monin-Obukhov_similarity_function_for_heat_over_ocean                                          | Monin-Obukhov similarity function for heat over ocean                               | none          |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%ffhh_land                     | Monin-Obukhov_similarity_function_for_heat_over_land                                           | Monin-Obukhov similarity function for heat over land                                | none          |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%ffhh_ice                      | Monin-Obukhov_similarity_function_for_heat_over_ice                                            | Monin-Obukhov similarity function for heat over ice                                 | none          |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%fh2                           | Monin-Obukhov_similarity_function_for_heat_at_2m                                               | Monin-Obukhov similarity parameter for heat at 2m                                   | none          |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%fh2_ocean                     | Monin-Obukhov_similarity_function_for_heat_at_2m_over_ocean                                    | Monin-Obukhov similarity parameter for heat at 2m over ocean                        | none          |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%fh2_land                      | Monin-Obukhov_similarity_function_for_heat_at_2m_over_land                                     | Monin-Obukhov similarity parameter for heat at 2m over land                         | none          |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%fh2_ice                       | Monin-Obukhov_similarity_function_for_heat_at_2m_over_ice                                      | Monin-Obukhov similarity parameter for heat at 2m over ice                          | none          |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%flag_cice                     | flag_for_cice                                                                                  | flag for cice                                                                       | flag          |    1 | logical     |           | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%flag_guess                    | flag_for_guess_run                                                                             | flag for guess run                                                                  | flag          |    1 | logical     |           | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%flag_iter                     | flag_for_iteration                                                                             | flag for iteration                                                                  | flag          |    1 | logical     |           | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%ffmm_ocean                    | Monin-Obukhov_similarity_function_for_momentum_over_ocean                                      | Monin-Obukhov similarity function for momentum over ocean                           | none          |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%ffmm_land                     | Monin-Obukhov_similarity_function_for_momentum_over_land                                       | Monin-Obukhov similarity function for momentum over land                            | none          |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%ffmm_ice                      | Monin-Obukhov_similarity_function_for_momentum_over_ice                                        | Monin-Obukhov similarity function for momentum over ice                             | none          |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%fm10                          | Monin-Obukhov_similarity_function_for_momentum_at_10m                                          | Monin-Obukhov similarity parameter for momentum at 10m                              | none          |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%fm10_ocean                    | Monin-Obukhov_similarity_function_for_momentum_at_10m_over_ocean                               | Monin-Obukhov similarity parameter for momentum at 10m over ocean                   | none          |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%fm10_land                     | Monin-Obukhov_similarity_function_for_momentum_at_10m_over_land                                | Monin-Obukhov similarity parameter for momentum at 10m over land                    | none          |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%fm10_ice                      | Monin-Obukhov_similarity_function_for_momentum_at_10m_over_ice                                 | Monin-Obukhov similarity parameter for momentum at 10m over ice                     | none          |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%frain                         | dynamics_to_physics_timestep_ratio                                                             | ratio of dynamics timestep to physics timestep                                      | none          |    0 | real        | kind_phys | none   | F        |
-!! | GFS_Interstitial(cdata%thrd_no)%frland                        | land_area_fraction                                                                             | land area fraction                                                                  | frac          |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%frland                        | land_area_fraction_for_microphysics                                                            | land area fraction used in microphysics schemes                                     | frac          |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%fscav                         | fraction_of_tracer_scavenged                                                                   | fraction of the tracer (aerosols) that is scavenged by convection                   | km-1          |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%fswtr                         | fraction_of_cloud_top_water_scavenged                                                          | fraction of the tracer (cloud top water) that is scavenged by convection            | km-1          |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%gabsbdlw                      | surface_downwelling_longwave_flux_absorbed_by_ground                                           | total sky surface downward longwave flux absorbed by the ground                     | W m-2         |    1 | real        | kind_phys | none   | F        |
@@ -2332,18 +2381,29 @@ module GFS_typedefs
 !! | GFS_Interstitial(cdata%thrd_no)%gasvmr(:,:,9)                 | volume_mixing_ratio_ccl4                                                                       | volume mixing ratio ccl4                                                            | kg kg-1       |    2 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%gasvmr(:,:,10)                | volume_mixing_ratio_cfc113                                                                     | volume mixing ratio cfc113                                                          | kg kg-1       |    2 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%gflx                          | upward_heat_flux_in_soil                                                                       | soil heat flux                                                                      | W m-2         |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%gflx_ocean                    | upward_heat_flux_in_soil_over_ocean                                                            | soil heat flux over ocean                                                           | W m-2         |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%gflx_land                     | upward_heat_flux_in_soil_over_land                                                             | soil heat flux over land                                                            | W m-2         |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%gflx_ice                      | upward_heat_flux_in_soil_over_ice                                                              | soil heat flux over ice                                                             | W m-2         |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%graupelmp                     | lwe_thickness_of_graupel_amount                                                                | explicit graupel fall on physics timestep                                           | m             |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%gwdcu                         | tendency_of_x_wind_due_to_convective_gravity_wave_drag                                         | zonal wind tendency due to convective gravity wave drag                             | m s-2         |    2 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%gwdcv                         | tendency_of_y_wind_due_to_convective_gravity_wave_drag                                         | meridional wind tendency due to convective gravity wave drag                        | m s-2         |    2 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%h2o_coeff                     | number_of_coefficients_in_h2o_forcing_data                                                     | number of coefficients in h2o forcing data                                          | index         |    0 | integer     |           | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%h2o_pres                      | natural_log_of_h2o_forcing_data_pressure_levels                                                | natural log of h2o forcing data pressure levels                                     | log(Pa)       |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%hflx                          | kinematic_surface_upward_sensible_heat_flux                                                    | kinematic surface upward sensible heat flux                                         | K m s-1       |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%hflx_ocean                    | kinematic_surface_upward_sensible_heat_flux_over_ocean                                         | kinematic surface upward sensible heat flux over ocean                              | K m s-1       |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%hflx_land                     | kinematic_surface_upward_sensible_heat_flux_over_land                                          | kinematic surface upward sensible heat flux over land                               | K m s-1       |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%hflx_ice                      | kinematic_surface_upward_sensible_heat_flux_over_ice                                           | kinematic surface upward sensible heat flux over ice                                | K m s-1       |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%hprime1                       | standard_deviation_of_subgrid_orography                                                        | standard deviation of subgrid orography                                             | m             |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%icemp                         | lwe_thickness_of_ice_amount                                                                    | explicit ice fall on physics timestep                                               | m             |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%dry                           | flag_nonzero_land_surface_fraction                                                             | flag indicating presence of some land surface area fraction                         | flag          |    1 | logical     |           | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%idxday                        | daytime_points                                                                                 | daytime points                                                                      | index         |    1 | integer     |           | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%icy                           | flag_nonzero_sea_ice_surface_fraction                                                          | flag indicating presence of some sea ice surface area fraction                      | flag          |    1 | logical     |           | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%lake                          | flag_nonzero_lake_surface_fraction                                                             | flag indicating presence of some lake surface area fraction                         | flag          |    1 | logical     |           | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%im                            | horizontal_loop_extent_OLD_NOW_MODEL_PERCENT_BLKSZ_OF_NB                                       | horizontal loop extent                                                              | count         |    0 | integer     |           | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%ocean                         | flag_nonzero_ocean_surface_fraction                                                            | flag indicating presence of some ocean surface area fraction                        | flag          |    1 | logical     |           | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%ipr                           | horizontal_index_of_printed_column                                                             | horizontal index of printed column                                                  | index         |    0 | integer     |           | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%islmsk                        | sea_land_ice_mask                                                                              | sea/land/ice mask (=0/1/2)                                                          | flag          |    1 | integer     |           | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%wet                           | flag_nonzero_wet_surface_fraction                                                              | flag indicating presence of some ocean or lake surface area fraction                | flag          |    1 | logical     |           | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%ix                            | horizontal_dimension_OLD_NOW_MODEL_PERCENT_BLKSZ_OF_NB                                         | horizontal dimension                                                                | count         |    0 | integer     |           | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%kb                            | vertical_index_difference_between_layer_and_lower_bound                                        | vertical index difference between layer and lower bound                             | index         |    0 | integer     |           | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%kbot                          | vertical_index_at_cloud_base                                                                   | vertical index at cloud base                                                        | index         |    1 | integer     |           | none   | F        |
@@ -2396,6 +2456,9 @@ module GFS_typedefs
 !! | GFS_Interstitial(cdata%thrd_no)%qsnw                          | local_snow_water_mixing_ratio                                                                  | moist (dry+vapor, no condensates) mixing ratio of snow water local to physics       | kg kg-1       |    2 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%prcpmp                        | lwe_thickness_of_explicit_precipitation_amount                                                 | explicit precipitation (rain, ice, snow, graupel, ...) on physics timestep          | m             |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%qss                           | surface_specific_humidity                                                                      | surface air saturation specific humidity                                            | kg kg-1       |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%qss_ocean                     | surface_specific_humidity_over_ocean                                                           | surface air saturation specific humidity over ocean                                 | kg kg-1       |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%qss_land                      | surface_specific_humidity_over_land                                                            | surface air saturation specific humidity over land                                  | kg kg-1       |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%qss_ice                       | surface_specific_humidity_over_ice                                                             | surface air saturation specific humidity over ice                                   | kg kg-1       |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%raddt                         | time_step_for_radiation                                                                        | radiation time step                                                                 | s             |    0 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%raincd                        | lwe_thickness_of_deep_convective_precipitation_amount                                          | deep convective rainfall amount on physics timestep                                 | m             |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%raincs                        | lwe_thickness_of_shallow_convective_precipitation_amount                                       | shallow convective rainfall amount on physics timestep                              | m             |    1 | real        | kind_phys | none   | F        |
@@ -2403,6 +2466,9 @@ module GFS_typedefs
 !! | GFS_Interstitial(cdata%thrd_no)%rainmp                        | lwe_thickness_of_explicit_rain_amount                                                          | explicit rain on physics timestep                                                   | m             |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%rainp                         | tendency_of_rain_water_mixing_ratio_due_to_microphysics                                        | tendency of rain water mixing ratio due to microphysics                             | kg kg-1 s-1   |    2 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%rb                            | bulk_richardson_number_at_lowest_model_level                                                   | bulk Richardson number at the surface                                               | none          |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%rb_ocean                      | bulk_richardson_number_at_lowest_model_level_over_ocean                                        | bulk Richardson number at the surface over ocean                                    | none          |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%rb_land                       | bulk_richardson_number_at_lowest_model_level_over_land                                         | bulk Richardson number at the surface over land                                     | none          |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%rb_ice                        | bulk_richardson_number_at_lowest_model_level_over_ice                                          | bulk Richardson number at the surface over ice                                      | none          |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%rhc                           | critical_relative_humidity                                                                     | critical relative humidity                                                          | frac          |    2 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%rhcbot                        | critical_relative_humidity_at_surface                                                          | critical relative humidity at the surface                                           | frac          |    0 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%rhcpbl                        | critical_relative_humidity_at_PBL_top                                                          | critical relative humidity at the PBL top                                           | frac          |    0 | real        | kind_phys | none   | F        |
@@ -2429,29 +2495,49 @@ module GFS_typedefs
 !! | GFS_Interstitial(cdata%thrd_no)%skip_macro                    | flag_skip_macro                                                                                | flag to skip cloud macrophysics in Morrison scheme                                  | flag          |    0 | logical     |           | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%slopetype                     | surface_slope_classification                                                                   | surface slope type at each grid cell                                                | index         |    1 | integer     |           | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%snowc                         | surface_snow_area_fraction                                                                     | surface snow area fraction                                                          | frac          |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%snowd_ocean                   | surface_snow_thickness_water_equivalent_over_ocean                                             | water equivalent snow depth over ocean                                              | mm            |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%snowd_land                    | surface_snow_thickness_water_equivalent_over_land                                              | water equivalent snow depth over land                                               | mm            |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%snowd_ice                     | surface_snow_thickness_water_equivalent_over_ice                                               | water equivalent snow depth over ice                                                | mm            |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%snohf                         | snow_freezing_rain_upward_latent_heat_flux                                                     | latent heat flux due to snow and frz rain                                           | W m-2         |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%snowmp                        | lwe_thickness_of_snow_amount                                                                   | explicit snow fall on physics timestep                                              | m             |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%snowmt                        | surface_snow_melt                                                                              | snow melt during timestep                                                           | m             |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%soiltype                      | soil_type_classification                                                                       | soil type at each grid cell                                                         | index         |    1 | integer     |           | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%stress                        | surface_wind_stress                                                                            | surface wind stress                                                                 | m2 s-2        |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%stress_ocean                  | surface_wind_stress_over_ocean                                                                 | surface wind stress over ocean                                                      | m2 s-2        |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%stress_land                   | surface_wind_stress_over_land                                                                  | surface wind stress over land                                                       | m2 s-2        |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%stress_ice                    | surface_wind_stress_over_ice                                                                   | surface wind stress over ice                                                        | m2 s-2        |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%theta                         | angle_from_east_of_maximum_subgrid_orographic_variations                                       | angle with_respect to east of maximum subgrid orographic variations                 | degrees       |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%tlvl                          | air_temperature_at_interface_for_radiation                                                     | air temperature at vertical interface for radiation calculation                     | K             |    2 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%tlyr                          | air_temperature_at_layer_for_radiation                                                         | air temperature at vertical layer for radiation calculation                         | K             |    2 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%tprcp_ocean                   | nonnegative_lwe_thickness_of_precipitation_amount_on_dynamics_timestep_over_ocean              | total precipitation amount in each time step over ocean                             | m             |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%tprcp_land                    | nonnegative_lwe_thickness_of_precipitation_amount_on_dynamics_timestep_over_land               | total precipitation amount in each time step over land                              | m             |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%tprcp_ice                     | nonnegative_lwe_thickness_of_precipitation_amount_on_dynamics_timestep_over_ice                | total precipitation amount in each time step over ice                               | m             |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%tracers_start_index           | start_index_of_other_tracers                                                                   | beginning index of the non-water tracer species                                     | index         |    0 | integer     |           | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%tracers_total                 | number_of_total_tracers                                                                        | total number of tracers                                                             | count         |    0 | integer     |           | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%trans                         | transpiration_flux                                                                             | total plant transpiration rate                                                      | kg m-2 s-1    |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%tseal                         | surface_skin_temperature_for_nsst                                                              | ocean surface skin temperature                                                      | K             |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%tsfa                          | surface_air_temperature_for_radiation                                                          | lowest model layer air temperature for radiation                                    | K             |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%tsfc_ocean                    | surface_skin_temperature_over_ocean_interstitial                                               | surface skin temperature over ocean (temporary use as interstitial)                 | K             |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%tsfc_land                     | surface_skin_temperature_over_land_interstitial                                                | surface skin temperature over land  (temporary use as interstitial)                 | K             |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%tsfc_ice                      | surface_skin_temperature_over_ice_interstitial                                                 | surface skin temperature over ice   (temporary use as interstitial)                 | K             |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%tsfg                          | surface_ground_temperature_for_radiation                                                       | surface ground temperature for radiation                                            | K             |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%tsurf                         | surface_skin_temperature_after_iteration                                                       | surface skin temperature after iteration                                            | K             |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%tsurf_ocean                   | surface_skin_temperature_after_iteration_over_ocean                                            | surface skin temperature after iteration over ocean                                 | K             |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%tsurf_land                    | surface_skin_temperature_after_iteration_over_land                                             | surface skin temperature after iteration over land                                  | K             |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%tsurf_ice                     | surface_skin_temperature_after_iteration_over_ice                                              | surface skin temperature after iteration over ice                                   | K             |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%tracers_water                 | number_of_water_tracers                                                                        | number of water-related tracers                                                     | count         |    0 | integer     |           | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%ud_mf                         | instantaneous_atmosphere_updraft_convective_mass_flux                                          | (updraft mass flux) * delt                                                          | kg m-2        |    2 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%ulwsfc_cice                   | surface_upwelling_longwave_flux_for_cice                                                       | surface upwelling longwave flux for cice                                            | W m-2         |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%uustar_ocean                  | surface_friction_velocity_over_ocean                                                           | surface friction velocity over ocean                                                | m s-1         |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%uustar_land                   | surface_friction_velocity_over_land                                                            | surface friction velocity over land                                                 | m s-1         |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%uustar_ice                    | surface_friction_velocity_over_ice                                                             | surface friction velocity over ice                                                  | m s-1         |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%vdftra                        | vertically_diffused_tracer_concentration                                                       | tracer concentration diffused by PBL scheme                                         | kg kg-1       |    3 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%vegf1d                        | perturbation_of_vegetation_fraction                                                            | perturbation of vegetation fraction                                                 | frac          |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%vegtype                       | vegetation_type_classification                                                                 | vegetation type at each grid cell                                                   | index         |    1 | integer     |           | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%w_upi                         | vertical_velocity_for_updraft                                                                  | vertical velocity for updraft                                                       | m s-1         |    2 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%wcbmax                        | maximum_updraft_velocity_at_cloud_base                                                         | maximum updraft velocity at cloud base                                              | m s-1         |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%weasd_land                    | water_equivalent_accumulated_snow_depth_over_land                                              | water equiv of acc snow depth over land                                             | mm            |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%weasd_ice                     | water_equivalent_accumulated_snow_depth_over_ice                                               | water equiv of acc snow depth over ice                                              | mm            |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%wind                          | wind_speed_at_lowest_model_layer                                                               | wind speed at lowest model level                                                    | m s-1         |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%work1                         | grid_size_related_coefficient_used_in_scale-sensitive_schemes                                  | grid size related coefficient used in scale-sensitive schemes                       | none          |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%work2                         | grid_size_related_coefficient_used_in_scale-sensitive_schemes_complement                       | complement to work1                                                                 | none          |    1 | real        | kind_phys | none   | F        |
@@ -2460,6 +2546,9 @@ module GFS_typedefs
 !! | GFS_Interstitial(cdata%thrd_no)%xlai1d                        | perturbation_of_leaf_area_index                                                                | perturbation of leaf area index                                                     | frac          |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%xmu                           | zenith_angle_temporal_adjustment_factor_for_shortwave_fluxes                                   | zenith angle temporal adjustment factor for shortwave                               | none          |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%z01d                          | perturbation_of_momentum_roughness_length                                                      | perturbation of momentum roughness length                                           | frac          |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%zorl_ocean                    | surface_roughness_length_over_ocean_interstitial                                               | surface roughness length over ocean (temporary use as interstitial)                 | cm            |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%zorl_land                     | surface_roughness_length_over_land_interstitial                                                | surface roughness length over land  (temporary use as interstitial)                 | cm            |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%zorl_ice                      | surface_roughness_length_over_ice_interstitial                                                 | surface roughness length over ice   (temporary use as interstitial)                 | cm            |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%zt1d                          | perturbation_of_heat_to_momentum_roughness_length_ratio                                        | perturbation of heat to momentum roughness length ratio                             | frac          |    1 | real        | kind_phys | none   | F        |
 !!
 #endif
@@ -2477,8 +2566,17 @@ module GFS_typedefs
     real (kind=kind_phys), pointer      :: alb1d(:)         => null()  !<
     real (kind=kind_phys), pointer      :: bexp1d(:)        => null()  !<
     real (kind=kind_phys), pointer      :: cd(:)            => null()  !<
+    real (kind=kind_phys), pointer      :: cd_ice(:)        => null()  !<
+    real (kind=kind_phys), pointer      :: cd_land(:)       => null()  !<
+    real (kind=kind_phys), pointer      :: cd_ocean(:)      => null()  !<
     real (kind=kind_phys), pointer      :: cdq(:)           => null()  !<
+    real (kind=kind_phys), pointer      :: cdq_ice(:)       => null()  !<
+    real (kind=kind_phys), pointer      :: cdq_land(:)      => null()  !<
+    real (kind=kind_phys), pointer      :: cdq_ocean(:)     => null()  !<
     real (kind=kind_phys), pointer      :: cf_upi(:,:)      => null()  !<
+    real (kind=kind_phys), pointer      :: chh_ice(:)       => null()  !<
+    real (kind=kind_phys), pointer      :: chh_land(:)      => null()  !<
+    real (kind=kind_phys), pointer      :: chh_ocean(:)     => null()  !<
     real (kind=kind_phys), pointer      :: clcn(:,:)        => null()  !<
     real (kind=kind_phys), pointer      :: cldf(:)          => null()  !<
     real (kind=kind_phys), pointer      :: cldsa(:,:)       => null()  !<
@@ -2489,6 +2587,9 @@ module GFS_typedefs
     real (kind=kind_phys), pointer      :: clw(:,:,:)       => null()  !<
     real (kind=kind_phys), pointer      :: clw_surf(:)      => null()  !<
     real (kind=kind_phys), pointer      :: clx(:,:)         => null()  !<
+    real (kind=kind_phys), pointer      :: cmm_ice(:)       => null()  !<
+    real (kind=kind_phys), pointer      :: cmm_land(:)      => null()  !<
+    real (kind=kind_phys), pointer      :: cmm_ocean(:)     => null()  !<
     real (kind=kind_phys), pointer      :: cndm_surf(:)     => null()  !<
     real (kind=kind_phys), pointer      :: cnv_dqldt(:,:)   => null()  !<
     real (kind=kind_phys), pointer      :: cnv_fice(:,:)    => null()  !<
@@ -2525,16 +2626,34 @@ module GFS_typedefs
     real (kind=kind_phys), pointer      :: dzlyr(:,:)       => null()  !<
     real (kind=kind_phys), pointer      :: elvmax(:)        => null()  !<
     real (kind=kind_phys), pointer      :: ep1d(:)          => null()  !<
+    real (kind=kind_phys), pointer      :: ep1d_ice(:)      => null()  !<
+    real (kind=kind_phys), pointer      :: ep1d_land(:)     => null()  !<
+    real (kind=kind_phys), pointer      :: ep1d_ocean(:)    => null()  !<
     real (kind=kind_phys), pointer      :: evap(:)          => null()  !<
+    real (kind=kind_phys), pointer      :: evap_ice(:)      => null()  !<
+    real (kind=kind_phys), pointer      :: evap_land(:)     => null()  !<
+    real (kind=kind_phys), pointer      :: evap_ocean(:)    => null()  !<
     real (kind=kind_phys), pointer      :: evbs(:)          => null()  !<
     real (kind=kind_phys), pointer      :: evcw(:)          => null()  !<
     real (kind=kind_phys), pointer      :: faerlw(:,:,:,:)  => null()  !<
     real (kind=kind_phys), pointer      :: faersw(:,:,:,:)  => null()  !<
+    real (kind=kind_phys), pointer      :: ffhh_ice(:)      => null()  !<
+    real (kind=kind_phys), pointer      :: ffhh_land(:)     => null()  !<
+    real (kind=kind_phys), pointer      :: ffhh_ocean(:)    => null()  !<
     real (kind=kind_phys), pointer      :: fh2(:)           => null()  !<
+    real (kind=kind_phys), pointer      :: fh2_ice(:)       => null()  !<
+    real (kind=kind_phys), pointer      :: fh2_land(:)      => null()  !<
+    real (kind=kind_phys), pointer      :: fh2_ocean(:)     => null()  !<
     logical,               pointer      :: flag_cice(:)     => null()  !<
     logical,               pointer      :: flag_guess(:)    => null()  !<
     logical,               pointer      :: flag_iter(:)     => null()  !<
+    real (kind=kind_phys), pointer      :: ffmm_ice(:)      => null()  !<
+    real (kind=kind_phys), pointer      :: ffmm_land(:)     => null()  !<
+    real (kind=kind_phys), pointer      :: ffmm_ocean(:)    => null()  !<
     real (kind=kind_phys), pointer      :: fm10(:)          => null()  !<
+    real (kind=kind_phys), pointer      :: fm10_ice(:)      => null()  !<
+    real (kind=kind_phys), pointer      :: fm10_land(:)     => null()  !<
+    real (kind=kind_phys), pointer      :: fm10_ocean(:)    => null()  !<
     real (kind=kind_phys)               :: frain                       !<
     real (kind=kind_phys), pointer      :: frland(:)        => null()  !<
     real (kind=kind_phys), pointer      :: fscav(:)         => null()  !<
@@ -2545,18 +2664,29 @@ module GFS_typedefs
     real (kind=kind_phys), pointer      :: gamt(:)          => null()  !<
     real (kind=kind_phys), pointer      :: gasvmr(:,:,:)    => null()  !<
     real (kind=kind_phys), pointer      :: gflx(:)          => null()  !<
+    real (kind=kind_phys), pointer      :: gflx_ice(:)      => null()  !<
+    real (kind=kind_phys), pointer      :: gflx_land(:)     => null()  !<
+    real (kind=kind_phys), pointer      :: gflx_ocean(:)    => null()  !<
     real (kind=kind_phys), pointer      :: graupelmp(:)     => null()  !<
     real (kind=kind_phys), pointer      :: gwdcu(:,:)       => null()  !<
     real (kind=kind_phys), pointer      :: gwdcv(:,:)       => null()  !<
     integer                             :: h2o_coeff                   !<
     real (kind=kind_phys), pointer      :: h2o_pres(:)      => null()  !<
     real (kind=kind_phys), pointer      :: hflx(:)          => null()  !<
+    real (kind=kind_phys), pointer      :: hflx_ice(:)      => null()  !<
+    real (kind=kind_phys), pointer      :: hflx_land(:)     => null()  !<
+    real (kind=kind_phys), pointer      :: hflx_ocean(:)    => null()  !<
     real (kind=kind_phys), pointer      :: hprime1(:)       => null()  !<
     real (kind=kind_phys), pointer      :: icemp(:)         => null()  !<
+    logical,               pointer      :: dry(:)           => null()  !<
     integer,               pointer      :: idxday(:)        => null()  !<
+    logical,               pointer      :: icy(:)           => null()  !<
+    logical,               pointer      :: lake(:)          => null()  !<
     integer                             :: im                          !<
+    logical,               pointer      :: ocean(:)         => null()  !<
     integer                             :: ipr                         !<
     integer,               pointer      :: islmsk(:)        => null()  !<
+    logical,               pointer      :: wet(:)           => null()  !<
     integer                             :: ix                          !<
     integer                             :: kb                          !<
     integer,               pointer      :: kbot(:)          => null()  !<
@@ -2609,6 +2739,9 @@ module GFS_typedefs
     real (kind=kind_phys), pointer      :: qrn(:,:)         => null()  !<
     real (kind=kind_phys), pointer      :: qsnw(:,:)        => null()  !<
     real (kind=kind_phys), pointer      :: qss(:)           => null()  !<
+    real (kind=kind_phys), pointer      :: qss_ice(:)       => null()  !<
+    real (kind=kind_phys), pointer      :: qss_land(:)      => null()  !<
+    real (kind=kind_phys), pointer      :: qss_ocean(:)     => null()  !<
     real (kind=kind_phys)               :: raddt                       !<
     real (kind=kind_phys), pointer      :: rainmp(:)        => null()  !<
     real (kind=kind_phys), pointer      :: raincd(:)        => null()  !<
@@ -2616,6 +2749,9 @@ module GFS_typedefs
     real (kind=kind_phys), pointer      :: rainmcadj(:)     => null()  !<
     real (kind=kind_phys), pointer      :: rainp(:,:)       => null()  !<
     real (kind=kind_phys), pointer      :: rb(:)            => null()  !<
+    real (kind=kind_phys), pointer      :: rb_ice(:)        => null()  !<
+    real (kind=kind_phys), pointer      :: rb_land(:)       => null()  !<
+    real (kind=kind_phys), pointer      :: rb_ocean(:)      => null()  !<
     real (kind=kind_phys), pointer      :: rhc(:,:)         => null()  !<
     real (kind=kind_phys)               :: rhcbot                      !<
     real (kind=kind_phys)               :: rhcpbl                      !<
@@ -2635,29 +2771,50 @@ module GFS_typedefs
     logical                             :: skip_macro                  !<
     integer, pointer                    :: slopetype(:)     => null()  !<
     real (kind=kind_phys), pointer      :: snowc(:)         => null()  !<
+    real (kind=kind_phys), pointer      :: snowd_ice(:)     => null()  !<
+    real (kind=kind_phys), pointer      :: snowd_land(:)    => null()  !<
+    real (kind=kind_phys), pointer      :: snowd_ocean(:)   => null()  !<
     real (kind=kind_phys), pointer      :: snohf(:)         => null()  !<
     real (kind=kind_phys), pointer      :: snowmp(:)        => null()  !<
     real (kind=kind_phys), pointer      :: snowmt(:)        => null()  !<
     integer, pointer                    :: soiltype(:)      => null()  !<
     real (kind=kind_phys), pointer      :: stress(:)        => null()  !<
+    real (kind=kind_phys), pointer      :: stress_ice(:)    => null()  !<
+    real (kind=kind_phys), pointer      :: stress_land(:)   => null()  !<
+    real (kind=kind_phys), pointer      :: stress_ocean(:)  => null()  !<
     real (kind=kind_phys), pointer      :: theta(:)         => null()  !<
     real (kind=kind_phys), pointer      :: tlvl(:,:)        => null()  !<
     real (kind=kind_phys), pointer      :: tlyr(:,:)        => null()  !<
+    real (kind=kind_phys), pointer      :: tprcp_ice(:)     => null()  !<
+    real (kind=kind_phys), pointer      :: tprcp_land(:)    => null()  !<
+    real (kind=kind_phys), pointer      :: tprcp_ocean(:)   => null()  !<
     integer                             :: tracers_start_index         !<
     integer                             :: tracers_total               !<
     integer                             :: tracers_water               !<
     real (kind=kind_phys), pointer      :: trans(:)         => null()  !<
     real (kind=kind_phys), pointer      :: tseal(:)         => null()  !<
     real (kind=kind_phys), pointer      :: tsfa(:)          => null()  !<
+    real (kind=kind_phys), pointer      :: tsfc_ice(:)      => null()  !<
+    real (kind=kind_phys), pointer      :: tsfc_land(:)     => null()  !<
+    real (kind=kind_phys), pointer      :: tsfc_ocean(:)    => null()  !<
     real (kind=kind_phys), pointer      :: tsfg(:)          => null()  !<
+    real (kind=kind_phys), pointer      :: tsnow(:)         => null()  !<
     real (kind=kind_phys), pointer      :: tsurf(:)         => null()  !<
+    real (kind=kind_phys), pointer      :: tsurf_ice(:)     => null()  !<
+    real (kind=kind_phys), pointer      :: tsurf_land(:)    => null()  !<
+    real (kind=kind_phys), pointer      :: tsurf_ocean(:)   => null()  !<
     real (kind=kind_phys), pointer      :: ud_mf(:,:)       => null()  !<
     real (kind=kind_phys), pointer      :: ulwsfc_cice(:)   => null()  !<
+    real (kind=kind_phys), pointer      :: uustar_ice(:)    => null()  !<
+    real (kind=kind_phys), pointer      :: uustar_land(:)   => null()  !<
+    real (kind=kind_phys), pointer      :: uustar_ocean(:)  => null()  !<
     real (kind=kind_phys), pointer      :: vdftra(:,:,:)    => null()  !<
     real (kind=kind_phys), pointer      :: vegf1d(:)        => null()  !<
     integer, pointer                    :: vegtype(:)       => null()  !<
     real (kind=kind_phys), pointer      :: w_upi(:,:)       => null()  !<
     real (kind=kind_phys), pointer      :: wcbmax(:)        => null()  !<
+    real (kind=kind_phys), pointer      :: weasd_land(:)    => null()  !<
+    real (kind=kind_phys), pointer      :: weasd_ice(:)     => null()  !<
     real (kind=kind_phys), pointer      :: wind(:)          => null()  !<
     real (kind=kind_phys), pointer      :: work1(:)         => null()  !<
     real (kind=kind_phys), pointer      :: work2(:)         => null()  !<
@@ -2666,6 +2823,9 @@ module GFS_typedefs
     real (kind=kind_phys), pointer      :: xlai1d(:)        => null()  !<
     real (kind=kind_phys), pointer      :: xmu(:)           => null()  !<
     real (kind=kind_phys), pointer      :: z01d(:)          => null()  !<
+    real (kind=kind_phys), pointer      :: zorl_ice(:)      => null()  !<
+    real (kind=kind_phys), pointer      :: zorl_land(:)     => null()  !<
+    real (kind=kind_phys), pointer      :: zorl_ocean(:)    => null()  !<
     real (kind=kind_phys), pointer      :: zt1d(:)          => null()  !<
 #ifdef HYBRID
     logical                             :: non_uniform_blocks          !< flag to indicate non-uniform blocks are used, only for CCPP hybrid
@@ -2808,25 +2968,37 @@ module GFS_typedefs
     type(GFS_control_type), intent(in) :: Model
 
     !--- physics and radiation
-    allocate (Sfcprop%slmsk  (IM))
-    allocate (Sfcprop%lakemsk(IM))
-    allocate (Sfcprop%tsfc   (IM))
-    allocate (Sfcprop%tisfc  (IM))
-    allocate (Sfcprop%snowd  (IM))
-    allocate (Sfcprop%zorl   (IM))
-    allocate (Sfcprop%fice   (IM))
-    allocate (Sfcprop%hprim  (IM))
-    allocate (Sfcprop%hprime (IM,Model%nmtvr))
+    allocate (Sfcprop%slmsk    (IM))
+    allocate (Sfcprop%oceanfrac(IM))
+    allocate (Sfcprop%landfrac (IM))
+    allocate (Sfcprop%lakefrac (IM))
+    allocate (Sfcprop%tsfc     (IM))
+    allocate (Sfcprop%tsfco    (IM))
+    allocate (Sfcprop%tsfcl    (IM))
+    allocate (Sfcprop%tisfc    (IM))
+    allocate (Sfcprop%snowd    (IM))
+    allocate (Sfcprop%zorl     (IM))
+    allocate (Sfcprop%zorlo    (IM))
+    allocate (Sfcprop%zorll    (IM))
+    allocate (Sfcprop%fice     (IM))
+    allocate (Sfcprop%hprim    (IM))
+    allocate (Sfcprop%hprime   (IM,Model%nmtvr))
 
-    Sfcprop%slmsk   = clear_val
-    Sfcprop%lakemsk = clear_val
-    Sfcprop%tsfc    = clear_val
-    Sfcprop%tisfc   = clear_val
-    Sfcprop%snowd   = clear_val
-    Sfcprop%zorl    = clear_val
-    Sfcprop%fice    = clear_val
-    Sfcprop%hprim   = clear_val
-    Sfcprop%hprime  = clear_val
+    Sfcprop%slmsk     = clear_val
+    Sfcprop%oceanfrac = clear_val
+    Sfcprop%landfrac  = clear_val
+    Sfcprop%lakefrac  = clear_val
+    Sfcprop%tsfc      = clear_val
+    Sfcprop%tsfco     = clear_val
+    Sfcprop%tsfcl     = clear_val
+    Sfcprop%tisfc     = clear_val
+    Sfcprop%snowd     = clear_val
+    Sfcprop%zorl      = clear_val
+    Sfcprop%zorlo     = clear_val
+    Sfcprop%zorll     = clear_val
+    Sfcprop%fice      = clear_val
+    Sfcprop%hprim     = clear_val
+    Sfcprop%hprime    = clear_val
 
 !--- In (radiation only)
     allocate (Sfcprop%sncovr (IM))
@@ -3458,7 +3630,7 @@ module GFS_typedefs
     logical              :: mg_do_graupel   = .true.            !< set .true. to turn on prognostic grapuel (with fprcp=2)
     logical              :: mg_do_hail      = .false.           !< set .true. to turn on prognostic hail (with fprcp=2)
     logical              :: mg_do_ice_gmao  = .false.           !< set .true. to turn on gmao ice formulation
-    logical              :: mg_do_liq_liu   = .true.            !< set .true. to turn on liu liquid treatment  
+    logical              :: mg_do_liq_liu   = .true.            !< set .true. to turn on liu liquid treatment
 
     !--- Thompson microphysical parameters
     logical              :: make_number_concentrations = .false.!< flag to calculate initial number concentrations
@@ -5760,8 +5932,17 @@ module GFS_typedefs
     allocate (Interstitial%alb1d      (IM))
     allocate (Interstitial%bexp1d     (IM))
     allocate (Interstitial%cd         (IM))
+    allocate (Interstitial%cd_ice     (IM))
+    allocate (Interstitial%cd_land    (IM))
+    allocate (Interstitial%cd_ocean   (IM))
     allocate (Interstitial%cdq        (IM))
+    allocate (Interstitial%cdq_ice    (IM))
+    allocate (Interstitial%cdq_land   (IM))
+    allocate (Interstitial%cdq_ocean  (IM))
     allocate (Interstitial%cf_upi     (IM,Model%levs))
+    allocate (Interstitial%chh_ice    (IM))
+    allocate (Interstitial%chh_land   (IM))
+    allocate (Interstitial%chh_ocean  (IM))
     allocate (Interstitial%clcn       (IM,Model%levs))
     allocate (Interstitial%cldf       (IM))
     allocate (Interstitial%cldsa      (IM,5))
@@ -5771,6 +5952,9 @@ module GFS_typedefs
     allocate (Interstitial%clouds     (IM,Model%levr+LTP,NF_CLDS))
     allocate (Interstitial%clw        (IM,Model%levs,Interstitial%nn))
     allocate (Interstitial%clx        (IM,4))
+    allocate (Interstitial%cmm_ice    (IM))
+    allocate (Interstitial%cmm_land   (IM))
+    allocate (Interstitial%cmm_ocean  (IM))
     allocate (Interstitial%cnv_dqldt  (IM,Model%levs))
     allocate (Interstitial%cnv_fice   (IM,Model%levs))
     allocate (Interstitial%cnv_mfd    (IM,Model%levs))
@@ -5806,16 +5990,34 @@ module GFS_typedefs
     allocate (Interstitial%dzlyr      (IM,Model%levr+LTP))
     allocate (Interstitial%elvmax     (IM))
     allocate (Interstitial%ep1d       (IM))
+    allocate (Interstitial%ep1d_ice   (IM))
+    allocate (Interstitial%ep1d_land  (IM))
+    allocate (Interstitial%ep1d_ocean (IM))
     allocate (Interstitial%evap       (IM))
+    allocate (Interstitial%evap_ice   (IM))
+    allocate (Interstitial%evap_land  (IM))
+    allocate (Interstitial%evap_ocean (IM))
     allocate (Interstitial%evbs       (IM))
     allocate (Interstitial%evcw       (IM))
     allocate (Interstitial%faerlw     (IM,Model%levr+LTP,NBDLW,NF_AELW))
     allocate (Interstitial%faersw     (IM,Model%levr+LTP,NBDSW,NF_AESW))
+    allocate (Interstitial%ffhh_ice   (IM))
+    allocate (Interstitial%ffhh_land  (IM))
+    allocate (Interstitial%ffhh_ocean (IM))
     allocate (Interstitial%fh2        (IM))
+    allocate (Interstitial%fh2_ice    (IM))
+    allocate (Interstitial%fh2_land   (IM))
+    allocate (Interstitial%fh2_ocean  (IM))
     allocate (Interstitial%flag_cice  (IM))
     allocate (Interstitial%flag_guess (IM))
     allocate (Interstitial%flag_iter  (IM))
+    allocate (Interstitial%ffmm_ice   (IM))
+    allocate (Interstitial%ffmm_land  (IM))
+    allocate (Interstitial%ffmm_ocean (IM))
     allocate (Interstitial%fm10       (IM))
+    allocate (Interstitial%fm10_ice   (IM))
+    allocate (Interstitial%fm10_land  (IM))
+    allocate (Interstitial%fm10_ocean (IM))
     allocate (Interstitial%frland     (IM))
     allocate (Interstitial%fscav      (Model%ntrac-Model%ncld+2))
     allocate (Interstitial%fswtr      (Model%ntrac-Model%ncld+2))
@@ -5825,13 +6027,24 @@ module GFS_typedefs
     allocate (Interstitial%gamt       (IM))
     allocate (Interstitial%gasvmr     (IM,Model%levr+LTP,NF_VGAS))
     allocate (Interstitial%gflx       (IM))
+    allocate (Interstitial%gflx_ice   (IM))
+    allocate (Interstitial%gflx_land  (IM))
+    allocate (Interstitial%gflx_ocean (IM))
     allocate (Interstitial%gwdcu      (IM,Model%levs))
     allocate (Interstitial%gwdcv      (IM,Model%levs))
     allocate (Interstitial%h2o_pres   (levh2o))
     allocate (Interstitial%hflx       (IM))
+    allocate (Interstitial%hflx_ice   (IM))
+    allocate (Interstitial%hflx_land  (IM))
+    allocate (Interstitial%hflx_ocean (IM))
     allocate (Interstitial%hprime1    (IM))
+    allocate (Interstitial%dry        (IM))
     allocate (Interstitial%idxday     (IM))
+    allocate (Interstitial%icy        (IM))
+    allocate (Interstitial%lake       (IM))
+    allocate (Interstitial%ocean      (IM))
     allocate (Interstitial%islmsk     (IM))
+    allocate (Interstitial%wet        (IM))
     allocate (Interstitial%kbot       (IM))
     allocate (Interstitial%kcnv       (IM))
     allocate (Interstitial%kinver     (IM))
@@ -5851,11 +6064,17 @@ module GFS_typedefs
     allocate (Interstitial%qlyr       (IM,Model%levr+LTP))
     allocate (Interstitial%prcpmp     (IM))
     allocate (Interstitial%qss        (IM))
+    allocate (Interstitial%qss_ice    (IM))
+    allocate (Interstitial%qss_land   (IM))
+    allocate (Interstitial%qss_ocean  (IM))
     allocate (Interstitial%raincd     (IM))
     allocate (Interstitial%raincs     (IM))
     allocate (Interstitial%rainmcadj  (IM))
     allocate (Interstitial%rainp      (IM,Model%levs))
     allocate (Interstitial%rb         (IM))
+    allocate (Interstitial%rb_ice     (IM))
+    allocate (Interstitial%rb_land    (IM))
+    allocate (Interstitial%rb_ocean   (IM))
     allocate (Interstitial%rhc        (IM,Model%levs))
     allocate (Interstitial%runoff     (IM))
     allocate (Interstitial%save_q     (IM,Model%levs,Model%ntrac))
@@ -5871,25 +6090,45 @@ module GFS_typedefs
     allocate (Interstitial%sigmatot   (IM,Model%levs))
     allocate (Interstitial%slopetype  (IM))
     allocate (Interstitial%snowc      (IM))
+    allocate (Interstitial%snowd_ice  (IM))
+    allocate (Interstitial%snowd_land (IM))
+    allocate (Interstitial%snowd_ocean(IM))
     allocate (Interstitial%snohf      (IM))
     allocate (Interstitial%snowmt     (IM))
     allocate (Interstitial%soiltype   (IM))
     allocate (Interstitial%stress     (IM))
+    allocate (Interstitial%stress_ice (IM))
+    allocate (Interstitial%stress_land(IM))
+    allocate (Interstitial%stress_ocean(IM))
     allocate (Interstitial%theta      (IM))
     allocate (Interstitial%tlvl       (IM,Model%levr+1+LTP))
     allocate (Interstitial%tlyr       (IM,Model%levr+LTP))
+    allocate (Interstitial%tprcp_ice  (IM))
+    allocate (Interstitial%tprcp_land (IM))
+    allocate (Interstitial%tprcp_ocean(IM))
     allocate (Interstitial%trans      (IM))
     allocate (Interstitial%tseal      (IM))
     allocate (Interstitial%tsfa       (IM))
+    allocate (Interstitial%tsfc_ice   (IM))
+    allocate (Interstitial%tsfc_land  (IM))
+    allocate (Interstitial%tsfc_ocean (IM))
     allocate (Interstitial%tsfg       (IM))
     allocate (Interstitial%tsurf      (IM))
+    allocate (Interstitial%tsurf_ice  (IM))
+    allocate (Interstitial%tsurf_land (IM))
+    allocate (Interstitial%tsurf_ocean(IM))
     allocate (Interstitial%ud_mf      (IM,Model%levs))
     allocate (Interstitial%ulwsfc_cice(IM))
+    allocate (Interstitial%uustar_ice (IM))
+    allocate (Interstitial%uustar_land(IM))
+    allocate (Interstitial%uustar_ocean(IM))
     allocate (Interstitial%vdftra     (IM,Model%levs,Interstitial%nvdiff))  !GJF first dimension was set as 'IX' in GFS_physics_driver
     allocate (Interstitial%vegf1d     (IM))
     allocate (Interstitial%vegtype    (IM))
     allocate (Interstitial%w_upi      (IM,Model%levs))
     allocate (Interstitial%wcbmax     (IM))
+    allocate (Interstitial%weasd_ice  (IM))
+    allocate (Interstitial%weasd_land (IM))
     allocate (Interstitial%wind       (IM))
     allocate (Interstitial%work1      (IM))
     allocate (Interstitial%work2      (IM))
@@ -5898,6 +6137,9 @@ module GFS_typedefs
     allocate (Interstitial%xlai1d     (IM))
     allocate (Interstitial%xmu        (IM))
     allocate (Interstitial%z01d       (IM))
+    allocate (Interstitial%zorl_ice   (IM))
+    allocate (Interstitial%zorl_land  (IM))
+    allocate (Interstitial%zorl_ocean (IM))
     allocate (Interstitial%zt1d       (IM))
     ! Allocate arrays that are conditional on physics choices
     if (Model%imp_physics == Model%imp_physics_gfdl .or. Model%imp_physics == Model%imp_physics_thompson) then
@@ -6140,14 +6382,26 @@ module GFS_typedefs
     Interstitial%adjvisdfd    = clear_val
     Interstitial%bexp1d       = clear_val
     Interstitial%cd           = clear_val
+    Interstitial%cd_ice       = huge
+    Interstitial%cd_land      = huge
+    Interstitial%cd_ocean     = huge
     Interstitial%cdq          = clear_val
+    Interstitial%cdq_ice      = huge
+    Interstitial%cdq_land     = huge
+    Interstitial%cdq_ocean    = huge
     Interstitial%cf_upi       = clear_val
+    Interstitial%chh_ice      = huge
+    Interstitial%chh_land     = huge
+    Interstitial%chh_ocean    = huge
     Interstitial%clcn         = clear_val
     Interstitial%cld1d        = clear_val
     Interstitial%cldf         = clear_val
     Interstitial%clw          = clear_val
     Interstitial%clw(:,:,2)   = -999.9
     Interstitial%clx          = clear_val
+    Interstitial%cmm_ice      = huge
+    Interstitial%cmm_land     = huge
+    Interstitial%cmm_ocean    = huge
     Interstitial%cnv_dqldt    = clear_val
     Interstitial%cnv_fice     = clear_val
     Interstitial%cnv_mfd      = clear_val
@@ -6180,14 +6434,32 @@ module GFS_typedefs
     Interstitial%dvsfc1       = clear_val
     Interstitial%elvmax       = clear_val
     Interstitial%ep1d         = clear_val
+    Interstitial%ep1d_ice     = huge
+    Interstitial%ep1d_land    = huge
+    Interstitial%ep1d_ocean   = huge
     Interstitial%evap         = clear_val
+    Interstitial%evap_ice     = huge
+    Interstitial%evap_land    = huge
+    Interstitial%evap_ocean   = huge
     Interstitial%evbs         = clear_val
     Interstitial%evcw         = clear_val
+    Interstitial%ffhh_ice     = huge
+    Interstitial%ffhh_land    = huge
+    Interstitial%ffhh_ocean   = huge
     Interstitial%fh2          = clear_val
+    Interstitial%fh2_ice      = huge
+    Interstitial%fh2_land     = huge
+    Interstitial%fh2_ocean    = huge
     Interstitial%flag_cice    = .false.
     Interstitial%flag_guess   = .false.
     Interstitial%flag_iter    = .true.
+    Interstitial%ffmm_ice     = huge
+    Interstitial%ffmm_land    = huge
+    Interstitial%ffmm_ocean   = huge
     Interstitial%fm10         = clear_val
+    Interstitial%fm10_ice     = huge
+    Interstitial%fm10_land    = huge
+    Interstitial%fm10_ocean   = huge
     Interstitial%frain        = clear_val
     Interstitial%frland       = clear_val
     Interstitial%fscav        = clear_val
@@ -6197,11 +6469,22 @@ module GFS_typedefs
     Interstitial%gamq         = clear_val
     Interstitial%gamt         = clear_val
     Interstitial%gflx         = clear_val
+    Interstitial%gflx_ice     = huge
+    Interstitial%gflx_land    = huge
+    Interstitial%gflx_ocean   = huge
     Interstitial%gwdcu        = clear_val
     Interstitial%gwdcv        = clear_val
     Interstitial%hflx         = clear_val
+    Interstitial%hflx_ice     = huge
+    Interstitial%hflx_land    = huge
+    Interstitial%hflx_ocean   = huge
     Interstitial%hprime1      = clear_val
+    Interstitial%dry          = .false.
+    Interstitial%icy          = .false.
+    Interstitial%lake         = .false.
+    Interstitial%ocean        = .false.
     Interstitial%islmsk       = 0
+    Interstitial%wet          = .false.
     Interstitial%kbot         = Model%levs
     Interstitial%kcnv         = 0
     Interstitial%kinver       = Model%levs
@@ -6214,11 +6497,17 @@ module GFS_typedefs
     Interstitial%qicn         = clear_val
     Interstitial%qlcn         = clear_val
     Interstitial%qss          = clear_val
+    Interstitial%qss_ice      = huge
+    Interstitial%qss_land     = huge
+    Interstitial%qss_ocean    = huge
     Interstitial%raincd       = clear_val
     Interstitial%raincs       = clear_val
     Interstitial%rainmcadj    = clear_val
     Interstitial%rainp        = clear_val
     Interstitial%rb           = clear_val
+    Interstitial%rb_ice       = huge
+    Interstitial%rb_land      = huge
+    Interstitial%rb_ocean     = huge
     Interstitial%rhc          = clear_val
     Interstitial%rhcbot       = clear_val
     Interstitial%rhcpbl       = clear_val
@@ -6235,22 +6524,43 @@ module GFS_typedefs
     Interstitial%sigmatot     = clear_val
     Interstitial%slopetype    = 0
     Interstitial%snowc        = clear_val
+    Interstitial%snowd_ice    = huge
+    Interstitial%snowd_land   = huge
+    Interstitial%snowd_ocean  = huge
     Interstitial%snohf        = clear_val
     Interstitial%snowmt       = clear_val
     Interstitial%soiltype     = 0
     Interstitial%stress       = clear_val
+    Interstitial%stress_ice   = huge
+    Interstitial%stress_land  = huge
+    Interstitial%stress_ocean = huge
     Interstitial%theta        = clear_val
+    Interstitial%tprcp_ice    = huge
+    Interstitial%tprcp_land   = huge
+    Interstitial%tprcp_ocean  = huge
     Interstitial%trans        = clear_val
     Interstitial%tseal        = clear_val
+    Interstitial%tsfc_ice     = huge
+    Interstitial%tsfc_land    = huge
+    Interstitial%tsfc_ocean   = huge
     Interstitial%tsurf        = clear_val
+    Interstitial%tsurf_ice    = huge
+    Interstitial%tsurf_land   = huge
+    Interstitial%tsurf_ocean  = huge
     Interstitial%ud_mf        = clear_val
     Interstitial%ulwsfc_cice  = clear_val
+    Interstitial%uustar_ice   = huge
+    Interstitial%uustar_land  = huge
+    Interstitial%uustar_ocean = huge
     Interstitial%vdftra       = clear_val
     Interstitial%vegf1d       = clear_val
     Interstitial%vegtype      = 0
     Interstitial%w_upi        = clear_val
     Interstitial%wcbmax       = clear_val
-    Interstitial%wind         = clear_val
+    Interstitial%weasd_ice    = huge
+    Interstitial%weasd_land   = huge
+    Interstitial%wind         = huge
+    ! DH* WHY THIS CHANGE? Interstitial%wind         = clear_val
     Interstitial%work1        = clear_val
     Interstitial%work2        = clear_val
     Interstitial%work3        = clear_val
@@ -6258,6 +6568,9 @@ module GFS_typedefs
     Interstitial%xlai1d       = clear_val
     Interstitial%xmu          = clear_val
     Interstitial%z01d         = clear_val
+    Interstitial%zorl_ice     = huge
+    Interstitial%zorl_land    = huge
+    Interstitial%zorl_ocean   = huge
     Interstitial%zt1d         = clear_val
     ! Reset fields that are conditional on physics choices
     if (Model%imp_physics == Model%imp_physics_gfdl .or. Model%imp_physics == Model%imp_physics_thompson) then
@@ -6331,8 +6644,17 @@ module GFS_typedefs
     write (0,*) 'sum(Interstitial%alb1d       ) = ', sum(Interstitial%alb1d       )
     write (0,*) 'sum(Interstitial%bexp1d      ) = ', sum(Interstitial%bexp1d      )
     write (0,*) 'sum(Interstitial%cd          ) = ', sum(Interstitial%cd          )
+    write (0,*) 'sum(Interstitial%cd_ice      ) = ', sum(Interstitial%cd_ice      )
+    write (0,*) 'sum(Interstitial%cd_land     ) = ', sum(Interstitial%cd_land     )
+    write (0,*) 'sum(Interstitial%cd_ocean    ) = ', sum(Interstitial%cd_ocean    )
     write (0,*) 'sum(Interstitial%cdq         ) = ', sum(Interstitial%cdq         )
+    write (0,*) 'sum(Interstitial%cdq_ice     ) = ', sum(Interstitial%cdq_ice     )
+    write (0,*) 'sum(Interstitial%cdq_land    ) = ', sum(Interstitial%cdq_land    )
+    write (0,*) 'sum(Interstitial%cdq_ocean   ) = ', sum(Interstitial%cdq_ocean   )
     write (0,*) 'sum(Interstitial%cf_upi      ) = ', sum(Interstitial%cf_upi      )
+    write (0,*) 'sum(Interstitial%chh_ice     ) = ', sum(Interstitial%chh_ice     )
+    write (0,*) 'sum(Interstitial%chh_land    ) = ', sum(Interstitial%chh_land    )
+    write (0,*) 'sum(Interstitial%chh_ocean   ) = ', sum(Interstitial%chh_ocean   )
     write (0,*) 'sum(Interstitial%clcn        ) = ', sum(Interstitial%clcn        )
     write (0,*) 'sum(Interstitial%cldf        ) = ', sum(Interstitial%cldf        )
     write (0,*) 'sum(Interstitial%cldsa       ) = ', sum(Interstitial%cldsa       )
@@ -6342,6 +6664,9 @@ module GFS_typedefs
     write (0,*) 'sum(Interstitial%clw         ) = ', sum(Interstitial%clw         )
     write (0,*) 'sum(Interstitial%clx         ) = ', sum(Interstitial%clx         )
     write (0,*) 'sum(Interstitial%clouds      ) = ', sum(Interstitial%clouds      )
+    write (0,*) 'sum(Interstitial%cmm_ice     ) = ', sum(Interstitial%cmm_ice     )
+    write (0,*) 'sum(Interstitial%cmm_land    ) = ', sum(Interstitial%cmm_land    )
+    write (0,*) 'sum(Interstitial%cmm_ocean   ) = ', sum(Interstitial%cmm_ocean   )
     write (0,*) 'sum(Interstitial%cnv_dqldt   ) = ', sum(Interstitial%cnv_dqldt   )
     write (0,*) 'sum(Interstitial%cnv_fice    ) = ', sum(Interstitial%cnv_fice    )
     write (0,*) 'sum(Interstitial%cnv_mfd     ) = ', sum(Interstitial%cnv_mfd     )
@@ -6377,16 +6702,34 @@ module GFS_typedefs
     write (0,*) 'sum(Interstitial%dzlyr       ) = ', sum(Interstitial%dzlyr       )
     write (0,*) 'sum(Interstitial%elvmax      ) = ', sum(Interstitial%elvmax      )
     write (0,*) 'sum(Interstitial%ep1d        ) = ', sum(Interstitial%ep1d        )
+    write (0,*) 'sum(Interstitial%ep1d_ice    ) = ', sum(Interstitial%ep1d_ice    )
+    write (0,*) 'sum(Interstitial%ep1d_land   ) = ', sum(Interstitial%ep1d_land   )
+    write (0,*) 'sum(Interstitial%ep1d_ocean  ) = ', sum(Interstitial%ep1d_ocean  )
     write (0,*) 'sum(Interstitial%evap        ) = ', sum(Interstitial%evap        )
+    write (0,*) 'sum(Interstitial%evap_ice    ) = ', sum(Interstitial%evap_ice    )
+    write (0,*) 'sum(Interstitial%evap_land   ) = ', sum(Interstitial%evap_land   )
+    write (0,*) 'sum(Interstitial%evap_ocean  ) = ', sum(Interstitial%evap_ocean  )
     write (0,*) 'sum(Interstitial%evbs        ) = ', sum(Interstitial%evbs        )
     write (0,*) 'sum(Interstitial%evcw        ) = ', sum(Interstitial%evcw        )
     write (0,*) 'sum(Interstitial%faerlw      ) = ', sum(Interstitial%faerlw      )
     write (0,*) 'sum(Interstitial%faersw      ) = ', sum(Interstitial%faersw      )
+    write (0,*) 'sum(Interstitial%ffhh_ice    ) = ', sum(Interstitial%ffhh_ice    )
+    write (0,*) 'sum(Interstitial%ffhh_land   ) = ', sum(Interstitial%ffhh_land   )
+    write (0,*) 'sum(Interstitial%ffhh_ocean  ) = ', sum(Interstitial%ffhh_ocean  )
     write (0,*) 'sum(Interstitial%fh2         ) = ', sum(Interstitial%fh2         )
+    write (0,*) 'sum(Interstitial%fh2_ice     ) = ', sum(Interstitial%fh2_ice     )
+    write (0,*) 'sum(Interstitial%fh2_land    ) = ', sum(Interstitial%fh2_land    )
+    write (0,*) 'sum(Interstitial%fh2_ocean   ) = ', sum(Interstitial%fh2_ocean   )
     write (0,*) 'Interstitial%flag_cice(1)      = ', Interstitial%flag_cice(1)
     write (0,*) 'Interstitial%flag_guess(1)     = ', Interstitial%flag_guess(1)
     write (0,*) 'Interstitial%flag_iter(1)      = ', Interstitial%flag_iter(1)
+    write (0,*) 'sum(Interstitial%ffmm_ice    ) = ', sum(Interstitial%ffmm_ice    )
+    write (0,*) 'sum(Interstitial%ffmm_land   ) = ', sum(Interstitial%ffmm_land   )
+    write (0,*) 'sum(Interstitial%ffmm_ocean  ) = ', sum(Interstitial%ffmm_ocean  )
     write (0,*) 'sum(Interstitial%fm10        ) = ', sum(Interstitial%fm10        )
+    write (0,*) 'sum(Interstitial%fm10_ice    ) = ', sum(Interstitial%fm10_ice    )
+    write (0,*) 'sum(Interstitial%fm10_land   ) = ', sum(Interstitial%fm10_land   )
+    write (0,*) 'sum(Interstitial%fm10_ocean  ) = ', sum(Interstitial%fm10_ocean  )
     write (0,*) 'Interstitial%frain             = ', Interstitial%frain
     write (0,*) 'sum(Interstitial%frland      ) = ', sum(Interstitial%frland      )
     write (0,*) 'sum(Interstitial%fscav       ) = ', sum(Interstitial%fscav       )
@@ -6397,12 +6740,23 @@ module GFS_typedefs
     write (0,*) 'sum(Interstitial%gamt        ) = ', sum(Interstitial%gamt        )
     write (0,*) 'sum(Interstitial%gasvmr      ) = ', sum(Interstitial%gasvmr      )
     write (0,*) 'sum(Interstitial%gflx        ) = ', sum(Interstitial%gflx        )
+    write (0,*) 'sum(Interstitial%gflx_ice    ) = ', sum(Interstitial%gflx_ice    )
+    write (0,*) 'sum(Interstitial%gflx_land   ) = ', sum(Interstitial%gflx_land   )
+    write (0,*) 'sum(Interstitial%gflx_ocean  ) = ', sum(Interstitial%gflx_ocean  )
     write (0,*) 'sum(Interstitial%gwdcu       ) = ', sum(Interstitial%gwdcu       )
     write (0,*) 'sum(Interstitial%gwdcv       ) = ', sum(Interstitial%gwdcv       )
     write (0,*) 'sum(Interstitial%hflx        ) = ', sum(Interstitial%hflx        )
+    write (0,*) 'sum(Interstitial%hflx_ice    ) = ', sum(Interstitial%hflx_ice    )
+    write (0,*) 'sum(Interstitial%hflx_land   ) = ', sum(Interstitial%hflx_land   )
+    write (0,*) 'sum(Interstitial%hflx_ocean  ) = ', sum(Interstitial%hflx_ocean  )
     write (0,*) 'sum(Interstitial%hprime1     ) = ', sum(Interstitial%hprime1     )
+    write (0,*) 'Interstitial%dry(1)          ) = ', Interstitial%dry(1)
     write (0,*) 'sum(Interstitial%idxday      ) = ', sum(Interstitial%idxday      )
+    write (0,*) 'Interstitial%icy(1)            = ', Interstitial%icy(1)
+    write (0,*) 'Interstitial%lake(1)           = ', Interstitial%lake(1)
+    write (0,*) 'Interstitial%ocean(1)          = ', Interstitial%ocean(1)
     write (0,*) 'sum(Interstitial%islmsk      ) = ', sum(Interstitial%islmsk      )
+    write (0,*) 'Interstitial%wet(1)            = ', Interstitial%wet(1)
     write (0,*) 'Interstitial%kb                = ', Interstitial%kb
     write (0,*) 'sum(Interstitial%kbot        ) = ', sum(Interstitial%kbot        )
     write (0,*) 'sum(Interstitial%kcnv        ) = ', sum(Interstitial%kcnv        )
@@ -6425,12 +6779,18 @@ module GFS_typedefs
     write (0,*) 'sum(Interstitial%qlcn        ) = ', sum(Interstitial%qlcn        )
     write (0,*) 'sum(Interstitial%qlyr        ) = ', sum(Interstitial%qlyr        )
     write (0,*) 'sum(Interstitial%qss         ) = ', sum(Interstitial%qss         )
+    write (0,*) 'sum(Interstitial%qss_ice     ) = ', sum(Interstitial%qss_ice     )
+    write (0,*) 'sum(Interstitial%qss_land    ) = ', sum(Interstitial%qss_land    )
+    write (0,*) 'sum(Interstitial%qss_ocean   ) = ', sum(Interstitial%qss_ocean   )
     write (0,*) 'Interstitial%raddt             = ', Interstitial%raddt
     write (0,*) 'sum(Interstitial%raincd      ) = ', sum(Interstitial%raincd      )
     write (0,*) 'sum(Interstitial%raincs      ) = ', sum(Interstitial%raincs      )
     write (0,*) 'sum(Interstitial%rainmcadj   ) = ', sum(Interstitial%rainmcadj   )
     write (0,*) 'sum(Interstitial%rainp       ) = ', sum(Interstitial%rainp       )
     write (0,*) 'sum(Interstitial%rb          ) = ', sum(Interstitial%rb          )
+    write (0,*) 'sum(Interstitial%rb_ice      ) = ', sum(Interstitial%rb_ice      )
+    write (0,*) 'sum(Interstitial%rb_land     ) = ', sum(Interstitial%rb_land     )
+    write (0,*) 'sum(Interstitial%rb_ocean    ) = ', sum(Interstitial%rb_ocean    )
     write (0,*) 'sum(Interstitial%rhc         ) = ', sum(Interstitial%rhc         )
     write (0,*) 'Interstitial%rhcbot            = ', Interstitial%rhcbot
     write (0,*) 'Interstitial%rhcpbl            = ', Interstitial%rhcpbl
@@ -6454,25 +6814,45 @@ module GFS_typedefs
     write (0,*) 'sum(Interstitial%sigmatot    ) = ', sum(Interstitial%sigmatot    )
     write (0,*) 'sum(Interstitial%slopetype   ) = ', sum(Interstitial%slopetype   )
     write (0,*) 'sum(Interstitial%snowc       ) = ', sum(Interstitial%snowc       )
+    write (0,*) 'sum(Interstitial%snowd_ice   ) = ', sum(Interstitial%snowd_ice   )
+    write (0,*) 'sum(Interstitial%snowd_land  ) = ', sum(Interstitial%snowd_land  )
+    write (0,*) 'sum(Interstitial%snowd_ocean ) = ', sum(Interstitial%snowd_ocean )
     write (0,*) 'sum(Interstitial%snohf       ) = ', sum(Interstitial%snohf       )
     write (0,*) 'sum(Interstitial%snowmt      ) = ', sum(Interstitial%snowmt      )
     write (0,*) 'sum(Interstitial%soiltype    ) = ', sum(Interstitial%soiltype    )
     write (0,*) 'sum(Interstitial%stress      ) = ', sum(Interstitial%stress      )
+    write (0,*) 'sum(Interstitial%stress_ice  ) = ', sum(Interstitial%stress_ice  )
+    write (0,*) 'sum(Interstitial%stress_land ) = ', sum(Interstitial%stress_land )
+    write (0,*) 'sum(Interstitial%stress_ocean) = ', sum(Interstitial%stress_ocean)
     write (0,*) 'sum(Interstitial%theta       ) = ', sum(Interstitial%theta       )
     write (0,*) 'sum(Interstitial%tlvl        ) = ', sum(Interstitial%tlvl        )
     write (0,*) 'sum(Interstitial%tlyr        ) = ', sum(Interstitial%tlyr        )
+    write (0,*) 'sum(Interstitial%tprcp_ice   ) = ', sum(Interstitial%tprcp_ice   )
+    write (0,*) 'sum(Interstitial%tprcp_land  ) = ', sum(Interstitial%tprcp_land  )
+    write (0,*) 'sum(Interstitial%tprcp_ocean ) = ', sum(Interstitial%tprcp_ocean )
     write (0,*) 'sum(Interstitial%trans       ) = ', sum(Interstitial%trans       )
     write (0,*) 'sum(Interstitial%tseal       ) = ', sum(Interstitial%tseal       )
     write (0,*) 'sum(Interstitial%tsfa        ) = ', sum(Interstitial%tsfa        )
+    write (0,*) 'sum(Interstitial%tsfc_ice    ) = ', sum(Interstitial%tsfc_ice    )
+    write (0,*) 'sum(Interstitial%tsfc_land   ) = ', sum(Interstitial%tsfc_land   )
+    write (0,*) 'sum(Interstitial%tsfc_ocean  ) = ', sum(Interstitial%tsfc_ocean  )
     write (0,*) 'sum(Interstitial%tsfg        ) = ', sum(Interstitial%tsfg        )
     write (0,*) 'sum(Interstitial%tsurf       ) = ', sum(Interstitial%tsurf       )
+    write (0,*) 'sum(Interstitial%tsurf_ice   ) = ', sum(Interstitial%tsurf_ice   )
+    write (0,*) 'sum(Interstitial%tsurf_land  ) = ', sum(Interstitial%tsurf_land  )
+    write (0,*) 'sum(Interstitial%tsurf_ocean ) = ', sum(Interstitial%tsurf_ocean )
     write (0,*) 'sum(Interstitial%ud_mf       ) = ', sum(Interstitial%ud_mf       )
     write (0,*) 'sum(Interstitial%ulwsfc_cice ) = ', sum(Interstitial%ulwsfc_cice )
+    write (0,*) 'sum(Interstitial%uustar_ice  ) = ', sum(Interstitial%uustar_ice  )
+    write (0,*) 'sum(Interstitial%uustar_land ) = ', sum(Interstitial%uustar_land )
+    write (0,*) 'sum(Interstitial%uustar_ocean) = ', sum(Interstitial%uustar_ocean)
     write (0,*) 'sum(Interstitial%vdftra      ) = ', sum(Interstitial%vdftra      )
     write (0,*) 'sum(Interstitial%vegf1d      ) = ', sum(Interstitial%vegf1d      )
     write (0,*) 'sum(Interstitial%vegtype     ) = ', sum(Interstitial%vegtype     )
     write (0,*) 'sum(Interstitial%w_upi       ) = ', sum(Interstitial%w_upi       )
     write (0,*) 'sum(Interstitial%wcbmax      ) = ', sum(Interstitial%wcbmax      )
+    write (0,*) 'sum(Interstitial%weasd_ice   ) = ', sum(Interstitial%weasd_ice   )
+    write (0,*) 'sum(Interstitial%weasd_land  ) = ', sum(Interstitial%weasd_land  )
     write (0,*) 'sum(Interstitial%wind        ) = ', sum(Interstitial%wind        )
     write (0,*) 'sum(Interstitial%work1       ) = ', sum(Interstitial%work1       )
     write (0,*) 'sum(Interstitial%work2       ) = ', sum(Interstitial%work2       )
@@ -6481,6 +6861,9 @@ module GFS_typedefs
     write (0,*) 'sum(Interstitial%xlai1d      ) = ', sum(Interstitial%xlai1d      )
     write (0,*) 'sum(Interstitial%xmu         ) = ', sum(Interstitial%xmu         )
     write (0,*) 'sum(Interstitial%z01d        ) = ', sum(Interstitial%z01d        )
+    write (0,*) 'sum(Interstitial%zorl_ice    ) = ', sum(Interstitial%zorl_ice    )
+    write (0,*) 'sum(Interstitial%zorl_land   ) = ', sum(Interstitial%zorl_land   )
+    write (0,*) 'sum(Interstitial%zorl_ocean  ) = ', sum(Interstitial%zorl_ocean  )
     write (0,*) 'sum(Interstitial%zt1d        ) = ', sum(Interstitial%zt1d        )
     ! Print arrays that are conditional on physics choices
     if (Model%imp_physics == Model%imp_physics_gfdl .or. Model%imp_physics == Model%imp_physics_thompson) then
