@@ -51,7 +51,11 @@ module module_physics_driver
   real(kind=kind_phys), parameter :: hocp    = con_hvap/con_cp
   real(kind=kind_phys), parameter :: qmin    = 1.0e-10
   real(kind=kind_phys), parameter :: qsmall  = 1.0e-20
+#ifdef TRANSITION
+  real(kind=kind_phys), parameter :: rainmin = 1.0d-13
+#else
   real(kind=kind_phys), parameter :: rainmin = 1.0e-13
+#endif
 #ifndef CCPP
   real(kind=kind_phys), parameter :: p850    = 85000.0
 #endif
