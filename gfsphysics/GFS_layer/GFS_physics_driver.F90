@@ -51,7 +51,11 @@ module module_physics_driver
   real(kind=kind_phys), parameter :: hocp    = con_hvap/con_cp
   real(kind=kind_phys), parameter :: qmin    = 1.0e-10
   real(kind=kind_phys), parameter :: qsmall  = 1.0e-20
+#ifdef TRANSITION
+  real(kind=kind_phys), parameter :: rainmin = 1.0d-13
+#else
   real(kind=kind_phys), parameter :: rainmin = 1.0e-13
+#endif
 #ifndef CCPP
   real(kind=kind_phys), parameter :: p850    = 85000.0
 #endif
@@ -2194,8 +2198,8 @@ module module_physics_driver
               !Diag%srunoff                          ! intent(inout)
               !Diag%soilm                            ! intent(out)
               !Sfcprop%wet1                          ! intent(out)
-              !Diag%acsnow                           ! intent(out)
-              !Diag%snowfallac                       ! intent(out)
+              !Sfcprop%acsnow                        ! intent(out)
+              !Sfcprop%snowfallac                    ! intent(out)
               !cdata_block(nb,nt)%errmsg = errmsg    ! intent(out)
               !cdata_block(nb,nt)%errflg = errflg    ! intent(out)
 
@@ -7063,7 +7067,7 @@ module module_physics_driver
                Tbd%phy_f3d(:,:,1),Tbd%phy_f3d(:,:,2),Tbd%phy_f3d(:,:,3),me,Statein%phii)
           endif
 #else
-          if (Model%me==0) write(0,*) 'CCPP DEBUG: calling mp_thompson_hrrr_pre_run through option B'
+          if (Model%me==0) write(0,*) 'CCPP DEBUG: calling mp_thompson_pre_run through option B'
           !Interstitial(nt)%im = im                             ! intent(in) - set in Interstitial(nt)%create()
           !Model%levs                                           ! intent(in)
           !Model%kdt                                            ! intent(in)
@@ -7084,16 +7088,16 @@ module module_physics_driver
           !cdata_block(nb,nt)%errmsg = errmsg                   ! intent(  out)
           !cdata_block(nb,nt)%errflg = errflg                   ! intent(  out)
           !
-          call ccpp_physics_run(cdata_block(nb,nt), scheme_name="mp_thompson_hrrr_pre", ierr=ierr)
+          call ccpp_physics_run(cdata_block(nb,nt), scheme_name="mp_thompson_pre", ierr=ierr)
           ! Copy back intent(inout) and intent(out) interstitial variables to local variables in driver
           errmsg = trim(cdata_block(nb,nt)%errmsg)
           errflg = cdata_block(nb,nt)%errflg
           !
           if (errflg/=0) then
-              write(0,*) 'Error in call to mp_thompson_hrrr_mp_mp_thompson_hrrr_run: ' // trim(errmsg)
+              write(0,*) 'Error in call to mp_thompson_mp_mp_thompson_run: ' // trim(errmsg)
               stop
           end if
-          if (Model%me==0) write(0,*) 'CCPP DEBUG: calling mp_thompson_hrrr_run through option B'
+          if (Model%me==0) write(0,*) 'CCPP DEBUG: calling mp_thompson_run through option B'
           ! Copy local variables from driver to appropriate interstitial variables
           !Interstitial(nt)%im = im                             ! intent(in) - set in Interstitial(nt)%create()
           !Model%levs                                           ! intent(in)
@@ -7135,35 +7139,35 @@ module module_physics_driver
           !cdata_block(nb,nt)%errmsg = errmsg                   ! intent(  out)
           !cdata_block(nb,nt)%errflg = errflg                   ! intent(  out)
           !
-          call ccpp_physics_run(cdata_block(nb,nt), scheme_name="mp_thompson_hrrr", ierr=ierr)
+          call ccpp_physics_run(cdata_block(nb,nt), scheme_name="mp_thompson", ierr=ierr)
           ! Copy back intent(inout) and intent(out) interstitial variables to local variables in driver
           rain1 = Interstitial(nt)%prcpmp
           errmsg = trim(cdata_block(nb,nt)%errmsg)
           errflg = cdata_block(nb,nt)%errflg
           !
           if (errflg/=0) then
-              write(0,*) 'Error in call to mp_thompson_hrrr: ' // trim(errmsg)
+              write(0,*) 'Error in call to mp_thompson: ' // trim(errmsg)
               stop
           end if
           !
-          if (Model%me==0) write(0,*) 'CCPP DEBUG: calling mp_thompson_hrrr_post_run through option B'
+          if (Model%me==0) write(0,*) 'CCPP DEBUG: calling mp_thompson_post_run through option B'
           ! Copy local variables from driver to appropriate interstitial variables
           !Interstitial(nt)%im = im                             ! intent(in) - set in Interstitial(nt)%create()
           !Model%levs                                           ! intent(in)
-          !Interstitial(nt)%save_t                              ! intent(in) - coming straight from mp_thompson_hrrr_pre_run
+          !Interstitial(nt)%save_t                              ! intent(in) - coming straight from mp_thompson_pre_run
           !Stateout%gt0                                         ! intent(inout)
           !Statein%prslk                                        ! intent(in)
           !Model%dtp                                            ! intent(in)
           !cdata_block(nb,nt)%errmsg = errmsg                   ! intent(  out)
           !cdata_block(nb,nt)%errflg = errflg                   ! intent(  out)
           !
-          call ccpp_physics_run(cdata_block(nb,nt), scheme_name="mp_thompson_hrrr_post", ierr=ierr)
+          call ccpp_physics_run(cdata_block(nb,nt), scheme_name="mp_thompson_post", ierr=ierr)
           ! Copy back intent(inout) and intent(out) interstitial variables to local variables in driver
           errmsg = trim(cdata_block(nb,nt)%errmsg)
           errflg = cdata_block(nb,nt)%errflg
           !
           if (errflg/=0) then
-              write(0,*) 'Error in call to mp_thompson_hrrr_mp_mp_thompson_hrrr_post_run: ' // trim(errmsg)
+              write(0,*) 'Error in call to mp_thompson_mp_mp_thompson_post_run: ' // trim(errmsg)
               stop
           end if
 #endif

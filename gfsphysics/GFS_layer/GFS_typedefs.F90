@@ -360,7 +360,7 @@ module GFS_typedefs
 !! | GFS_Data(cdata%blk_no)%Sfcprop%fice        | sea_ice_concentration                                                  | ice fraction over open water                           | frac          |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Sfcprop%hprim       |                                                                        | topographic standard deviation                         | m             |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Sfcprop%hprime      | statistical_measures_of_subgrid_orography                              | orographic metrics                                     | various       |    2 | real    | kind_phys | none   | F        |
-!! | GFS_Data(cdata%blk_no)%Sfcprop%sncovr      | surface_snow_area_fraction_for_diagnostics                             | surface snow area fraction                             | frac          |    1 | real    | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Sfcprop%sncovr      | surface_snow_area_fraction_over_land                                   | surface snow area fraction                             | frac          |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Sfcprop%snoalb      | upper_bound_on_max_albedo_over_deep_snow                               | maximum snow albedo                                    | frac          |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Sfcprop%alvsf       |                                                                        | mean vis albedo with strong cosz dependency            | frac          |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Sfcprop%alnsf       |                                                                        | mean nir albedo with strong cosz dependency            | frac          |    1 | real    | kind_phys | none   | F        |
@@ -424,6 +424,8 @@ module GFS_typedefs
 !! | GFS_Data(cdata%blk_no)%Sfcprop%flag_frsoil | flag_for_frozen_soil_physics                                           | flag for frozen soil physics (RUC)                     | flag          |    2 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Sfcprop%rhofr       | density_of_frozen_precipitation                                        | density of frozen precipitation                        | kg m-3        |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Sfcprop%tsnow       | snow_temperature_bottom_first_layer                                    | snow temperature at the bottom of the first snow layer | K             |    1 | real    | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Sfcprop%snowfallac  | total_accumulated_snowfall                                             | run-total snow accumulation on the ground              | kg m-2        |    1 | real    | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Sfcprop%acsnow      | accumulated_water_equivalent_of_frozen_precip                          | snow water equivalent of run-total frozen precip       | kg m-2        |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Sfcprop%ustm        | surface_friction_velocity_drag                                         | friction velocity isolated for momentum only           | m s-1         |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Sfcprop%zol         | surface_stability_parameter                                            | monin obukhov surface stability parameter              | none          |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Sfcprop%mol         | theta_star                                                             | temperature flux divided by ustar (temperature scale)  | K             |    1 | real    | kind_phys | none   | F        |
@@ -531,6 +533,9 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: cndm_surf(:)     => null()  !< RUC LSM: surface condensation mass
     real (kind=kind_phys), pointer :: rhofr(:)         => null()  !< RUC LSM: density of frozen precipitation
     real (kind=kind_phys), pointer :: tsnow(:)         => null()  !< RUC LSM: snow temperature at the bottom of the first soil layer
+    real (kind=kind_phys), pointer :: snowfallac(:)    => null()  !< ruc lsm diagnostics
+    real (kind=kind_phys), pointer :: acsnow(:)        => null()  !< ruc lsm diagnostics
+
     !  MYNN surface layer
     real (kind=kind_phys), pointer :: ustm (:)         => null()  !u* including drag
     real (kind=kind_phys), pointer :: zol(:)           => null()  !surface stability parameter
@@ -794,12 +799,12 @@ module GFS_typedefs
 !! | GFS_Control%fn_nml                   | namelist_filename                                                             | namelist filename                                       | none          |    0 | character | len=64    | none   | F        |
 !! | GFS_Control%input_nml_file           | namelist_filename_for_internal_file_reads                                     | namelist filename for internal file reads               | none          |    1 | character | len=256   | none   | F        |
 !! | GFS_Control%logunit                  | iounit_log                                                                    | fortran unit number for logfile                         | none          |    0 | integer   |           | none   | F        |
-!! | GFS_Control%fhzero                   |                                                                               | seconds between clearing of diagnostic buckets          | s             |    0 | real      | kind_phys | none   | F        |
+!! | GFS_Control%fhzero                   |                                                                               | hours between clearing of diagnostic buckets            | h             |    0 | real      | kind_phys | none   | F        |
 !! | GFS_Control%ldiag3d                  | flag_diagnostics_3D                                                           | flag for 3d diagnostic fields                           | flag          |    0 | logical   |           | none   | F        |
 !! | GFS_Control%lssav                    | flag_diagnostics                                                              | logical flag for storing diagnostics                    | flag          |    0 | logical   |           | none   | F        |
-!! | GFS_Control%fhcyc                    |                                                                               | frequency for surface data cycling (secs)               | s             |    0 | real      | kind_phys | none   | F        |
+!! | GFS_Control%fhcyc                    |                                                                               | frequency for surface data cycling (hours)              | h             |    0 | real      | kind_phys | none   | F        |
 !! | GFS_Control%lgocart                  | flag_gocart                                                                   | flag for 3d diagnostic fields for gocart 1              | flag          |    0 | logical   |           | none   | F        |
-!! | GFS_Control%fhgoc3d                  |                                                                               | seconds between calls to gocart                         | s             |    0 | real      | kind_phys | none   | F        |
+!! | GFS_Control%fhgoc3d                  |                                                                               | hours between calls to gocart                           | h             |    0 | real      | kind_phys | none   | F        |
 !! | GFS_Control%thermodyn_id             |                                                                               | valid for GFS only for get_prs/phi                      | index         |    0 | integer   |           | none   | F        |
 !! | GFS_Control%sfcpress_id              |                                                                               | valid for GFS only for get_prs/phi                      | index         |    0 | integer   |           | none   | F        |
 !! | GFS_Control%gen_coord_hybrid         |                                                                               | flag for Henry's gen coord                              | flag          |    0 | logical   |           | none   | F        |
@@ -900,12 +905,13 @@ module GFS_typedefs
 !! | GFS_Control%mg_do_hail               | mg_flag_for_hail                                                              | flag for hail for MG microphysics (graupel possible if false)                 | flag    |    0 | logical    |           | none   | F        |
 !! | GFS_Control%mg_do_ice_gmao           | mg_flag_for_gmao_ice_formulation                                              | flag for gmao ice formulation                                                 | flag    |    0 | logical    |           | none   | F        |
 !! | GFS_Control%mg_do_liq_liu            | mg_flag_for_liu_liquid_treatment                                              | flag for liu liquid treatment                                                 | flag    |    0 | logical    |           | none   | F        |
-!! | GFS_Control%shoc_parm(1)             | shoc_tke_dissipatation_pressure_threshold                                     | pressure below which extra TKE diss. is applied in SHOC | Pa            |    0 | real      | kind_phys | none   | F        |
-!! | GFS_Control%shoc_parm(2)             | shoc_tke_dissipation_tunable_parameter                                        | mult. tuning parameter for TKE diss. in SHOC            | none          |    0 | real      | kind_phys | none   | F        |
-!! | GFS_Control%shoc_parm(3)             | shoc_tke_dissipation_tunable_parameter_near_surface                           | mult. tuning parameter for TKE diss. at surface in SHOC | none          |    0 | real      | kind_phys | none   | F        |
-!! | GFS_Control%shoc_parm(4)             | shoc_implicit_TKE_integration_uncentering_term                                | uncentering term for TKE integration in SHOC            | none          |    0 | real      | kind_phys | none   | F        |
-!! | GFS_Control%shoc_parm(5)             | shoc_flag_for_optional_surface_TKE_dissipation                                | flag for alt. TKE diss. near surface in SHOC (>0 = ON)  | none          |    0 | real      | kind_phys | none   | F        |
-!! | GFS_Control%ncnd                     | number_of_cloud_condensate_types                                              | number of cloud condensate types                        | count         |    0 | integer   |           | none   | F        |
+!! | GFS_Control%shoc_parm(1)             | shoc_tke_dissipatation_pressure_threshold                                     | pressure below which extra TKE diss. is applied in SHOC                       | Pa      |    0 | real       | kind_phys | none   | F        |
+!! | GFS_Control%shoc_parm(2)             | shoc_tke_dissipation_tunable_parameter                                        | mult. tuning parameter for TKE diss. in SHOC                                  | none    |    0 | real       | kind_phys | none   | F        |
+!! | GFS_Control%shoc_parm(3)             | shoc_tke_dissipation_tunable_parameter_near_surface                           | mult. tuning parameter for TKE diss. at surface in SHOC                       | none    |    0 | real       | kind_phys | none   | F        |
+!! | GFS_Control%shoc_parm(4)             | shoc_implicit_TKE_integration_uncentering_term                                | uncentering term for TKE integration in SHOC                                  | none    |    0 | real       | kind_phys | none   | F        |
+!! | GFS_Control%shoc_parm(5)             | shoc_flag_for_optional_surface_TKE_dissipation                                | flag for alt. TKE diss. near surface in SHOC (>0 = ON)                        | none    |    0 | real       | kind_phys | none   | F        |
+!! | GFS_Control%ncnd                     | number_of_cloud_condensate_types                                              | number of cloud condensate types                                              | count   |    0 | integer    |           | none   | F        |
+!! | GFS_Control%make_number_concentrations | flag_for_initial_number_concentration_calculation                           | flag for initial number concentration calculation for Thompson MP             | flag    |    0 | logical    |           | none   | F        |
 !! | GFS_Control%ltaerosol                | flag_for_aerosol_physics                                                      | flag for aerosol physics                                | flag          |    0 | logical   |           | none   | F        |
 !! | GFS_Control%lradar                   | flag_for_radar_reflectivity                                                   | flag for radar reflectivity                             | flag          |    0 | logical   |           | none   | F        |
 !! | GFS_Control%ttendlim                 | limit_for_temperature_tendency_for_microphysics                               | temperature tendency limiter per physics time step      | K s-1         |    0 | real      | kind_phys | none   | F        |
@@ -1131,12 +1137,12 @@ module GFS_typedefs
 #ifdef CCPP
     integer              :: logunit
 #endif
-    real(kind=kind_phys) :: fhzero          !< seconds between clearing of diagnostic buckets
+    real(kind=kind_phys) :: fhzero          !< hours between clearing of diagnostic buckets
     logical              :: ldiag3d         !< flag for 3d diagnostic fields
     logical              :: lssav           !< logical flag for storing diagnostics
-    real(kind=kind_phys) :: fhcyc           !< frequency for surface data cycling (secs)
+    real(kind=kind_phys) :: fhcyc           !< frequency for surface data cycling (hours)
     logical              :: lgocart         !< flag for 3d diagnostic fields for gocart 1
-    real(kind=kind_phys) :: fhgoc3d         !< seconds between calls to gocart
+    real(kind=kind_phys) :: fhgoc3d         !< hours between calls to gocart
     integer              :: thermodyn_id    !< valid for GFS only for get_prs/phi
     integer              :: sfcpress_id     !< valid for GFS only for get_prs/phi
     logical              :: gen_coord_hybrid!< for Henry's gen coord
@@ -1281,6 +1287,8 @@ module GFS_typedefs
     integer              :: ncnd            !< number of cloud condensate types
 
     !--- Thompson's microphysical paramters
+    logical              :: make_number_concentrations !< flag to calculate initial number concentrations
+                                                       !< from mass concentrations if not in ICs/BCs
     logical              :: ltaerosol       !< flag for aerosol version
     logical              :: lradar          !< flag for radar reflectivity
     real(kind=kind_phys) :: ttendlim        !< temperature tendency limiter per time step in K/s
@@ -1964,8 +1972,6 @@ module GFS_typedefs
 !! | GFS_Data(cdata%blk_no)%Intdiag%tdomzr               | dominant_freezing_rain_type                                             | dominant freezing rain type                                     | none          |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Intdiag%tdomip               | dominant_sleet_type                                                     | dominant sleet type                                             | none          |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Intdiag%tdoms                | dominant_snow_type                                                      | dominant snow type                                              | none          |    1 | real        | kind_phys | none   | F        |
-!! | GFS_Data(cdata%blk_no)%Intdiag%snowfallac           | total_accumulated_snowfall                                              | run-total snow accumulation on the ground                       | kg m-2        |    1 | real        | kind_phys | none   | F        |
-!! | GFS_Data(cdata%blk_no)%Intdiag%acsnow               | accumulated_water_equivalent_of_frozen_precip                           | snow water equivalent of run-total frozen precip                | kg m-2        |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Intdiag%ca_out               |                                                                         | cellular automata fraction                                      |               |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Intdiag%ca_deep              |                                                                         | cellular automata fraction                                      |               |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Intdiag%ca_turb              |                                                                         | cellular automata fraction                                      |               |    1 | real        | kind_phys | none   | F        |
@@ -2058,10 +2064,6 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: transa (:)     => null()   !< noah lsm diagnostics
     real (kind=kind_phys), pointer :: sbsnoa (:)     => null()   !< noah lsm diagnostics
     real (kind=kind_phys), pointer :: snowca (:)     => null()   !< noah lsm diagnostics
-#ifdef CCPP
-    real (kind=kind_phys), pointer :: snowfallac (:) => null()   !< ruc lsm diagnostics
-    real (kind=kind_phys), pointer :: acsnow     (:) => null()   !< ruc lsm diagnostics
-#endif
     real (kind=kind_phys), pointer :: soilm  (:)     => null()   !< soil moisture
     real (kind=kind_phys), pointer :: tmpmin (:)     => null()   !< min temperature at 2m height (k)
     real (kind=kind_phys), pointer :: tmpmax (:)     => null()   !< max temperature at 2m height (k)
@@ -2648,7 +2650,6 @@ module GFS_typedefs
     real (kind=kind_phys), pointer      :: tseal(:)         => null()  !<
     real (kind=kind_phys), pointer      :: tsfa(:)          => null()  !<
     real (kind=kind_phys), pointer      :: tsfg(:)          => null()  !<
-    real (kind=kind_phys), pointer      :: tsnow(:)         => null()  !<
     real (kind=kind_phys), pointer      :: tsurf(:)         => null()  !<
     real (kind=kind_phys), pointer      :: ud_mf(:,:)       => null()  !<
     real (kind=kind_phys), pointer      :: ulwsfc_cice(:)   => null()  !<
@@ -2970,6 +2971,8 @@ module GFS_typedefs
        allocate (Sfcprop%cndm_surf   (IM))
        allocate (Sfcprop%rhofr       (IM))
        allocate (Sfcprop%tsnow       (IM))
+       allocate (Sfcprop%snowfallac  (IM))
+       allocate (Sfcprop%acsnow      (IM))
        !
        Sfcprop%sh2o        = clear_val
        Sfcprop%keepsmfr    = clear_val
@@ -2982,6 +2985,8 @@ module GFS_typedefs
        Sfcprop%flag_frsoil = clear_val
        Sfcprop%rhofr       = clear_val
        Sfcprop%tsnow       = clear_val
+       Sfcprop%snowfallac  = clear_val
+       Sfcprop%acsnow      = clear_val
     end if
     if (Model%do_mynnsfclay) then
     ! For MYNN surface layer scheme
@@ -3352,12 +3357,12 @@ module GFS_typedefs
 #endif
 
 !--- BEGIN NAMELIST VARIABLES
-    real(kind=kind_phys) :: fhzero         = 0.0             !< seconds between clearing of diagnostic buckets
+    real(kind=kind_phys) :: fhzero         = 0.0             !< hours between clearing of diagnostic buckets
     logical              :: ldiag3d        = .false.         !< flag for 3d diagnostic fields
     logical              :: lssav          = .false.         !< logical flag for storing diagnostics
-    real(kind=kind_phys) :: fhcyc          = 0.              !< frequency for surface data cycling (secs)
+    real(kind=kind_phys) :: fhcyc          = 0.              !< frequency for surface data cycling (hours)
     logical              :: lgocart        = .false.         !< flag for 3d diagnostic fields for gocart 1
-    real(kind=kind_phys) :: fhgoc3d        = 0.0             !< seconds between calls to gocart
+    real(kind=kind_phys) :: fhgoc3d        = 0.0             !< hours between calls to gocart
     integer              :: thermodyn_id   =  1              !< valid for GFS only for get_prs/phi
     integer              :: sfcpress_id    =  1              !< valid for GFS only for get_prs/phi
 
@@ -3456,6 +3461,8 @@ module GFS_typedefs
     logical              :: mg_do_liq_liu   = .true.            !< set .true. to turn on liu liquid treatment  
 
     !--- Thompson microphysical parameters
+    logical              :: make_number_concentrations = .false.!< flag to calculate initial number concentrations
+                                                                !< from mass concentrations if not in ICs/BCs
     logical              :: ltaerosol      = .false.            !< flag for aerosol version
     logical              :: lradar         = .false.            !< flag for radar reflectivity
     real(kind=kind_phys) :: ttendlim       = -999.0             !< temperature tendency limiter, set to <0 to deactivate
@@ -3690,6 +3697,7 @@ module GFS_typedefs
                                mg_do_graupel, mg_do_hail, mg_nccons, mg_nicons, mg_ngcons,  &
                                mg_ncnst, mg_ninst, mg_ngnst, sed_supersat, do_sb_physics,   &
                                mg_alf,   mg_qcmin, mg_do_ice_gmao, mg_do_liq_liu,           &
+                               make_number_concentrations,                                  &
                                ltaerosol, lradar, ttendlim, lgfdlmprad,                     &
                           !--- max hourly
                                avg_max_length,                                              &
@@ -3830,7 +3838,7 @@ module GFS_typedefs
 !--- calendars and time parameters and activation triggers
     Model%dtp              = dt_phys
     Model%dtf              = dt_dycore
-    Model%nscyc            = nint(fhcyc*3600./Model%dtp)
+    Model%nscyc            = nint(Model%fhcyc*con_hr/Model%dtp)
     Model%nszero           = nint(Model%fhzero*con_hr/Model%dtp)
     Model%idat(1:8)        = idat(1:8)
     Model%idate            = 0
@@ -3939,6 +3947,7 @@ module GFS_typedefs
 
 
 !--- Thompson MP parameters
+    Model%make_number_concentrations = make_number_concentrations
     Model%ltaerosol        = ltaerosol
     Model%lradar           = lradar
     Model%ttendlim         = ttendlim
@@ -4518,7 +4527,9 @@ module GFS_typedefs
       Model%nieffr = 2
       Model%nseffr = 3
       if (Model%me == Model%master) print *,' Using Thompson double moment', &
-                                          ' microphysics',' ltaerosol = ',Model%ltaerosol, &
+                                          ' microphysics', &
+                                          ' make_number_concentrations = ',Model%make_number_concentrations, &
+                                          ' ltaerosol = ',Model%ltaerosol, &
                                           ' lradar =',Model%lradar,' ttendlim =',Model%ttendlim, &
                                           Model%num_p3d,Model%num_p2d
 
@@ -4765,6 +4776,7 @@ module GFS_typedefs
       endif
       if (Model%imp_physics == Model%imp_physics_wsm6 .or. Model%imp_physics == Model%imp_physics_thompson) then
         print *, ' Thompson microphysical parameters'
+        print *, ' make_number_concentrations : ', Model%make_number_concentrations
         print *, ' ltaerosol         : ', Model%ltaerosol
         print *, ' lradar            : ', Model%lradar
         print *, ' ttendlim          : ', Model%ttendlim
@@ -5305,10 +5317,6 @@ module GFS_typedefs
     allocate (Diag%transa  (IM))
     allocate (Diag%sbsnoa  (IM))
     allocate (Diag%snowca  (IM))
-#ifdef CCPP
-    allocate (Diag%snowfallac  (IM))
-    allocate (Diag%acsnow      (IM))
-#endif
     allocate (Diag%soilm   (IM))
     allocate (Diag%tmpmin  (IM))
     allocate (Diag%tmpmax  (IM))
@@ -5506,10 +5514,6 @@ module GFS_typedefs
     Diag%transa     = zero
     Diag%sbsnoa     = zero
     Diag%snowca     = zero
-#ifdef CCPP
-    Diag%snowfallac = zero
-    Diag%acsnow     = zero
-#endif
     Diag%soilm      = zero
     Diag%tmpmin     = huge
     Diag%tmpmax     = zero
