@@ -1183,16 +1183,18 @@ module module_physics_driver
       !Interstitial(nt)%rhcpbl = rhpbl    ! intent(out) - rhpbl  uninitialized at this point
       !Interstitial(nt)%rhctop = rhbtop   ! intent(out) - rhbtop uninitialized at this point
       !Interstitial(nt)%frain  = frain    ! intent(out) - frain  uninitialized at this point
-      !Interstitial(nt)%islmsk = islmsk    ! intent(out)
-      !Interstitial(nt)%frland = frland    ! intent(out)
-      !Interstitial(nt)%work1  = work1     ! intent(out)
-      !Interstitial(nt)%work2  = work2     ! intent(out)
+      !Interstitial(nt)%islmsk = islmsk   ! intent(out)
+      !Interstitial(nt)%frland = frland   ! intent(out)
+      !Interstitial(nt)%work1  = work1    ! intent(out)
+      !Interstitial(nt)%work2  = work2    ! intent(out)
       !Diag%psurf                         ! intent(out)
-      !Interstitial(nt)%dudt   = dudt      ! intent(out)
-      !Interstitial(nt)%dvdt   = dvdt      ! intent(out)
-      !Interstitial(nt)%dtdt   = dtdt      ! intent(out)
-      !Interstitial(nt)%dtdtc  = dtdtc     ! intent(out)
-      !Interstitial(nt)%dqdt   = dqdt      ! intent(out)
+      !Interstitial(nt)%dudt   = dudt     ! intent(out)
+      !Interstitial(nt)%dvdt   = dvdt     ! intent(out)
+      !Interstitial(nt)%dtdt   = dtdt     ! intent(out)
+      !Interstitial(nt)%dtdtc  = dtdtc    ! intent(out)
+      !Interstitial(nt)%dqdt   = dqdt     ! intent(out)
+      !Sfcprop%tisfc                      ! intent(in)
+      !Interstitial(nt)%tice              ! intent(out) - tice uninitialized at this point
       !cdata_block(nb,nt)%errmsg = errmsg ! intent(out)
       !cdata_block(nb,nt)%errflg = errflg ! intent(out)
       !
@@ -1211,6 +1213,7 @@ module module_physics_driver
       dtdt   = Interstitial(nt)%dtdt
       dtdtc  = Interstitial(nt)%dtdtc
       dqdt   = Interstitial(nt)%dqdt
+      tice   = Interstitial(nt)%tice
       errmsg = trim(cdata_block(nb,nt)%errmsg)
       errflg = cdata_block(nb,nt)%errflg
       if (errflg/=0) then
@@ -2630,7 +2633,7 @@ module module_physics_driver
          !Interstitial(nt)%ipr                  ! intent(in   ) - set in Interstitial(nt)%create()
          !Sfcprop%hice                          ! intent(inout)
          !Sfcprop%fice                          ! intent(inout)
-         !Sfcprop%tisfc                         ! intent(inout)
+         Interstitial(nt)%tice = tice           ! intent(inout)
          Interstitial(nt)%weasd_ice = weasd_ice ! intent(inout)
          Interstitial(nt)%tsfc_ice = tsfc_ice   ! intent(inout)
          Interstitial(nt)%tprcp_ice = tprcp_ice ! intent(inout)
@@ -2648,20 +2651,21 @@ module module_physics_driver
          !cdata_block(nb,nt)%errflg = errflg    ! intent(out)
          call ccpp_physics_run(cdata_block(nb,nt), scheme_name="sfc_sice", ierr=ierr)
          ! Copy back intent(inout) interstitial variables to local variables in driver
+         tice      = Interstitial(nt)%tice
          weasd_ice = Interstitial(nt)%weasd_ice
-         tsfc_ice = Interstitial(nt)%tsfc_ice
+         tsfc_ice  = Interstitial(nt)%tsfc_ice
          tprcp_ice = Interstitial(nt)%tprcp_ice
-         ep1d_ice   = Interstitial(nt)%ep1d_ice
+         ep1d_ice  = Interstitial(nt)%ep1d_ice
          snowd_ice = Interstitial(nt)%snowd_ice
-         qss_ice = Interstitial(nt)%qss_ice
-         snowmt = Interstitial(nt)%snowmt
-         gflx_ice = Interstitial(nt)%gflx_ice
-         cmm_ice = Interstitial(nt)%cmm_ice
-         chh_ice = Interstitial(nt)%chh_ice
-         evap_ice = Interstitial(nt)%evap_ice
-         hflx_ice = Interstitial(nt)%hflx_ice
-         errmsg = trim(cdata_block(nb,nt)%errmsg)
-         errflg = cdata_block(nb,nt)%errflg
+         qss_ice   = Interstitial(nt)%qss_ice
+         snowmt    = Interstitial(nt)%snowmt
+         gflx_ice  = Interstitial(nt)%gflx_ice
+         cmm_ice   = Interstitial(nt)%cmm_ice
+         chh_ice   = Interstitial(nt)%chh_ice
+         evap_ice  = Interstitial(nt)%evap_ice
+         hflx_ice  = Interstitial(nt)%hflx_ice
+         errmsg    = trim(cdata_block(nb,nt)%errmsg)
+         errflg    = cdata_block(nb,nt)%errflg
          if (errflg/=0) then
              write(0,*) 'Error in call to sfc_sice: ' // trim(errmsg)
              stop
@@ -7341,6 +7345,7 @@ module module_physics_driver
       endif               !       moist convective adjustment over
 ! *DH
 !
+
 #ifdef CCPP
 ! OPTION B - works with all compilers
       if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_MP_generic_pre through option B'
@@ -7589,7 +7594,7 @@ module module_physics_driver
           errflg = cdata_block(nb,nt)%errflg
           !
           if (errflg/=0) then
-              write(0,*) 'Error in call to mp_thompson_mp_mp_thompson_run: ' // trim(errmsg)
+              write(0,*) 'Error in call to mp_thompson_pre: ' // trim(errmsg)
               stop
           end if
           if (Model%me==0) write(0,*) 'CCPP DEBUG: calling mp_thompson_run through option B'
@@ -7662,7 +7667,7 @@ module module_physics_driver
           errflg = cdata_block(nb,nt)%errflg
           !
           if (errflg/=0) then
-              write(0,*) 'Error in call to mp_thompson_mp_mp_thompson_post_run: ' // trim(errmsg)
+              write(0,*) 'Error in call to mp_thompson_post: ' // trim(errmsg)
               stop
           end if
 #endif
@@ -8750,6 +8755,7 @@ module module_physics_driver
         !Interstitial(nt)%im = im             ! intent(in) - set in Interstitial(nt)%create
         !Model%cplflx                         ! intent(in)
         Interstitial(nt)%islmsk = islmsk      ! intent(in)
+        Interstitial(nt)%tice = tice          ! intent(in)
         !Sfcprop%tsfc                         ! intent(in)
         !Sfcprop%fice                         ! intent(inout)
         !Sfcprop%hice                         ! intent(inout)

@@ -2443,7 +2443,7 @@ end subroutine atmos_data_type_chksum
     call fillExportFields(exportData)
 
 !---
-    if (IPD_Control%cplflx) then 
+    if (IPD_Control%cplflx) then
     ! zero out accumulated fields
       do j=jsc,jec
         do i=isc,iec

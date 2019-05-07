@@ -2507,6 +2507,7 @@ module GFS_typedefs
 !! | GFS_Interstitial(cdata%thrd_no)%stress_land                   | surface_wind_stress_over_land                                                                  | surface wind stress over land                                                       | m2 s-2        |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%stress_ice                    | surface_wind_stress_over_ice                                                                   | surface wind stress over ice                                                        | m2 s-2        |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%theta                         | angle_from_east_of_maximum_subgrid_orographic_variations                                       | angle with_respect to east of maximum subgrid orographic variations                 | degrees       |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Interstitial(cdata%thrd_no)%tice                          | sea_ice_temperature_interstitial                                                               | sea ice surface skin temperature use as interstitial                                | K             |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%tlvl                          | air_temperature_at_interface_for_radiation                                                     | air temperature at vertical interface for radiation calculation                     | K             |    2 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%tlyr                          | air_temperature_at_layer_for_radiation                                                         | air temperature at vertical layer for radiation calculation                         | K             |    2 | real        | kind_phys | none   | F        |
 !! | GFS_Interstitial(cdata%thrd_no)%tprcp_ocean                   | nonnegative_lwe_thickness_of_precipitation_amount_on_dynamics_timestep_over_ocean              | total precipitation amount in each time step over ocean                             | m             |    1 | real        | kind_phys | none   | F        |
@@ -2783,6 +2784,7 @@ module GFS_typedefs
     real (kind=kind_phys), pointer      :: stress_land(:)   => null()  !<
     real (kind=kind_phys), pointer      :: stress_ocean(:)  => null()  !<
     real (kind=kind_phys), pointer      :: theta(:)         => null()  !<
+    real (kind=kind_phys), pointer      :: tice(:)          => null()  !<
     real (kind=kind_phys), pointer      :: tlvl(:,:)        => null()  !<
     real (kind=kind_phys), pointer      :: tlyr(:,:)        => null()  !<
     real (kind=kind_phys), pointer      :: tprcp_ice(:)     => null()  !<
@@ -6101,6 +6103,7 @@ module GFS_typedefs
     allocate (Interstitial%stress_land(IM))
     allocate (Interstitial%stress_ocean(IM))
     allocate (Interstitial%theta      (IM))
+    allocate (Interstitial%tice       (IM))
     allocate (Interstitial%tlvl       (IM,Model%levr+1+LTP))
     allocate (Interstitial%tlyr       (IM,Model%levr+LTP))
     allocate (Interstitial%tprcp_ice  (IM))
@@ -6535,6 +6538,7 @@ module GFS_typedefs
     Interstitial%stress_land  = huge
     Interstitial%stress_ocean = huge
     Interstitial%theta        = clear_val
+    Interstitial%tice         = clear_val
     Interstitial%tprcp_ice    = huge
     Interstitial%tprcp_land   = huge
     Interstitial%tprcp_ocean  = huge
@@ -6560,7 +6564,6 @@ module GFS_typedefs
     Interstitial%weasd_ice    = huge
     Interstitial%weasd_land   = huge
     Interstitial%wind         = huge
-    ! DH* WHY THIS CHANGE? Interstitial%wind         = clear_val
     Interstitial%work1        = clear_val
     Interstitial%work2        = clear_val
     Interstitial%work3        = clear_val
@@ -6825,6 +6828,7 @@ module GFS_typedefs
     write (0,*) 'sum(Interstitial%stress_land ) = ', sum(Interstitial%stress_land )
     write (0,*) 'sum(Interstitial%stress_ocean) = ', sum(Interstitial%stress_ocean)
     write (0,*) 'sum(Interstitial%theta       ) = ', sum(Interstitial%theta       )
+    write (0,*) 'sum(Interstitial%tice        ) = ', sum(Interstitial%tice        )
     write (0,*) 'sum(Interstitial%tlvl        ) = ', sum(Interstitial%tlvl        )
     write (0,*) 'sum(Interstitial%tlyr        ) = ', sum(Interstitial%tlyr        )
     write (0,*) 'sum(Interstitial%tprcp_ice   ) = ', sum(Interstitial%tprcp_ice   )
