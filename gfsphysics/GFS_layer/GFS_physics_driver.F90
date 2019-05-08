@@ -26,7 +26,7 @@ module module_physics_driver
 
 #ifndef CCPP
   use gfdl_cloud_microphys_mod, only: gfdl_cloud_microphys_driver,      &
-				   cloud_diagnosis
+                                   cloud_diagnosis
   use module_mp_thompson,    only: mp_gt_driver
 #endif
   use module_mp_wsm6,        only: wsm6
@@ -564,7 +564,7 @@ module module_physics_driver
 
       real(kind=kind_phys), dimension(size(Grid%xlon,1))  ::            &
 #ifdef CCPP
-           ccwfac, garea, dlength, cumabs, gflx,                        &
+           ccwfac, garea, dlength, cumabs, tice, gflx,                  &
 #else
            ccwfac, garea, dlength, cumabs, cice, zice, tice, gflx,      &
 #endif
@@ -842,7 +842,7 @@ module module_physics_driver
         tsfc_ocean(:) = huge ;    tsfc_land(:) = huge ;    tsfc_ice(:) = huge
        tsurf_ocean(:) = huge ;   tsurf_land(:) = huge ;   tsurf_ice(:) = huge
         zorl_ocean(:) = huge ;    zorl_land(:) = huge ;    zorl_ice(:) = huge
-        wind(:)     = huge
+        wind(:)       = huge
 
 !
 !===> ...  begin here
@@ -1248,6 +1248,15 @@ module module_physics_driver
          if(ocean(i) .or. lake(i))     wet(i) = .true.
          if(Sfcprop%fice(i) > cimin*max(Sfcprop%oceanfrac(i),Sfcprop%lakefrac(i))) icy(i) = .true.
       enddo
+#endif
+#ifdef HYBRID
+      ! To avoid overwriting the default assignments in CCPP in Interstitial%create(im)
+      ! with uninitialized values in HYBRID mode, initialize from Interstitial arrays
+      wet   = Interstitial(nt)%wet
+      dry   = Interstitial(nt)%dry
+      ocean = Interstitial(nt)%ocean
+      lake  = Interstitial(nt)%lake
+      icy   = Interstitial(nt)%icy
 #endif
 
       do i=1,im
@@ -1769,9 +1778,88 @@ module module_physics_driver
       enddo
 
 #ifdef CCPP
-      write(0,*) "DH ERROR: call to GFS_surface_composites_pre_run not yet implemented in HYBRID mode"
-      call sleep(5)
-      stop
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_surface_composites_pre through option B'
+      ! Copy local variables from driver to appropriate interstitial variables
+      !Interstitial(nt)%im = im                    ! intent(in   ) - set in Interstitial(nt)%create()
+      !Model%cplflx                                ! intent(in   )
+      !Sfcprop%landfrac                            ! intent(in   )
+      !Sfcprop%lakefrac                            ! intent(in   )
+      !Sfcprop%oceanfrac                           ! intent(in   )
+      Interstitial(nt)%dry   = dry                 ! intent(inout)
+      Interstitial(nt)%icy   = icy                 ! intent(inout)
+      Interstitial(nt)%lake  = lake                ! intent(inout)
+      Interstitial(nt)%ocean = ocean               ! intent(inout)
+      Interstitial(nt)%wet   = wet                 ! intent(inout)
+      !Sfcprop%fice                                ! intent(in   )
+      !cimin                                       ! intent(in   ) - defined in physcons.F90
+      !Sfcprop%zorl                                ! intent(in   )
+      !Sfcprop%zorlo                               ! intent(inout)
+      !Sfcprop%zorll                               ! intent(inout)
+      Interstitial(nt)%zorl_ocean = zorl_ocean     ! intent(inout)
+      Interstitial(nt)%zorl_land  = zorl_land      ! intent(inout)
+      Interstitial(nt)%zorl_ice   = zorl_ice       ! intent(inout)
+      !Sfcprop%snowd                               ! intent(in   )
+      Interstitial(nt)%snowd_ocean = snowd_ocean   ! intent(inout)
+      Interstitial(nt)%snowd_land  = snowd_land    ! intent(inout)
+      Interstitial(nt)%snowd_ice   = snowd_ice     ! intent(inout)
+      !Sfcprop%tprcp                               ! intent(in   )
+      Interstitial(nt)%tprcp_ocean = tprcp_ocean   ! intent(inout)
+      Interstitial(nt)%tprcp_land  = tprcp_land    ! intent(inout)
+      Interstitial(nt)%tprcp_ice   = tprcp_ice     ! intent(inout)
+      !Sfcprop%uustar                              ! intent(in   )
+      Interstitial(nt)%uustar_land = uustar_land   ! intent(inout)
+      Interstitial(nt)%uustar_ice  = uustar_ice    ! intent(inout)
+      !Sfcprop%weasd                               ! intent(in   )
+      Interstitial(nt)%weasd_land = weasd_land     ! intent(inout)
+      Interstitial(nt)%weasd_ice  = weasd_ice      ! intent(inout)
+      Interstitial(nt)%ep1d_ice   = ep1d_ice       ! intent(inout)
+      !Sfcprop%tsfc                                ! intent(in   )
+      !Sfcprop%tsfco                               ! intent(inout)
+      !Sfcprop%tsfcl                               ! intent(inout)
+      Interstitial(nt)%tsfc_ocean = tsfc_ocean     ! intent(inout)
+      Interstitial(nt)%tsfc_land  = tsfc_land      ! intent(inout)
+      Interstitial(nt)%tsfc_ice   = tsfc_ice       ! intent(inout)
+      !Sfcprop%tisfc                               ! intent(inout)
+      Interstitial(nt)%tsurf       = tsurf         ! intent(inout)
+      Interstitial(nt)%tsurf_ocean = tsurf_ocean   ! intent(inout)
+      Interstitial(nt)%tsurf_land  = tsurf_land    ! intent(inout)
+      Interstitial(nt)%tsurf_ice   = tsurf_ice     ! intent(inout)
+      !cdata_block(nb,nt)%errmsg = errmsg          ! intent(out)
+      !cdata_block(nb,nt)%errflg = errflg          ! intent(out)
+      call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_surface_composites_pre", ierr=ierr)
+      ! Copy back intent(inout) interstitial variables to local variables in driver
+      dry         = Interstitial(nt)%dry
+      icy         = Interstitial(nt)%icy
+      lake        = Interstitial(nt)%lake
+      ocean       = Interstitial(nt)%ocean
+      wet         = Interstitial(nt)%wet
+      zorl_ocean  = Interstitial(nt)%zorl_ocean
+      zorl_land   = Interstitial(nt)%zorl_land
+      zorl_ice    = Interstitial(nt)%zorl_ice
+      snowd_ocean = Interstitial(nt)%snowd_ocean
+      snowd_land  = Interstitial(nt)%snowd_land
+      snowd_ice   = Interstitial(nt)%snowd_ice
+      tprcp_ocean = Interstitial(nt)%tprcp_ocean
+      tprcp_land  = Interstitial(nt)%tprcp_land
+      tprcp_ice   = Interstitial(nt)%tprcp_ice
+      uustar_land = Interstitial(nt)%uustar_land
+      uustar_ice  = Interstitial(nt)%uustar_ice
+      weasd_land  = Interstitial(nt)%weasd_land
+      weasd_ice   = Interstitial(nt)%weasd_ice
+      ep1d_ice    = Interstitial(nt)%ep1d_ice
+      tsfc_ocean  = Interstitial(nt)%tsfc_ocean
+      tsfc_land   = Interstitial(nt)%tsfc_land
+      tsfc_ice    = Interstitial(nt)%tsfc_ice
+      tsurf       = Interstitial(nt)%tsurf
+      tsurf_ocean = Interstitial(nt)%tsurf_ocean
+      tsurf_land  = Interstitial(nt)%tsurf_land
+      tsurf_ice   = Interstitial(nt)%tsurf_ice
+      errmsg      = trim(cdata_block(nb,nt)%errmsg)
+      errflg      = cdata_block(nb,nt)%errflg
+      if (errflg/=0) then
+          write(0,*) 'Error in call to GFS_surface_composites_pre: ' // trim(errmsg)
+          stop
+      end if
 #else
       do i=1,im
         if (.not. Model%cplflx) then
@@ -2321,109 +2409,109 @@ module module_physics_driver
 #ifdef CCPP
          if (Model%me==0) write(0,*) 'CCPP DEBUG: calling lsm_noah through option B'
          ! Copy local variables from driver to appropriate interstitial variables
-         !Interstitial(nt)%im = im              ! intent(in) - set in Interstitial(nt)%create()
-         !Model%lsoil                           ! intent(in)
-         !con_g
-         !con_cp
-         !con_hvap
-         !con_rd
-         !con_eps
-         !con_epsm1
-         !con_fvirt
-         !Statein%pgr                           ! intent(in)
-         !Statein%ugrs                          ! intent(in)
-         !Statein%vgrs                          ! intent(in)
-         !Statein%tgrs                          ! intent(in)
-         !Statein%qgrs                          ! intent(in)
-         Interstitial(nt)%soiltype= soiltyp     ! intent(in)
-         Interstitial(nt)%vegtype = vegtype     ! intent(in)
-         Interstitial(nt)%sigmaf = sigmaf       ! intent(in)
-         !Radtend%semis                         ! intent(in)
-         Interstitial(nt)%gabsbdlw = gabsbdlw   ! intent(in)
-         !Diag%dswsfci                          ! intent(in)
-         !Diag%nswsfci                          ! intent(in)
-         !Model%dtf                             ! intent(in)
-         !Sfcprop%tg3                           ! intent(in)
-         Interstitial(nt)%cd_land = cd_land     ! intent(in)
-         Interstitial(nt)%cdq_land = cdq_land   ! intent(in)
-         !Statein%prsl(1,1)                     ! intent(in)
-         Interstitial(nt)%work3 = work3         ! intent(in)
-         !Diag%zlvl                             ! intent(in)
-         Interstitial(nt)%dry = dry             ! intent(in)
-         !Tbd%phy_f2d(1,Model%num_p2d)          ! intent(in)
-         Interstitial(nt)%slopetype= slopetyp   ! intent(in)
-         !Sfcprop%shdmin                        ! intent(in)
-         !Sfcprop%shdmax                        ! intent(in)
-         !Sfcprop%snoalb                        ! intent(in)
-         !Radtend%sfalb                         ! intent(in)
-         Interstitial(nt)%flag_iter = flag_iter ! intent(in)
-         Interstitial(nt)%flag_guess= flag_guess! intent(in)
-         !Model%lheatstrg                       ! intent(in)
-         !Model%isot                            ! intent(in)
-         !Model%ivegsrc                         ! intent(in)
-         Interstitial(nt)%bexp1d = bexp1d       ! intent(in)
-         Interstitial(nt)%xlai1d = xlai1d       ! intent(in)
-         Interstitial(nt)%vegf1d = vegf1d       ! intent(in)
-         !Model%pertvegf                        ! intent(in)
-         Interstitial(nt)%weasd_land = weasd_land ! intent(inout)
-         Interstitial(nt)%snowd_land = snowd_land ! intent(inout)
-         Interstitial(nt)%tsfc_land = tsfc_land   ! intent(inout)
-         Interstitial(nt)%tprcp_land = tprcp_land ! intent(inout)
-         !Sfcprop%srflag                        ! intent(inout)
-         !Sfcprop%smc                           ! intent(inout)
-         !Sfcprop%stc                           ! intent(inout)
-         !Sfcprop%slc                           ! intent(inout)
-         !Sfcprop%canopy                        ! intent(inout)
-         Interstitial(nt)%trans  = trans        ! intent(inout)
-         Interstitial(nt)%tsurf_land = tsurf_land ! intent(inout)
-         Interstitial(nt)%zorl_land = zorl_land ! intent(inout)
-         !Sfcprop%sncovr                        ! intent(inout)
-         Interstitial(nt)%qss_land = qss_land   ! intent(inout)
-         Interstitial(nt)%gflx_land = gflx_land ! intent(inout)
-         Interstitial(nt)%drain  = drain        ! intent(inout)
-         Interstitial(nt)%evap_land = evap_land ! intent(inout)
-         Interstitial(nt)%hflx_land = hflx_land ! intent(inout)
-         Interstitial(nt)%ep1d_land = ep1d_land ! intent(inout)
-         Interstitial(nt)%runoff = runof        ! intent(inout)
-         Interstitial(nt)%cmm_land = cmm_land   ! intent(inout)
-         Interstitial(nt)%chh_land = chh_land   ! intent(inout)
-         Interstitial(nt)%evbs   = evbs         ! intent(inout)
-         Interstitial(nt)%evcw   = evcw         ! intent(inout)
-         Interstitial(nt)%sbsno  = sbsno        ! intent(inout)
-         Interstitial(nt)%snowc  = snowc        ! intent(inout)
-         !Diag%soilm                            ! intent(inout)
-         Interstitial(nt)%snohf  = snohf        ! intent(inout)
-         !Diag%smcwlt2                          ! intent(inout)
-         !Diag%smcref2                          ! intent(inout)
-         !Sfcprop%wet1                          ! intent(inout)
-         !cdata_block(nb,nt)%errmsg = errmsg    ! intent(out)
-         !cdata_block(nb,nt)%errflg = errflg    ! intent(out)
+         !Interstitial(nt)%im = im                 ! intent(in) - set in Interstitial(nt)%create()
+         !Model%lsoil                              ! intent(in)
+         !con_g                                    ! intent(in)
+         !con_cp                                   ! intent(in)
+         !con_hvap                                 ! intent(in)
+         !con_rd                                   ! intent(in)
+         !con_eps                                  ! intent(in)
+         !con_epsm1                                ! intent(in)
+         !con_fvirt                                ! intent(in)
+         !Statein%pgr                              ! intent(in)
+         !Statein%ugrs                             ! intent(in)
+         !Statein%vgrs                             ! intent(in)
+         !Statein%tgrs                             ! intent(in)
+         !Statein%qgrs                             ! intent(in)
+         Interstitial(nt)%soiltype= soiltyp        ! intent(in)
+         Interstitial(nt)%vegtype = vegtype        ! intent(in)
+         Interstitial(nt)%sigmaf = sigmaf          ! intent(in)
+         !Radtend%semis                            ! intent(in)
+         Interstitial(nt)%gabsbdlw = gabsbdlw      ! intent(in)
+         !Diag%dswsfci                             ! intent(in)
+         !Diag%nswsfci                             ! intent(in)
+         !Model%dtf                                ! intent(in)
+         !Sfcprop%tg3                              ! intent(in)
+         Interstitial(nt)%cd_land = cd_land        ! intent(in)
+         Interstitial(nt)%cdq_land = cdq_land      ! intent(in)
+         !Statein%prsl(:,1)                        ! intent(in)
+         Interstitial(nt)%work3 = work3            ! intent(in)
+         !Diag%zlvl                                ! intent(in)
+         Interstitial(nt)%dry = dry                ! intent(in)
+         !Tbd%phy_f2d(:,Model%num_p2d)             ! intent(in)
+         Interstitial(nt)%slopetype= slopetyp      ! intent(in)
+         !Sfcprop%shdmin                           ! intent(in)
+         !Sfcprop%shdmax                           ! intent(in)
+         !Sfcprop%snoalb                           ! intent(in)
+         !Radtend%sfalb                            ! intent(in)
+         Interstitial(nt)%flag_iter = flag_iter    ! intent(in)
+         Interstitial(nt)%flag_guess= flag_guess   ! intent(in)
+         !Model%lheatstrg                          ! intent(in)
+         !Model%isot                               ! intent(in)
+         !Model%ivegsrc                            ! intent(in)
+         Interstitial(nt)%bexp1d = bexp1d          ! intent(in)
+         Interstitial(nt)%xlai1d = xlai1d          ! intent(in)
+         Interstitial(nt)%vegf1d = vegf1d          ! intent(in)
+         !Model%pertvegf                           ! intent(in)
+         Interstitial(nt)%weasd_land = weasd_land  ! intent(inout)
+         Interstitial(nt)%snowd_land = snowd_land  ! intent(inout)
+         Interstitial(nt)%tsfc_land = tsfc_land    ! intent(inout)
+         Interstitial(nt)%tprcp_land = tprcp_land  ! intent(inout)
+         !Sfcprop%srflag                           ! intent(inout)
+         !Sfcprop%smc                              ! intent(inout)
+         !Sfcprop%stc                              ! intent(inout)
+         !Sfcprop%slc                              ! intent(inout)
+         !Sfcprop%canopy                           ! intent(inout)
+         Interstitial(nt)%trans      = trans       ! intent(inout)
+         Interstitial(nt)%tsurf_land = tsurf_land  ! intent(inout)
+         Interstitial(nt)%zorl_land  = zorl_land   ! intent(inout)
+         !Sfcprop%sncovr                           ! intent(inout)
+         Interstitial(nt)%qss_land   = qss_land    ! intent(inout)
+         Interstitial(nt)%gflx_land  = gflx_land   ! intent(inout)
+         Interstitial(nt)%drain      = drain       ! intent(inout)
+         Interstitial(nt)%evap_land  = evap_land   ! intent(inout)
+         Interstitial(nt)%hflx_land  = hflx_land   ! intent(inout)
+         Interstitial(nt)%ep1d_land  = ep1d_land   ! intent(inout)
+         Interstitial(nt)%runoff     = runof       ! intent(inout)
+         Interstitial(nt)%cmm_land   = cmm_land    ! intent(inout)
+         Interstitial(nt)%chh_land   = chh_land    ! intent(inout)
+         Interstitial(nt)%evbs       = evbs        ! intent(inout)
+         Interstitial(nt)%evcw       = evcw        ! intent(inout)
+         Interstitial(nt)%sbsno      = sbsno       ! intent(inout)
+         Interstitial(nt)%snowc      = snowc       ! intent(inout)
+         !Diag%soilm                               ! intent(inout)
+         Interstitial(nt)%snohf      = snohf       ! intent(inout)
+         !Diag%smcwlt2                             ! intent(inout)
+         !Diag%smcref2                             ! intent(inout)
+         !Sfcprop%wet1                             ! intent(inout)
+         !cdata_block(nb,nt)%errmsg = errmsg       ! intent(out)
+         !cdata_block(nb,nt)%errflg = errflg       ! intent(out)
          ! Call NOAH LSM through CCPP
          call ccpp_physics_run(cdata_block(nb,nt), scheme_name="lsm_noah", ierr=ierr)
          ! Copy back intent(inout) interstitial variables to local variables in driver
          weasd_land = Interstitial(nt)%weasd_land
          snowd_land = Interstitial(nt)%snowd_land
-         tsfc_land = Interstitial(nt)%tsfc_land
+         tsfc_land  = Interstitial(nt)%tsfc_land
          tprcp_land = Interstitial(nt)%tprcp_land
-         trans  = Interstitial(nt)%trans
-         tsurf_land  = Interstitial(nt)%tsurf_land
-         zorl_land = Interstitial(nt)%zorl_land
-         qss_land = Interstitial(nt)%qss_land
-         gflx_land = Interstitial(nt)%gflx_land
-         drain  = Interstitial(nt)%drain
-         evap_land = Interstitial(nt)%evap_land
-         hflx_land = Interstitial(nt)%hflx_land
-         ep1d_land = Interstitial(nt)%ep1d_land
-         runof  = Interstitial(nt)%runoff
-         cmm_land = Interstitial(nt)%cmm_land
-         chh_land = Interstitial(nt)%chh_land
-         evbs   = Interstitial(nt)%evbs
-         evcw   = Interstitial(nt)%evcw
-         sbsno  = Interstitial(nt)%sbsno
-         snowc  = Interstitial(nt)%snowc
-         snohf  = Interstitial(nt)%snohf
-         errmsg = trim(cdata_block(nb,nt)%errmsg)
-         errflg = cdata_block(nb,nt)%errflg
+         trans      = Interstitial(nt)%trans
+         tsurf_land = Interstitial(nt)%tsurf_land
+         zorl_land  = Interstitial(nt)%zorl_land
+         qss_land   = Interstitial(nt)%qss_land
+         gflx_land  = Interstitial(nt)%gflx_land
+         drain      = Interstitial(nt)%drain
+         evap_land  = Interstitial(nt)%evap_land
+         hflx_land  = Interstitial(nt)%hflx_land
+         ep1d_land  = Interstitial(nt)%ep1d_land
+         runof      = Interstitial(nt)%runoff
+         cmm_land   = Interstitial(nt)%cmm_land
+         chh_land   = Interstitial(nt)%chh_land
+         evbs       = Interstitial(nt)%evbs
+         evcw       = Interstitial(nt)%evcw
+         sbsno      = Interstitial(nt)%sbsno
+         snowc      = Interstitial(nt)%snowc
+         snohf      = Interstitial(nt)%snohf
+         errmsg     = trim(cdata_block(nb,nt)%errmsg)
+         errflg     = cdata_block(nb,nt)%errflg
          if (errflg/=0) then
              write(0,*) 'Error in call to lsm_noah: ' // trim(errmsg)
              stop
@@ -2754,14 +2842,137 @@ module module_physics_driver
       enddo   ! end iter_loop
 
 #ifdef CCPP
-      write(0,*) "DH ERROR: call to GFS_surface_composites_post_run not yet implemented in HYBRID mode"
-      call sleep(5)
-      stop
+      if (Model%me==0) write(0,*) 'CCPP DEBUG: calling GFS_surface_composites_post through option B'
+      ! Copy local variables from driver to appropriate interstitial variables
+      !Interstitial(nt)%im = im                      ! intent(in   ) - set in Interstitial(nt)%create()
+      !Model%cplflx                                  ! intent(in   )
+      Interstitial(nt)%flag_cice    = flag_cice      ! intent(in   )
+      Interstitial(nt)%dry          = dry            ! intent(in   )
+      Interstitial(nt)%wet          = wet            ! intent(in   )
+      Interstitial(nt)%icy          = icy            ! intent(in   )
+      !Sfcprop%landfrac                              ! intent(in   )
+      !Sfcprop%lakefrac                              ! intent(in   )
+      !Sfcprop%oceanfrac                             ! intent(in   )
+      !Sfcprop%fice                                  ! intent(in   )
+      !Sfcprop%zorl                                  ! intent(inout)
+      !Sfcprop%zorlo                                 ! intent(inout)
+      !Sfcprop%zorll                                 ! intent(inout)
+      Interstitial(nt)%zorl_ocean   = zorl_ocean     ! intent(in   )
+      Interstitial(nt)%zorl_land    = zorl_land      ! intent(in   )
+      Interstitial(nt)%zorl_ice     = zorl_ice       ! intent(in   )
+      Interstitial(nt)%cd           = cd             ! intent(inout)
+      Interstitial(nt)%cd_ocean     = cd_ocean       ! intent(in   )
+      Interstitial(nt)%cd_land      = cd_land        ! intent(in   )
+      Interstitial(nt)%cd_ice       = cd_ice         ! intent(in   )
+      Interstitial(nt)%cdq          = cdq            ! intent(inout)
+      Interstitial(nt)%cdq_ocean    = cdq_ocean      ! intent(in   )
+      Interstitial(nt)%cdq_land     = cdq_land       ! intent(in   )
+      Interstitial(nt)%cdq_ice      = cdq_ice        ! intent(in   )
+      Interstitial(nt)%rb           = rb             ! intent(inout)
+      Interstitial(nt)%rb_ocean     = rb_ocean       ! intent(in   )
+      Interstitial(nt)%rb_land      = rb_land        ! intent(in   )
+      Interstitial(nt)%rb_ice       = rb_ice         ! intent(in   )
+      Interstitial(nt)%stress       = stress         ! intent(inout)
+      Interstitial(nt)%stress_ocean = stress_ocean   ! intent(in   )
+      Interstitial(nt)%stress_land  = stress_land    ! intent(in   )
+      Interstitial(nt)%stress_ice   = stress_ice     ! intent(in   )
+      !Sfcprop%ffmm                                  ! intent(inout)
+      Interstitial(nt)%ffmm_ocean   = ffmm_ocean     ! intent(in   )
+      Interstitial(nt)%ffmm_land    = ffmm_land      ! intent(in   )
+      Interstitial(nt)%ffmm_ice     = ffmm_ice       ! intent(in   )
+      !Sfcprop%ffhh                                  ! intent(inout)
+      Interstitial(nt)%ffhh_ocean   = ffhh_ocean     ! intent(in   )
+      Interstitial(nt)%ffhh_land    = ffhh_land      ! intent(in   )
+      Interstitial(nt)%ffhh_ice     = ffhh_ice       ! intent(in   )
+      !Sfcprop%uustar                                ! intent(inout)
+      Interstitial(nt)%uustar_ocean = uustar_ocean   ! intent(in   )
+      Interstitial(nt)%uustar_land  = uustar_land    ! intent(in   )
+      Interstitial(nt)%uustar_ice   = uustar_ice     ! intent(in   )
+      Interstitial(nt)%fm10         = fm10           ! intent(inout)
+      Interstitial(nt)%fm10_ocean   = fm10_ocean     ! intent(in   )
+      Interstitial(nt)%fm10_land    = fm10_land      ! intent(in   )
+      Interstitial(nt)%fm10_ice     = fm10_ice       ! intent(in   )
+      Interstitial(nt)%fh2          = fh2            ! intent(inout)
+      Interstitial(nt)%fh2_ocean    = fh2_ocean      ! intent(in   )
+      Interstitial(nt)%fh2_land     = fh2_land       ! intent(in   )
+      Interstitial(nt)%fh2_ice      = fh2_ice        ! intent(in   )
+      Interstitial(nt)%tsurf        = tsurf          ! intent(inout)
+      Interstitial(nt)%tsurf_ocean  = tsurf_ocean    ! intent(in   )
+      Interstitial(nt)%tsurf_land   = tsurf_land     ! intent(in   )
+      Interstitial(nt)%tsurf_ice    = tsurf_ice      ! intent(in   )
+      !Diag%cmm                                      ! intent(inout)
+      Interstitial(nt)%cmm_ocean    = cmm_ocean      ! intent(in   )
+      Interstitial(nt)%cmm_land     = cmm_land       ! intent(in   )
+      Interstitial(nt)%cmm_ice      = cmm_ice        ! intent(in   )
+      !Diag%chh                                      ! intent(inout)
+      Interstitial(nt)%chh_ocean    = chh_ocean      ! intent(in   )
+      Interstitial(nt)%chh_land     = chh_land       ! intent(in   )
+      Interstitial(nt)%chh_ice      = chh_ice        ! intent(in   )
+      Interstitial(nt)%gflx         = gflx           ! intent(inout)
+      Interstitial(nt)%gflx_ocean   = gflx_ocean     ! intent(in   )
+      Interstitial(nt)%gflx_land    = gflx_land      ! intent(in   )
+      Interstitial(nt)%gflx_ice     = gflx_ice       ! intent(in   )
+      Interstitial(nt)%ep1d         = ep1d           ! intent(inout)
+      Interstitial(nt)%ep1d_ocean   = ep1d_ocean     ! intent(in   )
+      Interstitial(nt)%ep1d_land    = ep1d_land      ! intent(in   )
+      Interstitial(nt)%ep1d_ice     = ep1d_ice       ! intent(in   )
+      !Sfcprop%weasd                                 ! intent(inout)
+      Interstitial(nt)%weasd_land   = weasd_land     ! intent(in   )
+      Interstitial(nt)%weasd_ice    = weasd_ice      ! intent(in   )
+      !Sfcprop%snowd                                 ! intent(inout)
+      Interstitial(nt)%snowd_ocean  = snowd_ocean    ! intent(in   )
+      Interstitial(nt)%snowd_land   = snowd_land     ! intent(in   )
+      Interstitial(nt)%snowd_ice    = snowd_ice      ! intent(in   )
+      !Sfcprop%tprcp                                 ! intent(inout)
+      Interstitial(nt)%tprcp_ocean  = tprcp_ocean    ! intent(in   )
+      Interstitial(nt)%tprcp_land   = tprcp_land     ! intent(in   )
+      Interstitial(nt)%tprcp_ice    = tprcp_ice      ! intent(in   )
+      Interstitial(nt)%evap         = evap           ! intent(inout)
+      Interstitial(nt)%evap_ocean   = evap_ocean     ! intent(in   )
+      Interstitial(nt)%evap_land    = evap_land      ! intent(in   )
+      Interstitial(nt)%evap_ice     = evap_ice       ! intent(in   )
+      Interstitial(nt)%hflx         = hflx           ! intent(inout)
+      Interstitial(nt)%hflx_ocean   = hflx_ocean     ! intent(in   )
+      Interstitial(nt)%hflx_land    = hflx_land      ! intent(in   )
+      Interstitial(nt)%hflx_ice     = hflx_ice       ! intent(in   )
+      Interstitial(nt)%qss          = qss            ! intent(inout)
+      Interstitial(nt)%qss_ocean    = qss_ocean      ! intent(in   )
+      Interstitial(nt)%qss_land     = qss_land       ! intent(in   )
+      Interstitial(nt)%qss_ice      = qss_ice        ! intent(in   )
+      !Sfcprop%tsfc                                  ! intent(inout)
+      !Sfcprop%tsfco                                 ! intent(inout)
+      !Sfcprop%tsfcl                                 ! intent(inout)
+      Interstitial(nt)%tsfc_ocean   = tsfc_ocean     ! intent(in   )
+      Interstitial(nt)%tsfc_land    = tsfc_land      ! intent(in   )
+      Interstitial(nt)%tsfc_ice     = tsfc_ice       ! intent(in   )
+      !Sfcprop%tisfc                                 ! intent(inout)
+      !cdata_block(nb,nt)%errmsg = errmsg            ! intent(out  )
+      !cdata_block(nb,nt)%errflg = errflg            ! intent(out  )
+      call ccpp_physics_run(cdata_block(nb,nt), scheme_name="GFS_surface_composites_post", ierr=ierr)
+      ! Copy back intent(inout) interstitial variables to local variables in driver
+      cd     = Interstitial(nt)%cd
+      cdq    = Interstitial(nt)%cdq
+      rb     = Interstitial(nt)%rb
+      stress = Interstitial(nt)%stress
+      fm10   = Interstitial(nt)%fm10
+      fh2    = Interstitial(nt)%fh2
+      tsurf  = Interstitial(nt)%tsurf
+      gflx   = Interstitial(nt)%gflx
+      ep1d   = Interstitial(nt)%ep1d
+      evap   = Interstitial(nt)%evap
+      hflx   = Interstitial(nt)%hflx
+      qss    = Interstitial(nt)%qss
+      errmsg = trim(cdata_block(nb,nt)%errmsg)
+      errflg = cdata_block(nb,nt)%errflg
+      if (errflg/=0) then
+          write(0,*) 'Error in call to GFS_surface_composites_post: ' // trim(errmsg)
+          stop
+      end if
 #else
 ! --- generate ocean/land/ice composites
 
       ! DH*
-      write(0,*) "DH DEBUG composites: i, cplflx, flag_cice, dry, wet, icy, ocnfrac, lndfrac, lakfrac, cice, tsfc_{lnd,ocn,ice}, tsfc, tsfcl, tsfco, tisfc"
+      !write(0,*) "DH DEBUG composites: i, cplflx, flag_cice, dry, wet, icy, ocnfrac, lndfrac, lakfrac, cice, tsfc_{lnd,ocn,ice}, tsfc, tsfcl, tsfco, tisfc"
       ! *DH
 
       do i=1, im
@@ -2868,10 +3079,10 @@ module module_physics_driver
         end if
 
         ! DH*
-        write(0,'(i5,5(1x,l),11e16.7)') i, Model%cplflx, flag_cice(i), dry(i), wet(i), icy(i),                &
-                                        Sfcprop%oceanfrac(i), Sfcprop%landfrac(i), Sfcprop%lakefrac(i),       &
-                                        cice(i), tsfc_land(i), tsfc_ocean(i), tsfc_ice(i),                    &
-                                        Sfcprop%tsfc(i), Sfcprop%tsfcl(i), Sfcprop%tsfco(i), Sfcprop%tisfc(i)
+        !write(0,'(i5,5(1x,l),11e16.7)') i, Model%cplflx, flag_cice(i), dry(i), wet(i), icy(i),                &
+        !                                Sfcprop%oceanfrac(i), Sfcprop%landfrac(i), Sfcprop%lakefrac(i),       &
+        !                                cice(i), tsfc_land(i), tsfc_ocean(i), tsfc_ice(i),                    &
+        !                                Sfcprop%tsfc(i), Sfcprop%tsfcl(i), Sfcprop%tsfco(i), Sfcprop%tisfc(i)
         ! *DH
         end do
 
