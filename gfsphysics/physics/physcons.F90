@@ -149,7 +149,10 @@
 !> molecular wght of n2o (\f$g/mol\f$)
   real(kind=kind_phys),parameter:: con_amn2o  =44.013 
 !> temperature the H.G.Nuc. ice starts
-  real(kind=kind_phys), parameter:: con_thgni  =-38.15   
+  real(kind=kind_phys), parameter:: con_thgni  =-38.15
+!> minimum ice concentration   
+  real(kind=kind_phys),parameter:: cimin      =0.15                      
+
 
 !> \name Miscellaneous physics related constants (Moorthi - Jul 2014)
 
