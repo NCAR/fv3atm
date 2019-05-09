@@ -1406,6 +1406,7 @@ module GFS_typedefs
     !--- MYNN parameters/switches
     logical              :: do_mynnedmf
     logical              :: do_mynnsfclay
+    ! DH* TODO - move this to MYNN namelist section
     integer              :: grav_settling      !< flag for initalizing fist time step
     integer              :: bl_mynn_tkebudget  !< flag for activating TKE budget
     logical              :: bl_mynn_tkeadvect  !< activate computation of TKE advection (not yet in use for FV3)
@@ -1418,6 +1419,7 @@ module GFS_typedefs
     integer              :: bl_mynn_cloudmix   !< flag to activate mixing of cloud species
     integer              :: bl_mynn_mixqt      !< flag to mix total water or individual species
     integer              :: icloud_bl          !< flag for coupling sgs clouds to radiation
+    ! *DH
 #endif
 
 !--- Rayleigh friction
@@ -3711,6 +3713,7 @@ module GFS_typedefs
 #ifdef CCPP
     logical              :: do_mynnedmf       = .false.               !< flag for MYNN-EDMF
     logical              :: do_mynnsfclay     = .false.               !< flag for MYNN Surface Layer Scheme
+    ! DH* TODO - move to MYNN namelist section
     integer              :: grav_settling     = 0
     integer              :: bl_mynn_tkebudget = 0
     logical              :: bl_mynn_tkeadvect = .false.
@@ -3723,6 +3726,7 @@ module GFS_typedefs
     integer              :: bl_mynn_cloudmix  = 1
     integer              :: bl_mynn_mixqt     = 0
     integer              :: icloud_bl         = 1
+    ! *DH
 #endif
     integer              :: nmtvr          = 14                       !< number of topographic variables such as variance etc
                                                                       !< used in the GWD parameterization
@@ -3887,9 +3891,11 @@ module GFS_typedefs
 #ifdef CCPP
                                oz_phys, oz_phys_2015,                                       &
                                do_mynnedmf, do_mynnsfclay,                                  &
+                               ! DH* TODO - move to MYNN namelist section
                                bl_mynn_cloudpdf, bl_mynn_edmf, bl_mynn_edmf_mom,            &
                                bl_mynn_edmf_tke, bl_mynn_edmf_part, bl_mynn_cloudmix,       &
                                bl_mynn_mixqt, icloud_bl, bl_mynn_tkeadvect,                 &
+                               ! *DH
 #endif
                                h2o_phys, pdfcld, shcnvcw, redrag, hybedmf, satmedmf,        &
                                shinhong, do_ysu, dspheat, dspheat, lheatstrg, cnvcld,       &
@@ -4214,6 +4220,7 @@ module GFS_typedefs
 #ifdef CCPP
     Model%do_mynnedmf       = do_mynnedmf
     Model%do_mynnsfclay     = do_mynnsfclay
+    ! DH* TODO - move to MYNN namelist section
     Model%bl_mynn_cloudpdf  = bl_mynn_cloudpdf
     Model%bl_mynn_mixlength = bl_mynn_mixlength
     Model%bl_mynn_edmf      = bl_mynn_edmf
@@ -4225,6 +4232,7 @@ module GFS_typedefs
     Model%bl_mynn_tkeadvect = bl_mynn_tkeadvect
     Model%grav_settling     = grav_settling
     Model%icloud_bl         = icloud_bl
+    ! *DH
 #endif
 
 !--- Rayleigh friction
@@ -4502,12 +4510,19 @@ module GFS_typedefs
 
 #ifdef CCPP
     !--- mynn-edmf scheme
-    if (Model%bl_mynn_edmf > 0) then
-      Model%do_shoc    = .false.
+    if (Model%do_mynnedmf) then
+      if (Model%do_shoc .or. Model%hybedmf .or. Model%satmedmf) then
+          print *,' Logic error: MYNN EDMF cannot be run with SHOC, HEDMF or SATMEDMF'
+          stop
+      end if
 !      Model%shal_cnv   = .false.
 !      Model%imfshalcnv = -1
-      Model%hybedmf    = .false.
-      Model%satmedmf   = .false.
+      ! DH* substitute for MYNN namelist section
+      Model%icloud_bl         = 1
+      Model%bl_mynn_tkeadvect = .true.
+      Model%bl_mynn_edmf      = 1
+      Model%bl_mynn_edmf_mom  = 1
+      ! *DH
       if (Model%me == Model%master) print *,' MYNN-EDMF scheme is used for both',                &
                                             ' boundary layer turbulence and shallow convection', &
                                             ' bl_mynn_cloudpdf=',Model%bl_mynn_cloudpdf,         &
