@@ -4519,9 +4519,9 @@ module GFS_typedefs
 !      Model%imfshalcnv = -1
       ! DH* substitute for MYNN namelist section
       Model%icloud_bl         = 1
-      Model%bl_mynn_tkeadvect = .true.
+      !Model%bl_mynn_tkeadvect = .true.
       Model%bl_mynn_edmf      = 1
-      Model%bl_mynn_edmf_mom  = 1
+      !Model%bl_mynn_edmf_mom  = 1
       ! *DH
       if (Model%me == Model%master) print *,' MYNN-EDMF scheme is used for both',                &
                                             ' boundary layer turbulence and shallow convection', &
