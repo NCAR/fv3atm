@@ -219,7 +219,7 @@ SRCS_f90 = \
 	   ./physics/wam_f107_kp_mod.f90
 
 SRCS_F = \
-	   ./physics/aer_cloud.F                                                 \
+	   ./physics/aer_cloud.F                                                     \
 	   ./physics/cldmacro.F                                                      \
 	   ./physics/cldwat2m_micro.F                                                \
 	   ./physics/machine.F                                                       \
@@ -313,6 +313,9 @@ endif
 
 # Do preprocessing of the GFS drivers in two steps to be able
 # to look at the actual .f90 file that is compiled
+./GFS_layer/GFS_typedefs.o: ./GFS_layer/GFS_typedefs.F90
+	$(CPP) $(CPPDEFS) $(CPPFLAGS) $< > $*.tmp.f90
+	$(FC) $(FFLAGS) $(OTHER_FFLAGS) -c $*.tmp.f90 -o $@
 ./GFS_layer/GFS_driver.o: ./GFS_layer/GFS_driver.F90
 	$(CPP) $(CPPDEFS) $(CPPFLAGS) $< > $*.tmp.f90
 	$(FC) $(FFLAGS) $(OTHER_FFLAGS) -c $*.tmp.f90 -o $@
