@@ -83,7 +83,7 @@ SRCS_F90 = \
 	   ./GFS_layer/GFS_diagnostics.F90                                           \
 	   ./GFS_layer/GFS_driver.F90                                                \
 	   ./GFS_layer/GFS_restart.F90                                               \
-	   ./GFS_layer/GFS_typedefs.F90
+	   ./GFS_layer/GFS_typedefs.F90 # ./GFS_layer/GFS_typedefs.ccpp.F90
 else
 # CCPP standalone and static builds
 SRCS_f = \
@@ -105,7 +105,7 @@ SRCS_F90 = \
 	   ./GFS_layer/GFS_diagnostics.F90                                           \
 	   ./GFS_layer/GFS_driver.F90                                                \
 	   ./GFS_layer/GFS_restart.F90                                               \
-	   ./GFS_layer/GFS_typedefs.F90
+	   ./GFS_layer/GFS_typedefs.F90 # ./GFS_layer/GFS_typedefs.ccpp.F90
 endif
 # non-CCPP build
 else
@@ -248,7 +248,7 @@ SRCS_F90 = \
 	   ./GFS_layer/GFS_physics_driver.F90                                        \
 	   ./GFS_layer/GFS_radiation_driver.F90                                      \
 	   ./GFS_layer/GFS_restart.F90                                               \
-	   ./GFS_layer/GFS_typedefs.F90
+	   ./GFS_layer/GFS_typedefs.F90 # ./GFS_layer/GFS_typedefs.ipd.F90
 endif
 
 SRCS_c   =
@@ -316,6 +316,14 @@ endif
 ./GFS_layer/GFS_typedefs.o: ./GFS_layer/GFS_typedefs.F90
 	$(CPP) $(CPPDEFS) $(CPPFLAGS) $< > $*.tmp.f90
 	$(FC) $(FFLAGS) $(OTHER_FFLAGS) -c $*.tmp.f90 -o $@
+# DH*
+./GFS_layer/GFS_typedefs.ipd.o: ./GFS_layer/GFS_typedefs.ipd.F90
+	$(CPP) $(CPPDEFS) $(CPPFLAGS) $< > $*.tmp.f90
+	$(FC) $(FFLAGS) $(OTHER_FFLAGS) -c $*.tmp.f90 -o $@
+./GFS_layer/GFS_typedefs.ccpp.o: ./GFS_layer/GFS_typedefs.ccpp.F90
+	$(CPP) $(CPPDEFS) $(CPPFLAGS) $< > $*.tmp.f90
+	$(FC) $(FFLAGS) $(OTHER_FFLAGS) -c $*.tmp.f90 -o $@
+# *DH
 ./GFS_layer/GFS_driver.o: ./GFS_layer/GFS_driver.F90
 	$(CPP) $(CPPDEFS) $(CPPFLAGS) $< > $*.tmp.f90
 	$(FC) $(FFLAGS) $(OTHER_FFLAGS) -c $*.tmp.f90 -o $@
