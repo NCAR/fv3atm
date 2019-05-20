@@ -1,3 +1,4 @@
+
 !***********************************************************************
 !*                   GNU Lesser General Public License                 
 !*
@@ -130,6 +131,7 @@ module fv_mapz_mod
          rst_remap, mappm, E_Flux
 
 contains
+ 
 
 !>@brief The subroutine 'Lagrangian_to_Eulerian' remaps deformed Lagrangian layers back to the reference Eulerian coordinate.
 !>@details It also includes the entry point for calling fast microphysical processes. This is typically calle on the k_split loop.
@@ -223,7 +225,7 @@ contains
 #ifndef CCPP
   logical:: fast_mp_consv
 #endif
-  integer:: i,j,k 
+  integer:: i,j,k
   integer:: kdelz
 #ifdef CCPP
   integer:: nt, liq_wat, ice_wat, rainwat, snowwat, cld_amt, graupel, iq, n, kp, k_next
@@ -811,7 +813,7 @@ endif        ! end last_step check
 ! Note: pt at this stage is T_v
 ! if ( (.not.do_adiabatic_init) .and. do_sat_adj ) then
   if ( do_sat_adj ) then
-    call timing_on('sat_adj2')
+                                           call timing_on('sat_adj2')
 #ifdef CCPP
     if (ccpp_initialized(cdata)) then
 #ifdef STATIC
@@ -845,7 +847,9 @@ endif        ! end last_step check
                              q(isd,jsd,k,ice_wat), q(isd,jsd,k,rainwat),    &
                              q(isd,jsd,k,snowwat), q(isd,jsd,k,graupel),    &
                              hs ,dpln, delz(isd:,jsd:,kdelz), pt(isd,jsd,k), delp(isd,jsd,k), q_con(isd:,jsd:,k), &
+
               cappa(isd:,jsd:,k), gridstruct%area_64, dtdt(is,js,k), out_dt, last_step, cld_amt>0, q(isd,jsd,k,cld_amt))
+
               if ( .not. hydrostatic  ) then
                  do j=js,je
                     do i=is,ie
@@ -890,7 +894,7 @@ endif        ! end last_step check
                 enddo
            endif
 #endif
-    call timing_off('sat_adj2')
+                                           call timing_off('sat_adj2')
   endif   ! do_sat_adj
 
 

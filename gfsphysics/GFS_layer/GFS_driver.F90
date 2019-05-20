@@ -34,7 +34,7 @@ module GFS_driver
 !--------------------------------------------------------------------------------
 !   This container is the minimum set of data required from the dycore/atmosphere
 !   component to allow proper initialization of the GFS physics
-!
+!  
 !   Type is defined in GFS_typedefs.F90
 !--------------------------------------------------------------------------------
 ! type GFS_init_type
@@ -76,7 +76,7 @@ module GFS_driver
 !                                                  !< for use with internal file reads
 ! end type GFS_init_type
 !--------------------------------------------------------------------------------
-
+    
 !------------------
 ! Module parameters
 !------------------
@@ -118,7 +118,7 @@ module GFS_driver
 ! GFS initialze
 !--------------
   subroutine GFS_initialize (Model, Statein, Stateout, Sfcprop,     &
-                             Coupling, Grid, Tbd, Cldprop, Radtend, &
+                             Coupling, Grid, Tbd, Cldprop, Radtend, & 
 #ifdef CCPP
                              Diag, Interstitial, communicator,      &
                              ntasks, Init_parm)
@@ -164,6 +164,7 @@ module GFS_driver
     integer,                  intent(in)    :: ntasks
 #endif
     type(GFS_init_type),      intent(in)    :: Init_parm
+
 
     !--- local variables
     integer :: nb
@@ -313,7 +314,7 @@ module GFS_driver
     !--- read in and initialize ozone and water
     if (Model%ntoz > 0) then
       do nb = 1, nblks
-        call setindxoz (Init_parm%blksz(nb), Grid(nb)%xlat_d, Grid(nb)%jindx1_o3, &
+          call setindxoz (Init_parm%blksz(nb), Grid(nb)%xlat_d, Grid(nb)%jindx1_o3, &
                         Grid(nb)%jindx2_o3, Grid(nb)%ddy_o3)
       enddo
     endif
@@ -352,16 +353,17 @@ module GFS_driver
     !--- Call gfuncphys (funcphys.f) to compute all physics function tables.
     call gfuncphys ()
 ! *DH
+
 !   call gsmconst (Model%dtp, Model%me, .TRUE.) ! This is for Ferrier microphysics - notused - moorthi
 
 #ifdef CCPP
     ! For CCPP, Model%si is calculated in Model%init, and rad_initialize
     ! is run automatically as part of GFS_rrtmg_setup
 #else
-!--- define sigma level for radiation initialization
-!--- The formula converting hybrid sigma pressure coefficients to sigma coefficients follows Eckermann (2009, MWR)
-!--- ps is replaced with p0. The value of p0 uses that in http://www.emc.ncep.noaa.gov/officenotes/newernotes/on461.pdf
-!--- ak/bk have been flipped from their original FV3 orientation and are defined sfc -> toa
+    !--- define sigma level for radiation initialization 
+    !--- The formula converting hybrid sigma pressure coefficients to sigma coefficients follows Eckermann (2009, MWR)
+    !--- ps is replaced with p0. The value of p0 uses that in http://www.emc.ncep.noaa.gov/officenotes/newernotes/on461.pdf
+    !--- ak/bk have been flipped from their original FV3 orientation and are defined sfc -> toa
     allocate(si(Model%levr+1))
     si = (Init_parm%ak + Init_parm%bk * p_ref - Init_parm%ak(Model%levr+1)) &
              / (p_ref - Init_parm%ak(Model%levr+1))
@@ -376,7 +378,7 @@ module GFS_driver
 #endif
 
 !   microphysics initialization calls
-!   ---------------------------------
+!   --------------------------------- 
 
     if (Model%imp_physics == Model%imp_physics_mg) then          !--- initialize Morrison-Gettelman microphysics
 #ifndef CCPP
@@ -413,7 +415,7 @@ module GFS_driver
       else
         write(0,*)' Model%fprcp = ',Model%fprcp,' is not a valid option - aborting'
         stop
-
+      
       endif
       call aer_cloud_init ()
 #endif
@@ -421,37 +423,37 @@ module GFS_driver
     elseif (Model%imp_physics == Model%imp_physics_thompson) then       !--- initialize Thompson Cloud microphysics
       if(Model%do_shoc) then
         print *,'SHOC is not currently compatible with Thompson MP -- shutting down'
-        stop
-      endif
+        stop 
+      endif 
 ! For CCPP the Thompson MP init is called automatically as part of CCPP physics init
 #ifndef CCPP
       call thompson_init()                     !--- add aerosol version later
-      if(Model%ltaerosol) then
+      if(Model%ltaerosol) then 
         print *,'Aerosol awareness is not included in this version of Thompson MP -- shutting down'
-        stop
-      endif
+        stop 
+      endif 
 #endif
 !
 #if !defined(CCPP) || defined(HYBRID)
     elseif(Model%imp_physics == Model%imp_physics_wsm6) then        !--- initialize WSM6 Cloud microphysics
-      if(Model%do_shoc) then
+      if(Model%do_shoc) then 
         print *,'SHOC is not currently compatible with WSM6 -- shutting down'
-        stop
-      endif
+        stop 
+      endif 
       call  wsm6init()
 #endif
 !
     else if(Model%imp_physics == Model%imp_physics_gfdl) then      !--- initialize GFDL Cloud microphysics
 ! For CCPP the GFDL MP init is called automatically as part of CCPP physics init
 #ifndef CCPP
-      if(Model%do_shoc) then
+      if(Model%do_shoc) then 
          print *,'SHOC is not currently compatible with GFDL MP -- shutting down'
-         stop
-      endif
+         stop 
+      endif 
        call gfdl_cloud_microphys_init (Model%me, Model%master, Model%nlunit, Model%input_nml_file, &
                                        Init_parm%logunit, Model%fn_nml)
 #endif
-    endif
+    endif 
 
 #if !defined(CCPP) || defined(HYBRID)
     !--- initialize ras
@@ -511,7 +513,7 @@ module GFS_driver
 !      5) interpolates coefficients for prognostic ozone calculation
 !      6) performs surface data cycling via the GFS gcycle routine
 !-------------------------------------------------------------------------
-  subroutine GFS_time_vary_step (Model, Statein, Stateout, Sfcprop, Coupling, &
+  subroutine GFS_time_vary_step (Model, Statein, Stateout, Sfcprop, Coupling, & 
                                  Grid, Tbd, Cldprop, Radtend, Diag)
 
     implicit none
@@ -527,6 +529,7 @@ module GFS_driver
     type(GFS_cldprop_type),   intent(inout) :: Cldprop(:)
     type(GFS_radtend_type),   intent(inout) :: Radtend(:)
     type(GFS_diag_type),      intent(inout) :: Diag(:)
+
 
     !--- local variables
     integer :: nb, nblks, k, blocksize
@@ -592,7 +595,6 @@ module GFS_driver
     !!!!  THIS IS THE POINT AT WHICH DIAG%ZHOUR NEEDS TO BE UPDATED
       enddo
     endif
-
     call run_stochastic_physics(nblks,Model,Grid(:),Coupling(:))
 
     if(Model%do_ca)then
@@ -602,6 +604,7 @@ module GFS_driver
             Model%nseed,Model%nthresh,Model%ca_global,Model%ca_sgs,Model%iseed_ca,&
             Model%ca_smooth,Model%nspinup,blocksize)
     endif
+
 
 ! kludge for output
     if (Model%do_skeb) then
@@ -622,7 +625,7 @@ module GFS_driver
     if (Model%do_shum) then
       do nb = 1,nblks
         do k=1,Model%levs
-          Diag(nb)%shum_wts(:,k) = Coupling(nb)%shum_wts(:,Model%levs-k+1)
+          Diag(nb)%shum_wts(:,k)=Coupling(nb)%shum_wts(:,Model%levs-k+1)
         enddo
       enddo
     endif
@@ -690,7 +693,7 @@ module GFS_driver
            sppt_vwt=1.0
            if (Diag%zmtnblck(i).EQ.0.0) then
               sppt_vwt=1.0
-           else
+           else 
               if (k.GT.Diag%zmtnblck(i)+2) then
                  sppt_vwt=1.0
               endif
@@ -709,6 +712,7 @@ module GFS_driver
            endif
            Diag%sppt_wts(i,Model%levs-k+1)=Coupling%sppt_wts(i,k)
 
+           
           ! if(Model%isppt_deep)then
 
            ! tconvtend(i,k)=Coupling%tconvtend(i,k)
@@ -733,7 +737,7 @@ module GFS_driver
 
            Stateout%gu0(i,k)  = Statein%ugrs(i,k)+upert
            Stateout%gv0(i,k)  = Statein%vgrs(i,k)+vpert
-
+ 
            !negative humidity check
            qnew = Statein%qgrs(i,k,1)+qpert
            if (qnew >= 1.0e-10) then
@@ -768,6 +772,7 @@ module GFS_driver
         Diag%totprcpb(:)      = Diag%totprcpb(:)      + (Coupling%sppt_wts(:,15) - 1 )*Diag%rain(:)
         Diag%cnvprcpb(:)      = Diag%cnvprcpb(:)      + (Coupling%sppt_wts(:,15) - 1 )*Diag%rainc(:)
       
+
         if (Model%cplflx) then
            Coupling%rain_cpl(:) = Coupling%rain_cpl(:) + (Coupling%sppt_wts(:,15) - 1.0)*Tbd%drain_cpl(:)
            Coupling%snow_cpl(:) = Coupling%snow_cpl(:) + (Coupling%sppt_wts(:,15) - 1.0)*Tbd%dsnow_cpl(:)
@@ -790,6 +795,7 @@ module GFS_driver
      endif
 
   end subroutine GFS_stochastic_driver
+
 
 
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -888,7 +894,7 @@ module GFS_driver
 
     nblks = size(blksz,1)
 
-    !--- switch for saving convective clouds - cnvc90.f
+    !--- switch for saving convective clouds - cnvc90.f 
     !--- aka Ken Campana/Yu-Tai Hou legacy
     if ((mod(Model%kdt,Model%nsswr) == 0) .and. (Model%lsswr)) then
       !--- initialize,accumulate,convert

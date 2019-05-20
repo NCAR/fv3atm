@@ -66,12 +66,12 @@
 
 !> SW heating rate unit control flag: =1:k/day; =2:k/second.
       integer,parameter :: iswrate = 2
-
+                                       
 !> SW minor gases effect control flag (CH4 and O2): =0:no; =1:yes.
 !!\n =0: minor gases' effects are not included in calculations
 !!\n =1: minor gases' effects are included in calculations
       integer,parameter :: iswrgas = 1
-
+ 
 !> SW optical property for liquid clouds
 !!\n =0:input cld opt depth, ignoring iswcice setting
 !!\n =1:cloud optical property scheme based on Hu and Stamnes(1993) \cite
@@ -89,7 +89,7 @@
       integer,save      :: iswcice = 3
 
 !> SW control flag for scattering process approximation
-!!\n =1:two-stream delta-eddington    (Joseph et al. 1976
+!!\n =1:two-stream delta-eddington    (Joseph et al. 1976 
 !!                         \cite joseph_et_al_1976)
 !!\n =2:two-stream PIFM               (Zdunkowski et al. 1980
 !!                         \cite zdunkowski_et_al_1980)

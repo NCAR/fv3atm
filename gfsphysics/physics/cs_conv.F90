@@ -209,7 +209,7 @@ module cs_conv
 !
 ! output arguments of CS_CUMLUS
 !
-   real(r8), dimension(IM,KMAX,nctp)  :: vverti
+   real(r8),  dimension(IM,KMAX,nctp)  :: vverti
 
    real(r8) GTT(IJSDIM,KMAX)           ! temperature tendency [K/s]
    real(r8) GTQ(IJSDIM,KMAX,NTR)       ! tracer tendency [kg/kg/s]

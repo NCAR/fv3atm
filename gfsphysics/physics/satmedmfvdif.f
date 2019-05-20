@@ -99,8 +99,8 @@
      &                     f1(im,km),    f2(im,km*(ntrac-1))
 !
       real(kind=kind_phys) elm(im,km),   ele(im,km),  rle(im,km-1),
-     &                     ckz(im,km),   chz(im,km),
-     &                     diss(im,km-1),prod(im,km-1),
+     &                     ckz(im,km),   chz(im,km), 
+     &                     diss(im,km-1),prod(im,km-1), 
      &                     bf(im,km-1),  shr2(im,km-1),
      &                     xlamue(im,km-1), xlamde(im,km-1),
      &                     gotvx(im,km), rlam(im,km-1)
@@ -133,7 +133,7 @@
      &                     gocp,    gravi,  zol1,   zolcru,
      &                     buop,    shrp,   dtn,    cdtn,
      &                     prnum,   prmax,  prmin,  prtke,
-     &                     prscu,   dw2,    dw2min, zk,
+     &                     prscu,   dw2,    dw2min, zk,     
      &                     elmfac,  elefac, dspmax,
      &                     alp,     clwt,   cql,
      &                     f0,      robn,   crbmin, crbmax,

@@ -145,7 +145,7 @@
      &       prsl1, prslki, zf, land, ddvel, slopetyp,                  &
      &       shdmin, shdmax, snoalb, sfalb, flag_iter, flag_guess,      &
      &       lheatstrg, isot, ivegsrc,                                  &
-     &       bexppert, xlaipert, vegfpert, pertvegf,                    &  ! sfc perts, mgehne
+     &       bexppert, xlaipert, vegfpert,pertvegf,                     &  ! sfc perts, mgehne
 !  ---  in/outs:
      &       weasd, snwdph, tskin, tprcp, srflag, smc, stc, slc,        &
      &       canopy, trans, tsurf, zorl,                                &

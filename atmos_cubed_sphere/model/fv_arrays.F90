@@ -1309,7 +1309,7 @@ module fv_arrays_mod
 
      !Hold on to coarse-grid global grid, so we don't have to waste processor time getting it again when starting to do grid nesting
      real(kind=R_GRID), allocatable, dimension(:,:,:,:) :: grid_global
-
+ 
   integer :: atmos_axes(4)
 
   end type fv_atmos_type

@@ -98,12 +98,12 @@
 !     parameter (rnu=1.51e-5,arnu=0.11*rnu)
 !
 !  initialize variables. all units are supposedly m.k.s. unless specified
-!  ps is in pascals, wind is wind speed,
+!  ps is in pascals, wind is wind speed, 
 !  surface roughness length is converted to m from cm
 !
       do i=1,im
         ztmax_ocn = 0.; ztmax_lnd = 0.; ztmax_ice = 0.
-        if(flag_iter(i)) then
+        if(flag_iter(i)) then 
           wind(i) = max(sqrt(u1(i)*u1(i) + v1(i)*v1(i))
      &                + max(0.0, min(ddvel(i), 30.0)), 1.0)
           tem1    = 1.0 + rvrdm1 * max(q1(i),1.e-8)
@@ -149,7 +149,7 @@
             tem1 = 1.0 - shdmax(i)
             tem2 = tem1 * tem1
             tem1 = 1.0  - tem2
-
+          
             if( ivegsrc == 1 ) then
 
               if (vegtype(i) == 10) then
@@ -190,7 +190,7 @@
             if (dry(i) .and. z0pert(i) /= 0.0 ) then
               z0max_lnd = z0max_lnd * (10.**z0pert(i))
             endif
-
+ 
             z0max_lnd = max(z0max_lnd,1.0e-6)
             z0max_ice = max(z0max_ice,1.0e-6)
 
@@ -219,7 +219,7 @@
 ! BWG begin "stability" block, 2019-03-23
       if (wet(i) .and. fice(i) < 1.) then ! Some open ocean
           call stability
-!  ---  inputs:
+!  ---  inputs:                                                  
      &     (z1(i),snwdph_ocn(i),thv1,wind(i),
      &      z0max_ocn,ztmax_ocn,tvs_ocn,
 !  ---  outputs:
@@ -229,7 +229,7 @@
 
       if (dry(i)) then ! Some land
           call stability
-!  ---  inputs:
+!  ---  inputs:                                                  
      &     (z1(i),snwdph_lnd(i),thv1,wind(i),
      &      z0max_lnd,ztmax_lnd,tvs_lnd,
 !  ---  outputs:
@@ -239,7 +239,7 @@
 
       if (icy(i)) then ! Some ice
           call stability
-!  ---  inputs:
+!  ---  inputs:                                                  
      &     (z1(i),snwdph_ice(i),thv1,wind(i),
      &      z0max_ice,ztmax_ice,tvs_ice,
 !  ---  outputs:

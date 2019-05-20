@@ -1,3 +1,4 @@
+
 !***********************************************************************
 !*                   GNU Lesser General Public License                 
 !*
@@ -164,7 +165,7 @@ module external_ic_mod
    use fv_diagnostics_mod,only: prt_maxmin, prt_gb_nh_sh, prt_height
    use fv_grid_utils_mod, only: ptop_min, g_sum,mid_pt_sphere,get_unit_vect2,get_latlon_vector,inner_prod
    use fv_io_mod,         only: fv_io_read_tracers 
-   use fv_mapz_mod,       only: mappm
+   use fv_mapz_mod,       only: mappm 
 
    use fv_regional_mod,   only: dump_field, H_STAGGER, U_STAGGER, V_STAGGER, get_data_source
    use fv_mp_mod,         only: ng, is_master, fill_corners, YDir, mp_reduce_min, mp_reduce_max
@@ -321,7 +322,6 @@ contains
 #endif
         liq_aero  = get_tracer_index(MODEL_ATMOS, 'liq_aero')
         ice_aero  = get_tracer_index(MODEL_ATMOS, 'ice_aero')
-
 
         if ( liq_wat > 0 ) &
         call prt_maxmin('liq_wat', Atm(1)%q(:,:,:,liq_wat), is, ie, js, je, ng, Atm(1)%npz, 1.)
@@ -492,8 +492,8 @@ contains
       integer :: nt_checker = 0
       real(kind=R_GRID), dimension(2):: p1, p2, p3
       real(kind=R_GRID), dimension(3):: e1, e2, ex, ey
-      integer :: i,j,k,nts, ks
-      integer :: liq_wat, ice_wat, rainwat, snowwat, graupel, ntclamt
+      integer:: i,j,k,nts, ks
+      integer:: liq_wat, ice_wat, rainwat, snowwat, graupel, ntclamt
       namelist /external_ic_nml/ filtered_terrain, levp, gfs_dwinds, &
                                  checker_tr, nt_checker
 #ifdef GFSL64
@@ -720,7 +720,6 @@ contains
         call mpp_error(FATAL,'==> Error in External_ic::get_nggps_ic: tiled file '//trim(fn_gfs_ics)//' for NGGPS IC does not exist')
       endif
       call mpp_error(NOTE,'==> External_ic::get_nggps_ic: using tiled data file '//trim(fn_gfs_ics)//' for NGGPS IC')
-
 !
       call get_data_source(source,Atm(1)%flagstruct%regional)
 !
@@ -2750,7 +2749,7 @@ contains
                qp(i,k) = qa(i,j,k,iq)
             enddo
          enddo
-         call mappm(km, pe0, qp, npz, pe1, qn1, is, ie, 0, 8, Atm%ptop)
+         call mappm(km, pe0, qp, npz, pe1,  qn1, is,ie, 0, 8, Atm%ptop)
          if ( iq==sphum ) then
             call fillq(ie-is+1, npz, 1, qn1, dp2)
          else
