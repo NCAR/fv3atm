@@ -1775,7 +1775,7 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: phy_f2d  (:,:)   => null()  !< 2d arrays saved for restart
     real (kind=kind_phys), pointer :: phy_f3d  (:,:,:) => null()  !< 3d arrays saved for restart
 
-#if !defined(CCPP) || defined(HYBRID)
+#ifndef CCPP
 !--- for explicit data blocking
     integer                        :: blkno                       !< block number of this block
 #endif
@@ -2829,9 +2829,6 @@ module GFS_typedefs
     real (kind=kind_phys), pointer      :: zorl_land(:)     => null()  !<
     real (kind=kind_phys), pointer      :: zorl_ocean(:)    => null()  !<
     real (kind=kind_phys), pointer      :: zt1d(:)          => null()  !<
-#ifdef HYBRID
-    logical                             :: non_uniform_blocks          !< flag to indicate non-uniform blocks are used, only for CCPP hybrid
-#endif
 
     contains
       procedure :: create      => interstitial_create     !<   allocate array data
@@ -3474,11 +3471,11 @@ module GFS_typedefs
     use physcons,         only: dxmax, dxmin, dxinv, con_rerth, con_pi, rhc_max
 #endif
     use mersenne_twister, only: random_setseed, random_number
-#if !defined(CCPP) || defined(HYBRID)
+#ifndef CCPP
     use module_ras,       only: nrcmax
 #endif
     use parse_tracers,    only: get_tracer_index
-#if !defined(CCPP) || defined(HYBRID)
+#ifndef CCPP
     use wam_f107_kp_mod,  only: f107_kp_size, f107_kp_interval,     &
                                 f107_kp_skip_size, f107_kp_data_size
 #endif
@@ -4441,7 +4438,7 @@ module GFS_typedefs
     Model%si = (ak + bk * p_ref - ak(Model%levr+1)) / (p_ref - ak(Model%levr+1))
 #endif
 
-#if !defined(CCPP) || defined(HYBRID)
+#ifndef CCPP
     ! Beware! The values set here reside in wam_f107_kp_mod and determine sizes of arrays
     ! inside that module. These arrays get used later in modules idea_tracer.f, idea_ion.f,
     ! idea_solar_heating.f, efield.f, and idea_composition.f.
@@ -4477,7 +4474,7 @@ module GFS_typedefs
 
 !--- set nrcm 
 
-#if !defined(CCPP) || defined(HYBRID)
+#ifndef CCPP
     if (Model%ras) then
       Model%nrcm = min(nrcmax, Model%levs-1) * (Model%dtp/1200.d0) + 0.10001d0
     else
@@ -5253,7 +5250,7 @@ module GFS_typedefs
 !--------------------
 ! GFS_tbd_type%create
 !--------------------
-#if !defined(CCPP) || defined(HYBRID)
+#ifndef CCPP
   subroutine tbd_create (Tbd, IM, BLKNO, Model)
 #else
   subroutine tbd_create (Tbd, IM, Model)
@@ -5263,7 +5260,7 @@ module GFS_typedefs
 
     class(GFS_tbd_type)                :: Tbd
     integer,                intent(in) :: IM
-#if !defined(CCPP) || defined(HYBRID)
+#ifndef CCPP
     integer,                intent(in) :: BLKNO
 #endif
     type(GFS_control_type), intent(in) :: Model
@@ -5337,7 +5334,7 @@ module GFS_typedefs
 !   if (Model%do_shoc) Tbd%phy_f3d(:,1,Model%ntot3d-1) = 3.0
 !   if (Model%do_shoc) Tbd%phy_f3d(:,:,Model%ntot3d-1) = 1.0
 
-#if !defined(CCPP) || defined(HYBRID)
+#ifndef CCPP
     Tbd%blkno = BLKNO
 #endif
 
@@ -5913,19 +5910,12 @@ module GFS_typedefs
   !-------------------------
   ! GFS_interstitial_type%create
   !-------------------------
-#ifdef HYBRID
-  subroutine interstitial_create (Interstitial, IM, non_uniform_blocks, Model)
-#else
   subroutine interstitial_create (Interstitial, IM, Model)
-#endif
     !
     implicit none
     !
     class(GFS_interstitial_type)       :: Interstitial
     integer,                intent(in) :: IM
-#ifdef HYBRID
-    logical,                intent(in) :: non_uniform_blocks
-#endif
     type(GFS_control_type), intent(in) :: Model
     !
     allocate (Interstitial%otspt      (Model%ntracp1,2))
@@ -6202,10 +6192,6 @@ module GFS_typedefs
     ! hardcoded value for calling GFDL MP in GFS_physics_driver.F90,
     ! which is set to .true.
     Interstitial%phys_hydrostatic = .true.
-    !
-#ifdef HYBRID
-    Interstitial%non_uniform_blocks = non_uniform_blocks
-#endif
     !
     ! Reset all other variables
     call Interstitial%rad_reset ()
@@ -6641,9 +6627,6 @@ module GFS_typedefs
     write (0,*) 'sum(Interstitial%oz_pres)      = ', sum(Interstitial%oz_pres)
     write (0,*) 'Interstitial%phys_hydrostatic  = ', Interstitial%phys_hydrostatic
     write (0,*) 'Interstitial%skip_macro        = ', Interstitial%skip_macro
-#ifdef HYBRID
-    write (0,*) 'Interstitial%non_uniform_blocks= ', Interstitial%non_uniform_blocks
-#endif
     ! Print all other variables
     write (0,*) 'Interstitial_print: values that change'
     write (0,*) 'sum(Interstitial%adjnirbmd   ) = ', sum(Interstitial%adjnirbmd   )

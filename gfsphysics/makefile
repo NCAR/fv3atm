@@ -21,71 +21,15 @@ FFLAGS   += -I$(FMS_DIR) -I../cpl
 
 CPPDEFS += -DNEW_TAUCTMAX -DSMALL_PE -DNEMS_GSM -DINTERNAL_FILE_NML
 
-# Various CCPP builds
+# CCPP dynamic and static builds
 ifneq (,$(findstring CCPP,$(CPPDEFS)))
-# Set CCPP static api for static build, then set CCPP sources
+# Set CCPP static api for static build
 ifneq (,$(findstring STATIC,$(CPPDEFS)))
     CCPP_STATIC_API = ./CCPP_layer/ccpp_static_api.F90
 else
     CCPP_STATIC_API = 
 endif
-CCPP_SRCS_F90 = \
-	   ./CCPP_layer/CCPP_typedefs.F90                                            \
-	   ./CCPP_layer/CCPP_data.F90                                                \
-	   $(CCPP_STATIC_API)
-# Set physics source files for the hybrid build
-ifneq (,$(findstring HYBRID,$(CPPDEFS)))
-SRCS_f = \
-	   ./physics/dcyc2.pre.rad.f                                                 \
-	   ./physics/gscondp.f                                                       \
-	   ./physics/ideaca.f                                                        \
-	   ./physics/lrgsclr.f                                                       \
-	   ./physics/mersenne_twister.f                                              \
-	   ./physics/mfpbl.f                                                         \
-	   ./physics/moninedmf.f                                                     \
-	   ./physics/moninp.f                                                        \
-	   ./physics/moninp1.f                                                       \
-	   ./physics/moninq.f                                                        \
-	   ./physics/moninq1.f                                                       \
-	   ./physics/mstadb.f                                                        \
-	   ./physics/mstadbtn.f                                                      \
-	   ./physics/mstcnv.f                                                        \
-	   ./physics/namelist_soilveg.f                                              \
-	   ./physics/physparam.f                                                     \
-	   ./physics/precpd_shoc.f                                                   \
-	   ./physics/precpdp.f                                                       \
-	   ./physics/radlw_param.f                                                   \
-	   ./physics/radsw_param.f                                                   \
-	   ./physics/rascnvv2.f                                                      \
-	   ./physics/sascnv.f                                                        \
-	   ./physics/sascnvn.f                                                       \
-	   ./physics/set_soilveg.f                                                   \
-	   ./physics/sfc_cice.f                                                      \
-	   ./physics/sfc_ocean.f                                                     \
-	   ./physics/shalcnv.f                                                       \
-	   ./physics/shalcv.f                                                        \
-	   ./physics/shalcv_opr.f                                                    \
-	   ./physics/tridi2t3.f
-SRCS_f90 = \
-	   ./physics/funcphys.f90                                                    \
-	   ./physics/wam_f107_kp_mod.f90
-SRCS_F = \
-	   ./physics/machine.F
-SRCS_F90 = \
-	   ./physics/GFDL_parse_tracers.F90                                          \
-	   ./physics/physcons.F90                                                    \
-	   $(CCPP_SRCS_F90)                                                          \
-	   ./physics/module_mp_radar.F90                                             \
-	   ./physics/module_mp_wsm6_fv3.F90                                          \
-	   ./physics/GFS_debug.F90                                                   \
-	   ./GFS_layer/GFS_physics_driver.F90                                        \
-	   ./GFS_layer/GFS_abstraction_layer.F90                                     \
-	   ./GFS_layer/GFS_diagnostics.F90                                           \
-	   ./GFS_layer/GFS_driver.F90                                                \
-	   ./GFS_layer/GFS_restart.F90                                               \
-	   ./GFS_layer/GFS_typedefs.F90
-else
-# CCPP standalone and static builds
+# Set physics source files
 SRCS_f = \
 	   ./physics/mersenne_twister.f                                              \
 	   ./physics/namelist_soilveg.f                                              \
@@ -93,20 +37,20 @@ SRCS_f = \
 	   ./physics/radlw_param.f                                                   \
 	   ./physics/radsw_param.f                                                   \
 	   ./physics/set_soilveg.f
-SRCS_f90 = \
-	   ./physics/funcphys.f90
+SRCS_f90 =
 SRCS_F = \
 	   ./physics/machine.F
 SRCS_F90 = \
 	   ./physics/GFDL_parse_tracers.F90                                          \
 	   ./physics/physcons.F90                                                    \
-	   $(CCPP_SRCS_F90)                                                          \
+	   ./CCPP_layer/CCPP_typedefs.F90                                            \
+	   ./CCPP_layer/CCPP_data.F90                                                \
+	   $(CCPP_STATIC_API)                                                        \
 	   ./GFS_layer/GFS_abstraction_layer.F90                                     \
 	   ./GFS_layer/GFS_diagnostics.F90                                           \
 	   ./GFS_layer/GFS_driver.F90                                                \
 	   ./GFS_layer/GFS_restart.F90                                               \
 	   ./GFS_layer/GFS_typedefs.F90
-endif
 # non-CCPP build
 else
 SRCS_f =  \
@@ -285,8 +229,7 @@ FFLAGS_LOPT1=$(subst CORE-AVX512,CORE-AVX-I,\
 # Force consistent results of math calculations for MG microphysics
 # in DEBUG or REPRO mode; without this flag, the results of the intrinsic
 # gamma function differ for the non-CCPP and CCPP version (Theia/Intel 18).
-# Note this is only required with dynamic CCPP builds (hybrid, standalone),
-# not with static CCPP builds.
+# This is only required for the dynamic CCPP build, not for the static build.
 ifneq (,$(findstring TRANSITION,$(CPPDEFS)))
 FFLAGS_LOPT2=$(subst CORE-AVX2,CORE-AVX-I,\
                $(subst no-prec-sqrt,prec-sqrt,\

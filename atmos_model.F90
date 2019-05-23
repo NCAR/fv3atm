@@ -101,9 +101,6 @@ use IPD_driver,         only: IPD_initialize,                  &
                               IPD_initialize_rst,              &
                               IPD_step, IPD_finalize
 use CCPP_driver,        only: CCPP_step, non_uniform_blocks
-#ifdef HYBRID
-use physics_abstraction_layer, only: physics_step1
-#endif
 #else
 use IPD_driver,         only: IPD_initialize, IPD_initialize_rst, IPD_step
 use physics_abstraction_layer, only: time_vary_step, radiation_step1, physics_step1, physics_step2
@@ -282,7 +279,7 @@ subroutine update_atmos_radiation_physics (Atmos)
       call mpp_clock_begin(setupClock)
 #ifdef CCPP
       call CCPP_step (step="time_vary", nblks=Atm_block%nblks, ierr=ierr)
-      if (ierr/=0)  call mpp_error(FATAL, 'Call to IPD-CCPP time_vary step failed')
+      if (ierr/=0)  call mpp_error(FATAL, 'Call to CCPP time_vary step failed')
 #else
       Func1d => time_vary_step
       call IPD_step (IPD_Control, IPD_Data(:), IPD_Diag, IPD_Restart, IPD_func1d=Func1d)
@@ -308,7 +305,7 @@ subroutine update_atmos_radiation_physics (Atmos)
       ! Performance improvement. Only enter if it is time to call the radiation physics.
       if (IPD_Control%lsswr .or. IPD_Control%lslwr) then
         call CCPP_step (step="radiation", nblks=Atm_block%nblks, ierr=ierr)
-        if (ierr/=0)  call mpp_error(FATAL, 'Call to IPD-CCPP radiation step failed')
+        if (ierr/=0)  call mpp_error(FATAL, 'Call to CCPP radiation step failed')
       endif
 #else
       Func0d => radiation_step1
@@ -332,9 +329,9 @@ subroutine update_atmos_radiation_physics (Atmos)
 !--- execute the IPD atmospheric physics step1 subcomponent (main physics driver)
 
       call mpp_clock_begin(physClock)
-#if defined(CCPP) && !defined(HYBRID)
+#ifdef CCPP
       call CCPP_step (step="physics", nblks=Atm_block%nblks, ierr=ierr)
-      if (ierr/=0)  call mpp_error(FATAL, 'Call to IPD-CCPP physics step failed')
+      if (ierr/=0)  call mpp_error(FATAL, 'Call to CCPP physics step failed')
 #else
       Func0d => physics_step1
 !$OMP parallel do default (none) &
@@ -367,7 +364,7 @@ subroutine update_atmos_radiation_physics (Atmos)
       call mpp_clock_begin(physClock)
 #ifdef CCPP
       call CCPP_step (step="stochastics", nblks=Atm_block%nblks, ierr=ierr)
-      if (ierr/=0)  call mpp_error(FATAL, 'Call to IPD-CCPP stochastics step failed')
+      if (ierr/=0)  call mpp_error(FATAL, 'Call to CCPP stochastics step failed')
 #else
       Func0d => physics_step2
 !$OMP parallel do default (none) &
@@ -599,12 +596,12 @@ subroutine atmos_model_init (Atmos, Time_init, Time, Time_step)
 #ifdef CCPP
    ! Initialize the CCPP framework
    call CCPP_step (step="init", nblks=Atm_block%nblks, ierr=ierr)
-   if (ierr/=0)  call mpp_error(FATAL, 'Call to IPD-CCPP init step failed')
+   if (ierr/=0)  call mpp_error(FATAL, 'Call to CCPP init step failed')
    ! Doing the init here requires logic in thompson aerosol init if no aerosol
    ! profiles are specified and internal profiles are calculated, because these
    ! require temperature/geopotential etc which are not yet set. Sim. for RUC LSM.
    call CCPP_step (step="physics_init", nblks=Atm_block%nblks, ierr=ierr)
-   if (ierr/=0)  call mpp_error(FATAL, 'Call to IPD-CCPP physics_init step failed')
+   if (ierr/=0)  call mpp_error(FATAL, 'Call to CCPP physics_init step failed')
 #endif
 
    Atmos%Diag => IPD_Diag
@@ -889,7 +886,7 @@ subroutine atmos_model_end (Atmos)
 !   standard/slow physics (from IPD) are finalized in CCPP_step 'finalize'.
 !   The CCPP framework for all cdata structures is finalized in CCPP_step 'finalize'.
     call CCPP_step (step="finalize", nblks=Atm_block%nblks, ierr=ierr)
-    if (ierr/=0)  call mpp_error(FATAL, 'Call to IPD-CCPP finalize step failed')
+    if (ierr/=0)  call mpp_error(FATAL, 'Call to CCPP finalize step failed')
 #endif
 
 end subroutine atmos_model_end

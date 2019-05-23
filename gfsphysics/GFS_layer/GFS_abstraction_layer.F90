@@ -26,9 +26,6 @@ module physics_abstraction_layer
 
 #ifdef CCPP
   use GFS_driver,      only: initialize       =>  GFS_initialize,       &
-#ifdef HYBRID
-                             physics_step1    =>  GFS_physics_driver,   &
-#endif
                              finalize         =>  GFS_finalize
 #else
   use GFS_driver,      only: initialize       =>  GFS_initialize,       &
@@ -39,10 +36,12 @@ module physics_abstraction_layer
 #endif
 
 #ifndef CCPP
+  ! DH* even in the non-CCPP build, these don't get used (same for NAM physics)
   integer :: num_time_vary_steps  = 1
   integer :: num_rad_steps  = 1
-#endif
   integer :: num_phys_steps = 2
+  ! *DH
+#endif
 
 !-------------------------
 !  public physics dataspec
