@@ -188,7 +188,7 @@ contains
     integer                            :: start(4), nread(4)  
     integer                            :: is,  ie,  js,  je
     integer                            :: isd, ied, jsd, jed
-    integer,save :: halo=3
+      integer,save :: halo=3
 
     is  = Atm%bd%is
     ie  = Atm%bd%ie

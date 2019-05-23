@@ -149,9 +149,9 @@ module FV3GFS_io_mod
     type(domain2d),              intent(in)    :: fv_domain
     character(len=32), optional, intent(in)    :: timestamp
  
-    !--- read in surface data from chgres
+    !--- read in surface data from chgres 
     call sfc_prop_restart_write (IPD_Data%Sfcprop, Atm_block, Model, fv_domain, timestamp)
-
+ 
     !--- read in physics restart data
     call phys_restart_write (IPD_Restart, Atm_block, Model, fv_domain, timestamp)
 
@@ -415,7 +415,7 @@ module FV3GFS_io_mod
     real(kind=kind_phys) :: rsnow
     !--- local variables for fractional (remove in future)
     logical :: isFrac
-
+    
     nvar_o2  = 20
     nvar_s2o = 18
 #ifdef CCPP
@@ -517,7 +517,7 @@ module FV3GFS_io_mod
         Sfcprop(nb)%lakefrac(ix)  = oro_var2(i,j,19) !lake frac [0:1]
       enddo
     enddo
-
+ 
     if (nint(oro_var2(1,1,19)) == -9999._kind_phys) then ! lakefrac doesn't exist in the restart, need to create it
       if (Model%me == Model%master ) call mpp_error(NOTE, 'gfs_driver::surface_props_input - computing lakefrac') 
       do nb = 1, Atm_block%nblks
@@ -530,7 +530,7 @@ module FV3GFS_io_mod
     !--- deallocate containers and free restart container
     deallocate(oro_name2, oro_var2)
     call free_restart_type(Oro_restart)
-
+ 
     !--- SURFACE FILE
     if (.not. allocated(sfc_name2)) then
       !--- allocate the various containers needed for restarts
@@ -591,7 +591,7 @@ module FV3GFS_io_mod
         sfc_name2(34) = 'zorll'   !zorl on land portion of a cell
       end if
 
-      !--- NSSTM inputs only needed when (nstf_name(1) > 0) .and. (nstf_name(2)) == 0)
+      !--- NSSTM inputs only needed when (nstf_name(1) > 0) .and. (nstf_name(2)) == 0) 
       sfc_name2(nvar_s2m+1) = 'tref'
       sfc_name2(nvar_s2m+2) = 'z_c'
       sfc_name2(nvar_s2m+3) = 'c_0'
@@ -957,6 +957,7 @@ module FV3GFS_io_mod
           Sfcprop(nb)%oceanfrac(ix) = 1.-Sfcprop(nb)%landfrac(ix) !LHS:ocean frac [0:1]
         end if
       end if ! if cplflx .and. isFrac
+
     enddo
     enddo
 
@@ -968,7 +969,7 @@ module FV3GFS_io_mod
 !----------------------------------------------------------------------      
 !    routine to write out GFS surface restarts via the GFDL FMS restart
 !    subsystem.
-!    takes an optional argument to append timestamps for intermediate
+!    takes an optional argument to append timestamps for intermediate 
 !    restarts.
 !
 !    calls:  register_restart_field, save_restart
@@ -1050,7 +1051,6 @@ module FV3GFS_io_mod
       allocate(sfc_var2(nx,ny,nvar2m+nvar2o))
       allocate(sfc_var3(nx,ny,Model%lsoil,nvar3))
 #endif
-
       sfc_var2 = -9999._kind_phys
       sfc_var3 = -9999._kind_phys
 

@@ -632,7 +632,7 @@ contains
   endif
 #endif
 
-  call timing_on('FV_DYN_LOOP')
+                                                  call timing_on('FV_DYN_LOOP')
   do n_map=1, k_split   ! first level of time-split
       k_step = n_map
                                            call timing_on('COMM_TOTAL')

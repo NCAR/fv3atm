@@ -172,7 +172,7 @@
 
 
        subroutine aerosol_activate(tparc_in, pparc_in, sigwparc_in,
-     & wparc_ls, Aer_Props, npre_in, dpre_in, ccn_diagr8, Ndropr8,
+     & wparc_ls, Aer_Props, npre_in, dpre_in, ccn_diagr8, Ndropr8, 
      & cdncr8, smaxliqr8, incr8, smaxicer8, nheticer8, INimmr8,
      & dINimmr8, Ncdepr8, Ncdhfr8, sc_icer8, fdust_immr8, fdust_depr8,
      & fdust_dhfr8, nlimr8, use_average_v, CCN_param, IN_param, fd_dust,
@@ -224,9 +224,9 @@
 !    & ddust_ice
        real*8 :: temp_par,  pres_par
        real*8 :: akoh_par,  alfa_par,  bet2_par
-       real*8 aka_par, dv_par, psat_par, dair_par,surt_par,ddry_ice,
+       real*8 aka_par, dv_par, psat_par, dair_par,surt_par,ddry_ice, 
      & np_ice,nin_ice,alfa_ice,beta_ice,shom_ice, koft_ice, dliq_ice,
-     & g1_ice, g2_ice,gdoin_ice, z_ice, norg_ice, sigorg_ice,
+     & g1_ice, g2_ice,gdoin_ice, z_ice, norg_ice, sigorg_ice, 
      & dorg_ice, dbc_ice,sigbc_ice,lambda_ice,
      & kdust_ice, kbc_ice, shdust_ice, shbc_ice,
      & effdust_ice, effbc_ice, del1dust_ice, si0dust_ice, del1bc_ice,
@@ -433,7 +433,7 @@
        shdust_ice   = 0.
        shbc_ice     = 0.
        effdust_ice  = 0.
-       effbc_ice    = 0.
+       effbc_ice    = 0.  
        del1dust_ice = 0.
        si0dust_ice  = 0.
        del1bc_ice   = 0.
@@ -1296,7 +1296,7 @@
        do j=1, nmodes
 
          dlgsg = sig_par(j)
-
+ 
          if (sg_par(j) .gt. 0.0) then
            if (super .gt. 0.0) then
              dlgsp = dlog(sg_par(j)/super)
@@ -2636,7 +2636,7 @@
 
 
        tao=NHET_*SIZECORR*SX*sqrt(DSTAR)/(SX+1d0)/NSTAR
-
+      
 
        else
        DSH=SX-sh_ice
@@ -3080,7 +3080,7 @@
        real*8, dimension(3) :: sig_array, the_array, frac_array
        real*8, dimension(1:nbindust_ice) :: ndust_ice, sigdust_ice,
      &   ddust_ice
-     
+
        real :: n_iw, DSh_s , nbc_s, dbc_s, Asolo
        real, dimension (nbindust_ice) :: ndust_s, ddust_s
        integer :: index, kindex, mode,nbindust_ice
@@ -4015,3 +4015,9 @@
 
 
        END MODULE aer_cloud
+
+
+
+
+
+

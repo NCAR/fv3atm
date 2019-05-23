@@ -188,12 +188,12 @@ use fv_sg_mod,          only: fv_subgrid_z
 use fv_update_phys_mod, only: fv_update_phys
 use fv_nwp_nudge_mod,   only: fv_nwp_nudge_init, fv_nwp_nudge_end, do_adiabatic_init
 #ifdef MULTI_GASES
-use multi_gases_mod,    only: virq, virq_max, num_gas, ri, cpi
+use multi_gases_mod,  only: virq, virq_max, num_gas, ri, cpi
 #endif
 use fv_regional_mod,    only: start_regional_restart, read_new_bc_data, &
                               a_step, p_step, current_time_in_seconds
 
-use mpp_domains_mod,    only: mpp_get_data_domain, mpp_get_compute_domain
+use mpp_domains_mod,    only:  mpp_get_data_domain, mpp_get_compute_domain
 
 implicit none
 private
@@ -311,7 +311,7 @@ contains
    current_time_in_seconds = time_type_to_real( Time - Time_init )
    if (mpp_pe() == 0) write(*,"('atmosphere_init: current_time_seconds = ',f9.1)")current_time_in_seconds
 
-   call timing_on('ATMOS_INIT')
+                    call timing_on('ATMOS_INIT')
    allocate(pelist(mpp_npes()))
    call mpp_get_current_pelist(pelist)
 
@@ -437,7 +437,7 @@ contains
    id_subgridz  = mpp_clock_id ('FV subgrid_z',flags = clock_flag_default, grain=CLOCK_SUBCOMPONENT )
    id_fv_diag   = mpp_clock_id ('FV Diag',     flags = clock_flag_default, grain=CLOCK_SUBCOMPONENT )
 
-   call timing_off('ATMOS_INIT')
+                    call timing_off('ATMOS_INIT')
 
 #ifdef CCPP
    ! Do CCPP fast physics initialization before call to adiabatic_init (since this calls fv_dynamics)
@@ -460,7 +460,7 @@ contains
    nthreads = 1
 #endif
    ! Create interstitial data type for fast physics; for multi-gases physics,
-   ! pass q(:,:,:,1:num_gas) to qvi, otherwise pass q(:,:,:,1:1) as 4D array
+   ! pass q(:,:,:,1:num_gas) as qvi, otherwise pass q(:,:,:,1:1) as 4D array
    call CCPP_interstitial%create(Atm(mytile)%bd%is, Atm(mytile)%bd%ie, Atm(mytile)%bd%isd, Atm(mytile)%bd%ied, &
                                  Atm(mytile)%bd%js, Atm(mytile)%bd%je, Atm(mytile)%bd%jsd, Atm(mytile)%bd%jed, &
                                  Atm(mytile)%npz, Atm(mytile)%ng,                                              &
@@ -534,7 +534,7 @@ contains
 
    n = mytile
    call switch_current_Atm(Atm(n)) 
-
+      
  end subroutine atmosphere_init
 
 
@@ -635,7 +635,7 @@ contains
 
    do psc=1,abs(p_split)
       p_step = psc
-      call timing_on('fv_dynamics')
+                    call timing_on('fv_dynamics')
 !uc/vc only need be same on coarse grid? However BCs do need to be the same
       call fv_dynamics(npx, npy, npz, nq, Atm(n)%ng, dt_atmos/real(abs(p_split)),&
                        Atm(n)%flagstruct%consv_te, Atm(n)%flagstruct%fill,       &
@@ -1085,9 +1085,7 @@ contains
      call del2_cubed(Atm(mytile)%diss_est, 0.25*Atm(mytile)%gridstruct%da_min, Atm(mytile)%gridstruct, &
                      Atm(mytile)%domain, npx, npy, npz, 3, Atm(mytile)%bd)
    enddo
-
-   ! provide back sqrt of dissipation estimate,
-   ! taking absolute value before taking sqrt
+   ! provide back sqrt of dissipation estimate
    Atm(mytile)%diss_est=sqrt(abs(Atm(mytile)%diss_est))
 
  end subroutine atmosphere_diss_est

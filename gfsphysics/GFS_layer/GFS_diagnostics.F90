@@ -705,7 +705,7 @@ module GFS_diagnostics
 !
 !--- accumulated diagnostics ---
     do num = 1,NFXR
-      write (xtra,'(I2.2)') num
+      write (xtra,'(I2.2)') num 
       idx = idx + 1
       ExtDiag(idx)%axes = 2
       ExtDiag(idx)%name = 'fluxr_'//trim(xtra)
@@ -721,7 +721,7 @@ module GFS_diagnostics
 !--- the next two appear to be appear to be coupling fields in gloopr
 !--- each has four elements
 !rab    do num = 1,4
-!rab      write (xtra,'(I1)') num
+!rab      write (xtra,'(I1)') num 
 !rab      idx = idx + 1
 !rab      ExtDiag(idx)%axes = 2
 !rab      ExtDiag(idx)%name = 'dswcmp_'//trim(xtra)
@@ -734,7 +734,7 @@ module GFS_diagnostics
 !rab    enddo
 !rab
 !rab    do num = 1,4
-!rab      write (xtra,'(I1)') num
+!rab      write (xtra,'(I1)') num 
 !rab      idx = idx + 1
 !rab      ExtDiag(idx)%axes = 2
 !rab      ExtDiag(idx)%name = 'uswcmp_'//trim(xtra)
@@ -1109,6 +1109,7 @@ module GFS_diagnostics
       ExtDiag(idx)%data(nb)%var2 => IntDiag(nb)%cldwrk(:)
     enddo
 
+
     idx = idx + 1
     ExtDiag(idx)%axes = 2
     ExtDiag(idx)%name = 'u-gwd_ave'
@@ -1246,7 +1247,6 @@ module GFS_diagnostics
     do nb = 1,nblks
       ExtDiag(idx)%data(nb)%var2 => IntDiag(nb)%wind10mmax(:)
     enddo
-
     idx = idx + 1
     ExtDiag(idx)%axes = 2
     ExtDiag(idx)%name = 'u10max'
@@ -1909,7 +1909,6 @@ module GFS_diagnostics
     do nb = 1,nblks
       ExtDiag(idx)%data(nb)%var2 => IntDiag(nb)%refdmax(:)
     enddo
-
     idx = idx + 1
     ExtDiag(idx)%axes = 2
     ExtDiag(idx)%name = 'refdmax263k'
@@ -2008,6 +2007,8 @@ module GFS_diagnostics
     do nb = 1,nblks
       ExtDiag(idx)%data(nb)%var2 => IntDiag(nb)%ca_micro(:)
     enddo
+
+!    if(mpp_pe()==mpp_root_pe())print *,'in gfdl_diag_register,af shum_wts,idx=',idx
 
 !--- three-dimensional variables that need to be handled special when writing 
     idx = idx + 1
@@ -2188,7 +2189,6 @@ module GFS_diagnostics
 !rab      ExtDiag(idx)%mod_name = 'gfs_phys'
 !rab    enddo
 !rab
-
 !rab    idx = idx + 1
 !rab    ExtDiag(idx)%axes = 3
 !rab    !Requires lgocart = .T.
@@ -3132,10 +3132,8 @@ module GFS_diagnostics
     do nb = 1,nblks
       ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%qrain(:)
     enddo
-
-  endif
-
 !--------------------------nsst variables
+  endif
 
 !--------------------------aerosols
 #ifdef CCPP

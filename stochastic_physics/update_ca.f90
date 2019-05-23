@@ -284,17 +284,17 @@ endif !ca sgs true
  Cpert_halo=0
  field_in=0
 
-!The input to scalar_field_halo needs to be 1D.
+!The input to scalar_field_halo needs to be 1D.                                                          
 !take the updated board fields and extract the halo
 ! in order to have updated values in the halo region. 
 
- if(ca_global)then
-  do j=1,nyc
-   do i=1,nxc
-   field_in(i+(j-1)*nxc,1)=board(i,j,nf)
-   enddo
-  enddo
-!Step 3 - Extract the halo
+ if(ca_global)then 
+  do j=1,nyc                                                                        
+   do i=1,nxc                                                                                           
+   field_in(i+(j-1)*nxc,1)=board(i,j,nf)                                                                
+   enddo                                                                                                
+  enddo                                                                                                  
+!Step 3 - Extract the halo                                              
   call atmosphere_scalar_field_halo(board_halo,halo,nxch,nych,k_in,field_in)
  endif
  

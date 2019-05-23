@@ -74,14 +74,13 @@ module module_physics_driver
   real(kind=kind_phys), parameter :: czmin   = 0.0001      ! cos(89.994)
 #ifndef CCPP
   real(kind=kind_phys), parameter :: one     = 1.0d0, onebg = one/con_g
-  real(kind=kind_phys), parameter :: albdf   = 0.06
+  real(kind=kind_phys), parameter :: albdf   = 0.06 
   real(kind=kind_phys), parameter :: tf=258.16, tcr=273.16, tcrf=1.0/(tcr-tf)
 #endif
   real(kind=kind_phys), parameter :: con_p001= 0.001d0
   real(kind=kind_phys), parameter :: con_d00 = 0.0d0
   real(kind=kind_phys), parameter :: con_day = 86400.d0
   real(kind=kind_phys), parameter :: rad2dg  = 180.d0/con_pi
-
 
 !> GFS Physics Implementation Layer
 !> @brief Layer that invokes individual GFS physics routines
@@ -535,7 +534,7 @@ module module_physics_driver
 !--- coupling inputs for physics
            flag_cice
 
-      logical, dimension(Model%ntrac+1,2) :: otspt
+      logical, dimension(Model%ntrac+1,2) :: otspt 
 
       real(kind=kind_phys), dimension(Model%ntrac+2) :: trcmin
 
@@ -550,12 +549,11 @@ module module_physics_driver
       real(kind=kind_phys) ::                                           &
            dtf, dtp, rhbbot, rhbtop, rhpbl, frain, tem, tem1, tem2,     &
            xcosz_loc, zsea1, zsea2, eng0, eng1, dpshc,                  &
-!--- experimental for shoc sub-stepping
+!--- experimental for shoc sub-stepping 
            dtshoc
 !--- GFDL Cloud microphysics
       real(kind=kind_phys) ::                                           &
            crain, csnow, total_precip
-
       real(kind=kind_phys) :: rho
 #endif
 
@@ -652,7 +650,7 @@ module module_physics_driver
       real(kind=kind_phys), dimension(size(Grid%xlon,1),Model%levs) ::  &
           savet,saveq,saveu,savev
 
-!--- GFDL modification for FV3
+!--- GFDL modification for FV3 
       real(kind=kind_phys), dimension(size(Grid%xlon,1),Model%levs+1) ::&
            del_gz
 #ifndef CCPP

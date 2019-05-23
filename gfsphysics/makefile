@@ -83,7 +83,7 @@ SRCS_F90 = \
 	   ./GFS_layer/GFS_diagnostics.F90                                           \
 	   ./GFS_layer/GFS_driver.F90                                                \
 	   ./GFS_layer/GFS_restart.F90                                               \
-	   ./GFS_layer/GFS_typedefs.F90
+	   ./GFS_layer/GFS_typedefs.F90 # ./GFS_layer/GFS_typedefs.ccpp.F90
 else
 # CCPP standalone and static builds
 SRCS_f = \
@@ -105,7 +105,7 @@ SRCS_F90 = \
 	   ./GFS_layer/GFS_diagnostics.F90                                           \
 	   ./GFS_layer/GFS_driver.F90                                                \
 	   ./GFS_layer/GFS_restart.F90                                               \
-	   ./GFS_layer/GFS_typedefs.F90
+	   ./GFS_layer/GFS_typedefs.F90 # ./GFS_layer/GFS_typedefs.ccpp.F90
 endif
 # non-CCPP build
 else
@@ -219,7 +219,7 @@ SRCS_f90 = \
 	   ./physics/wam_f107_kp_mod.f90
 
 SRCS_F = \
-	   ./physics/aer_cloud.F                                                 \
+	   ./physics/aer_cloud.F                                                     \
 	   ./physics/cldmacro.F                                                      \
 	   ./physics/cldwat2m_micro.F                                                \
 	   ./physics/machine.F                                                       \
@@ -248,7 +248,7 @@ SRCS_F90 = \
 	   ./GFS_layer/GFS_physics_driver.F90                                        \
 	   ./GFS_layer/GFS_radiation_driver.F90                                      \
 	   ./GFS_layer/GFS_restart.F90                                               \
-	   ./GFS_layer/GFS_typedefs.F90
+	   ./GFS_layer/GFS_typedefs.F90 # ./GFS_layer/GFS_typedefs.ipd.F90
 endif
 
 SRCS_c   =
@@ -327,7 +327,7 @@ endif
 clean:
 	@echo "Cleaning gfsphysics  ... "
 	@echo
-	$(RM) -f $(LIBRARY) *__genmod.f90 *.o */*.o *.mod *.i90 *.lst *.i depend
+	$(RM) -f $(LIBRARY) *__genmod.f90 *.o */*.o *.mod *.i90 *.lst *.i depend */*.tmp.f90
 
 MKDEPENDS = ../mkDepends.pl
 include ../conf/make.rules

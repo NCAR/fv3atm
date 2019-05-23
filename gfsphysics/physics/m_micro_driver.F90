@@ -52,7 +52,7 @@
 !
 !   Feb 2018 : S. Moorthi Updated for MG3 with graupel as prognostic variable
 !------------------------------------
-!   input
+!   input 
 !      real,   parameter  :: r_air = 3.47d-3
        real,   parameter  :: one=1.0, oneb3=one/3.0, onebcp=one/cp,      &
      &                       kapa=rgas*onebcp,  cpbg=cp/grav,            &
@@ -84,10 +84,9 @@
 !   output
        real (kind=kind_phys),dimension(ix,lm) :: lwm_o, qi_o,           &
                         cldreffl, cldreffi, cldreffr, cldreffs, cldreffg
-       real (kind=kind_phys),dimension(im) :: rn_o,  sr_o
+       real (kind=kind_phys),dimension(im)    :: rn_o,  sr_o
+
 !   input and output
-!      Anning Cheng 10/24/2016 twat for total water, diagnostic purpose
-       integer, dimension(IM), intent(inout):: KCBL
        real (kind=kind_phys),dimension(ix,lm),intent(inout):: q_io, t_io,   &
      &                                             ncpl_io,ncpi_io,CLLS_io
        real (kind=kind_phys),dimension(im,lm),intent(inout):: rnw_io,snw_io,&
@@ -170,6 +169,8 @@
 !    &                                             LS_SNR, LS_PRC2, TPREC
        real(kind=kind_phys), dimension(IM)      :: LS_SNR, LS_PRC2
 !    &                                             VMIP, twat
+!      Anning Cheng 10/24/2016 twat for total water, diagnostic purpose
+       integer, dimension(IM)                   :: KCBL
 
        real(kind=kind_phys), dimension (LM) :: uwind_gw,vwind_gw,       &
      &   tm_gw, pm_gw, nm_gw, h_gw, rho_gw, khaux, qcaux,               &
@@ -186,7 +187,7 @@
      &   cmeioutr8, dsoutr8, qcsinksum_rate1ord,qrtend,nrtend,          &
      &   qstend,    nstend,  alphar8, rhr8,                             &
 
-     &   qgtend, ngtend, qgoutr8, ngoutr8, dgoutr8
+     &   qgtend, ngtend, qgoutr8, ngoutr8, dgoutr8 
 
        real(kind=kind_phys),  dimension(1)      :: prectr8, precir8
 
@@ -208,7 +209,7 @@
      &              reff_grau, umg,      qgsedtenr8, mnuccrior8,        &
      &   pracgr8,   psacwgr8,  pgsacwr8, pgracsr8,   prdgr8,   qmultgr8,&
      &   qmultrgr8, psacrr8,   npracgr8, nscngr8,    ngracsr8, nmultgr8,&
-     &   nmultrgr8, npsacwgr8, qgout2,   ngout2,     dgout2,   freqg
+     &   nmultrgr8, npsacwgr8, qgout2,   ngout2,     dgout2,   freqg 
 
        real(kind=kind_phys), dimension (0:LM) :: pi_gw, rhoi_gw,        &
      &                                           ni_gw, ti_gw
@@ -331,7 +332,7 @@
              enddo
            enddo
          endif
-
+           
        else
          DO K=1, LM
            DO I = 1,IM
@@ -745,7 +746,7 @@
 !              call init_Aer(AeroAux_b)
 !            endif
 
-             pfrz_inc_r8(k) = 0.0
+             pfrz_inc_r8(k) = 0.0 
              rh1_r8         = 0.0 !related to cnv_dql_dt, needed to changed soon
 
 !     if (lprnt) write(0,*)' bef aero npccninr8=',npccninr8(k),' k=',k  &
@@ -962,7 +963,7 @@
                 NHET_NUC(i,k) = 0.0
               endif
             endif
-
+             
           enddo
         enddo
 
@@ -1230,7 +1231,7 @@
 !     if(lprnt .and. i == ipr) write(0,*)' k=',k,' q1aftm=',q1(i,k)     &
 !    &,' qvlatr8=',qvlatr8(k)
             TEMP(I,k)   = TEMP(I,k)   + tlatr8(k)*DT_R8*onebcp
-
+        
             NCPL(I,k)   = MAX(NCPL(I,k)   + nctendr8(k) * DT_R8, 0.0)
             NCPI(I,k)   = MAX(NCPI(I,k)   + nitendr8(k) * DT_R8, 0.0)
             rnw(I,k)    = qrr8(k)
@@ -1632,7 +1633,7 @@
 !      do i=1,im
 !        clls_io(i,lm) = 0.5 * (dum(i,lm-1) + dum(i,lm))
 !      enddo
-
+           
 
 
 !=======================================================================

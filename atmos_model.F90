@@ -118,7 +118,6 @@ use module_fv3_config, only:  output_1st_tstep_rst, first_kdt
 !-----------------------------------------------------------------------
 
 implicit none
-
 private
 
 public update_atmos_radiation_physics
@@ -169,7 +168,7 @@ logical :: debug        = .false.
 logical :: sync         = .false.
 integer, parameter     :: maxhr = 4096
 real, dimension(maxhr) :: fdiag = 0.
-real                   :: fhmax=384.0, fhmaxhf=120.0, fhout=3.0, fhouthf=1.0, avg_max_length=3600.
+real                   :: fhmax=384.0, fhmaxhf=120.0, fhout=3.0, fhouthf=1.0,avg_max_length=3600.
 #ifdef CCPP
 namelist /atmos_model_nml/ blocksize, chksum_debug, dycore_only, debug, sync, fdiag, fhmax, fhmaxhf, fhout, fhouthf, ccpp_suite, avg_max_length
 #else
@@ -278,7 +277,6 @@ subroutine update_atmos_radiation_physics (Atmos)
       call get_date (Atmos%Time, jdat(1), jdat(2), jdat(3),  &
                                  jdat(5), jdat(6), jdat(7))
       IPD_Control%jdat(:) = jdat(:)
-
 
 !--- execute the IPD atmospheric setup step
       call mpp_clock_begin(setupClock)
@@ -881,6 +879,7 @@ subroutine atmos_model_end (Atmos)
 
 !-----------------------------------------------------------------------
 !---- termination routine for atmospheric model ----
+                                              
     call atmosphere_end (Atmos % Time, Atmos%grid)
     call FV3GFS_restart_write (IPD_Data, IPD_Restart, Atm_block, &
                                IPD_Control, Atmos%domain)
@@ -2443,7 +2442,7 @@ end subroutine atmos_data_type_chksum
     call fillExportFields(exportData)
 
 !---
-    if (IPD_Control%cplflx) then
+    if (IPD_Control%cplflx) then 
     ! zero out accumulated fields
       do j=jsc,jec
         do i=isc,iec

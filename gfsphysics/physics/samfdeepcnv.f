@@ -107,8 +107,8 @@
       real(kind=kind_phys), intent(inout) ::   qtr(ix,km,ntr+2),
      &   q1(ix,km), t1(ix,km),   u1(ix,km), v1(ix,km)
 
-      integer, intent(out) :: kbot(im), ktop(im)
-      real(kind=kind_phys), intent(out) :: cldwrk(im),
+      integer, intent(out) :: kbot(im), ktop(im) 
+      real(kind=kind_phys), intent(out) :: cldwrk(im), 
      &   rn(im),      cnvw(ix,km),  cnvc(ix,km),
      &   ud_mf(im,km),dd_mf(im,km), dt_mf(im,km)
 
@@ -131,8 +131,8 @@
      &                     dellat,  delta,   desdt,   dg,
      &                     dh,      dhh,     dp,
      &                     dq,      dqsdp,   dqsdt,   dt,
-     &                     dt2,     dtmax,   dtmin,
-     &                     dxcrtas, dxcrtuf,
+     &                     dt2,     dtmax,   dtmin,   
+     &                     dxcrtas, dxcrtuf, 
      &                     dv1h,    dv2h,    dv3h,
      &                     dv1q,    dv2q,    dv3q,
      &                     dz,      dz1,     e1,      edtmax,
@@ -166,7 +166,7 @@
      &                     delqbar(im), delqev(im), deltbar(im),
      &                     deltv(im),   dtconv(im), edt(im),
      &                     edto(im),    edtx(im),   fld(im),
-     &                     hcdo(im,km), hmax(im),   hmin(im),
+     &                     hcdo(im,km), hmax(im),   hmin(im), 
      &                     ucdo(im,km), vcdo(im,km),aa2(im),
      &                     ecdo(im,km,ntr),
      &                     pdot(im),    po(im,km),
@@ -229,7 +229,7 @@ c  physical parameters
 c  cloud water
 !     real(kind=kind_phys) tvo(im,km)
       real(kind=kind_phys) qlko_ktcon(im), dellal(im,km), tvo(im,km),
-     &                     dbyo(im,km),    zo(im,km),
+     &                     dbyo(im,km),    zo(im,km),     
      &                     xlamue(im,km),  xlamud(im,km),
      &                     fent1(im,km),   fent2(im,km),  frh(im,km),
      &                     heo(im,km),     heso(im,km),
@@ -2377,7 +2377,7 @@ c
 !
 !> - Then, calculate the reduction factor (scaldfunc) of the vertical convective eddy transport of mass flux as a function of updraft fraction from the studies by Arakawa and Wu (2013) \cite arakawa_and_wu_2013 (also see Han et al.'s (2017) \cite han_et_al_2017 equation 1 and 2). The final cloud base mass flux with scale-aware parameterization is obtained from the mass flux when sigmagfm << 1, multiplied by the reduction factor (Han et al.'s (2017) \cite han_et_al_2017 equation 2).
       do i = 1, im
-        if (cnvflg(i)) then
+        if(cnvflg(i)) then
           if (gdx(i) < dxcrtuf) then
             scaldfunc(i) = (1.-sigmagfm(i)) * (1.-sigmagfm(i))
             scaldfunc(i) = max(min(scaldfunc(i), 1.0), 0.)
@@ -2391,7 +2391,7 @@ c
 
 !If stochastic physics using cellular automata is .true. then perturb the mass-flux here:
 
-      if (do_ca) then
+      if(do_ca)then
         do i=1,im
          xmb(i) = xmb(i)*(1.0 + ca_deep(i)*5.)
         enddo

@@ -6,7 +6,7 @@ module GFS_restart
                               GFS_coupling_type, GFS_grid_type,     &
                               GFS_tbd_type,      GFS_cldprop_type,  &
                               GFS_radtend_type,  GFS_diag_type,     &
-                              GFS_init_type
+                              GFS_init_type   
   use GFS_diagnostics,  only: GFS_externaldiag_type
 
   type var_subtype
@@ -61,14 +61,14 @@ module GFS_restart
     !--- local variables
     integer :: idx, ndiag_rst
     integer :: ndiag_idx(20)
-    integer :: nblks, num, nb, max_rstrt, offset
+    integer :: nblks, num, nb, max_rstrt, offset 
     character(len=2) :: c2 = ''
     
     nblks = size(Init_parm%blksz)
     max_rstrt = size(Restart%name2d)
 
     !--- check if continuous accumulated total precip and total cnvc precip are
-    !requested in output
+    !requested in output 
     ndiag_rst = 0
     ndiag_idx(1:20) = 0
     do idx=1, size(ExtDiag)
