@@ -933,7 +933,7 @@ module module_physics_driver
         if(Sfcprop%landfrac(i) >0.)   dry(i) = .true.
         if(Sfcprop%lakefrac(i) >0.)  lake(i) = .true.
         if(ocean(i) .or. lake(i))     wet(i) = .true.
-        if(Sfcprop%fice(i) > cimin*max(Sfcprop%oceanfrac(i),Sfcprop%lakefrac(i))) icy(i) = .true.
+        if(wet(i).and.Sfcprop%fice(i) >= cimin*max(Sfcprop%oceanfrac(i),Sfcprop%lakefrac(i))) icy(i) = .true.
       enddo
 
       do i=1,im
