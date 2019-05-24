@@ -9,15 +9,10 @@ module GFS_driver
                                       GFS_radtend_type, GFS_diag_type
 #ifdef CCPP
   use GFS_typedefs,             only: GFS_interstitial_type
-#ifdef HYBRID
-  use module_physics_driver,    only: GFS_physics_driver
-#endif
 #else
   use module_radiation_driver,  only: GFS_radiation_driver, radupdate
   use module_physics_driver,    only: GFS_physics_driver
-#endif
   use funcphys,                 only: gfuncphys
-#ifndef CCPP
   use gfdl_cloud_microphys_mod, only: gfdl_cloud_microphys_init
 #endif
   use physcons,                 only: gravit => con_g,    rair    => con_rd, &
@@ -99,11 +94,7 @@ module GFS_driver
 #ifndef CCPP
   public  GFS_time_vary_step          !< perform operations needed prior radiation or physics
   public  GFS_radiation_driver        !< radiation_driver (was grrad)
-#endif
-#if !(defined CCPP) || defined(HYBRID)
   public  GFS_physics_driver          !< physics_driver (was gbphys)
-#endif
-#ifndef CCPP
   public  GFS_stochastic_driver       !< stochastic physics
 #endif
 #ifdef CCPP
@@ -136,14 +127,8 @@ module GFS_driver
     use micro_mg2_0,         only: micro_mg_init2_0 => micro_mg_init
     use micro_mg3_0,         only: micro_mg_init3_0 => micro_mg_init
     use aer_cloud,           only: aer_cloud_init
-#endif
-#if !defined(CCPP) || defined(HYBRID)
     use module_ras,          only: ras_init
-#endif
-#ifndef CCPP
     use module_mp_thompson,  only: thompson_init
-#endif
-#if !defined(CCPP) || defined(HYBRID)
     use module_mp_wsm6,      only: wsm6init
 #endif
 
@@ -244,7 +229,7 @@ module GFS_driver
       call Sfcprop  (nb)%create (ix, Model)
       call Coupling (nb)%create (ix, Model)
       call Grid     (nb)%create (ix, Model)
-#if !defined(CCPP) || defined(HYBRID)
+#ifndef CCPP
       call Tbd      (nb)%create (ix, nb, Model)
 #else
       call Tbd      (nb)%create (ix, Model)
@@ -256,15 +241,11 @@ module GFS_driver
     enddo
 
 #ifdef CCPP
-
 ! This logic deals with non-uniform block sizes for CCPP. When non-uniform block sizes
 ! are used, it is required that only the last block has a different (smaller) size than
 ! all other blocks. This is the standard in FV3. If this is the case, set non_uniform_blocks
 ! to .true. and initialize nthreads+1 elements of the interstitial array. The extra element
 ! will be used by the thread that runs over the last, smaller block.
-! Additional logic is required when non-uniform blocks are used in the CCPP hybrid mode.
-! In order to detect in GFS_physics_driver if the last block has a different size, we
-! need to pass the flag non_uniform_blocks as component of GFS_interstitial to the CCPP.
 
     if (minval(Init_parm%blksz)==maxval(Init_parm%blksz)) then
        non_uniform_blocks = .false.
@@ -282,20 +263,12 @@ module GFS_driver
 !$OMP            schedule (static,1) &
 !$OMP            private  (nt)
     do nt=1,nthrds
-#ifdef HYBRID
-      call Interstitial (nt)%create (maxval(Init_parm%blksz), non_uniform_blocks, Model)
-#else
       call Interstitial (nt)%create (maxval(Init_parm%blksz), Model)
-#endif
     enddo
 !$OMP end parallel do
 
     if (non_uniform_blocks) then
-#ifdef HYBRID
-      call Interstitial (nthrds+1)%create (Init_parm%blksz(nblks), non_uniform_blocks, Model)
-#else
       call Interstitial (nthrds+1)%create (Init_parm%blksz(nblks), Model)
-#endif
     end if
 #endif
 
@@ -309,7 +282,7 @@ module GFS_driver
     call run_stochastic_physics_sfc(nblks,Model,Grid,Coupling)
 #endif
 
-! For CCPP,  these are called automatically in GFS_phys_time_vary_init as part of CCPP physics init
+! For CCPP, these are called automatically in GFS_phys_time_vary_init as part of CCPP physics init
 #ifndef CCPP
     !--- read in and initialize ozone and water
     if (Model%ntoz > 0) then
@@ -346,13 +319,11 @@ module GFS_driver
     endif
 #endif
 
-! DH* Even though this gets called through CCPP in GFS_time_vary_pre_init, we also
-! need to do this here as long as there are non-CCPP compliant physics in FV3/gfsphysics
-! that get called in hybrid mode. Worth retesting to remove funcphys.f from the CCPP-build
-! of FV3 from time to time, as more physics will be moved over.
+! For CCPP, this is called automatically in GFS_time_vary_pre_init as part of CCPP physics init
+#ifndef CCPP
     !--- Call gfuncphys (funcphys.f) to compute all physics function tables.
     call gfuncphys ()
-! *DH
+#endif
 
 !   call gsmconst (Model%dtp, Model%me, .TRUE.) ! This is for Ferrier microphysics - notused - moorthi
 
@@ -432,9 +403,7 @@ module GFS_driver
         print *,'Aerosol awareness is not included in this version of Thompson MP -- shutting down'
         stop 
       endif 
-#endif
 !
-#if !defined(CCPP) || defined(HYBRID)
     elseif(Model%imp_physics == Model%imp_physics_wsm6) then        !--- initialize WSM6 Cloud microphysics
       if(Model%do_shoc) then 
         print *,'SHOC is not currently compatible with WSM6 -- shutting down'
@@ -455,15 +424,14 @@ module GFS_driver
 #endif
     endif 
 
-#if !defined(CCPP) || defined(HYBRID)
+#ifndef CCPP
     !--- initialize ras
     if (Model%ras) call ras_init (Model%levs, Model%me)
 #endif
 
 ! DH* Even though this gets called through CCPP in lsm_noah_init, we also
 ! need to do this here as long as FV3GFS_io.F90 is calculating Sfcprop%sncovr
-! when reading restart files (which, by all means, it shouldn't - this should
-! be moved to physics!).
+! when reading restart files (which it shouldn't, this should be moved to physics).
     !--- initialize soil vegetation
     call set_soilveg(Model%me, Model%isot, Model%ivegsrc, Model%nlunit)
 ! *DH
