@@ -881,33 +881,6 @@ module FV3GFS_io_mod
       enddo
     endif
 
-#ifdef CCPP
-    ! Update top layers of NOAH surface variables with RUC data
-    ! as it is done at the end of lsm_ruc_run. Same as sncovr above,
-    ! this doesn't belong here. However, it is temporary until we
-    ! modified the code such that we can use the same surface
-    ! variables for both LSMs and just change the number of levels.
-    ! This requires to rework how the initialization is done and
-    ! also to modify gcycle/sfcsub.F.
-    if (Model%lsm == Model%lsm_ruc .and. warm_start) then
-      if (Model%me==0) write(0,*) "RUC LSM restart: update NOAH surface variables with RUC data"
-      do nb = 1, Atm_block%nblks
-        do ix = 1, Atm_block%blksz(nb)
-          i = Atm_block%index(nb)%ii(ix) - isc + 1
-          j = Atm_block%index(nb)%jj(ix) - jsc + 1
-          do lsoil = 1,min(Model%lsoil,Model%lsoil_lsm)
-            !--- stc
-            Sfcprop(nb)%stc(ix,lsoil) = Sfcprop(nb)%tslb(ix,lsoil)
-            !--- smc
-            Sfcprop(nb)%smc(ix,lsoil) = Sfcprop(nb)%smois(ix,lsoil)
-            !--- slc
-            Sfcprop(nb)%slc(ix,lsoil) = Sfcprop(nb)%sh2o(ix,lsoil)
-          enddo
-        enddo
-      enddo
-    endif
-#endif
-
     isFrac=.true.
     if(Model%cplflx) then
       if (nint(sfc_var2(1,1,nvar_s2m-1)) == -9999._kind_phys) then !tsfcl doesn't exist in the restart, need to create it
