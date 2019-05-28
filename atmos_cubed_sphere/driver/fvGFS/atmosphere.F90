@@ -445,7 +445,8 @@ contains
    ! Initialize the cdata structure
    call ccpp_init(trim(ccpp_suite), cdata, ierr)
    if (ierr/=0) then
-      call mpp_error (FATAL,' atmosphere_dynamics: error in ccpp_init')
+      cdata%errmsg = ' atmosphere_dynamics: error in ccpp_init: ' // trim(cdata%errmsg)
+      call mpp_error (FATAL, cdata%errmsg)
    end if
    
    ! For fast physics running over the entire domain, block and thread
@@ -498,7 +499,8 @@ contains
       call ccpp_physics_init(cdata, group_name="fast_physics", ierr=ierr)
 #endif
       if (ierr/=0) then
-         call mpp_error (FATAL,' atmosphere_dynamics: error in ccpp_physics_init')
+         cdata%errmsg = ' atmosphere_dynamics: error in ccpp_physics_init for group fast_physics: ' // trim(cdata%errmsg)
+         call mpp_error (FATAL, cdata%errmsg)
       end if
    end if
 #endif
@@ -737,8 +739,8 @@ contains
       call ccpp_physics_finalize(cdata, group_name="fast_physics", ierr=ierr)
 #endif
       if (ierr/=0) then
-        write(0,'(a)') "An error occurred in ccpp_physics_finalize for group fast_physics"
-        return
+         cdata%errmsg = ' atmosphere_dynamics: error in ccpp_physics_finalize for group fast_physics: ' // trim(cdata%errmsg)
+         call mpp_error (FATAL, cdata%errmsg)
       end if
    end if
 #endif
