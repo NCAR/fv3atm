@@ -2585,12 +2585,12 @@ module GFS_diagnostics
 
 #ifdef CCPP
   if (Model%lsm == Model%lsm_ruc) then
-    do num = 1,4
+    do num = 1,Model%lsoil_lsm
       write (xtra,'(i1)') num
       idx = idx + 1
       ExtDiag(idx)%axes = 2
-      ExtDiag(idx)%name = 'slc_'//trim(xtra)
-      ExtDiag(idx)%desc = 'liquid soil mositure at layer-'//trim(xtra)
+      ExtDiag(idx)%name = 'soill'//trim(xtra)
+      ExtDiag(idx)%desc = 'liquid soil moisture ' // trim(soil_layer_depth(Model%lsm, Model%lsm_ruc, Model%lsm_noah, num))
       ExtDiag(idx)%unit = 'm**3/m**3'
       ExtDiag(idx)%mod_name = 'gfs_sfc'
       allocate (ExtDiag(idx)%data(nblks))
@@ -2599,19 +2599,21 @@ module GFS_diagnostics
       enddo
     enddo
   else
-    do num = 1,4
+    do num = 1,Model%lsoil_lsm
       write (xtra,'(i1)') num
       idx = idx + 1
       ExtDiag(idx)%axes = 2
       ExtDiag(idx)%name = 'slc_'//trim(xtra)
-      ExtDiag(idx)%desc = 'liquid soil mositure at layer-'//trim(xtra)
-! DH* Can't use correct units because of the way bit for bit
-! tests are conducted (using cmp -> test fails)
+! DH* Can't use correct unit/description because of the way
+! bit for bit tests are conducted (using cmp -> test fails)
 #if 0
+      ExtDiag(idx)%desc = 'liquid soil moisture ' // trim(soil_layer_depth(Model%lsm, Model%lsm_ruc, Model%lsm_noah, num))
       ExtDiag(idx)%unit = 'm**3/m**3'
 #else
+      ExtDiag(idx)%desc = 'liquid soil mositure at layer-'//trim(xtra)
       ExtDiag(idx)%unit = 'xxx'
 #endif
+! *DH
       ExtDiag(idx)%mod_name = 'gfs_sfc'
       allocate (ExtDiag(idx)%data(nblks))
       do nb = 1,nblks
@@ -2637,26 +2639,32 @@ module GFS_diagnostics
 
 #ifdef CCPP
   if (Model%lsm == Model%lsm_ruc) then
-    idx = idx + 1
-    ExtDiag(idx)%axes = 2
-    ExtDiag(idx)%name = 'soilw1'
-    ExtDiag(idx)%desc = 'volumetric soil moisture 0-10cm'
-    ExtDiag(idx)%unit = 'fraction'
-    ExtDiag(idx)%mod_name = 'gfs_sfc'
-    allocate (ExtDiag(idx)%data(nblks))
-    do nb = 1,nblks
-      ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%smois(:,1)
+    do num = 1,Model%lsoil_lsm
+      write (xtra,'(i1)') num
+      idx = idx + 1
+      ExtDiag(idx)%axes = 2
+      ExtDiag(idx)%name = 'soilw'//trim(xtra)
+      ExtDiag(idx)%desc = 'volumetric soil moisture ' // trim(soil_layer_depth(Model%lsm, Model%lsm_ruc, Model%lsm_noah, num))
+      ExtDiag(idx)%unit = 'fraction'
+      ExtDiag(idx)%mod_name = 'gfs_sfc'
+      allocate (ExtDiag(idx)%data(nblks))
+      do nb = 1,nblks
+        ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%smois(:,num)
+      enddo
     enddo
   else
-    idx = idx + 1
-    ExtDiag(idx)%axes = 2
-    ExtDiag(idx)%name = 'soilw1'
-    ExtDiag(idx)%desc = 'volumetric soil moisture 0-10cm'
-    ExtDiag(idx)%unit = 'fraction'
-    ExtDiag(idx)%mod_name = 'gfs_sfc'
-    allocate (ExtDiag(idx)%data(nblks))
-    do nb = 1,nblks
-      ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%smc(:,1)
+    do num = 1,Model%lsoil_lsm
+      write (xtra,'(i1)') num
+      idx = idx + 1
+      ExtDiag(idx)%axes = 2
+      ExtDiag(idx)%name = 'soilw'//trim(xtra)
+      ExtDiag(idx)%desc = 'volumetric soil moisture ' // trim(soil_layer_depth(Model%lsm, Model%lsm_ruc, Model%lsm_noah, num))
+      ExtDiag(idx)%unit = 'fraction'
+      ExtDiag(idx)%mod_name = 'gfs_sfc'
+      allocate (ExtDiag(idx)%data(nblks))
+      do nb = 1,nblks
+        ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%smc(:,num)
+      enddo
     enddo
   endif
 #else
@@ -2670,21 +2678,7 @@ module GFS_diagnostics
     do nb = 1,nblks
       ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%smc(:,1)
     enddo
-#endif
 
-#ifdef CCPP
-  if (Model%lsm == Model%lsm_ruc) then
-    idx = idx + 1
-    ExtDiag(idx)%axes = 2
-    ExtDiag(idx)%name = 'soilw2'
-    ExtDiag(idx)%desc = 'volumetric soil moisture 10-40cm'
-    ExtDiag(idx)%unit = 'fraction'
-    ExtDiag(idx)%mod_name = 'gfs_sfc'
-    allocate (ExtDiag(idx)%data(nblks))
-    do nb = 1,nblks
-      ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%smois(:,2)
-    enddo
-  else
     idx = idx + 1
     ExtDiag(idx)%axes = 2
     ExtDiag(idx)%name = 'soilw2'
@@ -2695,33 +2689,7 @@ module GFS_diagnostics
     do nb = 1,nblks
       ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%smc(:,2)
     enddo
-  endif
-#else
-    idx = idx + 1
-    ExtDiag(idx)%axes = 2
-    ExtDiag(idx)%name = 'soilw2'
-    ExtDiag(idx)%desc = 'volumetric soil moisture 10-40cm'
-    ExtDiag(idx)%unit = 'fraction'
-    ExtDiag(idx)%mod_name = 'gfs_sfc'
-    allocate (ExtDiag(idx)%data(nblks))
-    do nb = 1,nblks
-      ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%smc(:,2)
-    enddo
-#endif
 
-#ifdef CCPP
-  if (Model%lsm == Model%lsm_ruc) then
-    idx = idx + 1
-    ExtDiag(idx)%axes = 2
-    ExtDiag(idx)%name = 'soilw3'
-    ExtDiag(idx)%desc = 'volumetric soil moisture 40-100cm'
-    ExtDiag(idx)%unit = 'fraction'
-    ExtDiag(idx)%mod_name = 'gfs_sfc'
-    allocate (ExtDiag(idx)%data(nblks))
-    do nb = 1,nblks
-      ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%smois(:,3)
-    enddo
-  else
     idx = idx + 1
     ExtDiag(idx)%axes = 2
     ExtDiag(idx)%name = 'soilw3'
@@ -2732,45 +2700,7 @@ module GFS_diagnostics
     do nb = 1,nblks
       ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%smc(:,3)
     enddo
-  endif
-#else
-    idx = idx + 1
-    ExtDiag(idx)%axes = 2
-    ExtDiag(idx)%name = 'soilw3'
-    ExtDiag(idx)%desc = 'volumetric soil moisture 40-100cm'
-    ExtDiag(idx)%unit = 'fraction'
-    ExtDiag(idx)%mod_name = 'gfs_sfc'
-    allocate (ExtDiag(idx)%data(nblks))
-    do nb = 1,nblks
-      ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%smc(:,3)
-    enddo
-#endif
 
-#ifdef CCPP
-  if (Model%lsm == Model%lsm_ruc) then
-    idx = idx + 1
-    ExtDiag(idx)%axes = 2
-    ExtDiag(idx)%name = 'soilw4'
-    ExtDiag(idx)%desc = 'volumetric soil moisture 100-200cm'
-    ExtDiag(idx)%unit = 'fraction'
-    ExtDiag(idx)%mod_name = 'gfs_sfc'
-    allocate (ExtDiag(idx)%data(nblks))
-    do nb = 1,nblks
-      ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%smois(:,4)
-    enddo
-  else
-    idx = idx + 1
-    ExtDiag(idx)%axes = 2
-    ExtDiag(idx)%name = 'soilw4'
-    ExtDiag(idx)%desc = 'volumetric soil moisture 100-200cm'
-    ExtDiag(idx)%unit = 'fraction'
-    ExtDiag(idx)%mod_name = 'gfs_sfc'
-    allocate (ExtDiag(idx)%data(nblks))
-    do nb = 1,nblks
-      ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%smc(:,4)
-    enddo
-  endif
-#else
     idx = idx + 1
     ExtDiag(idx)%axes = 2
     ExtDiag(idx)%name = 'soilw4'
@@ -2784,29 +2714,35 @@ module GFS_diagnostics
 #endif
 
 #ifdef CCPP
-  if (Model%lsm == Model%lsm_ruc) then
-    idx = idx + 1
-    ExtDiag(idx)%axes = 2
-    ExtDiag(idx)%name = 'soilt1'
-    ExtDiag(idx)%desc = 'soil temperature 0-10cm' 
-    ExtDiag(idx)%unit = 'K'
-    ExtDiag(idx)%mod_name = 'gfs_sfc'
-    allocate (ExtDiag(idx)%data(nblks))
-    do nb = 1,nblks
-      ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%tslb(:,1)
-    enddo
-  else
-    idx = idx + 1
-    ExtDiag(idx)%axes = 2
-    ExtDiag(idx)%name = 'soilt1'
-    ExtDiag(idx)%desc = 'soil temperature 0-10cm'
-    ExtDiag(idx)%unit = 'K'
-    ExtDiag(idx)%mod_name = 'gfs_sfc'
-    allocate (ExtDiag(idx)%data(nblks))
-    do nb = 1,nblks
-      ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%stc(:,1)
-    enddo
-  endif
+    if (Model%lsm == Model%lsm_ruc) then
+      do num = 1,Model%lsoil_lsm
+        write (xtra,'(i1)') num
+        idx = idx + 1
+        ExtDiag(idx)%axes = 2
+        ExtDiag(idx)%name = 'soilt'//trim(xtra)
+        ExtDiag(idx)%desc = 'soil temperature ' // trim(soil_layer_depth(Model%lsm, Model%lsm_ruc, Model%lsm_noah, num))
+        ExtDiag(idx)%unit = 'K'
+        ExtDiag(idx)%mod_name = 'gfs_sfc'
+        allocate (ExtDiag(idx)%data(nblks))
+        do nb = 1,nblks
+          ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%tslb(:,num)
+        enddo
+      enddo
+    else
+      do num = 1,Model%lsoil_lsm
+        write (xtra,'(i1)') num
+        idx = idx + 1
+        ExtDiag(idx)%axes = 2
+        ExtDiag(idx)%name = 'soilt'//trim(xtra)
+        ExtDiag(idx)%desc = 'soil temperature ' // trim(soil_layer_depth(Model%lsm, Model%lsm_ruc, Model%lsm_noah, num))
+        ExtDiag(idx)%unit = 'K'
+        ExtDiag(idx)%mod_name = 'gfs_sfc'
+        allocate (ExtDiag(idx)%data(nblks))
+        do nb = 1,nblks
+          ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%stc(:,num)
+        enddo
+      enddo
+    endif
 #else
     idx = idx + 1
     ExtDiag(idx)%axes = 2
@@ -2818,21 +2754,7 @@ module GFS_diagnostics
     do nb = 1,nblks
       ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%stc(:,1)
     enddo
-#endif
 
-#ifdef CCPP
-  if (Model%lsm == Model%lsm_ruc) then
-    idx = idx + 1
-    ExtDiag(idx)%axes = 2
-    ExtDiag(idx)%name = 'soilt2'
-    ExtDiag(idx)%desc = 'soil temperature 10-40cm' 
-    ExtDiag(idx)%unit = 'K'
-    ExtDiag(idx)%mod_name = 'gfs_sfc'
-    allocate (ExtDiag(idx)%data(nblks))
-    do nb = 1,nblks
-      ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%tslb(:,2)
-    enddo
-  else
     idx = idx + 1
     ExtDiag(idx)%axes = 2
     ExtDiag(idx)%name = 'soilt2'
@@ -2843,33 +2765,7 @@ module GFS_diagnostics
     do nb = 1,nblks
       ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%stc(:,2)
     enddo
-  endif
-#else
-    idx = idx + 1
-    ExtDiag(idx)%axes = 2
-    ExtDiag(idx)%name = 'soilt2'
-    ExtDiag(idx)%desc = 'soil temperature 10-40cm'
-    ExtDiag(idx)%unit = 'K'
-    ExtDiag(idx)%mod_name = 'gfs_sfc'
-    allocate (ExtDiag(idx)%data(nblks))
-    do nb = 1,nblks
-      ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%stc(:,2)
-    enddo
-#endif
 
-#ifdef CCPP
-  if (Model%lsm == Model%lsm_ruc) then
-    idx = idx + 1
-    ExtDiag(idx)%axes = 2
-    ExtDiag(idx)%name = 'soilt3'
-    ExtDiag(idx)%desc = 'soil temperature 40-100cm' 
-    ExtDiag(idx)%unit = 'K'
-    ExtDiag(idx)%mod_name = 'gfs_sfc'
-    allocate (ExtDiag(idx)%data(nblks))
-    do nb = 1,nblks
-      ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%tslb(:,3)
-    enddo
-  else
     idx = idx + 1
     ExtDiag(idx)%axes = 2
     ExtDiag(idx)%name = 'soilt3'
@@ -2880,45 +2776,7 @@ module GFS_diagnostics
     do nb = 1,nblks
       ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%stc(:,3)
     enddo
-  endif
-#else
-    idx = idx + 1
-    ExtDiag(idx)%axes = 2
-    ExtDiag(idx)%name = 'soilt3'
-    ExtDiag(idx)%desc = 'soil temperature 40-100cm'
-    ExtDiag(idx)%unit = 'K'
-    ExtDiag(idx)%mod_name = 'gfs_sfc'
-    allocate (ExtDiag(idx)%data(nblks))
-    do nb = 1,nblks
-      ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%stc(:,3)
-    enddo
-#endif
 
-#ifdef CCPP
-  if (Model%lsm == Model%lsm_ruc) then
-    idx = idx + 1
-    ExtDiag(idx)%axes = 2
-    ExtDiag(idx)%name = 'soilt4'
-    ExtDiag(idx)%desc = 'soil temperature 100-200cm' 
-    ExtDiag(idx)%unit = 'K'
-    ExtDiag(idx)%mod_name = 'gfs_sfc'
-    allocate (ExtDiag(idx)%data(nblks))
-    do nb = 1,nblks
-      ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%tslb(:,4)
-    enddo
-  else
-    idx = idx + 1
-    ExtDiag(idx)%axes = 2
-    ExtDiag(idx)%name = 'soilt4'
-    ExtDiag(idx)%desc = 'soil temperature 100-200cm'
-    ExtDiag(idx)%unit = 'K'
-    ExtDiag(idx)%mod_name = 'gfs_sfc'
-    allocate (ExtDiag(idx)%data(nblks))
-    do nb = 1,nblks
-      ExtDiag(idx)%data(nb)%var2 => sfcprop(nb)%stc(:,4)
-    enddo
-  endif
-#else
     idx = idx + 1
     ExtDiag(idx)%axes = 2
     ExtDiag(idx)%name = 'soilt4'
@@ -3541,6 +3399,59 @@ module GFS_diagnostics
 !rab    ExtDiag(idx)%mod_name = 'gfs_phys'
 
   end subroutine GFS_externaldiag_populate
+
+#ifdef CCPP
+  function soil_layer_depth(lsm, lsm_ruc, lsm_noah, layer) result(layer_depth)
+     character(len=30)   :: layer_depth
+     integer, intent(in) :: lsm, lsm_ruc, lsm_noah, layer
+     !
+     continue
+     !
+     if (lsm==lsm_ruc) then
+        select case (layer)
+           case (1)
+              layer_depth = 'at 0 cm depth'
+           case (2)
+              layer_depth = 'at 5 cm depth'
+           case (3)
+              layer_depth = 'at 20 cm depth'
+           case (4)
+              layer_depth = 'at 40 cm depth'
+           case (5)
+              layer_depth = 'at 60 cm depth'
+           case (6)
+              layer_depth = 'at 100 cm depth'
+           case (7)
+              layer_depth = 'at 160 cm depth'
+           case (8)
+              layer_depth = 'at 220 cm depth'
+           case (9)
+              layer_depth = 'at 300 cm depth'
+           case default
+              write (layer_depth,'(a,i0)') 'invalid layer ', layer
+        end select
+     else if (lsm==lsm_noah) then
+        select case (layer)
+           case (1)
+              layer_depth = '0-10cm'
+           case (2)
+              layer_depth = '10-40cm'
+           case (3)
+              layer_depth = '40-100cm'
+           case (4)
+              layer_depth = '100-200cm'
+           case default
+              write (layer_depth,'(a,i0)') 'invalid layer ', layer
+        end select
+     else
+        write (layer_depth,'(a,i0)') 'unknown layer ', layer
+     end if
+     !
+     return
+     !
+  end function soil_layer_depth
+#endif
+
 !-------------------------------------------------------------------------      
 
 end module GFS_diagnostics
