@@ -4136,6 +4136,12 @@ module GFS_typedefs
     Model%lsm              = lsm
     Model%lsoil            = lsoil
 #ifdef CCPP
+    ! Consistency check for RUC LSM
+    if (Model%lsm == Model%lsm_ruc .and. Model%nscyc>0) then
+      write(0,*) 'Logic error: RUC LSM cannot be used with surface data cycling at this point (fhcyc>0)'
+      stop
+    end if
+    ! Set surface layers for CCPP physics
     if (lsoil_lsm==-1) then
       Model%lsoil_lsm      = lsoil
     else
