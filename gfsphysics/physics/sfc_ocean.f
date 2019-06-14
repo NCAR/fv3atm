@@ -6,7 +6,7 @@
 !...................................
 !  ---  inputs:
      &     ( im, ps, u1, v1, t1, q1, tskin, cm, ch,                     &
-     &       prsl1, prslki, wet, fice, ddvel, flag_iter,                &
+     &       prsl1, prslki, wet, ddvel, flag_iter,                      &
 !  ---  outputs:
      &       qsurf, cmm, chh, gflux, evap, hflx, ep                     &
      &     )
@@ -19,7 +19,7 @@
 !    call sfc_ocean                                                     !
 !       inputs:                                                         !
 !          ( im, ps, u1, v1, t1, q1, tskin, cm, ch,                     !
-!            prsl1, prslki, wet, fice, ddvel, flag_iter,                !
+!            prsl1, prslki, wet, ddvel, flag_iter,                      !
 !       outputs:                                                        !
 !            qsurf, cmm, chh, gflux, evap, hflx, ep )                   !
 !                                                                       !
@@ -51,7 +51,6 @@
 !     prsl1    - real, surface layer mean pressure                 im   !
 !     prslki   - real,                                             im   !
 !     wet      - logical, =T if any ocean/lak, =F otherwise        im   !
-!     fice     - real, ice fraction                                im   !
 !     ddvel    - real, wind enhancement due to convection (m/s)    im   !
 !     flag_iter- logical,                                          im   !
 !                                                                       !
@@ -82,7 +81,7 @@
 !  ---  inputs:
       integer, intent(in) :: im
       real (kind=kind_phys), dimension(im), intent(in) :: ps, u1, v1,   &
-     &      t1, q1, tskin, cm, ch, prsl1, prslki, ddvel, fice
+     &      t1, q1, tskin, cm, ch, prsl1, prslki, ddvel
 
       logical, dimension(im), intent(in) :: flag_iter, wet
 
@@ -102,7 +101,7 @@
 !
 !  --- ...  flag for open water
       do i = 1, im
-        flag(i) = (wet(i) .and. fice(i)<1. .and. flag_iter(i))
+        flag(i) = (wet(i) .and. flag_iter(i))
 
 !  --- ...  initialize variables. all units are supposedly m.k.s. unless specified
 !           ps is in pascals, wind is wind speed, 

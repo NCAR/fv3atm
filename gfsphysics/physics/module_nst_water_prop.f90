@@ -635,7 +635,7 @@ end subroutine solar_time_from_julian
 
   integer, intent(in) :: nx,ny
   real (kind=kind_phys), dimension(nx,ny), intent(in)  :: xt,xz,dt_cool,zc
-  logical, dimension(nx,ny), intent(in)  :: wet,icy
+  logical, dimension(nx,ny), intent(in)  :: wet, icy
   real (kind=kind_phys), intent(in)  :: z1,z2
   real (kind=kind_phys), dimension(nx,ny), intent(out) :: dtm                    
 ! Local variables
@@ -686,7 +686,7 @@ end subroutine solar_time_from_julian
             endif
           endif
         endif
-      endif        ! if ( wet(i,j) .and. .not.icy(i,j) ) then
+      endif        ! if  wet(i,j) .and. .not.icy(i,j)
     enddo
   enddo 
 !
@@ -695,7 +695,7 @@ end subroutine solar_time_from_julian
 !$omp parallel do private(j,i)
   do j = 1, ny
     do i= 1, nx
-      if ( wet(i,j) .and. .not.icy(i,j)) then
+      if ( wet(i,j) .and. .not.icy(i,j) ) then
         dtm(i,j) = dtw(i,j) - dtc(i,j)
       endif
     enddo

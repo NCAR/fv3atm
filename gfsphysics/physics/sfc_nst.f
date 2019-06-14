@@ -23,8 +23,7 @@
 !...................................
 !  ---  inputs:
      &     ( im,    ps, u1, v1, t1, q1, tref, cm, ch,                   &
-     &       prsl1, prslki, wet, icy,                                   &
-     &       xlon, sinlat, stress,                                      &
+     &       prsl1, prslki, wet, icy, xlon, sinlat, stress,             &
      &       sfcemis, dlwflx, sfcnsw, rain, timestep, kdt, solhr,xcosz, &
      &       ddvel, flag_iter, flag_guess, nstf_name,                   &
      &       lprnt, ipr,                                                &
@@ -88,8 +87,8 @@
 !     ch       - real, surface exchange coeff heat & moisture(m/s) im   !
 !     prsl1    - real, surface layer mean pressure (pa)            im   !
 !     prslki   - real,                                             im   !
-!     wet      - logical, =T if any ocn/lak water (F otherwise)    im   !
-!     icy      - logical, =T if "enough" ice (F otherwise)         im   !
+!     wet      - logical, =T if any ocn/lake water (F otherwise)   im   !
+!     icy      - logical, =T if any ice                            im   !
 !     xlon     - real, longitude         (radians)                 im   !
 !     sinlat   - real, sin of latitude                             im   !
 !     stress   - real, wind stress       (n/m**2)                  im   !
@@ -192,7 +191,7 @@
       real (kind=kind_phys), intent(in) :: solhr
 
       logical, dimension(im), intent(in) :: flag_iter, flag_guess, wet, &
-     &       icy
+     &                                      icy
       logical,                intent(in) :: lprnt
 
 !  ---  input/outputs:
@@ -252,7 +251,7 @@ cc
 !  save nst-related prognostic fields for guess run
 !
       do i=1, im
-        if(wet(i) .and. .not.icy(i) .and. flag_guess(i)) then
+        if (wet(i) .and. .not.icy(i) .and. flag_guess(i)) then
           xt_old(i)      = xt(i)
           xs_old(i)      = xs(i)
           xu_old(i)      = xu(i)
@@ -509,8 +508,8 @@ cc
      &                        zsea1,zsea2,dtz)
           tsurf(i) = max(271.2, tref(i) + dtz )
 
-      if (lprnt .and. i == ipr) print *,' tsurf=',tsurf(i),' tref=',
-     &tref(i),' xz=',xz(i),' dt_cool=',dt_cool(i)
+!     if (lprnt .and. i == ipr) print *,' tsurf=',tsurf(i),' tref=',
+!    &tref(i),' xz=',xz(i),' dt_cool=',dt_cool(i)
 
           if ( xt(i) > 0.0 ) then
             call cal_w(kdt,xz(i),xt(i),xzts(i),xtts(i),w_0(i),w_d(i))
@@ -534,8 +533,8 @@ cc
 
 ! restore nst-related prognostic fields for guess run
       do i=1, im
-        if(wet(i) .and. .not.icy(i)) then
-          if(flag_guess(i)) then    ! when it is guess of 
+        if (wet(i) .and. .not.icy(i)) then
+          if (flag_guess(i)) then    ! when it is guess of 
             xt(i)      = xt_old(i)
             xs(i)      = xs_old(i)
             xu(i)      = xu_old(i)
@@ -555,9 +554,9 @@ cc
 !
             if ( nstf_name(1) > 1 ) then
               tskin(i) = tsurf(i)
-            endif               ! if ( nstf_name(1) > 1  then
-          endif                 ! if(flag_guess(i)) then
-        endif                   ! if(wet(i) .and. .not.icy(i)) then
+            endif               ! if nstf_name(1) > 1
+          endif                 ! if flag_guess(i)
+        endif                   ! if wet(i) .and. .not.icy(i)
       enddo
 
 !     if (lprnt .and. i == ipr) print *,' beg xz8=',xz(i)

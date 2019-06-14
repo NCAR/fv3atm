@@ -10,29 +10,19 @@
      &                    sigmaf,vegtype,shdmax,ivegsrc,        !intent(in)
      &                    z0pert,ztpert,        ! mg, sfc-perts !intent(in)
      &                    flag_iter,redrag,                     !intent(in)
-     &                    wet,dry,icy,fice,                     !intent(in)
-     &                    tskin_ocn, tskin_lnd, tskin_ice,      !intent(in)
-     &                    tsurf_ocn, tsurf_lnd, tsurf_ice,      !intent(in)
-     &                   snwdph_ocn,snwdph_lnd,snwdph_ice,      !intent(in)
+     &                    wet,dry,icy,                          !intent(in)
+     &                    tskin, tsurf, snwdph, z0rl, ustar,
 !
-     &                     z0rl_ocn,  z0rl_lnd,  z0rl_ice,      !intent(inout)
-     &                    ustar_ocn, ustar_lnd, ustar_ice,      !intent(inout)
-!
-     &                       cm_ocn,    cm_lnd,    cm_ice,      !intent(out)
-     &                       ch_ocn,    ch_lnd,    ch_ice,      !intent(out)
-     &                       rb_ocn,    rb_lnd,    rb_ice,      !intent(out)
-     &                   stress_ocn,stress_lnd,stress_ice,      !intent(out)
-     &                       fm_ocn,    fm_lnd,    fm_ice,      !intent(out)
-     &                       fh_ocn,    fh_lnd,    fh_ice,      !intent(out)
-     &                     fm10_ocn,  fm10_lnd,  fm10_ice,      !intent(out)
-     &                      fh2_ocn,   fh2_lnd,   fh2_ice,      !intent(out)
-     &                      wind)                               !intent(out)
+     &                    cm, ch, rb, stress, fm, fh, fm10, fh2,
+     &                    wind)                                 !intent(out)
 !
       use funcphys, only : fpvs
       use physcons, rvrdm1 => con_fvirt
      &,             eps => con_eps, epsm1 => con_epsm1
       implicit none
 !
+! 1 - land, 2 - ice, 3 - water
+! --------  -------- ---------
       integer, intent(in) :: im, ivegsrc
       integer, dimension(im), intent(in) :: vegtype
 
@@ -43,26 +33,17 @@
      &                    ps,u1,v1,t1,q1,z1,prsl1,prslki,ddvel,
      &                    sigmaf,shdmax,
      &                    z0pert,ztpert ! mg, sfc-perts
-      real(kind=kind_phys), dimension(im), intent(in)    ::
-     &                    tskin_ocn, tskin_lnd, tskin_ice,
-     &                    tsurf_ocn, tsurf_lnd, tsurf_ice,
-     &                   snwdph_ocn,snwdph_lnd,snwdph_ice,
-     &                    fice
+      real(kind=kind_phys), dimension(im,3), intent(in)    ::
+     &                    tskin, tsurf, snwdph
 
-      real(kind=kind_phys), dimension(im), intent(inout) ::
-     &                     z0rl_ocn,  z0rl_lnd,  z0rl_ice,
-     &                    ustar_ocn, ustar_lnd, ustar_ice
+      real(kind=kind_phys), dimension(im,3), intent(inout) ::
+     &                       z0rl, ustar
 
-      real(kind=kind_phys), dimension(im), intent(out)   ::
-     &                       cm_ocn,    cm_lnd,    cm_ice,
-     &                       ch_ocn,    ch_lnd,    ch_ice,
-     &                       rb_ocn,    rb_lnd,    rb_ice,
-     &                   stress_ocn,stress_lnd,stress_ice,
-     &                       fm_ocn,    fm_lnd,    fm_ice,
-     &                       fh_ocn,    fh_lnd,    fh_ice,
-     &                     fm10_ocn,  fm10_lnd,  fm10_ice,
-     &                      fh2_ocn,   fh2_lnd,   fh2_ice,
-     &                      wind
+! 1 - land, 2 - ice, 3 - water
+! --------  -------- ---------
+      real(kind=kind_phys), dimension(im,3), intent(out)   ::
+     &                       cm, ch, rb, stress, fm, fh, fm10, fh2
+      real(kind=kind_phys), dimension(im),   intent(out)   :: wind
 !
 !     locals
 !
@@ -102,37 +83,39 @@
 !  surface roughness length is converted to m from cm
 !
       do i=1,im
-        ztmax_ocn = 0.; ztmax_lnd = 0.; ztmax_ice = 0.
+        ztmax_ocn = 0.0 ; ztmax_lnd = 0.0 ; ztmax_ice = 0.0
+        tvs_lnd   = 0.0 ; tvs_ice   = 0.0 ; tvs_ocn   = 0.0
         if(flag_iter(i)) then 
           wind(i) = max(sqrt(u1(i)*u1(i) + v1(i)*v1(i))
      &                + max(0.0, min(ddvel(i), 30.0)), 1.0)
           tem1    = 1.0 + rvrdm1 * max(q1(i),1.e-8)
           thv1    = t1(i) * prslki(i) * tem1
-          tvs_ocn = 0.5 * (tsurf_ocn(i)+tskin_ocn(i)) * tem1
-          tvs_lnd = 0.5 * (tsurf_lnd(i)+tskin_lnd(i)) * tem1
-          tvs_ice = 0.5 * (tsurf_ice(i)+tskin_ice(i)) * tem1
+          if (dry(i)) tvs_lnd = 0.5 * (tsurf(i,1)+tskin(i,1)) * tem1
+          if (icy(i)) tvs_ice = 0.5 * (tsurf(i,2)+tskin(i,2)) * tem1
+          if (wet(i)) tvs_ocn = 0.5 * (tsurf(i,3)+tskin(i,3)) * tem1
+
           qs1     = fpvs(t1(i))
           qs1     = max(1.0e-8, eps * qs1 / (prsl1(i) + epsm1 * qs1))
 
-          z0_ocn      = 0.01 * z0rl_ocn(i)
-          z0max_ocn   = max(1.0e-6, min(z0_ocn,z1(i)))
-          z0_lnd      = 0.01 * z0rl_lnd(i)
-          z0max_lnd   = max(1.0e-6, min(z0_lnd,z1(i)))
-          z0_ice      = 0.01 * z0rl_ice(i)
-          z0max_ice   = max(1.0e-6, min(z0_ice,z1(i)))
+          z0_lnd    = 0.01 * z0rl(i,1)
+          z0max_lnd = max(1.0e-6, min(z0_lnd,z1(i)))
+          z0_ice    = 0.01 * z0rl(i,2)
+          z0max_ice = max(1.0e-6, min(z0_ice,z1(i)))
+          z0_ocn    = 0.01 * z0rl(i,3)
+          z0max_ocn = max(1.0e-6, min(z0_ocn,z1(i)))
 
 !  compute stability dependent exchange coefficients
 !  this portion of the code is presently suppressed
 !
 
-          if (wet(i) .and. fice(i) < 1.) then ! some open ocean
-            ustar_ocn(i) = sqrt(grav * z0_ocn / charnock)
+          if (wet(i)) then ! some open ocean
+            ustar(i,3) = sqrt(grav * z0_ocn / charnock)
 
 !**  test xubin's new z0
 
 !           ztmax  = z0max
 
-            restar = max(ustar_ocn(i)*z0max_ocn*visi, 0.000001)
+            restar = max(ustar(i,3)*z0max_ocn*visi, 0.000001)
 
 !           restar = log(restar)
 !           restar = min(restar,5.)
@@ -199,9 +182,9 @@
 
             tem1 = 1.0 - sigmaf(i)
             ztmax_lnd = z0max_lnd*exp( - tem1*tem1
-     &                     * czilc*ca*sqrt(ustar_lnd(i)*(0.01/1.5e-05)))
+     &                     * czilc*ca*sqrt(ustar(i,1)*(0.01/1.5e-05)))
             ztmax_ice = z0max_ice*exp( - tem1*tem1
-     &                     * czilc*ca*sqrt(ustar_ice(i)*(0.01/1.5e-05)))
+     &                     * czilc*ca*sqrt(ustar(i,2)*(0.01/1.5e-05)))
 
 
 ! mg, sfc-perts: add surface perturbations to ztmax/z0max ratio over land
@@ -217,35 +200,35 @@
           ztmax_ice  = max(ztmax_ice,1.0e-6)
 
 ! BWG begin "stability" block, 2019-03-23
-      if (wet(i) .and. fice(i) < 1.) then ! Some open ocean
-          call stability
+          if (wet(i)) then ! Some open ocean
+            call stability
 !  ---  inputs:                                                  
-     &     (z1(i),snwdph_ocn(i),thv1,wind(i),
-     &      z0max_ocn,ztmax_ocn,tvs_ocn,
+     &       (z1(i),snwdph(i,3),thv1,wind(i),
+     &        z0max_ocn,ztmax_ocn,tvs_ocn,
 !  ---  outputs:
-     &      rb_ocn(i),fm_ocn(i),fh_ocn(i),fm10_ocn(i),fh2_ocn(i),
-     &      cm_ocn(i),ch_ocn(i),stress_ocn(i),ustar_ocn(i))
-      endif ! Open ocean points
+     &        rb(i,3), fm(i,3), fh(i,3), fm10(i,3), fh2(i,3),
+     &        cm(i,3), ch(i,3), stress(i,3), ustar(i,3))
+          endif ! Open ocean points
 
-      if (dry(i)) then ! Some land
-          call stability
+          if (dry(i)) then ! Some land
+            call stability
 !  ---  inputs:                                                  
-     &     (z1(i),snwdph_lnd(i),thv1,wind(i),
-     &      z0max_lnd,ztmax_lnd,tvs_lnd,
+     &       (z1(i),snwdph(i,1),thv1,wind(i),
+     &        z0max_lnd,ztmax_lnd,tvs_lnd,
 !  ---  outputs:
-     &      rb_lnd(i),fm_lnd(i),fh_lnd(i),fm10_lnd(i),fh2_lnd(i),
-     &      cm_lnd(i),ch_lnd(i),stress_lnd(i),ustar_lnd(i))
-      endif ! Dry points
+     &        rb(i,1), fm(i,1), fh(i,1), fm10(i,1), fh2(i,1),
+     &        cm(i,1), ch(i,1), stress(i,1), ustar(i,1))
+          endif ! Dry points
 
-      if (icy(i)) then ! Some ice
-          call stability
+          if (icy(i)) then ! Some ice
+            call stability
 !  ---  inputs:                                                  
-     &     (z1(i),snwdph_ice(i),thv1,wind(i),
-     &      z0max_ice,ztmax_ice,tvs_ice,
+     &       (z1(i),snwdph(i,2),thv1,wind(i),
+     &        z0max_ice,ztmax_ice,tvs_ice,
 !  ---  outputs:
-     &      rb_ice(i),fm_ice(i),fh_ice(i),fm10_ice(i),fh2_ice(i),
-     &      cm_ice(i),ch_ice(i),stress_ice(i),ustar_ice(i))
-      endif ! Icy points
+     &        rb(i,2), fm(i,2), fh(i,2), fm10(i,2), fh2(i,2),
+     &        cm(i,2), ch(i,2), stress(i,2), ustar(i,2))
+          endif ! Icy points
 
 ! BWG: Everything from here to end of subroutine was after
 !      the stuff now put into "stability"
@@ -253,8 +236,8 @@
 !
 !  update z0 over ocean
 !
-          if (wet(i) .and. fice(i) < 1.) then
-            z0_ocn = (charnock / grav) * ustar_ocn(i) * ustar_ocn(i)
+          if (wet(i)) then
+            z0_ocn = (charnock / grav) * ustar(i,3) * ustar(i,3)
 
 ! mbek -- toga-coare flux algorithm
 !           z0 = (charnock / grav) * ustar(i)*ustar(i) +  arnu/ustar(i)
@@ -265,9 +248,9 @@
 !           z0 = arnu / (ustar(i) * ff ** pp)
 
             if (redrag) then
-              z0rl_ocn(i) = 100.0 * max(min(z0_ocn, z0s_max), 1.e-7)
+              z0rl(i,3) = 100.0 * max(min(z0_ocn, z0s_max), 1.e-7)
             else
-              z0rl_ocn(i) = 100.0 * max(min(z0_ocn,.1), 1.e-7)
+              z0rl(i,3) = 100.0 * max(min(z0_ocn,.1), 1.e-7)
             endif
           endif              ! end of if(open ocean)
         endif                ! end of if(flagiter) loop
@@ -329,8 +312,8 @@
           tem2    = 1.0 / ztmax
           fm      = log((z0max+z1) * tem1)
           fh      = log((ztmax+z1) * tem2)
-          fm10    = log((z0max+10.)   * tem1)
-          fh2     = log((ztmax+2.)    * tem2)
+          fm10    = log((z0max+10.)* tem1)
+          fh2     = log((ztmax+2.) * tem2)
           hlinf   = rb * fm * fm / fh
           hlinf   = min(max(hlinf,ztmin1),ztmax1)
 !
