@@ -130,6 +130,7 @@ module GFS_driver
     use module_ras,          only: ras_init
     use module_mp_thompson,  only: thompson_init
     use module_mp_wsm6,      only: wsm6init
+    use cires_ugwp_module,   only: cires_ugwp_init
 #endif
 
     !--- interface variables
@@ -443,22 +444,29 @@ module GFS_driver
       !--- NEED TO get the logic from the old phys/gloopb.f initialization area
     endif
 
-! For CCPP, this is called automatically as part of CCPP_physics_init
-#ifdef CCPP
-    if(Model%do_ca)then
-      print *,'Cellular automata cannot be used when CCPP is turned on until'
-      print *,'the stochastic physics pattern generation code has been pulled'
-      print *,'out of the FV3 repository and updated with the CCPP version.'
-      stop
+#ifndef CCPP
+!----  initialization of cires_ugwp .
+!     if ( Model%me == Model%master) print *,  ' VAY-nml ',  Model%fn_nml
+!     if ( Model%me == Model%master) print *,  ' VAY-nml2 ', Model%input_nml_file
+    if (Model%do_ugwp) then
+!     if ( Model%me == Model%master) print *,  ' VAY-nml ',  Model%fn_nml,
+!     Model%input_nml_file
+      call cires_ugwp_init(Model%me,      Model%master, Model%nlunit,  Init_parm%logunit, &
+                           Model%fn_nml,  Model%lonr,   Model%latr,    Model%levs,        &
+                           Init_parm%ak,  Init_parm%bk, p_ref,         Model%dtp,         &
+                           Model%cdmbgwd, Model%cgwf,   Model%prslrd0, Model%ral_ts)
     endif
-#else
+#endif
+
+! For CCPP, this is called automatically as part of CCPP_physics_init
+#ifndef CCPP
     !--- Initialize cellular automata
     if(Model%do_ca)then
     blocksize=size(Grid(1)%xlon)
-    call cellular_automata(Model%kdt,Statein,Coupling,Diag,nblks,Model%levs, &
-            Model%nca,Model%ncells,Model%nlives,Model%nfracseed,&
-            Model%nseed,Model%nthresh,Model%ca_global,Model%ca_sgs,Model%iseed_ca,&
-            Model%ca_smooth,Model%nspinup,blocksize)
+    call cellular_automata(Model%kdt, Statein, Coupling, Diag, nblks, Model%levs,     &
+                           Model%nca, Model%ncells, Model%nlives, Model%nfracseed,    &
+                           Model%nseed, Model%nthresh, Model%ca_global, Model%ca_sgs, &
+                           Model%iseed_ca, Model%ca_smooth, Model%nspinup, blocksize)
     endif
 #endif
 
@@ -500,9 +508,10 @@ module GFS_driver
 
 
     !--- local variables
-    integer :: nb, nblks, k, blocksize
+    integer :: nb, nblks, k, kdt_rad, blocksize
     real(kind=kind_phys) :: rinc(5)
-    real(kind=kind_phys) :: sec
+    real(kind=kind_phys) :: sec, sec_zero
+    real(kind=kind_phys), parameter :: cn_hr     = 3600._kind_phys
 
     nblks = size(blksz)
     !--- Model%jdat is being updated directly inside of FV3GFS_cap.F90
@@ -556,21 +565,38 @@ module GFS_driver
     endif
 
     !--- determine if diagnostics buckets need to be cleared
-    if (mod(Model%kdt,Model%nszero) == 1) then
-      do nb = 1,nblks
-        call Diag(nb)%rad_zero  (Model)
-        call Diag(nb)%phys_zero (Model)
+    sec_zero = nint(Model%fhzero*con_hr)
+    if (sec_zero >= nint(max(Model%fhswr,Model%fhlwr))) then
+      if (mod(Model%kdt,Model%nszero) == 1) then
+        do nb = 1,nblks
+          call Diag(nb)%rad_zero  (Model)
+          call Diag(nb)%phys_zero (Model)
     !!!!  THIS IS THE POINT AT WHICH DIAG%ZHOUR NEEDS TO BE UPDATED
-      enddo
+        enddo
+      endif
+    else
+      if (mod(Model%kdt,Model%nszero) == 1) then
+        do nb = 1,nblks
+          call Diag(nb)%phys_zero (Model)
+    !!!!  THIS IS THE POINT AT WHICH DIAG%ZHOUR NEEDS TO BE UPDATED
+        enddo
+      endif
+      kdt_rad = nint(min(Model%fhswr,Model%fhlwr)/Model%dtp)
+      if (mod(Model%kdt, kdt_rad) == 1) then
+        do nb = 1,nblks
+          call Diag(nb)%rad_zero  (Model)
+    !!!!  THIS IS THE POINT AT WHICH DIAG%ZHOUR NEEDS TO BE UPDATED
+        enddo
+      endif
     endif
     call run_stochastic_physics(nblks,Model,Grid(:),Coupling(:))
 
     if(Model%do_ca)then
-    blocksize=size(Grid(1)%xlon)
-    call cellular_automata(Model%kdt,Statein,Coupling,Diag,nblks,Model%levs, &
-            Model%nca,Model%ncells,Model%nlives,Model%nfracseed,&
-            Model%nseed,Model%nthresh,Model%ca_global,Model%ca_sgs,Model%iseed_ca,&
-            Model%ca_smooth,Model%nspinup,blocksize)
+      blocksize = size(Grid(1)%xlon)
+      call cellular_automata(Model%kdt,Statein,Coupling,Diag,nblks,Model%levs,      &
+              Model%nca,Model%ncells,Model%nlives,Model%nfracseed,                  &
+              Model%nseed,Model%nthresh,Model%ca_global,Model%ca_sgs,Model%iseed_ca,&
+              Model%ca_smooth,Model%nspinup,blocksize)
     endif
 
 

@@ -362,7 +362,7 @@
 !    dqsdt2  - slope of sat specific humidity curve at t=sfctmp (kg kg-1 k-1)
 
           sfcspd = wind(i)
-          q2sat =  qs1(i)
+          q2sat  =  qs1(i)
           dqsdt2 = q2sat * a23m4/(sfctmp-a4)**2
 
 !   4. canopy/soil characteristics (s):
@@ -377,26 +377,25 @@
 !    snoalb  - upper bound on maximum albedo over deep snow          -> snoalb1d
 !    tbot    - bottom soil temperature (local yearly-mean sfc air temp)
 
-          vtype = vegtype(i)
-          stype = soiltyp(i)
-          slope = slopetyp(i)
-          shdfac= sigmaf(i)
+          vtype  = vegtype(i)
+          stype  = soiltyp(i)
+          slope  = slopetyp(i)
+          shdfac = sigmaf(i)
 
 !  perturb vegetation fraction that goes into sflx, use the same
 !  perturbation strategy as for albedo (percentile matching)
-        vegfp  = vegfpert(i)                    ! sfc-perts, mgehne
-        ! sfc perts, mgehne
-        if (pertvegf(1)>0.0) then
+          vegfp  = vegfpert(i)                    ! sfc-perts, mgehne
+          if (pertvegf(1) > 0.0) then
                 ! compute beta distribution parameters for vegetation fraction
                 mv = shdfac
                 sv = pertvegf(1)*mv*(1.-mv)
-                alphav = mv*mv*(1.-mv)/(sv*sv)-mv
-                betav  = alphav*(1.-mv)/mv
-                ! compute beta distribution value corresponding
-                ! to the given percentile albPpert to use as new albedo
+                alphav = mv*mv*(1.0-mv)/(sv*sv)-mv
+                betav  = alphav*(1.0-mv)/mv
+! compute beta distribution value corresponding
+! to the given percentile albPpert to use as new albedo
                 call ppfbet(vegfp,alphav,betav,iflag,vegftmp)
                 shdfac = vegftmp
-        endif
+          endif
 ! *** sfc-perts, mgehne
 
           shdmin1d = shdmin(i)
@@ -420,7 +419,7 @@
 !    ch      - surface exchange coefficient for heat and moisture (m s-1) -> chx
 !    cm      - surface exchange coefficient for momentum (m s-1)          -> cmx
 
-          cmc = canopy(i) * 0.001            ! convert from mm to m
+          cmc  = canopy(i) * 0.001           ! convert from mm to m
           tsea = tsurf(i)                    ! clu_q2m_iter
 
           do k = 1, km

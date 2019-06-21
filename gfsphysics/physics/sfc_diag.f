@@ -1,8 +1,8 @@
       module module_sfc_diag
       contains
-      subroutine sfc_diag(im,ps,u1,v1,t1,q1,
-     &                    tskin,qsurf,f10m,u10m,v10m,t2m,q2m,
-     &                    prslki,evap,fm,fh,fm10,fh2)
+      subroutine sfc_diag(im,ps,u1,v1,t1,q1,prslki,
+     &                    evap,fm,fh,fm10,fh2,tskin,qsurf,
+     &                    f10m,u10m,v10m,t2m,q2m)
 !
       use machine , only : kind_phys
       use funcphys, only : fpvs
@@ -12,10 +12,10 @@
 !
       integer, intent(IN) :: im
       real, dimension(im), intent(IN)  ::
-     &                        ps,   u1,   v1,   t1,  q1,  tskin,  qsurf
+     &      ps,   u1,   v1,   t1,  q1,  tskin,  qsurf, 
+     &      fm, fm10, fh, fh2, prslki, evap
       real, dimension(im), intent(OUT) ::
-     &                       f10m, u10m, v10m, t2m, q2m, prslki, evap,
-     &                       fm,   fh,   fm10, fh2
+     &      f10m, u10m, v10m, t2m, q2m
 !
 !     locals
 !

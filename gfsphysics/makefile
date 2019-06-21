@@ -61,12 +61,13 @@ SRCS_f =  \
 	   ./physics/dcyc2.pre.rad.f                                                 \
 	   ./physics/efield.f                                                        \
 	   ./physics/get_prs.f                                                       \
-	   ./physics/gfs_phy_tracer_config.f                                         \
 	   ./physics/gocart_tracer_config_stub.f                                     \
 	   ./physics/gscond.f                                                        \
 	   ./physics/gscondp.f                                                       \
 	   ./physics/gwdc.f                                                          \
 	   ./physics/gwdps.f                                                         \
+	   ./physics/ugwp_driver_v0.f                                                \
+	   ./physics/cires_orowam2017.f                                              \
 	   ./physics/h2o_def.f                                                       \
 	   ./physics/h2oc.f                                                          \
 	   ./physics/h2ohdc.f                                                        \
@@ -131,11 +132,13 @@ SRCS_f =  \
 	   ./physics/sascnv.f                                                        \
 	   ./physics/sascnvn.f                                                       \
 	   ./physics/satmedmfvdif.f                                                  \
+	   ./physics/satmedmfvdifq.f                                                 \
 	   ./physics/set_soilveg.f                                                   \
 	   ./physics/sfc_cice.f                                                      \
 	   ./physics/sfc_diag.f                                                      \
 	   ./physics/sfc_diff.f                                                      \
 	   ./physics/sfc_drv.f                                                       \
+	   ./physics/sfc_noahmp_drv.f                                                \
 	   ./physics/sfc_nst.f                                                       \
 	   ./physics/sfc_ocean.f                                                     \
 	   ./physics/sfc_sice.f                                                      \
@@ -158,6 +161,10 @@ SRCS_f90 = \
 	   ./physics/module_nst_parameters.f90                                       \
 	   ./physics/module_nst_water_prop.f90                                       \
 	   ./physics/ozinterp.f90                                                    \
+	   ./physics/module_wrf_utl.f90                                              \
+	   ./physics/noahmp_tables.f90                                               \
+	   ./physics/module_sf_noahmplsm.f90                                         \
+	   ./physics/module_sf_noahmp_glacier.f90                                    \
 	   ./physics/iccninterp.f90                                                  \
 	   ./physics/aerinterp.f90                                                   \
 	   ./physics/wam_f107_kp_mod.f90
@@ -166,6 +173,7 @@ SRCS_F = \
 	   ./physics/aer_cloud.F                                                     \
 	   ./physics/cldmacro.F                                                      \
 	   ./physics/cldwat2m_micro.F                                                \
+	   ./physics/gfs_phy_tracer_config.F                                         \
 	   ./physics/machine.F                                                       \
 	   ./physics/num_parthds.F                                                   \
 	   ./physics/sfcsub.F                                                        \
@@ -174,6 +182,14 @@ SRCS_F = \
 SRCS_F90 = \
 	   ./physics/GFDL_parse_tracers.F90                                          \
 	   ./physics/gcycle.F90                                                      \
+  	   ./physics/cires_ugwp_initialize.F90                                       \
+	   ./physics/cires_ugwp_module.F90                                           \
+	   ./physics/cires_ugwp_utils.F90                                            \
+	   ./physics/cires_ugwp_triggers.F90                                         \
+	   ./physics/cires_ugwp_solvers.F90                                          \
+	   ./physics/cires_vert_lsatdis.F90                                          \
+	   ./physics/cires_vert_orodis.F90                                           \
+	   ./physics/cires_vert_wmsdis.F90                                           \
 	   ./physics/gfdl_cloud_microphys.F90                                        \
 	   ./physics/micro_mg_utils.F90                                              \
 	   ./physics/micro_mg2_0.F90                                                 \
