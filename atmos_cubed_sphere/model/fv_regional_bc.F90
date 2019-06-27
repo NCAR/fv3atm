@@ -2727,7 +2727,6 @@ subroutine remap_scalar_nggps_regional_bc(Atm                         &
   graupel = get_tracer_index(MODEL_ATMOS, 'graupel')
   cld_amt = get_tracer_index(MODEL_ATMOS, 'cld_amt')
   o3mr    = get_tracer_index(MODEL_ATMOS, 'o3mr')
-  ! DH* TODO - OTHER TRACERS FOR THOMPSON, MG etc? *DH
 
   k2 = max(10, km/2)
 
@@ -5204,7 +5203,6 @@ subroutine remap_scalar_nggps_regional_bc(Atm                         &
    snowwat = get_tracer_index(MODEL_ATMOS, 'snowwat')
    graupel = get_tracer_index(MODEL_ATMOS, 'graupel')
    cld_amt = get_tracer_index(MODEL_ATMOS, 'cld_amt')
-   ! DH* OTHER TRACERS FOR THOMPSON, MG ? *DH
 !
    source: if (trim(data_source) == 'FV3GFS GAUSSIAN NEMSIO FILE') then
 !
