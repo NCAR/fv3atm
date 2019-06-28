@@ -516,7 +516,7 @@ module FV3GFS_io_mod
     nvar_s2o = 18
 #ifdef CCPP
     if (Model%lsm == Model%lsm_ruc .and. warm_start) then
-      nvar_s2r = 7
+      nvar_s2r = 6
       nvar_s3  = 5
     else
       nvar_s2r = 0
@@ -764,9 +764,8 @@ module FV3GFS_io_mod
         sfc_name2(nvar_s2m+20) = 'clw_surf'
         sfc_name2(nvar_s2m+21) = 'qwv_surf'
         sfc_name2(nvar_s2m+22) = 'tsnow'
-        sfc_name2(nvar_s2m+23) = 'sr'
-        sfc_name2(nvar_s2m+24) = 'snowfall_acc'
-        sfc_name2(nvar_s2m+25) = 'swe_snowfall_acc'
+        sfc_name2(nvar_s2m+23) = 'snowfall_acc'
+        sfc_name2(nvar_s2m+24) = 'swe_snowfall_acc'
 #endif
       endif
 
@@ -952,9 +951,8 @@ module FV3GFS_io_mod
           Sfcprop(nb)%clw_surf(ix)   = sfc_var2(i,j,nvar_s2m+20)
           Sfcprop(nb)%qwv_surf(ix)   = sfc_var2(i,j,nvar_s2m+21)
           Sfcprop(nb)%tsnow(ix)      = sfc_var2(i,j,nvar_s2m+22)
-          Sfcprop(nb)%sr(ix)         = sfc_var2(i,j,nvar_s2m+23)
-          Sfcprop(nb)%snowfallac(ix) = sfc_var2(i,j,nvar_s2m+24)
-          Sfcprop(nb)%acsnow(ix)     = sfc_var2(i,j,nvar_s2m+25)
+          Sfcprop(nb)%snowfallac(ix) = sfc_var2(i,j,nvar_s2m+23)
+          Sfcprop(nb)%acsnow(ix)     = sfc_var2(i,j,nvar_s2m+24)
         elseif (Model%lsm == Model%lsm_noahmp) then
           !--- Extra Noah MP variables
 #else
@@ -1448,7 +1446,7 @@ module FV3GFS_io_mod
     nvar2o = 18
 #ifdef CCPP
     if (Model%lsm == Model%lsm_ruc) then
-      nvar2r = 7
+      nvar2r = 6
       nvar3  = 5
     else
       nvar2r = 0
@@ -1577,9 +1575,8 @@ module FV3GFS_io_mod
         sfc_name2(nvar2m+20) = 'clw_surf'
         sfc_name2(nvar2m+21) = 'qwv_surf'
         sfc_name2(nvar2m+22) = 'tsnow'
-        sfc_name2(nvar2m+23) = 'sr'
-        sfc_name2(nvar2m+24) = 'snowfall_acc'
-        sfc_name2(nvar2m+25) = 'swe_snowfall_acc'
+        sfc_name2(nvar2m+23) = 'snowfall_acc'
+        sfc_name2(nvar2m+24) = 'swe_snowfall_acc'
       else if(Model%lsm == Model%lsm_noahmp) then
 #else
 ! Only needed when Noah MP LSM is used - 29 2D
@@ -1777,9 +1774,8 @@ module FV3GFS_io_mod
           sfc_var2(i,j,nvar2m+20) = Sfcprop(nb)%clw_surf(ix)
           sfc_var2(i,j,nvar2m+21) = Sfcprop(nb)%qwv_surf(ix)
           sfc_var2(i,j,nvar2m+22) = Sfcprop(nb)%tsnow(ix)
-          sfc_var2(i,j,nvar2m+23) = Sfcprop(nb)%sr(ix)
-          sfc_var2(i,j,nvar2m+24) = Sfcprop(nb)%snowfallac(ix)
-          sfc_var2(i,j,nvar2m+25) = Sfcprop(nb)%acsnow(ix)
+          sfc_var2(i,j,nvar2m+23) = Sfcprop(nb)%snowfallac(ix)
+          sfc_var2(i,j,nvar2m+24) = Sfcprop(nb)%acsnow(ix)
         else if (Model%lsm == Model%lsm_noahmp) then
 
 #else
