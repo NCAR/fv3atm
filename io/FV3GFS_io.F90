@@ -760,7 +760,7 @@ module FV3GFS_io_mod
         sfc_name2(nvar_s2m+47) =  'rechxy'
 #ifdef CCPP
       else if (Model%lsm == Model%lsm_ruc .and. warm_start) then
-        sfc_name2(nvar_s2m+19) = 'wet1'
+        sfc_name2(nvar_s2m+19) = 'wetness'
         sfc_name2(nvar_s2m+20) = 'clw_surf'
         sfc_name2(nvar_s2m+21) = 'qwv_surf'
         sfc_name2(nvar_s2m+22) = 'tsnow'
@@ -948,7 +948,7 @@ module FV3GFS_io_mod
 #ifdef CCPP
         if (Model%lsm == Model%lsm_ruc .and. warm_start) then
           !--- Extra RUC variables
-          Sfcprop(nb)%wet1(ix)       = sfc_var2(i,j,nvar_s2m+19)
+          Sfcprop(nb)%wetness(ix)    = sfc_var2(i,j,nvar_s2m+19)
           Sfcprop(nb)%clw_surf(ix)   = sfc_var2(i,j,nvar_s2m+20)
           Sfcprop(nb)%qwv_surf(ix)   = sfc_var2(i,j,nvar_s2m+21)
           Sfcprop(nb)%tsnow(ix)      = sfc_var2(i,j,nvar_s2m+22)
@@ -1573,7 +1573,7 @@ module FV3GFS_io_mod
       sfc_name2(nvar2m+18) = 'qrain'
 #ifdef CCPP
       if (Model%lsm == Model%lsm_ruc) then
-        sfc_name2(nvar2m+19) = 'wet1'
+        sfc_name2(nvar2m+19) = 'wetness'
         sfc_name2(nvar2m+20) = 'clw_surf'
         sfc_name2(nvar2m+21) = 'qwv_surf'
         sfc_name2(nvar2m+22) = 'tsnow'
@@ -1773,7 +1773,7 @@ module FV3GFS_io_mod
 #ifdef CCPP
         if (Model%lsm == Model%lsm_ruc) then
           !--- Extra RUC variables
-          sfc_var2(i,j,nvar2m+19) = Sfcprop(nb)%wet1(ix)
+          sfc_var2(i,j,nvar2m+19) = Sfcprop(nb)%wetness(ix)
           sfc_var2(i,j,nvar2m+20) = Sfcprop(nb)%clw_surf(ix)
           sfc_var2(i,j,nvar2m+21) = Sfcprop(nb)%qwv_surf(ix)
           sfc_var2(i,j,nvar2m+22) = Sfcprop(nb)%tsnow(ix)
