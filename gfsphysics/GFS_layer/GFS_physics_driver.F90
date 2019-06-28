@@ -6,7 +6,7 @@ module module_physics_driver
                                    con_rerth, con_pi, rhc_max, dxmin,   &
                                    dxinv, pa2mb, rlapse, con_eps,       &
                                    con_epsm1, PQ0, A2A, A3, A4, RHmin,  &
-                                   tgice => con_tice, cimin
+                                   tgice => con_tice
                                    
   use cs_conv,               only: cs_convr
   use ozne_def,              only: levozp,  oz_coeff, oz_pres
@@ -28,7 +28,7 @@ module module_physics_driver
   use module_sfc_diff,  only: sfc_diff
   use module_sfc_ocean, only: sfc_ocean
   use module_sfc_drv,   only: sfc_drv
-  use module_sfc_sice,  only: sfc_sice
+  use module_sfc_sice,  only: sfc_sice, cimin
   use module_sfc_cice,  only: sfc_cice
   use module_sfc_nst,   only: sfc_nst
   use module_sfc_diag,  only: sfc_diag

@@ -153,8 +153,10 @@
 !> temperature the H.G.Nuc. ice starts
   real(kind=kind_phys), parameter:: con_thgni  =-38.15_kind_phys
 
+#ifdef CCPP
 !> minimum ice concentration
   real(kind=kind_phys),parameter:: cimin      =0.15
+#endif
 
 !> \name Miscellaneous physics related constants (Moorthi - Jul 2014)
 

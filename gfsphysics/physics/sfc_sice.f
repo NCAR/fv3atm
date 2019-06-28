@@ -24,8 +24,9 @@
      &                      tgice => con_tice,   cp => con_cp,          &
      &                        eps => con_eps, epsm1 => con_epsm1,       &
      &                     rvrdm1 => con_fvirt, t0c => con_t0c,         &
-     &                         rd => con_rd,  cimin
+     &                         rd => con_rd
       implicit none
+      real (kind=kind_phys), parameter :: cimin=0.15 !  --- minimum ice concentration
       contains
 !-----------------------------------
       subroutine sfc_sice                                               &
