@@ -693,7 +693,7 @@ module GFS_typedefs
 !! | GFS_Data(cdata%blk_no)%Coupling%ca_shal        |                                                                                                |                                                        |               |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Coupling%ca_rad         |                                                                                                |                                                        |               |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Coupling%ca_micro       |                                                                                                |                                                        |               |    1 | real    | kind_phys | none   | F        |
-!! | GFS_Data(cdata%blk_no)%Coupling%cape           | convective_available_potential_energy_for_coupling                                             | convective available potential energy for coupling DH* CHECK THIS DOESN'T MAKE SENSE!!! *DH | m2 s-2        |    1 | real    | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Coupling%cape           | convective_available_potential_energy_for_coupling                                             | convective available potential energy for coupling     | m2 s-2        |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Coupling%shum_wts       | weights_for_stochastic_shum_perturbation                                                       | weights for stochastic shum perturbation               | none          |    2 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Coupling%sppt_wts       | weights_for_stochastic_sppt_perturbation                                                       | weights for stochastic sppt perturbation               | none          |    2 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Coupling%skebu_wts      | weights_for_stochastic_skeb_perturbation_of_x_wind                                             | weights for stochastic skeb perturbation of x wind     | none          |    2 | real    | kind_phys | none   | F        |
@@ -2092,7 +2092,7 @@ module GFS_typedefs
 !! | GFS_Data(cdata%blk_no)%Intdiag%dt3dt(:,:,5)         | cumulative_change_in_temperature_due_to_shal_convection                   | cumulative change in temperature due to shal conv.                     | K             |    2 | real        | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Intdiag%dt3dt(:,:,6)         | cumulative_change_in_temperature_due_to_microphysics                      | cumulative change in temperature due to microphysics                   | K             |    2 | real        | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Intdiag%dt3dt(:,:,7)         | cumulative_change_in_temperature_due_to_orographic_gravity_wave_drag      | cumulative change in temperature due to orographic gravity wave drag   | K             |    2 | real        | kind_phys | none   | F        |
-!! | GFS_Data(cdata%blk_no)%Intdiag%dq3dt                | cumulative_change_in_water_vapor_specific_humidity_due_to_physics         | cumulative change in water vapor specific humidity due to physics      | kg kg-1       |    3 | real        | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Intdiag%dq3dt                |                                                                           | cumulative change in water vapor specific humidity due to physics      | kg kg-1       |    3 | real        | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Intdiag%dq3dt(:,:,1)         | cumulative_change_in_water_vapor_specific_humidity_due_to_PBL             | cumulative change in water vapor specific humidity due to PBL          | kg kg-1       |    2 | real        | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Intdiag%dq3dt(:,:,2)         | cumulative_change_in_water_vapor_specific_humidity_due_to_deep_convection | cumulative change in water vapor specific humidity due to deep conv.   | kg kg-1       |    2 | real        | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Intdiag%dq3dt(:,:,3)         | cumulative_change_in_water_vapor_specific_humidity_due_to_shal_convection | cumulative change in water vapor specific humidity due to shal conv.   | kg kg-1       |    2 | real        | kind_phys | none   | F        |
@@ -3660,7 +3660,6 @@ module GFS_typedefs
     endif
 
     !--- needed for Thompson's aerosol option
-! DH* CHECK IF THIS WORKS WITH CCPP WHEN ltaerosol is false! *DH
     if(Model%imp_physics == Model%imp_physics_thompson .and. Model%ltaerosol) then 
       allocate (Coupling%nwfa2d (IM))
       allocate (Coupling%nifa2d (IM))
@@ -4346,10 +4345,8 @@ module GFS_typedefs
 !--- microphysical switch
     Model%ncld             = ncld
     Model%imp_physics      = imp_physics
-    ! DH*
     ! turn off ICCN interpolation when MG2/3 are not used
     if (.not. Model%imp_physics==Model%imp_physics_mg) Model%iccn = .false.
-    ! *DH
 !--- Zhao-Carr MP parameters
     Model%psautco          = psautco
     Model%prautco          = prautco
@@ -5957,28 +5954,19 @@ module GFS_typedefs
     allocate (Diag%ca_micro  (IM))
     
     !--- 3D diagnostics
-#ifdef CCPP
-    ! need to allocate these arrays to avoid Fortran runtime errors when
-    ! trying to add slices of non-allocated fields to the CCPP data structure
-#else
     if (Model%ldiag3d) then
-#endif
       allocate (Diag%du3dt  (IM,Model%levs,4))
       allocate (Diag%dv3dt  (IM,Model%levs,4))
       allocate (Diag%dt3dt  (IM,Model%levs,7))
-      ! DH* FIX BEFORE MERGE TO VLAB MASTER
-      ! DH* temporary allocate Diag%dq3dt with size (IM,Model%levs,9) to avoid crash on MacOSX/GNU (and others?) in PROD mode"
       allocate (Diag%dq3dt  (IM,Model%levs,9))
-      ! *DH
 !      allocate (Diag%dq3dt  (IM,Model%levs,oz_coeff+5))
 !--- needed to allocate GoCart coupling fields
 !      allocate (Diag%upd_mf (IM,Model%levs))
 !      allocate (Diag%dwn_mf (IM,Model%levs))
 !      allocate (Diag%det_mf (IM,Model%levs))
 !      allocate (Diag%cldcov (IM,Model%levs))
-#ifndef CCPP
     endif
-#endif
+
 !vay-2018
     if (Model%ldiag_ugwp) then
       allocate (Diag%du3dt_dyn  (IM,Model%levs) )

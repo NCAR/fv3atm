@@ -81,10 +81,13 @@ fv3_cap.o: fv3_cap.F90
 
 DEPEND_FILES = time_utils.F90 module_fv3_config.F90 atmos_model.F90 module_fcst_grid_comp.F90 fv3_cap.F90 coupler_main.F90
 
+# For CCPP, check if SIONlib is used and set linker flags accordingly
+ifneq (,$(findstring CCPP,$(CPPDEFS)))
 ifneq (,$(findstring SION,$(CPPDEFS)))
   SIONLIB_LINK_FLAGS = $(SIONLIB_LIB)
 else
   SIONLIB_LINK_FLAGS =
+endif
 endif
 
 # Remove stochastic_physics from CCPP build
@@ -120,7 +123,7 @@ esmf_make_fragment:
 	#@echo "ESMF_DEP_INCPATH   = $(PWD)/nems_dir" >> fv3.mk
 	@echo "ESMF_DEP_INCPATH   = $(PWD) $(addprefix $(PWD)/, nems_dir atmos_cubed_sphere io fms gfsphysics cpl ipd)" >> fv3.mk
 	@echo "ESMF_DEP_CMPL_OBJS ="                 >> fv3.mk
-	@echo "ESMF_DEP_LINK_OBJS = $(addprefix $(PWD)/nems_dir/, libfv3cap.a libfv3core.a libfv3io.a libipd.a lib$(PHYSP)phys.a libfv3cpl.a libstochastic_physics.a) $(SIONLIB_LINK_FLAGS)" >> fv3.mk
+	@echo "ESMF_DEP_LINK_OBJS = $(addprefix $(PWD)/nems_dir/, libfv3cap.a libfv3core.a libfv3io.a libipd.a lib$(PHYSP)phys.a libfv3cpl.a libstochastic_physics.a)" >> fv3.mk
 	@echo "ESMF_DEP_SHRD_PATH ="                 >> fv3.mk
 	@echo "ESMF_DEP_SHRD_LIBS ="                 >> fv3.mk
 	@echo

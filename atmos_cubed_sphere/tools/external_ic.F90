@@ -2987,7 +2987,6 @@ contains
 #else
   integer:: o3mr
 #endif
-! DH* TODO DO WE NEED THIS FOR THOMPSON AS WELL??? *DH
   integer:: i,j,k,l,m,k2, iq
   integer:: is,  ie,  js,  je
 

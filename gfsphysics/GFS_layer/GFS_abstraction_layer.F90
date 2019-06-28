@@ -25,8 +25,7 @@ module physics_abstraction_layer
                              diagnostic_populate  =>  GFS_externaldiag_populate
 
 #ifdef CCPP
-  use GFS_driver,      only: initialize       =>  GFS_initialize,       &
-                             finalize         =>  GFS_finalize
+  use GFS_driver,      only: initialize       =>  GFS_initialize
 #else
   use GFS_driver,      only: initialize       =>  GFS_initialize,       &
                              time_vary_step   =>  GFS_time_vary_step,   &
@@ -72,10 +71,12 @@ module physics_abstraction_layer
 !  public variables 
 !------------------
 #ifndef CCPP
+  ! DH* even in the non-CCPP build, these don't get used (same for NAM physics)
   public  num_time_vary_steps
   public  num_rad_steps
-#endif
   public  num_phys_steps
+  ! *DH
+#endif
 
 !--------------------------
 !  public physics functions
@@ -84,9 +85,7 @@ module physics_abstraction_layer
 #ifndef CCPP
   public  time_vary_step
   public  radiation_step1
-#endif
   public  physics_step1
-#ifndef CCPP
   public  physics_step2
 #endif
 

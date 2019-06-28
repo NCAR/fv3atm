@@ -97,9 +97,6 @@ module GFS_driver
   public  GFS_physics_driver          !< physics_driver (was gbphys)
   public  GFS_stochastic_driver       !< stochastic physics
 #endif
-#ifdef CCPP
-  public  GFS_finalize
-#endif
 
   CONTAINS
 !*******************************************************************************************
@@ -1021,14 +1018,6 @@ module GFS_driver
     enddo
 
   end subroutine GFS_grid_populate
-
-#ifdef CCPP
-!-------------
-! GFS finalize
-!-------------
-  subroutine GFS_finalize ()
-  end subroutine GFS_finalize
-#endif
 
 end module GFS_driver
 

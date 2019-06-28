@@ -97,9 +97,7 @@ use CCPP_data,          only: ccpp_suite,                      &
                               IPD_control => GFS_control,      &
                               IPD_data => GFS_data,            &
                               IPD_interstitial => GFS_interstitial
-use IPD_driver,         only: IPD_initialize,                  &
-                              IPD_initialize_rst,              &
-                              IPD_step, IPD_finalize
+use IPD_driver,         only: IPD_initialize, IPD_initialize_rst
 use CCPP_driver,        only: CCPP_step, non_uniform_blocks
 #else
 use IPD_driver,         only: IPD_initialize, IPD_initialize_rst, IPD_step
@@ -337,18 +335,10 @@ subroutine update_atmos_radiation_physics (Atmos)
       Func0d => physics_step1
 !$OMP parallel do default (none) &
 !$OMP            schedule (dynamic,1), &
-#ifdef CCPP
-!$OMP            shared   (Atm_block, IPD_Control, IPD_Data, IPD_Diag, IPD_Restart, IPD_Interstitial, Func0d) &
-#else
 !$OMP            shared   (Atm_block, IPD_Control, IPD_Data, IPD_Diag, IPD_Restart, Func0d) &
-#endif
 !$OMP            private  (nb)
       do nb = 1,Atm_block%nblks
-#ifdef CCPP
-        call IPD_step (IPD_Control, IPD_Data(nb:nb), IPD_Diag, IPD_Restart, IPD_Interstitial, IPD_func0d=Func0d)
-#else
         call IPD_step (IPD_Control, IPD_Data(nb:nb), IPD_Diag, IPD_Restart, IPD_func0d=Func0d)
-#endif
       enddo
 #endif
       call mpp_clock_end(physClock)
