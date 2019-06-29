@@ -23,6 +23,10 @@ CPPDEFS += -DNEW_TAUCTMAX -DSMALL_PE -DNEMS_GSM -DINTERNAL_FILE_NML
 
 # CCPP dynamic and static builds
 ifneq (,$(findstring CCPP,$(CPPDEFS)))
+# Set flags for 32-bit dynamics build
+ifeq ($(DYN32),Y)
+CPPDEFS += -DOVERLOAD_R4
+endif
 # Set CCPP static api for static build
 ifneq (,$(findstring STATIC,$(CPPDEFS)))
     CCPP_STATIC_API = ./CCPP_layer/ccpp_static_api.F90
