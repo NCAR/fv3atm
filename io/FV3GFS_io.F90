@@ -657,16 +657,28 @@ module FV3GFS_io_mod
       allocate(sfc_var2(nx,ny,nvar_s2m+nvar_s2o+nvar_s2mp))
       allocate(sfc_var3(nx,ny,1:4,1:3))
 #endif
+#ifdef CCPP
+      if (Model%lsm == Model%lsm_noahmp) then
+#endif
       allocate(sfc_var3sn(nx,ny,-2:0,4:6))
       allocate(sfc_var3eq(nx,ny,1:4,7:7))
       allocate(sfc_var3zn(nx,ny,-2:4,8:8))
+#ifdef CCPP
+      end if
+#endif
 
       sfc_var2   = -9999._kind_phys
       sfc_var3   = -9999._kind_phys
+#ifdef CCPP
+      if (Model%lsm == Model%lsm_noahmp) then
+#endif
       sfc_var3sn = -9999._kind_phys
       sfc_var3eq = -9999._kind_phys
       sfc_var3zn = -9999._kind_phys
- 
+#ifdef CCPP
+      end if
+#endif
+
       !--- names of the 2D variables to save
       sfc_name2(1)  = 'slmsk'
       sfc_name2(2)  = 'tsea'    !tsfc
@@ -1475,9 +1487,6 @@ module FV3GFS_io_mod
           deallocate(sfc_name3)
           deallocate(sfc_var2)
           deallocate(sfc_var3)
-          deallocate(sfc_var3sn)
-          deallocate(sfc_var3eq)
-          deallocate(sfc_var3zn)
           call free_restart_type(Sfc_restart)
         end if
       end if
@@ -1501,15 +1510,27 @@ module FV3GFS_io_mod
       allocate(sfc_var2(nx,ny,nvar2m+nvar2o+nvar2mp))
       allocate(sfc_var3(nx,ny,Model%lsoil,nvar3))
 #endif
+#ifdef CCPP
+      if (Model%lsm == Model%lsm_noahmp) then
+#endif
       allocate(sfc_var3sn(nx,ny,-2:0,4:6))
       allocate(sfc_var3eq(nx,ny,1:4,7:7))
       allocate(sfc_var3zn(nx,ny,-2:4,8:8))
+#ifdef CCPP
+      end if
+#endif
 
       sfc_var2 = -9999._kind_phys
       sfc_var3 = -9999._kind_phys
+#ifdef CCPP
+      if (Model%lsm == Model%lsm_noahmp) then
+#endif
       sfc_var3sn = -9999._kind_phys
       sfc_var3eq = -9999._kind_phys
       sfc_var3zn = -9999._kind_phys
+#ifdef CCPP
+      end if
+#endif
 
 
       !--- names of the 2D variables to save
