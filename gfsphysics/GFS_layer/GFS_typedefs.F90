@@ -399,11 +399,9 @@ module GFS_typedefs
 !! | GFS_Data(cdata%blk_no)%Sfcprop%f10m        | ratio_of_wind_at_lowest_model_layer_and_wind_at_10m                    | ratio of sigma level 1 wind and 10m wind               | ratio         |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Sfcprop%tprcp       | nonnegative_lwe_thickness_of_precipitation_amount_on_dynamics_timestep | total precipitation amount in each time step           | m             |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Sfcprop%srflag      | flag_for_precipitation_type                                            | snow/rain flag for precipitation                       | flag          |    1 | real    | kind_phys | none   | F        |
-!! | GFS_Data(cdata%blk_no)%Sfcprop%sr          | ratio_of_snowfall_to_rainfall                                          | snow ratio: ratio of snow to total precipitation       | frac          |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Sfcprop%slc         | volume_fraction_of_unfrozen_soil_moisture                              | liquid soil moisture                                   | frac          |    2 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Sfcprop%smc         | volume_fraction_of_soil_moisture                                       | total soil moisture                                    | frac          |    2 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Sfcprop%stc         | soil_temperature                                                       | soil temperature                                       | K             |    2 | real    | kind_phys | none   | F        |
-!! | GFS_Data(cdata%blk_no)%Sfcprop%wet1        | normalized_soil_wetness                                                | normalized soil wetness                                | frac          |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Sfcprop%t2m         | temperature_at_2m                                                      | 2 meter temperature                                    | K             |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Sfcprop%th2m        | potential_temperature_at_2m                                            | 2 meter potential temperature                          | K             |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Sfcprop%q2m         | specific_humidity_at_2m                                                | 2 meter specific humidity                              | kg kg-1       |    1 | real    | kind_phys | none   | F        |
@@ -425,6 +423,7 @@ module GFS_typedefs
 !! | GFS_Data(cdata%blk_no)%Sfcprop%ifd         | index_of_dtlm_start                                                    | index to start dtlm run or not                         | index         |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Sfcprop%dt_cool     | sub-layer_cooling_amount                                               | sub-layer cooling amount                               | K             |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Sfcprop%qrain       | sensible_heat_flux_due_to_rainfall                                     | sensible heat flux due to rainfall                     | W             |    1 | real    | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Sfcprop%wetness     | normalized_soil_wetness_for_land_surface_model                         | normalized soil wetness for lsm                        | frac          |    1 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Sfcprop%sh2o        | volume_fraction_of_unfrozen_soil_moisture_for_land_surface_model       | volume fraction of unfrozen soil moisture for lsm      | frac          |    2 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Sfcprop%keepsmfr    | volume_fraction_of_frozen_soil_moisture_for_land_surface_model         | volume fraction of frozen soil moisture for lsm        | frac          |    2 | real    | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Sfcprop%smois       | volume_fraction_of_soil_moisture_for_land_surface_model                | volumetric fraction of soil moisture for lsm           | frac          |    2 | real    | kind_phys | none   | F        |
@@ -504,11 +503,9 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: f10m   (:)   => null()  !< fm at 10m - Ratio of sigma level 1 wind and 10m wind
     real (kind=kind_phys), pointer :: tprcp  (:)   => null()  !< sfc_fld%tprcp - total precipitation
     real (kind=kind_phys), pointer :: srflag (:)   => null()  !< sfc_fld%srflag - snow/rain flag for precipitation
-    real (kind=kind_phys), pointer :: sr     (:)   => null()  !< snow ratio : ratio of snow to total precipitation
     real (kind=kind_phys), pointer :: slc    (:,:) => null()  !< liquid soil moisture
     real (kind=kind_phys), pointer :: smc    (:,:) => null()  !< total soil moisture
     real (kind=kind_phys), pointer :: stc    (:,:) => null()  !< soil temperature
-    real (kind=kind_phys), pointer :: wet1   (:)   => null()  !< normalized soil wetness
 
 !--- Out
     real (kind=kind_phys), pointer :: t2m    (:)   => null()  !< 2 meter temperature
@@ -577,7 +574,8 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: qrain  (:)   => null()  !< nst_fld%qrain   sensible heat flux due to rainfall (watts)
 
 #ifdef CCPP
-    ! Soil properties for RUC LSM (if number of levels different from NOAH 4-layer model)
+    ! Soil properties for RUC LSM (number of levels different from NOAH 4-layer model)
+    real (kind=kind_phys), pointer :: wetness(:)       => null()  !< normalized soil wetness for lsm
     real (kind=kind_phys), pointer :: sh2o(:,:)        => null()  !< volume fraction of unfrozen soil moisture for lsm
     real (kind=kind_phys), pointer :: keepsmfr(:,:)    => null()  !< RUC LSM: frozen moisture in soil
     real (kind=kind_phys), pointer :: smois(:,:)       => null()  !< volumetric fraction of soil moisture for lsm
@@ -948,7 +946,7 @@ module GFS_typedefs
 !! | GFS_Control%tf                       | frozen_cloud_threshold_temperature                                            | threshold temperature below which all cloud is ice                            | K       |    0 | real       | kind_phys | none   | F        |
 !! | GFS_Control%tcr                      | cloud_phase_transition_threshold_temperature                                  | threshold temperature below which cloud starts to freeze                      | K       |    0 | real       | kind_phys | none   | F        |
 !! | GFS_Control%tcrf                     | cloud_phase_transition_denominator                                            | denominator in cloud phase transition = 1/(tcr-tf)                            | K-1     |    0 | real       | kind_phys | none   | F        |
-!! | GFS_Control%effr_in                  | flag_for_cloud_effective_radii                                                | flag for cloud effective radii calculations in microphysics                   |         |    0 | logical    |           | none   | F        |
+!! | GFS_Control%effr_in                  | flag_for_cloud_effective_radii                                                | flag for cloud effective radii calculations in GFDL microphysics              |         |    0 | logical    |           | none   | F        |
 !! | GFS_Control%microp_uniform           | mg_flag_for_uniform_subcolumns                                                | flag for uniform subcolumns for MG microphysics                               | flag    |    0 | logical    |           | none   | F        |
 !! | GFS_Control%do_cldliq                |                                                                               |                                                                               |         |    0 | logical    |           | none   | F        |
 !! | GFS_Control%do_cldice                | mg_flag_for_cloud_ice_processes                                               | flag for cloud ice processes for MG microphysics                              | flag    |    0 | logical    |           | none   | F        |
@@ -2059,6 +2057,8 @@ module GFS_typedefs
 !! | GFS_Data(cdata%blk_no)%Intdiag%epi                  | instantaneous_surface_potential_evaporation                             | instantaneous sfc potential evaporation                         | W m-2         |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Intdiag%smcwlt2              | volume_fraction_of_condensed_water_in_soil_at_wilting_point             | wilting point (volumetric)                                      | frac          |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Intdiag%smcref2              | threshold_volume_fraction_of_condensed_water_in_soil                    | soil moisture threshold (volumetric)                            | frac          |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Intdiag%sr                   | ratio_of_snowfall_to_rainfall                                           | snow ratio: ratio of snow to total precipitation (explicit only)| frac          |    1 | real        | kind_phys | none   | F        |
+!! | GFS_Data(cdata%blk_no)%Intdiag%wet1                 | normalized_soil_wetness                                                 | normalized soil wetness                                         | frac          |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Intdiag%tdomr                | dominant_rain_type                                                      | dominant rain type                                              | none          |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Intdiag%tdomzr               | dominant_freezing_rain_type                                             | dominant freezing rain type                                     | none          |    1 | real        | kind_phys | none   | F        |
 !! | GFS_Data(cdata%blk_no)%Intdiag%tdomip               | dominant_sleet_type                                                     | dominant sleet type                                             | none          |    1 | real        | kind_phys | none   | F        |
@@ -2240,6 +2240,8 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: epi    (:)     => null()   !< instantaneous sfc potential evaporation
     real (kind=kind_phys), pointer :: smcwlt2(:)     => null()   !< wilting point (volumetric)
     real (kind=kind_phys), pointer :: smcref2(:)     => null()   !< soil moisture threshold (volumetric)
+    real (kind=kind_phys), pointer :: wet1   (:)     => null()   !< normalized soil wetness
+    real (kind=kind_phys), pointer :: sr     (:)     => null()   !< snow ratio : ratio of snow to total precipitation
     real (kind=kind_phys), pointer :: tdomr  (:)     => null()   !< dominant accumulated rain type
     real (kind=kind_phys), pointer :: tdomzr (:)     => null()   !< dominant accumulated freezing rain type
     real (kind=kind_phys), pointer :: tdomip (:)     => null()   !< dominant accumulated sleet type
@@ -3196,11 +3198,9 @@ module GFS_typedefs
     allocate (Sfcprop%f10m   (IM))
     allocate (Sfcprop%tprcp  (IM))
     allocate (Sfcprop%srflag (IM))
-    allocate (Sfcprop%sr     (IM))
     allocate (Sfcprop%slc    (IM,Model%lsoil))
     allocate (Sfcprop%smc    (IM,Model%lsoil))
     allocate (Sfcprop%stc    (IM,Model%lsoil))
-    allocate (Sfcprop%wet1   (IM))
 
     Sfcprop%hice   = clear_val
     Sfcprop%weasd  = clear_val
@@ -3211,11 +3211,9 @@ module GFS_typedefs
     Sfcprop%f10m   = clear_val
     Sfcprop%tprcp  = clear_val
     Sfcprop%srflag = clear_val
-    Sfcprop%sr     = clear_val
     Sfcprop%slc    = clear_val
     Sfcprop%smc    = clear_val
     Sfcprop%stc    = clear_val
-    Sfcprop%wet1   = clear_val
 
 !--- Out
     allocate (Sfcprop%t2m (IM))
@@ -3350,6 +3348,7 @@ module GFS_typedefs
 #ifdef CCPP
     if (Model%lsm == Model%lsm_ruc) then
        ! For land surface models with different numbers of levels than the four NOAH levels
+       allocate (Sfcprop%wetness     (IM))
        allocate (Sfcprop%sh2o        (IM,Model%lsoil_lsm))
        allocate (Sfcprop%keepsmfr    (IM,Model%lsoil_lsm))
        allocate (Sfcprop%smois       (IM,Model%lsoil_lsm))
@@ -3364,6 +3363,7 @@ module GFS_typedefs
        allocate (Sfcprop%snowfallac  (IM))
        allocate (Sfcprop%acsnow      (IM))
        !
+       Sfcprop%wetness     = clear_val
        Sfcprop%sh2o        = clear_val
        Sfcprop%keepsmfr    = clear_val
        Sfcprop%smois       = clear_val
@@ -5936,6 +5936,10 @@ module GFS_typedefs
     allocate (Diag%epi     (IM))
     allocate (Diag%smcwlt2 (IM))
     allocate (Diag%smcref2 (IM))
+    if (.not. Model%lsm == Model%lsm_ruc) then
+      allocate (Diag%wet1    (IM))
+    end if
+    allocate (Diag%sr      (IM))
     allocate (Diag%tdomr   (IM))
     allocate (Diag%tdomzr  (IM))
     allocate (Diag%tdomip  (IM))
@@ -6185,6 +6189,10 @@ module GFS_typedefs
     Diag%epi        = zero
     Diag%smcwlt2    = zero
     Diag%smcref2    = zero
+    if (.not. Model%lsm == Model%lsm_ruc) then
+      Diag%wet1       = zero
+    end if
+    Diag%sr         = zero
     Diag%tdomr      = zero
     Diag%tdomzr     = zero
     Diag%tdomip     = zero

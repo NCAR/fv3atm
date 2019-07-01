@@ -24,6 +24,11 @@ FFLAGS   += -I$(FMS_DIR) -I../gfsphysics -I../atmos_cubed_sphere
 
 #CPPDEFS += -DNEW_TAUCTMAX -DSMALL_PE -DNEMS_GSM -DINTERNAL_FILE_NML
 
+# Set flags for 32-bit dynamics build
+ifeq ($(DYN32),Y)
+CPPDEFS += -DOVERLOAD_R4
+endif
+
 SRCS_F90 = \
 	   CCPP_driver.F90
 

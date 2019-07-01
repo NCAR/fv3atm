@@ -6,7 +6,7 @@ module module_physics_driver
                                    con_rerth, con_pi, rhc_max, dxmin,   &
                                    dxinv, pa2mb, rlapse, con_eps,       &
                                    con_epsm1, PQ0, A2A, A3, A4, RHmin,  &
-                                   tgice => con_tice, cimin
+                                   tgice => con_tice
                                    
   use cs_conv,               only: cs_convr
   use ozne_def,              only: levozp,  oz_coeff, oz_pres
@@ -28,7 +28,7 @@ module module_physics_driver
   use module_sfc_diff,  only: sfc_diff
   use module_sfc_ocean, only: sfc_ocean
   use module_sfc_drv,   only: sfc_drv
-  use module_sfc_sice,  only: sfc_sice
+  use module_sfc_sice,  only: sfc_sice, cimin
   use module_sfc_cice,  only: sfc_cice
   use module_sfc_nst,   only: sfc_nst
   use module_sfc_diag,  only: sfc_diag
@@ -1784,7 +1784,7 @@ module module_physics_driver
             Sfcprop%sncovr, qss3(:,1), gflx3(:,1), drain, evap3(:,1),    &
             hflx3(:,1), ep1d3(:,1), runof,                              &
             cmm3(:,1),  chh3(:,1), evbs, evcw, sbsno, snowc, Diag%soilm,&
-            snohf, Diag%smcwlt2, Diag%smcref2, Sfcprop%wet1)
+            snohf, Diag%smcwlt2, Diag%smcref2, Diag%wet1)
 
 !     if (lprnt) write(0,*)' tseae=',tseal(ipr),' tsurf=',tsurf(ipr),iter  
 !    &,' phy_f2d=',phy_f2d(ipr,num_p2d)
@@ -1828,7 +1828,7 @@ module module_physics_driver
             Sfcprop%sncovr, qss3(:,1), gflx3(:,1), drain, evap3(:,1),  &
             hflx3(:,1), ep1d3(:,1), runof,                             &
             cmm3(:,1), chh3(:,1), evbs, evcw, sbsno, snowc, Diag%soilm,&
-            snohf, Diag%smcwlt2, Diag%smcref2, Sfcprop%wet1,t2mmp,q2mp)
+            snohf, Diag%smcwlt2, Diag%smcref2, Diag%wet1,t2mmp,q2mp)
 
 !     if (lprnt) write(0,*)' tseae=',tsea(ipr),' tsurf=',tsurf(ipr),iter &
 !    &,' phy_f2d=',phy_f2d(ipr,num_p2d)
@@ -4485,7 +4485,7 @@ module module_physics_driver
           if (Model%do_shoc) then
             call precpd_shoc (im, ix, levs, dtp, del, Statein%prsl,            &
                               Stateout%gq0(1,1,1), Stateout%gq0(1,1,ntcw),     &
-                              Stateout%gt0, rain1, Sfcprop%sr, rainp, rhc,     &
+                              Stateout%gt0, rain1, Diag%sr, rainp, rhc,        &
                               psautco_l, prautco_l, Model%evpco, Model%wminco, &
                               Tbd%phy_f3d(1,1,ntot3d-2), lprnt, ipr)
           else
@@ -4497,7 +4497,7 @@ module module_physics_driver
 
             call precpd (im, ix, levs, dtp, del, Statein%prsl,                 &
                         Stateout%gq0(1,1,1), Stateout%gq0(1,1,ntcw),           &
-                        Stateout%gt0, rain1, Sfcprop%sr, rainp, rhc, psautco_l,&
+                        Stateout%gt0, rain1, Diag%sr, rainp, rhc, psautco_l,   &
                         prautco_l, Model%evpco, Model%wminco, lprnt, ipr)
           endif
 !         if (lprnt) then
@@ -4522,7 +4522,7 @@ module module_physics_driver
             call precpdp (im, ix, levs,  dtp, del, Statein%prsl,       &
                           Statein%pgr, Stateout%gq0(1,1,1),            &
                           Stateout%gq0(1,1,ntcw), Stateout%gt0,        &
-                          rain1, Sfcprop%sr, rainp, rhc,               &
+                          rain1, Diag%sr, rainp, rhc,                  &
                           Tbd%phy_f3d(1,1,Model%num_p3d+1), psautco_l, &
                           prautco_l, Model%evpco, Model%wminco, lprnt, ipr)
 !          endif   ! end of grid-scale precip/microphysics options
@@ -4545,7 +4545,7 @@ module module_physics_driver
 !              Stateout%gq0(1:im,1:im,Model%ntrnc),                                        &
 !              Stateout%gt0, Statein%prsl, Statein%vvl, del, dtp, kdt,                     &
 !              rain1,                                                                      &
-!              Sfcprop%sr,                                                                 &
+!              Diag%sr,                                                                    &
 !!             Diag%refl_10cm, Model%lradar,                                               &
 !!             Tbd%phy_f3d(:,:,1),Tbd%phy_f3d(:,:,2),Tbd%phy_f3d(:,:,3),                   & !has_reqc, has_reqi, has_reqs,
 !!             ims,ime,kms,kme,its,ite,kts,kte)
@@ -4565,7 +4565,7 @@ module module_physics_driver
 !2014v         Stateout%gt0, Statein%prsl, Statein%vvl, del, dtp, kdt,                     &
                Stateout%gt0, Statein%prsl, del, dtp, kdt,                                  &
                rain1,                                                                      &
-               Sfcprop%sr,                                                                 &
+               Diag%sr,                                                                    &
                islmsk,                                                                     &
                Diag%refl_10cm, Model%lradar,                                               &
                Tbd%phy_f3d(:,:,1),Tbd%phy_f3d(:,:,2),Tbd%phy_f3d(:,:,3),me,Statein%phii)
@@ -4583,7 +4583,7 @@ module module_physics_driver
                                 Stateout%gq0(1:im,1:levs,Model%ntsw),                           &
                                 Stateout%gq0(1:im,1:levs,Model%ntgl),                           &
                                 Statein%prsl, del, dtp, rain1,                                  &
-                                Sfcprop%sr,                                                     &
+                                Diag%sr,                                                        &
                                 islmsk,                                                         & 
                                 Tbd%phy_f3d(:,:,1),Tbd%phy_f3d(:,:,2),Tbd%phy_f3d(:,:,3),       &
                                 ims,ime, kms,kme,                                               &
@@ -4713,7 +4713,7 @@ module module_physics_driver
                              CNV_FICE, CNV_NDROP, CNV_NICE, Stateout%gq0(1,1,1), &
                              Stateout%gq0(1,1,ntcw),                             &
                              Stateout%gq0(1,1,ntiw), Stateout%gt0, rain1,        &
-                             Sfcprop%sr, Stateout%gq0(1,1,ntlnc),                &
+                             Diag%sr, Stateout%gq0(1,1,ntlnc),                   &
                              Stateout%gq0(1,1,ntinc), Model%fprcp, qrn,          &
                              qsnw, qgl, ncpr, ncps, ncgl,                        &
                              Tbd%phy_f3d(1,1,1),  kbot,                          &
@@ -4885,14 +4885,14 @@ module module_physics_driver
             Diag%graupel(i) = graupel0(i,1) * tem
 #ifdef TRANSITION
             if ( volatile_var1 * tem > rainmin ) then
-              Sfcprop%sr(i) = volatile_var2 / volatile_var1
+              Diag%sr(i) = volatile_var2 / volatile_var1
 #else
             if ( rain1(i) > rainmin ) then
-              Sfcprop%sr(i) = (snow0(i,1) + ice0(i,1)  + graupel0(i,1)) &
-                            / (rain0(i,1) + snow0(i,1) + ice0(i,1) + graupel0(i,1))
+              Diag%sr(i) = (snow0(i,1) + ice0(i,1)  + graupel0(i,1)) &
+                         / (rain0(i,1) + snow0(i,1) + ice0(i,1) + graupel0(i,1))
 #endif
             else
-              Sfcprop%sr(i) = 0.0
+              Diag%sr(i) = 0.0
             endif
           enddo
 #if defined(TRANSITION) || defined(REPRO)
@@ -5160,7 +5160,7 @@ module module_physics_driver
         if (Model%imp_physics == Model%imp_physics_mg) then              ! MG microphysics
           do i=1,im
             if (Diag%rain(i)*tem > rainmin) then
-              Sfcprop%srflag(i) = max(zero, min(one, (Diag%rain(i)-Diag%rainc(i))*Sfcprop%sr(i)/Diag%rain(i)))
+              Sfcprop%srflag(i) = max(zero, min(one, (Diag%rain(i)-Diag%rainc(i))*Diag%sr(i)/Diag%rain(i)))
             else
               Sfcprop%srflag(i) = 0.0
             endif
