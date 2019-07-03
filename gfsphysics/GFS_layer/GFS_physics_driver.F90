@@ -692,25 +692,23 @@ module module_physics_driver
       real(kind=kind_phys), volatile :: volatile_var1, volatile_var2
 #endif
 
-      ! DH* 
-      ! Initialize local variables (mainly for debugging purposes, because the
-      ! corresponding variables Interstitial(nt)%... are reset to zero every time);
-      ! these variables are only modified over parts of the entire domain (related
-      ! to land surface mask etc.)
-      snowmt = 0.
-      gamq   = 0.
-      gamt   = 0.
-      gflx   = 0.
-      hflx   = 0.
-
-      ! Strictly speaking, this is not required. But when
-      ! hunting for bit-for-bit differences, doing the same as
-      ! in GFS_suite_stateout_reset makes life a lot easier.
-      Stateout%gt0(:,:)   = Statein%tgrs(:,:)
-      Stateout%gu0(:,:)   = Statein%ugrs(:,:)
-      Stateout%gv0(:,:)   = Statein%vgrs(:,:)
-      Stateout%gq0(:,:,:) = Statein%qgrs(:,:,:)
-      ! *DH
+      !! Initialize local variables (mainly for debugging purposes, because the
+      !! corresponding variables Interstitial(nt)%... are reset to zero every time);
+      !! these variables are only modified over parts of the entire domain (related
+      !! to land surface mask etc.)
+      !snowmt = 0.
+      !gamq   = 0.
+      !gamt   = 0.
+      !gflx   = 0.
+      !hflx   = 0.
+      !
+      !! Strictly speaking, this is not required. But when
+      !! hunting for bit-for-bit differences, doing the same as
+      !! in GFS_suite_stateout_reset makes life a lot easier.
+      !Stateout%gt0(:,:)   = Statein%tgrs(:,:)
+      !Stateout%gu0(:,:)   = Statein%ugrs(:,:)
+      !Stateout%gv0(:,:)   = Statein%vgrs(:,:)
+      !Stateout%gq0(:,:,:) = Statein%qgrs(:,:,:)
 
 !===> ...  begin here
       ldiag_ugwp = Model%ldiag_ugwp
@@ -2258,16 +2256,16 @@ module module_physics_driver
                            Model%xkzminv, Model%moninq_fac)
 !     if (lprnt)  write(0,*)' dtdtm=',(dtdt(ipr,k),k=1,15)
 !     if (lprnt)  write(0,*)' dqdtm=',(dqdt(ipr,k,1),k=1,15)
-          elseif (Model%do_ysu) then
-            if (Model%me==0) then
-                write(0,*) 'Error, ysuvdif only available through CCPP'
-                stop
-            end if
-          elseif (Model%shinhong) then
-            if (Model%me==0) then
-                write(0,*) 'Error, shinhongvdif only available through CCPP'
-                stop
-            end if
+          !elseif (Model%do_ysu) then
+          !  if (Model%me==0) then
+          !      write(0,*) 'Error, ysuvdif only available through CCPP'
+          !      stop
+          !  end if
+          !elseif (Model%shinhong) then
+          !  if (Model%me==0) then
+          !      write(0,*) 'Error, shinhongvdif only available through CCPP'
+          !      stop
+          !  end if
           elseif (.not. Model%old_monin) then
             call moninq(ix, im, levs, nvdiff, ntcw, dvdt, dudt, dtdt, dqdt,         &
                         Statein%ugrs, Statein%vgrs, Statein%tgrs, Statein%qgrs,     &
@@ -3526,16 +3524,16 @@ module module_physics_driver
                              Model%evfact_deep, Model%evfactl_deep,              &
                              Model%pgcon_deep,  Model%asolfac_deep)
 !           if (lprnt) print *,' rain1=',rain1(ipr)
-          elseif (Model%imfdeepcnv == 3) then
-            if (Model%me==0) then
-                write(0,*) 'Error, GF convection scheme only available through CCPP'
-                stop
-            end if
-          elseif (Model%imfdeepcnv == 4) then
-            if (Model%me==0) then
-                write(0,*) 'Error, New Tiedtke convection scheme only available through CCPP'
-                stop
-            end if
+          !elseif (Model%imfdeepcnv == 3) then
+          !  if (Model%me==0) then
+          !      write(0,*) 'Error, GF convection scheme only available through CCPP'
+          !      stop
+          !  end if
+          !elseif (Model%imfdeepcnv == 4) then
+          !  if (Model%me==0) then
+          !      write(0,*) 'Error, New Tiedtke convection scheme only available through CCPP'
+          !      stop
+          !  end if
           elseif (Model%imfdeepcnv == 0) then         ! random cloud top
             call sascnv (im, ix, levs, Model%jcap, dtp, del,                     &
                          Statein%prsl, Statein%pgr, Statein%phil, clw(:,:,1:2),  &
