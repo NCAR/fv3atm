@@ -551,18 +551,15 @@ module GFS_typedefs
 #ifdef CCPP
     integer              :: levsp1          !< number of vertical levels plus one
     integer              :: levsm1          !< number of vertical levels minus one
-    !--- ak/bk for pressure level calculations
-    real(kind=kind_phys), pointer :: ak(:)  !< from surface (k=1) to TOA (k=levs)
-    real(kind=kind_phys), pointer :: bk(:)  !< from surface (k=1) to TOA (k=levs)
 #endif
     integer              :: cnx             !< number of points in the i-dir for this cubed-sphere face
     integer              :: cny             !< number of points in the j-dir for this cubed-sphere face
     integer              :: lonr            !< number of global points in x-dir (i) along the equator
     integer              :: latr            !< number of global points in y-dir (j) along any meridian
     integer              :: tile_num
-#ifdef CCPP
     integer              :: nblks           !< for explicit data blocking: number of blocks
     integer,     pointer :: blksz(:)        !< for explicit data blocking: block sizes of all blocks
+#ifdef CCPP
     integer,     pointer :: blksz2(:)       !< for explicit data blocking: block sizes of all blocks (duplicate)
 #endif
 
@@ -1624,13 +1621,11 @@ module GFS_typedefs
     integer,               pointer      :: idxday(:)        => null()  !<
     logical,               pointer      :: icy(:)           => null()  !<
     logical,               pointer      :: lake(:)          => null()  !<
-    integer                             :: im                          !<
     logical,               pointer      :: ocean(:)         => null()  !<
     integer                             :: ipr                         !<
     integer,               pointer      :: islmsk(:)        => null()  !<
     integer,               pointer      :: islmsk_cice(:)   => null()  !<
     logical,               pointer      :: wet(:)           => null()  !<
-    integer                             :: ix                          !<
     integer                             :: kb                          !<
     integer,               pointer      :: kbot(:)          => null()  !<
     integer,               pointer      :: kcnv(:)          => null()  !<
@@ -2506,10 +2501,9 @@ module GFS_typedefs
                                  cnx, cny, gnx, gny, dt_dycore,     &
                                  dt_phys, iau_offset, idat, jdat,   &
                                  tracer_names,                      &
-                                 input_nml_file, tile_num           &
+                                 input_nml_file, tile_num, blksz    &
 #ifdef CCPP
-                                ,ak, bk, blksz,                     &
-                                 restart, hydrostatic,              &
+                                ,ak, bk, restart, hydrostatic,      &
                                  communicator, ntasks, nthreads     &
 #endif
                                  )
@@ -2555,10 +2549,10 @@ module GFS_typedefs
     integer,                intent(in) :: jdat(8)
     character(len=32),      intent(in) :: tracer_names(:)
     character(len=256),     intent(in), pointer :: input_nml_file(:)
+    integer,                intent(in) :: blksz(:)
 #ifdef CCPP
     real(kind=kind_phys), dimension(:), intent(in) :: ak
     real(kind=kind_phys), dimension(:), intent(in) :: bk
-    integer,                intent(in) :: blksz(:)
     logical,                intent(in) :: restart
     logical,                intent(in) :: hydrostatic
     integer,                intent(in) :: communicator
@@ -2986,9 +2980,7 @@ module GFS_typedefs
                                do_deep, jcap,                                               &
                                cs_parm, flgmin, cgwf, ccwf, cdmbgwd, sup, ctei_rm, crtrh,   &
                                dlqf, rbcr, shoc_parm, psauras, prauras, wminras,            &
-#ifdef CCPP
                                do_sppt, do_shum, do_skeb, do_sfcperts,                      &
-#endif
                           !--- Rayleigh friction
                                prslrd0, ral_ts,  ldiag_ugwp, do_ugwp, do_tofd,              &
                           !--- mass flux deep convection
@@ -3098,10 +3090,6 @@ module GFS_typedefs
 #ifdef CCPP
     Model%levsp1           = Model%levs + 1
     Model%levsm1           = Model%levs - 1
-    allocate(Model%ak(1:size(ak)))
-    allocate(Model%bk(1:size(bk)))
-    Model%ak               = ak
-    Model%bk               = bk
 #endif
     Model%cnx              = cnx
     Model%cny              = cny
@@ -3110,8 +3098,9 @@ module GFS_typedefs
 #ifdef CCPP
     Model%nblks            = size(blksz)
     allocate(Model%blksz(1:Model%nblks))
-    allocate(Model%blksz2(1:Model%nblks))
     Model%blksz            = blksz
+#ifdef CCPP
+    allocate(Model%blksz2(1:Model%nblks))
     Model%blksz2           = blksz
 #endif
 
@@ -3414,21 +3403,9 @@ module GFS_typedefs
     Model%moninq_fac       = moninq_fac
 
 !--- stochastic physics options
-    ! DH* 20180730
-    ! For the standard/non-CCPP build, do_sppt, do_shum, do_skeb and do_sfcperts
-    ! are set to false here and updated later as part of init_stochastic_physics,
-    ! depending on values of other namelist parameters. Since these values are used
-    ! as conditionals for allocating components of Coupling and other DDTs, the call
-    ! to init_stochastic_physics is placed between creating the "Model" DDT and the
-    ! other DDTs.
-    ! This is confusing and not compatible with CCPP, because the CCPP physics init
-    ! can happen only after ALL DDTs are created and added to the CCPP data structure
-    ! (cdata). Hence, for CCPP do_sppt, do_shum, do_skeb and do_sfcperts are additional
-    ! namelist variables in group physics that are parsed here and then compared in
-    ! stochastic_physics_init (the CCPP version of init_stochastic_physics) to the
-    ! stochastic physics namelist parameters to ensure consistency.
-    ! DH* 20190518 - the same functionality is needed for separating stochastic_physics
-    ! from both IPD and CCPP, i.e. keep this code *DH
+    ! do_sppt, do_shum, do_skeb and do_sfcperts are namelist variables in group
+    ! physics that are parsed here and then compared in init_stochastic_physics
+    ! to the stochastic physics namelist parametersto ensure consistency.
     Model%do_sppt          = do_sppt
     Model%use_zmtnblck     = use_zmtnblck
     Model%do_shum          = do_shum
@@ -3441,7 +3418,6 @@ module GFS_typedefs
     Model%pertlai          = pertlai
     Model%pertalb          = pertalb
     Model%pertvegf         = pertvegf
-    ! *DH 20180730
 
     !--- cellular automata options
     Model%nca              = nca
@@ -3451,14 +3427,6 @@ module GFS_typedefs
     Model%nseed            = nseed
     Model%ca_global        = ca_global
     Model%do_ca            = do_ca
-#ifdef CCPP
-    if(Model%do_ca)then
-      print *,'Cellular automata cannot be used when CCPP is turned on until'
-      print *,'the stochastic physics pattern generation code has been pulled'
-      print *,'out of the FV3 repository and updated with the CCPP version.'
-      stop
-    endif
-#endif
     Model%ca_sgs           = ca_sgs
     Model%iseed_ca         = iseed_ca
     Model%ca_smooth        = ca_smooth
@@ -4126,10 +4094,8 @@ module GFS_typedefs
       print *, ' cny               : ', Model%cny
       print *, ' lonr              : ', Model%lonr
       print *, ' latr              : ', Model%latr
-#ifdef CCPP
       print *, ' blksz(1)          : ', Model%blksz(1)
       print *, ' blksz(nblks)      : ', Model%blksz(Model%nblks)
-#endif
       print *, ' '
       print *, 'coupling parameters'
       print *, ' cplflx            : ', Model%cplflx
@@ -5601,9 +5567,7 @@ module GFS_typedefs
     end if
     !
     ! Set components that do not change
-    Interstitial%im               = IM
     Interstitial%ipr              = min(IM,10)
-    Interstitial%ix               = IM
     Interstitial%latidxprnt       = 1
     Interstitial%levi             = Model%levs+1
     Interstitial%levh2o           = levh2o
@@ -6088,9 +6052,7 @@ module GFS_typedefs
     write (0,*) 'Interstitial_print: values that do not change'
     write (0,*) 'Interstitial%h2o_coeff         = ', Interstitial%h2o_coeff
     write (0,*) 'sum(Interstitial%h2o_pres)     = ', sum(Interstitial%h2o_pres)
-    write (0,*) 'Interstitial%im                = ', Interstitial%im
     write (0,*) 'Interstitial%ipr               = ', Interstitial%ipr
-    write (0,*) 'Interstitial%ix                = ', Interstitial%ix
     write (0,*) 'Interstitial%latidxprnt        = ', Interstitial%latidxprnt
     write (0,*) 'Interstitial%levi              = ', Interstitial%levi
     write (0,*) 'Interstitial%levh2o            = ', Interstitial%levh2o

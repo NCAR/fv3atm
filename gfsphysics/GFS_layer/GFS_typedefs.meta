@@ -1659,18 +1659,6 @@
   units = count
   dimensions = ()
   type = integer
-[ak]
-  standard_name = a_parameter_of_the_hybrid_coordinate
-  long_name = a parameter for sigma pressure level calculations
-  units = Pa
-  dimensions = (number_of_vertical_layers_for_radiation_calculations_plus_one)
-  type = real
-[bk]
-  standard_name = b_parameter_of_the_hybrid_coordinate
-  long_name = b parameter for sigma pressure level calculations
-  units = none
-  dimensions = (number_of_vertical_layers_for_radiation_calculations_plus_one)
-  type = real
 [levsp1]
   standard_name = vertical_dimension_plus_one
   long_name = number of vertical levels plus one
@@ -6189,12 +6177,6 @@
   units = flag
   dimensions = (horizontal_dimension)
   type = logical
-[im]
-  standard_name = horizontal_loop_extent_OLD_NOW_MODEL_PERCENT_BLKSZ_OF_NB
-  long_name = horizontal loop extent
-  units = count
-  dimensions = ()
-  type = integer
 [ocean]
   standard_name = flag_nonzero_ocean_surface_fraction
   long_name = flag indicating presence of some ocean surface area fraction
@@ -6225,12 +6207,6 @@
   units = flag
   dimensions = (horizontal_dimension)
   type = logical
-[ix]
-  standard_name = horizontal_dimension_OLD_NOW_MODEL_PERCENT_BLKSZ_OF_NB
-  long_name = horizontal dimension
-  units = count
-  dimensions = ()
-  type = integer
 [kb]
   standard_name = vertical_index_difference_between_layer_and_lower_bound
   long_name = vertical index difference between layer and lower bound
