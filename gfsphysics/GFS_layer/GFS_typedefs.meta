@@ -1617,6 +1617,18 @@
   units = count
   dimensions = ()
   type = integer
+[ak]
+  standard_name = a_parameter_of_the_hybrid_coordinate
+  long_name = a parameter for sigma pressure level calculations
+  units = Pa
+  dimensions = ()
+  type = real
+[bk]
+  standard_name = b_parameter_of_the_hybrid_coordinate
+  long_name = b parameter for sigma pressure level calculations
+  units = none
+  dimensions = ()
+  type = real
 [levsp1]
   standard_name = vertical_dimension_plus_one
   long_name = number of vertical levels plus one
@@ -1632,6 +1644,12 @@
 [lonr]
   standard_name = number_of_equatorial_longitude_points
   long_name = number of global points in x-dir (i) along the equator
+  units = count
+  dimensions = ()
+  type = integer
+[latr]
+  standard_name = number_of_latitude_points
+  long_name = number of global points in y-dir (j) along the meridian
   units = count
   dimensions = ()
   type = integer
@@ -3310,6 +3328,24 @@
   units = flag
   dimensions = ()
   type = integer
+[do_ugwp]
+  standard_name = do_ugwp
+  long_name = flag to activate CIRES UGWP
+  units = flag
+  dimensions = ()
+  type = logical
+[do_tofd]
+  standard_name = turb_oro_form_drag_flag
+  long_name = flag for turbulent orographic form drag
+  units = flag
+  dimensions = ()
+  type = logical
+[ldiag_ugwp]
+  standard_name = diag_ugwp_flag
+  long_name = flag for CIRES UGWP Diagnostics
+  units = flag
+  dimensions = ()
+  type = logical
 
 ########################################################################
 [ccpp-arg-table]
@@ -3354,6 +3390,13 @@
   standard_name = sine_of_latitude
   long_name = sine of latitude
   units = none
+  dimensions = (horizontal_dimension)
+  type = real
+  kind = kind_phys
+[xlat_d]
+  standard_name = latitude_degree
+  long_name = latitude in degrees
+  units = degree
   dimensions = (horizontal_dimension)
   type = real
   kind = kind_phys
@@ -4851,6 +4894,83 @@
   standard_name = atmosphere_momentum_diffusivity_for_mynnpbl
   long_name = diffusivity for momentum for MYNN PBL (defined for all mass levels)
   units = m2 s-1
+  dimensions = (horizontal_dimension,vertical_dimension)
+  type = real
+  kind = kind_phys
+[zmtb]
+  standard_name = time_integral_of_height_of_mountain_blocking
+  long_name = time integral of height of mountain blocking drag
+  units = m
+  dimensions = (horizontal_dimension)
+  type = real
+  kind = kind_phys
+[zlwb]
+  standard_name = time_integral_of_height_of_low_level_wave_breaking
+  long_name = time integral of height of drag due to low level wave breaking
+  units = m
+  dimensions = (horizontal_dimension)
+  type = real
+  kind = kind_phys
+[zogw]
+  standard_name = time_integral_of_height_of_launch_level_of_orographic_gravity_wave
+  long_name = time integral of height of launch level of orographic gravity wave
+  units = m
+  dimensions = (horizontal_dimension)
+  type = real
+  kind = kind_phys
+[tau_tofd]
+  standard_name = time_integral_of_momentum_flux_due_to_turbulent_orographic_form_drag
+  long_name = time integral of momentum flux due to TOFD
+  units = Pa
+  dimensions = (horizontal_dimension,vertical_dimension)
+  type = real
+  kind = kind_phys
+[tau_mtb]
+  standard_name = time_integral_of_momentum_flux_due_to_mountain_blocking_drag
+  long_name = time integral of momentum flux due to mountain blocking drag
+  units = Pa
+  dimensions = (horizontal_dimension,vertical_dimension)
+  type = real
+  kind = kind_phys
+[tau_ogw]
+  standard_name = time_integral_of_momentum_flux_due_to_orographic_gravity_wave_drag
+  long_name = time integral of momentum flux due to orographic gravity wave drag
+  units = Pa
+  dimensions = (horizontal_dimension,vertical_dimension)
+  type = real
+  kind = kind_phys
+[tau_ngw]
+  standard_name = time_integral_of_momentum_flux_due_to_nonstationary_gravity_wave
+  long_name = time integral of momentum flux due to nonstationary gravity waves
+  units = Pa
+  dimensions = (horizontal_dimension,vertical_dimension)
+  type = real
+  kind = kind_phys
+[du3dt_mtb]
+  standard_name = time_integral_of_change_in_x_wind_due_to_mountain_blocking_drag
+  long_name = time integral of change in x wind due to mountain blocking drag
+  units = m s-2
+  dimensions = (horizontal_dimension,vertical_dimension)
+  type = real
+  kind = kind_phys
+[du3dt_ogw]
+  standard_name = time_integral_of_change_in_x_wind_due_to_orographic_gravity_wave_drag
+  long_name = time integral of change in x wind due to orographic gw drag
+  units = m s-2
+  dimensions = (horizontal_dimension,vertical_dimension)
+  type = real
+  kind = kind_phys
+[du3dt_tms]
+  standard_name = time_integral_of_change_in_x_wind_due_to_turbulent_orographic_form_drag
+  long_name = time integral of change in x wind due to TOFD
+  units = m s-2
+  dimensions = (horizontal_dimension,vertical_dimension)
+  type = real
+  kind = kind_phys
+[du3dt_ngw]
+  standard_name = time_integral_of_change_in_x_wind_due_to_nonstationary_gravity_wave
+  long_name = time integral of change in x wind due to NGW
+  units = m s-2
   dimensions = (horizontal_dimension,vertical_dimension)
   type = real
   kind = kind_phys
@@ -7031,6 +7151,104 @@
   long_name = perturbation of heat to momentum roughness length ratio
   units = frac
   dimensions = (horizontal_dimension)
+  type = real
+  kind = kind_phys
+[gw_dudt]
+  standard_name = tendency_of_x_wind_due_to_ugwp
+  long_name = zonal wind tendency due to UGWP
+  units = m s-2
+  dimensions = (horizontal_dimension,vertical_dimension)
+  type = real
+  kind = kind_phys
+[gw_dvdt]
+  standard_name = tendency_of_y_wind_due_to_ugwp
+  long_name = meridional wind tendency due to UGWP
+  units = m s-2
+  dimensions = (horizontal_dimension,vertical_dimension)
+  type = real
+  kind = kind_phys
+[gw_dtdt]
+  standard_name = tendency_of_air_temperature_due_to_ugwp
+  long_name = air temperature tendency due to UGWP
+  units = K s-1
+  dimensions = (horizontal_dimension,vertical_dimension)
+  type = real
+  kind = kind_phys
+[gw_kdis]
+  standard_name = eddy_mixing_due_to_ugwp
+  long_name = eddy mixing due to UGWP
+  units = m2 s-1
+  dimensions = (horizontal_dimension,vertical_dimension)
+  type = real
+  kind = kind_phys
+[zmtb]
+  standard_name = height_of_mountain_blocking
+  long_name = height of mountain blocking drag
+  units = m
+  dimensions = (horizontal_dimension)
+  type = real
+  kind = kind_phys
+[zlwb]
+  standard_name = height_of_low_level_wave_breaking
+  long_name = height of drag due to low level wave breaking
+  units = m
+  dimensions = (horizontal_dimension)
+  type = real
+  kind = kind_phys
+[zogw]
+  standard_name = height_of_launch_level_of_orographic_gravity_wave
+  long_name = height of launch level of orographic gravity wave
+  units = m
+  dimensions = (horizontal_dimension)
+  type = real
+  kind = kind_phys
+[tau_tofd]
+  standard_name = instantaneous_momentum_flux_due_to_turbulent_orographic_form_drag
+  long_name = instantaneous momentum flux due to TOFD
+  units = Pa
+  dimensions = (horizontal_dimension,vertical_dimension)
+  type = real
+  kind = kind_phys
+[tau_mtb]
+  standard_name = instantaneous_momentum_flux_due_to_mountain_blocking_drag
+  long_name = instantaneous momentum flux due to mountain blocking drag
+  units = Pa
+  dimensions = (horizontal_dimension,vertical_dimension)
+  type = real
+  kind = kind_phys
+[tau_ogw]
+  standard_name = instantaneous_momentum_flux_due_to_orographic_gravity_wave_drag
+  long_name = instantaneous momentum flux due to orographic gravity wave drag
+  units = Pa
+  dimensions = (horizontal_dimension,vertical_dimension)
+  type = real
+  kind = kind_phys
+[tau_ngw]
+  standard_name = instantaneous_momentum_flux_due_to_nonstationary_gravity_wave
+  long_name = instantaneous momentum flux due to nonstationary gravity waves
+  units = Pa
+  dimensions = (horizontal_dimension,vertical_dimension)
+  type = real
+  kind = kind_phys
+[dudt_mtb]
+  standard_name = instantaneous_change_in_x_wind_due_to_mountain_blocking_drag
+  long_name = instantaneous change in x wind due to mountain blocking drag
+  units = m s-2
+  dimensions = (horizontal_dimension,vertical_dimension)
+  type = real
+  kind = kind_phys
+[dudt_ogw]
+  standard_name = instantaneous_change_in_x_wind_due_to_orographic_gravity_wave_drag
+  long_name = instantaneous change in x wind due to orographic gw drag
+  units = m s-2
+  dimensions = (horizontal_dimension,vertical_dimension)
+  type = real
+  kind = kind_phys
+[dudt_tms]
+  standard_name = instantaneous_change_in_x_wind_due_to_turbulent_orographic_form_drag
+  long_name = instantaneous change in x wind due to TOFD
+  units = m s-2
+  dimensions = (horizontal_dimension,vertical_dimension)
   type = real
   kind = kind_phys
 
