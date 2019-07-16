@@ -6726,9 +6726,9 @@ module GFS_typedefs
 
     if (Model%imp_physics == Model%imp_physics_thompson) then
       if (Model%ltaerosol) then
-        Interstitial%nvdiff = 8
+        Interstitial%nvdiff = 10
       else
-        Interstitial%nvdiff = 5
+        Interstitial%nvdiff = 7
       endif
       if (Model%satmedmf) Interstitial%nvdiff = Interstitial%nvdiff + 1
       Interstitial%nncl = 5
@@ -6792,7 +6792,9 @@ module GFS_typedefs
         endif
       elseif (Model%imp_physics == Model%imp_physics_gfdl) then
         Interstitial%nvdiff = 7
-      ! DH* WHAT ABOUT THOMPSON? *DH
+      elseif (Model%imp_physics == Model%imp_physics_thompson) then
+        write(0,*) "Error in interstitial_setup_tracers, Thompson MP not configured for cplchm"
+        stop
       endif
       if (Model%ntke > 0) Interstitial%nvdiff = Interstitial%nvdiff + 1    ! adding tke to the list
     endif
