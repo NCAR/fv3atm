@@ -116,21 +116,21 @@
 !> \name Module variables (to be set in module_radiation_astronomy::sol_update)
 
 !> equation of time
-      real (kind=kind_phys) :: sollag=0.0
+      real (kind=kind_phys) :: sollag=0.0   
 !> sine of the solar declination angle
-      real (kind=kind_phys) :: sindec=0.0
+      real (kind=kind_phys) :: sindec=0.0   
 !> cosine of the solar declination angle
-      real (kind=kind_phys) :: cosdec=0.0
+      real (kind=kind_phys) :: cosdec=0.0   
 !> solar angle increment per interation of cosz calc
-      real (kind=kind_phys) :: anginc=0.0
+      real (kind=kind_phys) :: anginc=0.0   
 !> saved monthly solar constants (isolflg=4 only)
-      real (kind=kind_phys) :: smon_sav(12)
+      real (kind=kind_phys) :: smon_sav(12) 
       data smon_sav(1:12) / 12*con_solr /
 
 !> saved year  of data used
-      integer               :: iyr_sav =0
+      integer               :: iyr_sav =0  
 !> total number of zenith angle iterations
-      integer               :: nstp    =6
+      integer               :: nstp    =6  
 
       public  sol_init, sol_update, coszmn
 
@@ -301,7 +301,7 @@
 
 
 !> This subroutine computes solar parameters at forecast time.
-!!\param jdate     ncep absolute date and time at fcst time
+!!\param jdate     ncep absolute date and time at fcst time 
 !!                 (yr, mon, day, t-zone, hr, min, sec, mil-sec)
 !!\param kyear     usually kyear=jdate(1). if not, it is for hindcast
 !!                 mode, and it is usually the init cond time and
@@ -599,7 +599,7 @@
 
 !  --- ...  setting up calculation parameters used by subr coszmn
 
-      nswr  = nint(deltsw / deltim)         ! number of mdl t-step per sw call
+      nswr  = max(1, nint(deltsw/deltim))   ! number of mdl t-step per sw call
       dtswh = deltsw / f3600                ! time length in hours
 
 !     if ( deltsw >= f3600 ) then           ! for longer sw call interval
@@ -612,7 +612,7 @@
 
 !     anginc = pid12 * dtswh / float(nstp-1)          ! solar angle inc during each calc step
 
-      nstp = nswr
+      nstp = max(6, nswr)
       anginc = pid12 * dtswh / float(nstp)
 
       if ( me == 0 ) then
@@ -848,7 +848,7 @@
       real (kind=kind_phys), intent(out) :: coszen(:), coszdg(:)
 
 !  ---  locals:
-      real (kind=kind_phys) :: coszn, cns, ss, cc, solang, rstp
+      real (kind=kind_phys) :: coszn, cns, solang, rstp
 
       integer :: istsun(IM), i, it, j, lat
 
@@ -864,12 +864,9 @@
 
       do it = 1, nstp
         cns = solang + (float(it)-0.5)*anginc + sollag
-
         do i = 1, IM
-          ss  = sinlat(i) * sindec
-          cc  = coslat(i) * cosdec
-
-          coszn = ss + cc * cos(cns + xlon(i))
+          coszn     = sindec * sinlat(i) + cosdec * coslat(i)           &
+     &                                   * cos(cns+xlon(i))
           coszen(i) = coszen(i) + max(0.0, coszn)
           if (coszn > czlimt) istsun(i) = istsun(i) + 1
         enddo

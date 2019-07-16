@@ -134,7 +134,7 @@ module fv_dynamics_mod
    use diag_manager_mod,    only: send_data
    use fv_diagnostics_mod,  only: fv_time, prt_mxm, range_check, prt_minmax
    use mpp_domains_mod,     only: DGRID_NE, CGRID_NE, mpp_update_domains, domain2D
-   use mpp_mod,             only: mpp_pe, mpp_root_pe
+   use mpp_mod,             only: mpp_pe
    use field_manager_mod,   only: MODEL_ATMOS
    use tracer_manager_mod,  only: get_tracer_index
    use fv_sg_mod,           only: neg_adj3, neg_adj2
@@ -448,7 +448,9 @@ contains
              call moist_cp(is,ie,isd,ied,jsd,jed, npz, j, k, nwat, sphum, liq_wat, rainwat,    &
                            ice_wat, snowwat, graupel, q, q_con(is:ie,j,k), cvm)
 #endif
-
+            do i=is,ie
+               dp1(i,j,k) = zvir*q(i,j,k,sphum)
+            enddo
          enddo
       enddo
     else
@@ -632,7 +634,7 @@ contains
   endif
 #endif
 
-  call timing_on('FV_DYN_LOOP')
+                                                  call timing_on('FV_DYN_LOOP')
   do n_map=1, k_split   ! first level of time-split
       k_step = n_map
                                            call timing_on('COMM_TOTAL')

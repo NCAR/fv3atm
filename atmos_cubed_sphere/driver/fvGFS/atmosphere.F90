@@ -188,12 +188,12 @@ use fv_sg_mod,          only: fv_subgrid_z
 use fv_update_phys_mod, only: fv_update_phys
 use fv_nwp_nudge_mod,   only: fv_nwp_nudge_init, fv_nwp_nudge_end, do_adiabatic_init
 #ifdef MULTI_GASES
-use multi_gases_mod,    only: virq, virq_max, num_gas, ri, cpi
+use multi_gases_mod,  only: virq, virq_max, num_gas, ri, cpi
 #endif
 use fv_regional_mod,    only: start_regional_restart, read_new_bc_data, &
                               a_step, p_step, current_time_in_seconds
 
-use mpp_domains_mod,    only: mpp_get_data_domain, mpp_get_compute_domain
+use mpp_domains_mod,    only:  mpp_get_data_domain, mpp_get_compute_domain
 
 implicit none
 private
@@ -311,7 +311,7 @@ contains
    current_time_in_seconds = time_type_to_real( Time - Time_init )
    if (mpp_pe() == 0) write(*,"('atmosphere_init: current_time_seconds = ',f9.1)")current_time_in_seconds
 
-   call timing_on('ATMOS_INIT')
+                    call timing_on('ATMOS_INIT')
    allocate(pelist(mpp_npes()))
    call mpp_get_current_pelist(pelist)
 
@@ -437,7 +437,7 @@ contains
    id_subgridz  = mpp_clock_id ('FV subgrid_z',flags = clock_flag_default, grain=CLOCK_SUBCOMPONENT )
    id_fv_diag   = mpp_clock_id ('FV Diag',     flags = clock_flag_default, grain=CLOCK_SUBCOMPONENT )
 
-   call timing_off('ATMOS_INIT')
+                    call timing_off('ATMOS_INIT')
 
 #ifdef CCPP
    ! Do CCPP fast physics initialization before call to adiabatic_init (since this calls fv_dynamics)
@@ -445,7 +445,8 @@ contains
    ! Initialize the cdata structure
    call ccpp_init(trim(ccpp_suite), cdata, ierr)
    if (ierr/=0) then
-      call mpp_error (FATAL,' atmosphere_dynamics: error in ccpp_init')
+      cdata%errmsg = ' atmosphere_dynamics: error in ccpp_init: ' // trim(cdata%errmsg)
+      call mpp_error (FATAL, cdata%errmsg)
    end if
    
    ! For fast physics running over the entire domain, block and thread
@@ -460,7 +461,7 @@ contains
    nthreads = 1
 #endif
    ! Create interstitial data type for fast physics; for multi-gases physics,
-   ! pass q(:,:,:,1:num_gas) to qvi, otherwise pass q(:,:,:,1:1) as 4D array
+   ! pass q(:,:,:,1:num_gas) as qvi, otherwise pass q(:,:,:,1:1) as 4D array
    call CCPP_interstitial%create(Atm(mytile)%bd%is, Atm(mytile)%bd%ie, Atm(mytile)%bd%isd, Atm(mytile)%bd%ied, &
                                  Atm(mytile)%bd%js, Atm(mytile)%bd%je, Atm(mytile)%bd%jsd, Atm(mytile)%bd%jed, &
                                  Atm(mytile)%npz, Atm(mytile)%ng,                                              &
@@ -498,7 +499,8 @@ contains
       call ccpp_physics_init(cdata, group_name="fast_physics", ierr=ierr)
 #endif
       if (ierr/=0) then
-         call mpp_error (FATAL,' atmosphere_dynamics: error in ccpp_physics_init')
+         cdata%errmsg = ' atmosphere_dynamics: error in ccpp_physics_init for group fast_physics: ' // trim(cdata%errmsg)
+         call mpp_error (FATAL, cdata%errmsg)
       end if
    end if
 #endif
@@ -534,7 +536,7 @@ contains
 
    n = mytile
    call switch_current_Atm(Atm(n)) 
-
+      
  end subroutine atmosphere_init
 
 
@@ -635,7 +637,7 @@ contains
 
    do psc=1,abs(p_split)
       p_step = psc
-      call timing_on('fv_dynamics')
+                    call timing_on('fv_dynamics')
 !uc/vc only need be same on coarse grid? However BCs do need to be the same
       call fv_dynamics(npx, npy, npz, nq, Atm(n)%ng, dt_atmos/real(abs(p_split)),&
                        Atm(n)%flagstruct%consv_te, Atm(n)%flagstruct%fill,       &
@@ -737,8 +739,8 @@ contains
       call ccpp_physics_finalize(cdata, group_name="fast_physics", ierr=ierr)
 #endif
       if (ierr/=0) then
-        write(0,'(a)') "An error occurred in ccpp_physics_finalize for group fast_physics"
-        return
+         cdata%errmsg = ' atmosphere_dynamics: error in ccpp_physics_finalize for group fast_physics: ' // trim(cdata%errmsg)
+         call mpp_error (FATAL, cdata%errmsg)
       end if
    end if
 #endif
@@ -1085,9 +1087,7 @@ contains
      call del2_cubed(Atm(mytile)%diss_est, 0.25*Atm(mytile)%gridstruct%da_min, Atm(mytile)%gridstruct, &
                      Atm(mytile)%domain, npx, npy, npz, 3, Atm(mytile)%bd)
    enddo
-
-   ! provide back sqrt of dissipation estimate,
-   ! taking absolute value before taking sqrt
+   ! provide back sqrt of dissipation estimate
    Atm(mytile)%diss_est=sqrt(abs(Atm(mytile)%diss_est))
 
  end subroutine atmosphere_diss_est
@@ -1904,7 +1904,7 @@ contains
    real(kind=kind_phys), parameter :: qmin = 1.0e-10   
    real(kind=kind_phys) :: pk0inv, ptop, pktop
    real(kind=kind_phys) :: rTv, dm, qgrs_rad
-   integer :: nb, blen, npz, i, j, k, ix, k1, dnats, nq_adv
+   integer :: nb, blen, npz, i, j, k, ix, k1, kz, dnats, nq_adv
 
 !!! NOTES: lmh 6nov15
 !!! - "Layer" means "layer mean", ie. the average value in a layer
@@ -1925,7 +1925,7 @@ contains
 !$OMP             shared  (Atm_block, Atm, IPD_Data, npz, nq, ncnst, sphum, liq_wat, &
 !$OMP                      ice_wat, rainwat, snowwat, graupel, pk0inv, ptop,   &
 !$OMP                      pktop, zvir, mytile, dnats, nq_adv, flip_vc) &
-!$OMP             private (dm, nb, blen, i, j, ix, k1, rTv, qgrs_rad)
+!$OMP             private (dm, nb, blen, i, j, ix, k1, kz, rTv, qgrs_rad)
 
    do nb = 1,Atm_block%nblks
 ! gas_phase_mass <-- prsl
@@ -1942,17 +1942,19 @@ contains
      IPD_Data(nb)%Statein%prsik(:,:) = 1.e25_kind_phys
 
      do k = 1, npz
+       !Indices for FV's vertical coordinate, for which 1 = top
+       !here, k is the index for GFS's vertical coordinate, for which 1 =
+       !bottom
+       kz = npz+1-k
+       if(flip_vc) then
+         k1 = kz ! flipping the index
+       else
+         k1 = k
+       endif
        do ix = 1, blen
          i = Atm_block%index(nb)%ii(ix)
          j = Atm_block%index(nb)%jj(ix)
 
-            !Indices for FV's vertical coordinate, for which 1 = top
-            !here, k is the index for GFS's vertical coordinate, for which 1 = bottom
-         if(flip_vc) then
-           k1 = npz+1-k ! flipping the index
-         else
-           k1 = k
-         endif
          IPD_Data(nb)%Statein%tgrs(ix,k) = _DBL_(_RL_(Atm(mytile)%pt(i,j,k1)))
          IPD_Data(nb)%Statein%ugrs(ix,k) = _DBL_(_RL_(Atm(mytile)%ua(i,j,k1)))
          IPD_Data(nb)%Statein%vgrs(ix,k) = _DBL_(_RL_(Atm(mytile)%va(i,j,k1)))
@@ -1965,21 +1967,21 @@ contains
              IPD_Data(nb)%Statein%phii(ix,k+1) = IPD_Data(nb)%Statein%phii(ix,k) - _DBL_(_RL_(Atm(mytile)%delz(i,j,k1)*grav))
          else
            if (.not.Atm(mytile)%flagstruct%hydrostatic .and. (.not.Atm(mytile)%flagstruct%use_hydro_pressure))  &
-             IPD_Data(nb)%Statein%phii(ix,npz+1-k) = IPD_Data(nb)%Statein%phii(ix,npz+1-k+1) - _DBL_(_RL_(Atm(mytile)%delz(i,j,npz+1-k)*grav))
+             IPD_Data(nb)%Statein%phii(ix,kz) = IPD_Data(nb)%Statein%phii(ix,kz+1) - _DBL_(_RL_(Atm(mytile)%delz(i,j,kz)*grav))
          endif
 
 ! Convert to tracer mass:
          IPD_Data(nb)%Statein%qgrs(ix,k,1:nq_adv) =  _DBL_(_RL_(Atm(mytile)%q(i,j,k1,1:nq_adv))) &
                                                           * IPD_Data(nb)%Statein%prsl(ix,k)
-         if (dnats .gt. 0) &
+         if (dnats > 0) &
              IPD_Data(nb)%Statein%qgrs(ix,k,nq_adv+1:nq) =  _DBL_(_RL_(Atm(mytile)%q(i,j,k1,nq_adv+1:nq)))
          !--- SHOULD THESE BE CONVERTED TO MASS SINCE THE DYCORE DOES NOT TOUCH THEM IN ANY WAY???
          !--- See Note in state update...
          if ( ncnst > nq) &
              IPD_Data(nb)%Statein%qgrs(ix,k,nq+1:ncnst) = _DBL_(_RL_(Atm(mytile)%qdiag(i,j,k1,nq+1:ncnst)))
 ! Remove the contribution of condensates to delp (mass):
-         if ( Atm(mytile)%flagstruct%nwat .eq. 6 ) then
-            IPD_Data(nb)%Statein%prsl(ix,k) = IPD_Data(nb)%Statein%prsl(ix,k) &
+         if ( Atm(mytile)%flagstruct%nwat == 6 ) then
+            IPD_Data(nb)%Statein%prsl(ix,k) = IPD_Data(nb)%Statein%prsl(ix,k)           &
                                             - IPD_Data(nb)%Statein%qgrs(ix,k,liq_wat)   &
                                             - IPD_Data(nb)%Statein%qgrs(ix,k,ice_wat)   &
                                             - IPD_Data(nb)%Statein%qgrs(ix,k,rainwat)   &

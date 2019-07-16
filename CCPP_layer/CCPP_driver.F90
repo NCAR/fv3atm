@@ -168,49 +168,30 @@ module CCPP_driver
 
    else if (trim(step)=="physics_init") then
 
-      ! Loop over blocks, don't use threading on the outside but allowing threading
-      ! inside the initialization, because physics initialization code does a lot of
-      ! reading/writing data from disk, allocating fields, etc.
+      ! Since the physics init steps are independent of the blocking structure,
+      ! we can use cdata_domain here. Since we don't use threading on the outside,
+      ! we can allow threading inside the time_vary routines.
       GFS_control%nthreads = nthrds
 
-      ! DH* TODO - I believe that they way this works in FV3, physics init can only
-      ! affect block- and thread-independent data - hence, it would be sufficient to
-      ! run physics_init once over cdata_domain?!? Update notes accordingly if true. *DH
-      ! If physics init affect block data, then changes must be made to parsing the
-      ! SDF (cannot use pointers to point to the central SDF, because a scheme will
-      ! be considered as initialized because of its CCPP-internal attribute after a
-      ! first call to it), and the is_initialized logic inside the scheme (independent)
-      ! of CCPP must be removed for those schemes that need to be initialized multiple
-      ! times once per block.
-
-      ! Since physics init can only affect block- (and not thread-) dependent data
-      ! structures, it is sufficient to run this over all blocks for one thread only
-      nt = 1
-      do nb=1,nblks
-        !--- Initialize CCPP physics
 #ifdef STATIC
-        call ccpp_physics_init(cdata_block(nb,nt), suite_name=trim(ccpp_suite), ierr=ierr)
+      call ccpp_physics_init(cdata_domain, suite_name=trim(ccpp_suite), ierr=ierr)
 #else
-        call ccpp_physics_init(cdata_block(nb,nt), ierr=ierr)
+      call ccpp_physics_init(cdata_domain, ierr=ierr)
 #endif
-        if (ierr/=0) then
-          write(0,'(2(a,i4))') "An error occurred in ccpp_physics_init for block ", nb, " and thread ", nt
-          write(0,'(a)') trim(cdata_block(nb,nt)%errmsg)
-          return
-        end if
-      end do
+      if (ierr/=0) then
+        write(0,'(a)') "An error occurred in ccpp_physics_init"
+        write(0,'(a)') trim(cdata_domain%errmsg)
+        return
+      end if
 
    else if (trim(step)=="time_vary") then
-
-      ! Loop over blocks, don't use threading on the outside but allowing threading
-      ! inside the time_vary routines. This is because the time_vary routines contain
-      ! calls to gcycle.f90 and sfcsub.F, which do a lot of I/O and are highly
-      !inefficient if executed nthread times.
-      GFS_control%nthreads = nthrds
 
       ! Since the time_vary steps only use data structures for all blocks (except the
       ! CCPP-internal variables ccpp_error_flag and ccpp_error_message, which are defined
       ! for all cdata structures independently), we can use cdata_domain here.
+      ! Since we don't use threading on the outside, we can allow threading
+      ! inside the time_vary routines.
+      GFS_control%nthreads = nthrds
 
 #ifdef STATIC
       call ccpp_physics_run(cdata_domain, suite_name=trim(ccpp_suite), group_name="time_vary", ierr=ierr)
@@ -223,7 +204,7 @@ module CCPP_driver
         return
       end if
 
-    ! Radiation and stochastic physics
+   ! Radiation and stochastic physics
    else if (trim(step)=="radiation" .or. trim(step)=="physics" .or. trim(step)=="stochastics") then
 
       ! Set number of threads available to physics schemes to one,

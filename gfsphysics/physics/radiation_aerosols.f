@@ -4366,7 +4366,7 @@
       real (kind=kind_io8), Dimension( NP2 ) :: Angle, Cos_Angle,       &
      &                                          Cos_Weight
       real (kind=kind_io8), Dimension(n_p,nAero) :: RH, rm, reff
-      real (kind=kind_io8), Dimension(nWave,n_p,nAero) ::               &
+      real (kind=kind_io8), Dimension(nWave,n_p,nAero) ::               & 
      &                      ext0, sca0, asy0
       real (kind=kind_io8), Dimension(NP2,n_p,nWave,nAero) :: ph0
       real (kind=kind_io8) :: wavelength(nWave), density(nAero),        &
@@ -4502,7 +4502,7 @@
 !-----------------------------------
 !                                                                      !
 !> This subroutine computes mean aerosols optical properties over each
-!! SW/LW radiation spectral band for each of the species components.
+!! SW/LW radiation spectral band for each of the species components. 
 !! This program follows GFDL's approach for thick cloud optical property
 !! in SW radiation scheme (2000).
 !-----------------------------
