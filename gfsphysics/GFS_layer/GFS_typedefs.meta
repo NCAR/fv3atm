@@ -2669,6 +2669,12 @@
   units = flag
   dimensions = ()
   type = logical
+[sfc_z0_type]
+  standard_name = flag_for_surface_roughness_option_over_ocean
+  long_name = surface roughness options over ocean
+  units = flag
+  dimensions = ()
+  type = integer
 [xkzminv]
   standard_name = atmosphere_heat_diffusivity_background_maximum
   long_name = maximum background value of heat diffusivity
