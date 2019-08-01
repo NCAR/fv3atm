@@ -655,7 +655,8 @@ module GFS_driver
     endif
 !*## CCPP ##
 
-!## CCPP ##* This is not in the CCPP.
+!## CCPP ##* GFS_stochastics.F90/GFS_stochastics_run; Note: these lines are not 
+! verbatim in the CCPP, but functionally equivalent.
 ! kludge for output
     if (Model%do_skeb) then
       do nb = 1,nblks
