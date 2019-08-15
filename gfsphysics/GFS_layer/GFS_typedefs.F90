@@ -408,6 +408,10 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: dvsfcin_cpl(:) => null()   !< aoi_fld%dvsfcin(item,lan)
     real (kind=kind_phys), pointer :: dtsfcin_cpl(:) => null()   !< aoi_fld%dtsfcin(item,lan)
     real (kind=kind_phys), pointer :: dqsfcin_cpl(:) => null()   !< aoi_fld%dqsfcin(item,lan)
+    real (kind=kind_phys), pointer :: dusfc_cice(:) => null()   !< aoi_fld%dusfc_cice(item,lan)
+    real (kind=kind_phys), pointer :: dvsfc_cice(:) => null()   !< aoi_fld%dvsfc_cice(item,lan)
+    real (kind=kind_phys), pointer :: dtsfc_cice(:) => null()   !< aoi_fld%dtsfc_cice(item,lan)
+    real (kind=kind_phys), pointer :: dqsfc_cice(:) => null()   !< aoi_fld%dqsfc_cice(item,lan)
     real (kind=kind_phys), pointer :: ulwsfcin_cpl(:)=> null()   !< aoi_fld%ulwsfcin(item,lan)
     real (kind=kind_phys), pointer :: tseain_cpl(:)  => null()   !< aoi_fld%tseain(item,lan)
     real (kind=kind_phys), pointer :: tisfcin_cpl(:) => null()   !< aoi_fld%tisfcin(item,lan)
@@ -1628,6 +1632,7 @@ module GFS_typedefs
     logical,               pointer      :: ocean(:)         => null()  !<
     integer                             :: ipr                         !<
     integer,               pointer      :: islmsk(:)        => null()  !<
+    integer,               pointer      :: islmsk_cice(:)   => null()  !<
     logical,               pointer      :: wet(:)           => null()  !<
     integer                             :: ix                          !<
     integer                             :: kb                          !<
@@ -2280,6 +2285,10 @@ module GFS_typedefs
       allocate (Coupling%dvsfcin_cpl  (IM))
       allocate (Coupling%dtsfcin_cpl  (IM))
       allocate (Coupling%dqsfcin_cpl  (IM))
+      allocate (Coupling%dusfc_cice   (IM))
+      allocate (Coupling%dvsfc_cice   (IM))
+      allocate (Coupling%dtsfc_cice   (IM))
+      allocate (Coupling%dqsfc_cice   (IM))
       allocate (Coupling%ulwsfcin_cpl (IM))
       allocate (Coupling%tseain_cpl   (IM))
       allocate (Coupling%tisfcin_cpl  (IM))
@@ -2298,6 +2307,10 @@ module GFS_typedefs
       Coupling%ficein_cpl   = clear_val
       Coupling%hicein_cpl   = clear_val
       Coupling%hsnoin_cpl   = clear_val
+      Coupling%dusfc_cice   = clear_val
+      Coupling%dvsfc_cice   = clear_val
+      Coupling%dtsfc_cice   = clear_val
+      Coupling%dqsfc_cice   = clear_val
 
       !--- accumulated quantities
       allocate (Coupling%dusfc_cpl  (IM))
@@ -5435,6 +5448,7 @@ module GFS_typedefs
     allocate (Interstitial%lake       (IM))
     allocate (Interstitial%ocean      (IM))
     allocate (Interstitial%islmsk     (IM))
+    allocate (Interstitial%islmsk_cice (IM))
     allocate (Interstitial%wet        (IM))
     allocate (Interstitial%kbot       (IM))
     allocate (Interstitial%kcnv       (IM))
@@ -5897,6 +5911,7 @@ module GFS_typedefs
     Interstitial%lake         = .false.
     Interstitial%ocean        = .false.
     Interstitial%islmsk       = 0
+    Interstitial%islmsk_cice  = 0
     Interstitial%wet          = .false.
     Interstitial%kbot         = Model%levs
     Interstitial%kcnv         = 0
@@ -6173,6 +6188,7 @@ module GFS_typedefs
     write (0,*) 'Interstitial%lake(:)==.true.   = ', count(Interstitial%lake(:))
     write (0,*) 'Interstitial%ocean(:)==.true.  = ', count(Interstitial%ocean(:))
     write (0,*) 'sum(Interstitial%islmsk      ) = ', sum(Interstitial%islmsk      )
+    write (0,*) 'sum(Interstitial%islmsk_cice ) = ', sum(Interstitial%islmsk_cice )
     write (0,*) 'Interstitial%wet(:)==.true.    = ', count(Interstitial%wet(:))
     write (0,*) 'Interstitial%kb                = ', Interstitial%kb
     write (0,*) 'sum(Interstitial%kbot        ) = ', sum(Interstitial%kbot        )

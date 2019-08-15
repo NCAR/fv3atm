@@ -1386,6 +1386,76 @@
   dimensions = (horizontal_dimension)
   type = real
   kind = kind_phys
+[ulwsfcin_cpl]
+  standard_name = surface_upwelling_longwave_flux_for_coupling_in
+  long_name = surface upwelling LW flux for coupling in
+  units = W m-2 
+  dimensions = (horizontal_dimension)
+  type = real
+  kind = kind_phys
+[dusfcin_cpl]
+  standard_name = surface_x_momentum_flux_for_coupling_in
+  long_name = sfc x momentum flux for coupling in
+  units = Pa 
+  dimensions = (horizontal_dimension)
+  type = real
+  kind = kind_phys
+[dvsfcin_cpl]
+  standard_name = surface_y_momentum_flux_for_coupling_in
+  long_name = sfc y momentum flux for coupling in
+  units = Pa 
+  dimensions = (horizontal_dimension)
+  type = real
+  kind = kind_phys
+[dtsfcin_cpl]
+  standard_name = surface_upward_sensible_heat_flux_for_coupling_in
+  long_name = sfc sensible heat flux input
+  units = W m-2
+  dimensions = (horizontal_dimension)
+  type = real
+  kind = kind_phys
+[dqsfcin_cpl]
+  standard_name = surface_upward_latent_heat_flux_for_coupling_in
+  long_name = sfc latent heat flux input for coupling in
+  units = W m-2
+  dimensions = (horizontal_dimension)
+  type = real
+  kind = kind_phys
+[slimskin_cpl]
+  standard_name = sea_land_ice_mask_in	
+  long_name = sea/land/ice mask input (=0/1/2)
+  units = flag
+  dimensions = (horizontal_dimension)
+  type = real
+  kind = kind_phys
+[dusfc_cice]
+  standard_name = surface_x_momentum_flux_for_coupling_cice
+  long_name = sfc x momentum flux for cice
+  units = Pa 
+  dimensions = (horizontal_dimension)
+  type = real
+  kind = kind_phys
+[dvsfc_cice]
+  standard_name = surface_y_momentum_flux_for_coupling_cice
+  long_name = sfc y momentum flux for cice
+  units = Pa 
+  dimensions = (horizontal_dimension)
+  type = real
+  kind = kind_phys
+[dtsfc_cice]
+  standard_name = surface_upward_sensible_heat_flux_for_coupling_cice 
+  long_name = sfc sensible heat flux for cice
+  units = W m-2 
+  dimensions = (horizontal_dimension)
+  type = real
+  kind = kind_phys
+[dqsfc_cice]
+  standard_name = surface_upward_latent_heat_flux_for_coupling_cice 
+  long_name= surface latent heat flux for cice  
+  units = W m-2 
+  dimensions = (horizontal_dimension)
+  type = real
+  kind = kind_phys
 [tconvtend]
   standard_name = tendency_of_air_temperature_due_to_deep_convection_for_coupling_on_physics_timestep
   long_name = tendency of air temperature due to deep convection
@@ -6020,6 +6090,12 @@
 [islmsk]
   standard_name = sea_land_ice_mask
   long_name = sea/land/ice mask (=0/1/2)
+  units = flag
+  dimensions = (horizontal_dimension)
+  type = integer
+[islmsk_cice]
+  standard_name = sea_land_ice_mask_cice
+  long_name = sea/land/ice mask cice (=0/1/2)
   units = flag
   dimensions = (horizontal_dimension)
   type = integer
