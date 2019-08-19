@@ -621,7 +621,9 @@ contains
   mdt = bdt / real(k_split)
 
 #ifndef CCPP
-  if ( idiag%id_mdt > 0 .and. (.not. do_adiabatic_init) ) then
+  ! Routine Lagrangian_to_Eulerian expects dtdt_m to be allocated:
+  ! (fv_mapz.F90, 201): line real, intent(inout)::   dtdt(is:ie,js:je,km)
+  !if ( idiag%id_mdt > 0 .and. (.not. do_adiabatic_init) ) then
        allocate ( dtdt_m(is:ie,js:je,npz) )
 !$OMP parallel do default(none) shared(is,ie,js,je,npz,dtdt_m)
        do k=1,npz
@@ -631,7 +633,7 @@ contains
              enddo
           enddo
        enddo
-  endif
+  !endif
 #endif
 
                                                   call timing_on('FV_DYN_LOOP')
@@ -834,10 +836,10 @@ contains
        enddo
 !      call prt_mxm('Fast DTDT (deg/Day)', dtdt_m, is, ie, js, je, 0, npz, 1., gridstruct%area_64, domain)
        used = send_data(idiag%id_mdt, dtdt_m, fv_time)
-#ifndef CCPP
-       deallocate ( dtdt_m )
-#endif
   endif
+#ifndef CCPP
+  deallocate ( dtdt_m )
+#endif
 
   if( nwat == 6 ) then
      if (cld_amt > 0) then
