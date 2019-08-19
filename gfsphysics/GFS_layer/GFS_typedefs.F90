@@ -1536,6 +1536,12 @@ module GFS_typedefs
 !--- fractional grid
     logical              :: frac_grid       !< flag for fractional grid
 
+!--- surface layer z0 scheme
+    integer              :: sfc_z0_type     !< surface roughness options over ocean: 
+                                            !< 0=no change
+                                            !< 6=areodynamical roughness over water with input 10-m wind
+                                            !< 7=slightly decrease Cd for higher wind speed compare to 6
+
 !--- background vertical diffusion
     real(kind=kind_phys) :: xkzm_m          !< [in] bkgd_vdif_m  background vertical diffusion for momentum  
     real(kind=kind_phys) :: xkzm_h          !< [in] bkgd_vdif_h  background vertical diffusion for heat q  
@@ -4044,6 +4050,12 @@ module GFS_typedefs
 !--- fractional grid
     logical              :: frac_grid      = .false.         !< flag for fractional grid
 
+!--- surface layer z0 scheme
+    integer              :: sfc_z0_type    = 0               !< surface roughness options over ocean
+                                                             !< 0=no change
+                                                             !< 6=areodynamical roughness over water with input 10-m wind
+                                                             !< 7=slightly decrease Cd for higher wind speed compare to 6
+
 !--- background vertical diffusion
     real(kind=kind_phys) :: xkzm_m         = 1.0d0           !< [in] bkgd_vdif_m  background vertical diffusion for momentum  
     real(kind=kind_phys) :: xkzm_h         = 1.0d0           !< [in] bkgd_vdif_h  background vertical diffusion for heat q  
@@ -4166,6 +4178,8 @@ module GFS_typedefs
                           !--- near surface sea temperature model
                                nst_anl, lsea, nstf_name,                                    &
                                frac_grid,                                                   &
+                          !--- surface layer
+                               sfc_z0_type,                                                 &
                           !    background vertical diffusion
                                xkzm_m, xkzm_h, xkzm_s, xkzminv, moninq_fac,                 &
                           !--- cellular automata                         
@@ -4552,6 +4566,9 @@ module GFS_typedefs
 
 !--- fractional grid
     Model%frac_grid        = frac_grid
+
+!--- surface layer
+    Model%sfc_z0_type      = sfc_z0_type
 
 !--- backgroud vertical diffusion
     Model%xkzm_m           = xkzm_m
@@ -5445,6 +5462,9 @@ module GFS_typedefs
       print *, ' nst_anl           : ', Model%nst_anl
       print *, ' nstf_name         : ', Model%nstf_name
       print *, ' lsea              : ', Model%lsea
+      print *, ' '
+      print *, 'surface layer options'
+      print *, ' sfc_z0_type       : ', Model%sfc_z0_type
       print *, ' '
       print *, 'background vertical diffusion coefficients'
       print *, ' xkzm_m            : ', Model%xkzm_m
