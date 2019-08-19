@@ -408,10 +408,6 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: dvsfcin_cpl(:) => null()   !< aoi_fld%dvsfcin(item,lan)
     real (kind=kind_phys), pointer :: dtsfcin_cpl(:) => null()   !< aoi_fld%dtsfcin(item,lan)
     real (kind=kind_phys), pointer :: dqsfcin_cpl(:) => null()   !< aoi_fld%dqsfcin(item,lan)
-    real (kind=kind_phys), pointer :: dusfc_cice(:) => null()   !< aoi_fld%dusfc_cice(item,lan)
-    real (kind=kind_phys), pointer :: dvsfc_cice(:) => null()   !< aoi_fld%dvsfc_cice(item,lan)
-    real (kind=kind_phys), pointer :: dtsfc_cice(:) => null()   !< aoi_fld%dtsfc_cice(item,lan)
-    real (kind=kind_phys), pointer :: dqsfc_cice(:) => null()   !< aoi_fld%dqsfc_cice(item,lan)
     real (kind=kind_phys), pointer :: ulwsfcin_cpl(:)=> null()   !< aoi_fld%ulwsfcin(item,lan)
     real (kind=kind_phys), pointer :: tseain_cpl(:)  => null()   !< aoi_fld%tseain(item,lan)
     real (kind=kind_phys), pointer :: tisfcin_cpl(:) => null()   !< aoi_fld%tisfcin(item,lan)
@@ -1756,6 +1752,10 @@ module GFS_typedefs
     real (kind=kind_phys), pointer      :: tsurf_ocean(:)   => null()  !<
     real (kind=kind_phys), pointer      :: ud_mf(:,:)       => null()  !<
     real (kind=kind_phys), pointer      :: ulwsfc_cice(:)   => null()  !<
+    real (kind=kind_phys), pointer      :: dusfc_cice(:)    => null()  !<
+    real (kind=kind_phys), pointer      :: dvsfc_cice(:)    => null()  !<
+    real (kind=kind_phys), pointer      :: dqsfc_cice(:)    => null()  !<
+    real (kind=kind_phys), pointer      :: dtsfc_cice(:)    => null()  !<
     real (kind=kind_phys), pointer      :: uustar_ice(:)    => null()  !<
     real (kind=kind_phys), pointer      :: uustar_land(:)   => null()  !<
     real (kind=kind_phys), pointer      :: uustar_ocean(:)  => null()  !<
@@ -2285,10 +2285,6 @@ module GFS_typedefs
       allocate (Coupling%dvsfcin_cpl  (IM))
       allocate (Coupling%dtsfcin_cpl  (IM))
       allocate (Coupling%dqsfcin_cpl  (IM))
-      allocate (Coupling%dusfc_cice   (IM))
-      allocate (Coupling%dvsfc_cice   (IM))
-      allocate (Coupling%dtsfc_cice   (IM))
-      allocate (Coupling%dqsfc_cice   (IM))
       allocate (Coupling%ulwsfcin_cpl (IM))
       allocate (Coupling%tseain_cpl   (IM))
       allocate (Coupling%tisfcin_cpl  (IM))
@@ -2307,10 +2303,6 @@ module GFS_typedefs
       Coupling%ficein_cpl   = clear_val
       Coupling%hicein_cpl   = clear_val
       Coupling%hsnoin_cpl   = clear_val
-      Coupling%dusfc_cice   = clear_val
-      Coupling%dvsfc_cice   = clear_val
-      Coupling%dtsfc_cice   = clear_val
-      Coupling%dqsfc_cice   = clear_val
 
       !--- accumulated quantities
       allocate (Coupling%dusfc_cpl  (IM))
@@ -5516,6 +5508,10 @@ module GFS_typedefs
     allocate (Interstitial%tsurf_ocean(IM))
     allocate (Interstitial%ud_mf      (IM,Model%levs))
     allocate (Interstitial%ulwsfc_cice(IM))
+    allocate (Interstitial%dusfc_cice (IM))
+    allocate (Interstitial%dvsfc_cice (IM))
+    allocate (Interstitial%dtsfc_cice (IM))
+    allocate (Interstitial%dqsfc_cice (IM))
     allocate (Interstitial%uustar_ice (IM))
     allocate (Interstitial%uustar_land(IM))
     allocate (Interstitial%uustar_ocean(IM))
@@ -5966,6 +5962,10 @@ module GFS_typedefs
     Interstitial%tsurf_ocean  = huge
     Interstitial%ud_mf        = clear_val
     Interstitial%ulwsfc_cice  = clear_val
+    Interstitial%dusfc_cice  = clear_val
+    Interstitial%dvsfc_cice  = clear_val
+    Interstitial%dtsfc_cice  = clear_val
+    Interstitial%dqsfc_cice  = clear_val
     Interstitial%uustar_ice   = huge
     Interstitial%uustar_land  = huge
     Interstitial%uustar_ocean = huge
@@ -6266,6 +6266,10 @@ module GFS_typedefs
     write (0,*) 'sum(Interstitial%tsurf_ocean ) = ', sum(Interstitial%tsurf_ocean )
     write (0,*) 'sum(Interstitial%ud_mf       ) = ', sum(Interstitial%ud_mf       )
     write (0,*) 'sum(Interstitial%ulwsfc_cice ) = ', sum(Interstitial%ulwsfc_cice )
+    write (0,*) 'sum(Interstitial%dusfc_cice  ) = ', sum(Interstitial%dusfc_cice  )
+    write (0,*) 'sum(Interstitial%dvsfc_cice  ) = ', sum(Interstitial%dvsfc_cice  )
+    write (0,*) 'sum(Interstitial%dtsfc_cice  ) = ', sum(Interstitial%dtsfc_cice  )
+    write (0,*) 'sum(Interstitial%dqsfc_cice  ) = ', sum(Interstitial%dqsfc_cice  )
     write (0,*) 'sum(Interstitial%uustar_ice  ) = ', sum(Interstitial%uustar_ice  )
     write (0,*) 'sum(Interstitial%uustar_land ) = ', sum(Interstitial%uustar_land )
     write (0,*) 'sum(Interstitial%uustar_ocean) = ', sum(Interstitial%uustar_ocean)
