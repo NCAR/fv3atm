@@ -3709,15 +3709,15 @@
   dimensions = (horizontal_dimension)
   type = integer
 [raincprv]
-  standard_name = lwe_thickness_of_explicit_rainfall_amount_from_previous_timestep
-  long_name = explicit rainfall from previous timestep
+  standard_name = lwe_thickness_of_convective_precipitation_amount_from_previous_timestep
+  long_name = convective_precipitation_amount from previous timestep
   units = m
   dimensions = (horizontal_dimension)
   type = real
   kind = kind_phys
 [rainncprv]
-  standard_name = lwe_thickness_of_convective_precipitation_amount_from_previous_timestep
-  long_name = convective_precipitation_amount from previous timestep
+  standard_name = lwe_thickness_of_explicit_rainfall_amount_from_previous_timestep
+  long_name = explicit rainfall from previous timestep
   units = m
   dimensions = (horizontal_dimension)
   type = real
