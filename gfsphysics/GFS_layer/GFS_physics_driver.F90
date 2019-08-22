@@ -1080,7 +1080,7 @@ module module_physics_driver
 #endif
 !*## CCPP ##
 
-!## CCPP ##* this block not yet in CCPP
+!## CCPP ##* noahmp_pre.F90/noahmp_pre_run
 !
 ! Julian day calculation (fcst day of the year)
 ! we need imn to init lai and sai and yearln and julian to
@@ -1250,7 +1250,7 @@ module module_physics_driver
       enddo
 !*## CCPP ##
 
-!## CCPP ##* note: this block is not yet in CCPP
+!## CCPP ##* global to local variable transfer not necessary for these variables
 ! -- Noah MP 3D global to local
      if (Model%lsm == Model%lsm_noahmp) then
 
@@ -2145,7 +2145,8 @@ module module_physics_driver
 !*## CCPP ##
 !## CCPP ##* This block is not in the CCPP
       Tbd%phy_f2d(:,Model%num_p2d) = 0.0
-
+!*## CCPP ##
+!## CCPP ##* This block is executed inside sfc_noahmp_drv.f/noahmpdrv_run
       if (Model%lsm == Model%lsm_noahmp) then
         do i=1,im
           if(dry(i)) then
@@ -5460,7 +5461,8 @@ module module_physics_driver
                        Sfcprop%f10m, Diag%u10m, Diag%v10m, Sfcprop%t2m, &
                        Sfcprop%q2m,  work3, evap, Sfcprop%ffmm,         &
                        Sfcprop%ffhh, fm10, fh2)
-      
+!*## CCPP ##
+!## CCPP ##* This block is executed inside sfc_noahmp_drv.f/noahmpdrv_run  
       if (Model%lsm == Model%lsm_noahmp) then
         do i=1,im
           if (dry(i)) then
@@ -5498,9 +5500,10 @@ module module_physics_driver
 !  --- ...  total runoff is composed of drainage into water table and
 !           runoff at the surface and is accumulated in unit of meters
       if (Model%lssav) then
+        tem = dtf * 0.001
         do i=1,im
-          Diag%runoff(i)  = Diag%runoff(i)  + (drain(i)+runof(i)) * dtf
-          Diag%srunoff(i) = Diag%srunoff(i) + runof(i) * dtf
+          Diag%runoff(i)  = Diag%runoff(i)  + (drain(i)+runof(i)) * tem
+          Diag%srunoff(i) = Diag%srunoff(i) + runof(i) * tem
         enddo
       endif
 !*## CCPP ##
@@ -5515,7 +5518,7 @@ module module_physics_driver
         enddo
       enddo
 !*## CCPP ##
-!## CCPP ##* This block not yet in CCPP.
+!## CCPP ##* global to local variable transfer not necessary for these variables
 ! Noah MP
      if (Model%lsm == Model%lsm_noahmp) then
 
