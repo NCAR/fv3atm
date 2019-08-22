@@ -580,7 +580,6 @@ module GFS_typedefs
     logical              :: do_ugwp         ! do mesoscale UGWP + TOFD + RF
     logical              :: do_tofd         ! tofd flag in gwdps.f
 
-
 !--- calendars and time parameters and activation triggers
     real(kind=kind_phys) :: dtp             !< physics timestep in seconds
     real(kind=kind_phys) :: dtf             !< dynamics timestep in seconds
@@ -3078,15 +3077,7 @@ module GFS_typedefs
     Model%ldiag_ugwp       = ldiag_ugwp
     Model%do_ugwp          = do_ugwp
     Model%do_tofd          = do_tofd
-!WL*
-!#ifdef CCPP
-!    if (Model%ldiag_ugwp .or. Model%do_ugwp .or. Model%do_tofd) then
-!      print *, "Error, unified gravity wavedrag parameterization not yet available in CCPP"
-!      stop
-!    endif
-!#endif
-!
-!*WL
+
     Model%lssav            = lssav
     Model%fhcyc            = fhcyc
     Model%lgocart          = lgocart
