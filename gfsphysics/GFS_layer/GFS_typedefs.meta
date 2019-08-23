@@ -1621,13 +1621,13 @@
   standard_name = a_parameter_of_the_hybrid_coordinate
   long_name = a parameter for sigma pressure level calculations
   units = Pa
-  dimensions = ()
+  dimensions = (number_of_vertical_layers_for_radiation_calculations_plus_one)
   type = real
 [bk]
   standard_name = b_parameter_of_the_hybrid_coordinate
   long_name = b parameter for sigma pressure level calculations
   units = none
-  dimensions = ()
+  dimensions = (number_of_vertical_layers_for_radiation_calculations_plus_one)
   type = real
 [levsp1]
   standard_name = vertical_dimension_plus_one
@@ -7530,6 +7530,13 @@
   standard_name = freezing_point_temperature_of_seawater
   long_name = freezing point temperature of seawater
   units = K
+  dimensions = ()
+  type = real
+  kind = kind_phys
+[con_p0]
+  standard_name = standard_atmospheric_pressure
+  long_name = standard atmospheric pressure
+  units = Pa
   dimensions = ()
   type = real
   kind = kind_phys

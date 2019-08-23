@@ -8,7 +8,7 @@ module GFS_typedefs
                                            con_hvap, con_hfus, con_pi, con_rd, con_rv, &
                                            con_t0c, con_cvap, con_cliq, con_eps, &
                                            con_epsm1, con_ttp, rlapse, con_jcal, con_rhw0, &
-                                           con_sbc, con_tice, cimin
+                                           con_sbc, con_tice, cimin, con_p0
        use module_radsw_parameters,  only: topfsw_type, sfcfsw_type, cmpfsw_type, NBDSW
        use module_radlw_parameters,  only: topflw_type, sfcflw_type, NBDLW
 #else
@@ -2569,9 +2569,6 @@ module GFS_typedefs
     real(kind=kind_phys) :: rinc(5)
     real(kind=kind_phys) :: wrk(1)
     real(kind=kind_phys), parameter :: con_hr = 3600.
-#ifdef CCPP
-    real(kind=kind_phys), parameter   :: p_ref = 101325.0d0
-#endif
 
 !--- BEGIN NAMELIST VARIABLES
     real(kind=kind_phys) :: fhzero         = 0.0             !< hours between clearing of diagnostic buckets
@@ -3592,7 +3589,7 @@ module GFS_typedefs
     !--- The formula converting hybrid sigma pressure coefficients to sigma coefficients follows Eckermann (2009, MWR)
     !--- ps is replaced with p0. The value of p0 uses that in http://www.emc.ncep.noaa.gov/officenotes/newernotes/on461.pdf
     !--- ak/bk have been flipped from their original FV3 orientation and are defined sfc -> toa
-    Model%si = (ak + bk * p_ref - ak(Model%levr+1)) / (p_ref - ak(Model%levr+1))
+    Model%si = (ak + bk * con_p0 - ak(Model%levr+1)) / (con_p0 - ak(Model%levr+1))
 #endif
 
 #ifndef CCPP
