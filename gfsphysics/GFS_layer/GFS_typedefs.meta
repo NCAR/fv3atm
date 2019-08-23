@@ -4922,28 +4922,28 @@
   standard_name = time_integral_of_momentum_flux_due_to_turbulent_orographic_form_drag
   long_name = time integral of momentum flux due to TOFD
   units = Pa
-  dimensions = (horizontal_dimension,vertical_dimension)
+  dimensions = (horizontal_dimension)
   type = real
   kind = kind_phys
 [tau_mtb]
   standard_name = time_integral_of_momentum_flux_due_to_mountain_blocking_drag
   long_name = time integral of momentum flux due to mountain blocking drag
   units = Pa
-  dimensions = (horizontal_dimension,vertical_dimension)
+  dimensions = (horizontal_dimension)
   type = real
   kind = kind_phys
 [tau_ogw]
   standard_name = time_integral_of_momentum_flux_due_to_orographic_gravity_wave_drag
   long_name = time integral of momentum flux due to orographic gravity wave drag
   units = Pa
-  dimensions = (horizontal_dimension,vertical_dimension)
+  dimensions = (horizontal_dimension)
   type = real
   kind = kind_phys
 [tau_ngw]
   standard_name = time_integral_of_momentum_flux_due_to_nonstationary_gravity_wave
   long_name = time integral of momentum flux due to nonstationary gravity waves
   units = Pa
-  dimensions = (horizontal_dimension,vertical_dimension)
+  dimensions = (horizontal_dimension)
   type = real
   kind = kind_phys
 [du3dt_mtb]
@@ -7206,28 +7206,28 @@
   standard_name = instantaneous_momentum_flux_due_to_turbulent_orographic_form_drag
   long_name = instantaneous momentum flux due to TOFD
   units = Pa
-  dimensions = (horizontal_dimension,vertical_dimension)
+  dimensions = (horizontal_dimension)
   type = real
   kind = kind_phys
 [tau_mtb]
   standard_name = instantaneous_momentum_flux_due_to_mountain_blocking_drag
   long_name = instantaneous momentum flux due to mountain blocking drag
   units = Pa
-  dimensions = (horizontal_dimension,vertical_dimension)
+  dimensions = (horizontal_dimension)
   type = real
   kind = kind_phys
 [tau_ogw]
   standard_name = instantaneous_momentum_flux_due_to_orographic_gravity_wave_drag
   long_name = instantaneous momentum flux due to orographic gravity wave drag
   units = Pa
-  dimensions = (horizontal_dimension,vertical_dimension)
+  dimensions = (horizontal_dimension)
   type = real
   kind = kind_phys
 [tau_ngw]
   standard_name = instantaneous_momentum_flux_due_to_nonstationary_gravity_wave
   long_name = instantaneous momentum flux due to nonstationary gravity waves
   units = Pa
-  dimensions = (horizontal_dimension,vertical_dimension)
+  dimensions = (horizontal_dimension)
   type = real
   kind = kind_phys
 [dudt_mtb]
