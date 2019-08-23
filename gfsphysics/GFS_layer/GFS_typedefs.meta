@@ -1621,13 +1621,13 @@
   standard_name = a_parameter_of_the_hybrid_coordinate
   long_name = a parameter for sigma pressure level calculations
   units = Pa
-  dimensions = ()
+  dimensions = (number_of_vertical_layers_for_radiation_calculations_plus_one)
   type = real
 [bk]
   standard_name = b_parameter_of_the_hybrid_coordinate
   long_name = b parameter for sigma pressure level calculations
   units = none
-  dimensions = ()
+  dimensions = (number_of_vertical_layers_for_radiation_calculations_plus_one)
   type = real
 [levsp1]
   standard_name = vertical_dimension_plus_one
@@ -4922,28 +4922,28 @@
   standard_name = time_integral_of_momentum_flux_due_to_turbulent_orographic_form_drag
   long_name = time integral of momentum flux due to TOFD
   units = Pa
-  dimensions = (horizontal_dimension,vertical_dimension)
+  dimensions = (horizontal_dimension)
   type = real
   kind = kind_phys
 [tau_mtb]
   standard_name = time_integral_of_momentum_flux_due_to_mountain_blocking_drag
   long_name = time integral of momentum flux due to mountain blocking drag
   units = Pa
-  dimensions = (horizontal_dimension,vertical_dimension)
+  dimensions = (horizontal_dimension)
   type = real
   kind = kind_phys
 [tau_ogw]
   standard_name = time_integral_of_momentum_flux_due_to_orographic_gravity_wave_drag
   long_name = time integral of momentum flux due to orographic gravity wave drag
   units = Pa
-  dimensions = (horizontal_dimension,vertical_dimension)
+  dimensions = (horizontal_dimension)
   type = real
   kind = kind_phys
 [tau_ngw]
   standard_name = time_integral_of_momentum_flux_due_to_nonstationary_gravity_wave
   long_name = time integral of momentum flux due to nonstationary gravity waves
   units = Pa
-  dimensions = (horizontal_dimension,vertical_dimension)
+  dimensions = (horizontal_dimension)
   type = real
   kind = kind_phys
 [du3dt_mtb]
@@ -7206,28 +7206,28 @@
   standard_name = instantaneous_momentum_flux_due_to_turbulent_orographic_form_drag
   long_name = instantaneous momentum flux due to TOFD
   units = Pa
-  dimensions = (horizontal_dimension,vertical_dimension)
+  dimensions = (horizontal_dimension)
   type = real
   kind = kind_phys
 [tau_mtb]
   standard_name = instantaneous_momentum_flux_due_to_mountain_blocking_drag
   long_name = instantaneous momentum flux due to mountain blocking drag
   units = Pa
-  dimensions = (horizontal_dimension,vertical_dimension)
+  dimensions = (horizontal_dimension)
   type = real
   kind = kind_phys
 [tau_ogw]
   standard_name = instantaneous_momentum_flux_due_to_orographic_gravity_wave_drag
   long_name = instantaneous momentum flux due to orographic gravity wave drag
   units = Pa
-  dimensions = (horizontal_dimension,vertical_dimension)
+  dimensions = (horizontal_dimension)
   type = real
   kind = kind_phys
 [tau_ngw]
   standard_name = instantaneous_momentum_flux_due_to_nonstationary_gravity_wave
   long_name = instantaneous momentum flux due to nonstationary gravity waves
   units = Pa
-  dimensions = (horizontal_dimension,vertical_dimension)
+  dimensions = (horizontal_dimension)
   type = real
   kind = kind_phys
 [dudt_mtb]
@@ -7530,6 +7530,13 @@
   standard_name = freezing_point_temperature_of_seawater
   long_name = freezing point temperature of seawater
   units = K
+  dimensions = ()
+  type = real
+  kind = kind_phys
+[con_p0]
+  standard_name = standard_atmospheric_pressure
+  long_name = standard atmospheric pressure
+  units = Pa
   dimensions = ()
   type = real
   kind = kind_phys
