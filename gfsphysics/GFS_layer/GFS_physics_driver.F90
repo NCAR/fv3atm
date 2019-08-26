@@ -1080,7 +1080,7 @@ module module_physics_driver
 #endif
 !*## CCPP ##
 
-!## CCPP ##* noahmp_pre.F90/noahmp_pre_run
+!## CCPP ##* GFS_time_vary_pre.fv3.F90/GFS_time_vary_pre_run
 !
 ! Julian day calculation (fcst day of the year)
 ! we need imn to init lai and sai and yearln and julian to

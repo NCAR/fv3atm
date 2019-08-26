@@ -589,6 +589,10 @@ module GFS_typedefs
                                             !< (yr, mon, day, t-zone, hr, min, sec, mil-sec)
     integer              :: idate(4)        !< initial date with different size and ordering
                                             !< (hr, mon, day, yr)
+#ifdef CCPP
+    real(kind=kind_phys) :: julian          !< julian day using midnight of January 1 of forecast year as initial epoch
+    integer              :: yearlen         !< length of the forecast year in days
+#endif
 !--- radiation control parameters
     real(kind=kind_phys) :: fhswr           !< frequency for shortwave radiation (secs)
     real(kind=kind_phys) :: fhlwr           !< frequency for longwave radiation (secs)
@@ -994,7 +998,7 @@ module GFS_typedefs
     real(kind=kind_phys) :: clstp           !< index used by cnvc90 (for convective clouds) 
                                             !< legacy stuff - does not affect forecast
     real(kind=kind_phys) :: phour           !< previous forecast hour
-    real(kind=kind_phys) :: fhour           !< curent forecast hour
+    real(kind=kind_phys) :: fhour           !< current forecast hour
     real(kind=kind_phys) :: zhour           !< previous hour diagnostic buckets emptied
     integer              :: kdt             !< current forecast iteration
 #ifdef CCPP
@@ -1638,7 +1642,6 @@ module GFS_typedefs
     integer,               pointer      :: islmsk(:)        => null()  !<
     logical,               pointer      :: wet(:)           => null()  !<
     integer                             :: ix                          !<
-    real (kind=kind_phys)               :: julian                      !<
     integer                             :: kb                          !<
     integer,               pointer      :: kbot(:)          => null()  !<
     integer,               pointer      :: kcnv(:)          => null()  !<
@@ -1778,7 +1781,6 @@ module GFS_typedefs
     real (kind=kind_phys), pointer      :: xcosz(:)         => null()  !<
     real (kind=kind_phys), pointer      :: xlai1d(:)        => null()  !<
     real (kind=kind_phys), pointer      :: xmu(:)           => null()  !<
-    integer                             :: yearlen                     !<
     real (kind=kind_phys), pointer      :: z01d(:)          => null()  !<
     real (kind=kind_phys), pointer      :: zorl_ice(:)      => null()  !<
     real (kind=kind_phys), pointer      :: zorl_land(:)     => null()  !<
@@ -3599,6 +3601,13 @@ module GFS_typedefs
     Model%jdat(1:8)        = jdat(1:8)
 #ifdef CCPP
     Model%sec              = 0
+    
+#ifdef CCPP
+    if (Model%lsm == Model%lsm_noahmp) then
+      Model%yearlen          = 365
+      Model%julian           = -9999.
+    endif
+#endif    
     ! DH* what happens if LTP>0? Does this have to change? 
     ! A conversation with Yu-Tai suggests that we can probably
     ! eliminate LTP altogether *DH
@@ -6045,10 +6054,6 @@ module GFS_typedefs
        Interstitial%ncpi      = clear_val
        Interstitial%ncpl      = clear_val
     end if
-    if (Model%lsm == Model%lsm_noahmp) THEN
-       Interstitial%yearlen   = 365
-       Interstitial%julian    = clear_val
-    end if
     !
     ! Set flag for resetting maximum hourly output fields
     Interstitial%reset = mod(Model%kdt-1, nint(Model%avg_max_length/Model%dtp)) == 0
@@ -6349,11 +6354,6 @@ module GFS_typedefs
        write (0,*) 'sum(Interstitial%qgl      ) = ', sum(Interstitial%qgl         )
        write (0,*) 'sum(Interstitial%ncpi     ) = ', sum(Interstitial%ncpi        )
        write (0,*) 'sum(Interstitial%ncpl     ) = ', sum(Interstitial%ncpl        )
-    end if
-    if (Model%lsm == Model%lsm_noahmp) THEN
-       write (0,*) 'Interstitial_print: values specific to NoahMP'
-       write (0,*) 'Interstitial%yearlen        = ', Interstitial%yearlen
-       write (0,*) 'Interstitial%julian         = ', Interstitial%julian
     end if
     write (0,*) 'Interstitial_print: end'
     !
