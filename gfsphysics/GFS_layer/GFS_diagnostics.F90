@@ -819,6 +819,9 @@ module GFS_diagnostics
     ExtDiag(idx)%desc = 'surface storm water runoff - GFS lsm'
     ExtDiag(idx)%unit = 'kg/m**2'
     ExtDiag(idx)%mod_name = 'gfs_phys'
+#ifndef CCPP
+    ExtDiag(idx)%cnvfac = cn_th
+#endif
     allocate (ExtDiag(idx)%data(nblks))
     do nb = 1,nblks
       ExtDiag(idx)%data(nb)%var2 => IntDiag(nb)%srunoff(:)
@@ -904,6 +907,9 @@ module GFS_diagnostics
     ExtDiag(idx)%unit = 'kg/m**2'
     ExtDiag(idx)%mod_name = 'gfs_phys'
     ExtDiag(idx)%mask = "land_only"
+#ifndef CCPP
+    ExtDiag(idx)%cnvfac = cn_th
+#endif
     allocate (ExtDiag(idx)%data(nblks))
     do nb = 1,nblks
       ExtDiag(idx)%data(nb)%var2  => IntDiag(nb)%soilm(:)
@@ -1076,6 +1082,9 @@ module GFS_diagnostics
     ExtDiag(idx)%desc = 'total water runoff'
     ExtDiag(idx)%unit = 'kg/m**2'
     ExtDiag(idx)%mod_name = 'gfs_phys'
+#ifndef CCPP
+    ExtDiag(idx)%cnvfac = cn_th
+#endif
     allocate (ExtDiag(idx)%data(nblks))
     do nb = 1,nblks
       ExtDiag(idx)%data(nb)%var2 => IntDiag(nb)%runoff(:)
