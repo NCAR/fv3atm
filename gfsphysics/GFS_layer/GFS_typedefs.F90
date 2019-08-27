@@ -3729,13 +3729,6 @@ module GFS_typedefs
       elseif (Model%lsm == 0) then
         print *,' OSU no longer supported - job aborted'
         stop
-#ifdef CCPP
-      elseif (Model%lsm == Model%lsm_ruc) then
-        print *,' RUC Land Surface Model used'
-      elseif (Model%lsm == Model%lsm_noahmp) then
-        print *,' Error, NOAH MP Land Surface Model not yet available in CCPP - job aborted'
-        stop
-#else
       elseif (Model%lsm == Model%lsm_noahmp) then
         if (Model%ivegsrc /= 1) then
           print *,'Vegetation type must be IGBP if Noah MP is used'
@@ -3759,6 +3752,10 @@ module GFS_typedefs
         print *,'iopt_snf   =  ', Model%iopt_snf
         print *,'iopt_tbot   =  ',Model%iopt_tbot
         print *,'iopt_stc   =  ', Model%iopt_stc
+#ifdef CCPP
+      elseif (Model%lsm == Model%lsm_ruc) then
+        print *,' RUC Land Surface Model used'
+#else
       elseif (Model%lsm == Model%lsm_ruc) then
         print *,' RUC Land Surface Model only available through CCPP - job aborted'
         stop
