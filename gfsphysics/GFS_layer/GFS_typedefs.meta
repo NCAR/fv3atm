@@ -5521,7 +5521,7 @@
 [drain]
   standard_name = subsurface_runoff_flux
   long_name = subsurface runoff flux
-  units = g m-2 s-1
+  units = kg m-2 s-1
   dimensions = (horizontal_dimension)
   type = real
   kind = kind_phys
@@ -6618,7 +6618,7 @@
 [runoff]
   standard_name = surface_runoff_flux
   long_name = surface runoff flux
-  units = g m-2 s-1
+  units = kg m-2 s-1
   dimensions = (horizontal_dimension)
   type = real
   kind = kind_phys
@@ -6899,7 +6899,7 @@
 [trans]
   standard_name = transpiration_flux
   long_name = total plant transpiration rate
-  units = kg m-2 s-1
+  units = W m-2
   dimensions = (horizontal_dimension)
   type = real
   kind = kind_phys
