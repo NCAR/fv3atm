@@ -1628,6 +1628,7 @@ module GFS_typedefs
     logical,               pointer      :: ocean(:)         => null()  !<
     integer                             :: ipr                         !<
     integer,               pointer      :: islmsk(:)        => null()  !<
+    integer,               pointer      :: islmsk_cice(:)   => null()  !<
     logical,               pointer      :: wet(:)           => null()  !<
     integer                             :: ix                          !<
     integer                             :: kb                          !<
@@ -1751,6 +1752,10 @@ module GFS_typedefs
     real (kind=kind_phys), pointer      :: tsurf_ocean(:)   => null()  !<
     real (kind=kind_phys), pointer      :: ud_mf(:,:)       => null()  !<
     real (kind=kind_phys), pointer      :: ulwsfc_cice(:)   => null()  !<
+    real (kind=kind_phys), pointer      :: dusfc_cice(:)    => null()  !<
+    real (kind=kind_phys), pointer      :: dvsfc_cice(:)    => null()  !<
+    real (kind=kind_phys), pointer      :: dqsfc_cice(:)    => null()  !<
+    real (kind=kind_phys), pointer      :: dtsfc_cice(:)    => null()  !<
     real (kind=kind_phys), pointer      :: uustar_ice(:)    => null()  !<
     real (kind=kind_phys), pointer      :: uustar_land(:)   => null()  !<
     real (kind=kind_phys), pointer      :: uustar_ocean(:)  => null()  !<
@@ -5444,6 +5449,7 @@ module GFS_typedefs
     allocate (Interstitial%lake       (IM))
     allocate (Interstitial%ocean      (IM))
     allocate (Interstitial%islmsk     (IM))
+    allocate (Interstitial%islmsk_cice (IM))
     allocate (Interstitial%wet        (IM))
     allocate (Interstitial%kbot       (IM))
     allocate (Interstitial%kcnv       (IM))
@@ -5518,6 +5524,10 @@ module GFS_typedefs
     allocate (Interstitial%tsurf_ocean(IM))
     allocate (Interstitial%ud_mf      (IM,Model%levs))
     allocate (Interstitial%ulwsfc_cice(IM))
+    allocate (Interstitial%dusfc_cice (IM))
+    allocate (Interstitial%dvsfc_cice (IM))
+    allocate (Interstitial%dtsfc_cice (IM))
+    allocate (Interstitial%dqsfc_cice (IM))
     allocate (Interstitial%uustar_ice (IM))
     allocate (Interstitial%uustar_land(IM))
     allocate (Interstitial%uustar_ocean(IM))
@@ -5922,6 +5932,7 @@ module GFS_typedefs
     Interstitial%lake         = .false.
     Interstitial%ocean        = .false.
     Interstitial%islmsk       = 0
+    Interstitial%islmsk_cice  = 0
     Interstitial%wet          = .false.
     Interstitial%kbot         = Model%levs
     Interstitial%kcnv         = 0
@@ -5983,6 +5994,10 @@ module GFS_typedefs
     Interstitial%tsurf_ocean  = huge
     Interstitial%ud_mf        = clear_val
     Interstitial%ulwsfc_cice  = clear_val
+    Interstitial%dusfc_cice  = clear_val
+    Interstitial%dvsfc_cice  = clear_val
+    Interstitial%dtsfc_cice  = clear_val
+    Interstitial%dqsfc_cice  = clear_val
     Interstitial%uustar_ice   = huge
     Interstitial%uustar_land  = huge
     Interstitial%uustar_ocean = huge
@@ -6214,6 +6229,7 @@ module GFS_typedefs
     write (0,*) 'Interstitial%lake(:)==.true.   = ', count(Interstitial%lake(:))
     write (0,*) 'Interstitial%ocean(:)==.true.  = ', count(Interstitial%ocean(:))
     write (0,*) 'sum(Interstitial%islmsk      ) = ', sum(Interstitial%islmsk      )
+    write (0,*) 'sum(Interstitial%islmsk_cice ) = ', sum(Interstitial%islmsk_cice )
     write (0,*) 'Interstitial%wet(:)==.true.    = ', count(Interstitial%wet(:))
     write (0,*) 'Interstitial%kb                = ', Interstitial%kb
     write (0,*) 'sum(Interstitial%kbot        ) = ', sum(Interstitial%kbot        )
@@ -6298,6 +6314,10 @@ module GFS_typedefs
     write (0,*) 'sum(Interstitial%tsurf_ocean ) = ', sum(Interstitial%tsurf_ocean )
     write (0,*) 'sum(Interstitial%ud_mf       ) = ', sum(Interstitial%ud_mf       )
     write (0,*) 'sum(Interstitial%ulwsfc_cice ) = ', sum(Interstitial%ulwsfc_cice )
+    write (0,*) 'sum(Interstitial%dusfc_cice  ) = ', sum(Interstitial%dusfc_cice  )
+    write (0,*) 'sum(Interstitial%dvsfc_cice  ) = ', sum(Interstitial%dvsfc_cice  )
+    write (0,*) 'sum(Interstitial%dtsfc_cice  ) = ', sum(Interstitial%dtsfc_cice  )
+    write (0,*) 'sum(Interstitial%dqsfc_cice  ) = ', sum(Interstitial%dqsfc_cice  )
     write (0,*) 'sum(Interstitial%uustar_ice  ) = ', sum(Interstitial%uustar_ice  )
     write (0,*) 'sum(Interstitial%uustar_land ) = ', sum(Interstitial%uustar_land )
     write (0,*) 'sum(Interstitial%uustar_ocean) = ', sum(Interstitial%uustar_ocean)
