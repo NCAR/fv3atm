@@ -1555,8 +1555,8 @@
   type = real
   kind = kind_phys
 [ushfsfci]
-  standard_name = instantaneous_upward_sensible_heat_flux
-  long_name = instantaneous upward sensible heat flux
+  standard_name = instantaneous_surface_upward_sensible_heat_flux_for_chemistry_coupling
+  long_name = instantaneous upward sensible heat flux for chemistry coupling
   units = W m-2
   dimensions = (horizontal_dimension)
   type = real
