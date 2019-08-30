@@ -36,11 +36,9 @@ endif
 # Set physics source files
 SRCS_f = \
 	   ./physics/mersenne_twister.f                                              \
-	   ./physics/namelist_soilveg.f                                              \
 	   ./physics/physparam.f                                                     \
 	   ./physics/radlw_param.f                                                   \
-	   ./physics/radsw_param.f                                                   \
-	   ./physics/set_soilveg.f
+	   ./physics/radsw_param.f
 SRCS_f90 =
 SRCS_F = \
 	   ./physics/machine.F
