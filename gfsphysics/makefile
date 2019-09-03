@@ -39,7 +39,8 @@ SRCS_f = \
 	   ./physics/physparam.f                                                     \
 	   ./physics/radlw_param.f                                                   \
 	   ./physics/radsw_param.f
-SRCS_f90 =
+SRCS_f90 = \
+     ./physics/noahmp_tables.f90
 SRCS_F = \
 	   ./physics/machine.F
 SRCS_F90 = \

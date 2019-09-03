@@ -34,6 +34,8 @@ module FV3GFS_io_mod
 #ifndef CCPP
 !--- variables needed for calculating 'sncovr'
   use namelist_soilveg,   only: salp_data, snupx
+#endif
+
 !
 ! --- variables needed for Noah MP init
 !
@@ -42,7 +44,7 @@ module FV3GFS_io_mod
                                 dwsat_table,dksat_table,psisat_table, &
                                 isurban_table,isbarren_table,         &
                                 isice_table,iswater_table
-#endif
+
 !
 !--- GFS_typedefs
 !rab  use GFS_typedefs,       only: GFS_sfcprop_type, GFS_diag_type, &
@@ -1164,7 +1166,6 @@ module FV3GFS_io_mod
       enddo
     enddo
 
-#ifndef CCPP
     if (Model%lsm == Model%lsm_noahmp) then 
       if (nint(sfc_var2(1,1,nvar_s2m+19)) == -66666) then
         if (Model%me == Model%master ) call mpp_error(NOTE, 'gfs_driver:: - Cold start Noah MP ')
@@ -1428,7 +1429,6 @@ module FV3GFS_io_mod
         enddo  ! nb
       endif
     endif   !if Noah MP cold start ends
-#endif
 
   end subroutine sfc_prop_restart_read
 
