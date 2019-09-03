@@ -6,7 +6,7 @@ module module_physics_driver
                                    con_rerth, con_pi, rhc_max, dxmin,   &
                                    dxinv, pa2mb, rlapse, con_eps,       &
                                    con_epsm1, PQ0, A2A, A3, A4, RHmin,  &
-                                   tgice => con_tice
+                                   qamin, tgice => con_tice
                                    
   use cs_conv,               only: cs_convr
   use ozne_def,              only: levozp,  oz_coeff, oz_pres
@@ -492,7 +492,7 @@ module module_physics_driver
                  ims, ime, kms, kme, its, ite, kts, kte, imp_physics,   &
                  ntwa, ntia, nmtvr
 
-      integer :: i, kk, ic, k, n, k1, iter, levshcm, tracers,           &
+      integer :: i, kk, ic, itc, k, n, k1, iter, levshcm, tracers,      &
                  tottracer, nsamftrac, num2, num3, nshocm, nshoc, ntk,  &
                  nn, nncl, ntiwx, seconds
 
@@ -503,7 +503,7 @@ module module_physics_driver
            islmsk_cice
 
 !--- LOGICAL VARIABLES
-      logical :: lprnt, revap, mg3_as_mg2, skip_macro
+      logical :: lprnt, revap, mg3_as_mg2, skip_macro, trans_aero
 
       logical, dimension(size(Grid%xlon,1)) ::                          &
            flag_iter, flag_guess, invrsn,                               &
@@ -785,6 +785,9 @@ module module_physics_driver
 !## CCPP ##* GFS_typedefs.F90/interstitial_setup_tracers
       nncl = ncld
 
+      ! perform aerosol convective transport and PBL diffusion
+      trans_aero = Model%cplchm .and. Model%trans_trac
+
       if (imp_physics == Model%imp_physics_thompson) then
         if (Model%ltaerosol) then
           nvdiff = 8
@@ -821,18 +824,18 @@ module module_physics_driver
       endif
 !
       if (Model%cplchm) then
-        if (imp_physics == 99) then
+        ! Only Zhao/Carr/Sundqvist and GFDL microphysics schemes are supported
+        ! when coupling with chemistry. PBL diffusion of aerosols is only supported
+        ! for GFDL microphysics.
+        if (imp_physics == Model%imp_physics_zhao_carr) then
           nvdiff = 3
-        elseif (imp_physics == 10) then
-          if (ntgl > 0) then
-            nvdiff = 12
-          else
-            nvdiff = 10
+          if (ntke > 0) nvdiff = nvdiff + 1    ! adding tke to the list
+        elseif (imp_physics == Model%imp_physics_gfdl) then
+          if (.not. Model%trans_trac) then
+            nvdiff = 7
+            if (ntke > 0) nvdiff = nvdiff + 1    ! adding tke to the list
           endif
-        elseif (imp_physics == 11) then
-          nvdiff = 7
         endif
-        if (ntke > 0) nvdiff = nvdiff + 1    ! adding tke to the list
       endif
 !*## CCPP ##
 
@@ -935,7 +938,9 @@ module module_physics_driver
          endif
 !  ---  get the amount of different precip type for Noah MP
 !  ---  convert from m/dtp to mm/s
-      if (Model%lsm == 2 .and. (Model%imp_physics == 10 .or. Model%imp_physics == 11)) then
+      if (Model%lsm == 2 .and. &
+          (Model%imp_physics == Model%imp_physics_mg .or. &
+           Model%imp_physics == Model%imp_physics_gfdl)) then
         tem = 1.0 / (dtp*con_p001)
         do  i=1,im
           rainn_mp(i)   = tem * (Diag%rain(i)-Diag%rainc(i))
@@ -2507,7 +2512,19 @@ module module_physics_driver
             enddo
           enddo
           ntiwx = 3
-        elseif (imp_physics == 99) then                    ! Zhao/Carr/Sundqvist
+          if (trans_aero) then
+            kk = 7
+            do n=Model%ntchs,Model%ntchm+Model%ntchs-1
+              kk = kk + 1
+              do k=1,levs
+                do i=1,im
+                  vdftra(i,k,kk) = Statein%qgrs(i,k,n)
+                enddo
+              enddo
+            enddo
+          endif
+!
+        elseif (imp_physics == Model%imp_physics_zhao_carr) then                    ! Zhao/Carr/Sundqvist
           if (Model%cplchm) then
             do k=1,levs
               do i=1,im
@@ -2727,8 +2744,19 @@ module module_physics_driver
               dqdt(i,k,ntoz) = dvdftra(i,k,7)
             enddo
           enddo
+          if (trans_aero) then
+            kk = 7
+            do n=Model%ntchs,Model%ntchm+Model%ntchs-1
+              kk = kk + 1
+              do k=1,levs
+                do i=1,im
+                  dqdt(i,k,n) = dvdftra(i,k,kk)
+                enddo
+              enddo
+            enddo
+          endif
 
-        elseif (imp_physics == 99) then                      !  Zhao/Carr/Sundqvist
+        elseif (imp_physics == Model%imp_physics_zhao_carr) then                      !  Zhao/Carr/Sundqvist
           if (Model%cplchm) then
             do k=1,levs
               do i=1,im
@@ -3344,6 +3372,7 @@ module module_physics_driver
 !## CCPP ## Most of this code block is in GFS_typedefs.F90/interstitial_setup_tracers except
 ! for code that needs to be executed every time step (noted below). For those lines,
 ! they are in GFS_suite_interstitial.F90/GFS_suite_interstitial_3_run.
+      itc       = 0
       ntk       = 0
       tottracer = 0
       if (Model%cscnv .or. Model%satmedmf .or. Model%trans_trac ) then
@@ -3370,6 +3399,7 @@ module module_physics_driver
 !           if (ntlnc == n .or. ntinc == n .or. ntrnc == n .or. ntsnc == n .or.&
 !               ntrw  == n .or. ntsw  == n .or. ntgl  == n)                    &
                     otspt(tracers+1,1) = .false.
+            if (trans_aero .and. Model%ntchs == n) itc = tracers
           endif
         enddo
         tottracer = tracers - 2
@@ -3438,7 +3468,8 @@ module module_physics_driver
       endif      ! ntcw > 0
 !*## CCPP ##
 !
-      if (imp_physics == 99 .or. imp_physics == 98) then   ! zhao-carr microphysics
+      if (imp_physics == Model%imp_physics_zhao_carr .or. &
+          imp_physics == Model%imp_physics_zhao_carr_pdf) then   ! zhao-carr microphysics
 !## CCPP ##* precpd.f/zhaocarr_precpd_run
         do i=1,im
           psautco_l(i) = Model%psautco(1)*work1(i) + Model%psautco(2)*work2(i)
@@ -3466,7 +3497,8 @@ module module_physics_driver
         else
           ice00(:,:) = clw(:,:,1)
         endif
-      elseif (imp_physics == Model%imp_physics_wsm6 .or. imp_physics == Model%imp_physics_mg) then
+      elseif (imp_physics == Model%imp_physics_wsm6 .or. &
+              imp_physics == Model%imp_physics_mg) then
         do k=1,levs
           do i=1,im
             clw(i,k,1) = Stateout%gq0(i,k,ntiw)                    ! ice
@@ -3533,7 +3565,8 @@ module module_physics_driver
               qsnw(i,k)  = Stateout%gq0(i,k,ntsw)
             enddo
           enddo
-        elseif (imp_physics == 99 .or. imp_physics == 98) then
+        elseif (imp_physics == Model%imp_physics_zhao_carr .or. &
+                imp_physics == Model%imp_physics_zhao_carr_pdf) then
           do k=1,levs
             do i=1,im
               if (abs(Stateout%gq0(i,k,ntcw)) < epsq) then
@@ -3701,20 +3734,20 @@ module module_physics_driver
             endif
 !*## CCPP ##
 !## CCPP ##* samfdeepcnv.f/samfdeepcnv_run
-            call samfdeepcnv(im, ix, levs, dtp, ntk, nsamftrac, del,             &
-                             Statein%prsl, Statein%pgr, Statein%phil, clw,       &
-                             Stateout%gq0(:,:,1), Stateout%gt0,                  &
-                             Stateout%gu0, Stateout%gv0, Model%do_ca,            &
-                             Coupling%ca_deep, cld1d, rain1, kbot, ktop, kcnv,   &
-                             islmsk, garea,                                      &
-                             Statein%vvl, ncld, ud_mf, dd_mf, dt_mf, cnvw, cnvc, &
-                             QLCN, QICN, w_upi,cf_upi, CNV_MFD,                  &
-!                            QLCN, QICN, w_upi,cf_upi, CNV_MFD, CNV_PRC3,        &
-                             CNV_DQLDT,CLCN,CNV_FICE,CNV_NDROP,CNV_NICE,         &
-                             imp_physics,                                        &
-                             Model%clam_deep,   Model%c0s_deep,                  &
-                             Model%c1_deep,  Model%betal_deep, Model%betas_deep, &
-                             Model%evfact_deep, Model%evfactl_deep,              &
+            call samfdeepcnv(im, ix, levs, dtp, itc, Model%ntchm, ntk, nsamftrac,  &
+                             del, Statein%prsl, Statein%pgr, Statein%phil, clw,    &
+                             Stateout%gq0(:,:,1), Stateout%gt0,                    &
+                             Stateout%gu0, Stateout%gv0, Model%fscav, Model%do_ca, &
+                             Coupling%ca_deep, cld1d, rain1, kbot, ktop, kcnv,     &
+                             islmsk, garea,                                        &
+                             Statein%vvl, ncld, ud_mf, dd_mf, dt_mf, cnvw, cnvc,   &
+                             QLCN, QICN, w_upi,cf_upi, CNV_MFD,                    &
+!                            QLCN, QICN, w_upi,cf_upi, CNV_MFD, CNV_PRC3,          &
+                             CNV_DQLDT,CLCN,CNV_FICE,CNV_NDROP,CNV_NICE,           &
+                             imp_physics,                                          &
+                             Model%clam_deep,   Model%c0s_deep,                    &
+                             Model%c1_deep,  Model%betal_deep, Model%betas_deep,   &
+                             Model%evfact_deep, Model%evfactl_deep,                &
                              Model%pgcon_deep,  Model%asolfac_deep)
 !*## CCPP ##
 !           if (lprnt) print *,' rain1=',rain1(ipr)
@@ -4332,14 +4365,14 @@ module module_physics_driver
             endif
 !*## CCPP ##
 !## CCPP ##* samfshalcnv.f/samfshalcnv_run
-            call samfshalcnv (im, ix, levs, dtp, ntk, nsamftrac, del,          &
-                              Statein%prsl, Statein%pgr, Statein%phil, clw,    &
-                              Stateout%gq0(:,:,1), Stateout%gt0,               &
-                              Stateout%gu0, Stateout%gv0,                      &
-                              rain1, kbot, ktop, kcnv, islmsk, garea,          &
-                              Statein%vvl, ncld, Diag%hpbl, ud_mf,             &
-                              dt_mf, cnvw, cnvc,                               &
-                              Model%clam_shal,  Model%c0s_shal, Model%c1_shal, &
+            call samfshalcnv (im, ix, levs, dtp, itc, Model%ntchm, ntk, nsamftrac, &
+                              del, Statein%prsl, Statein%pgr, Statein%phil, clw,   &
+                              Stateout%gq0(:,:,1), Stateout%gt0,                   &
+                              Stateout%gu0, Stateout%gv0, Model%fscav,             &
+                              rain1, kbot, ktop, kcnv, islmsk, garea,              &
+                              Statein%vvl, ncld, Diag%hpbl, ud_mf,                 &
+                              dt_mf, cnvw, cnvc,                                   &
+                              Model%clam_shal,  Model%c0s_shal, Model%c1_shal,     &
                               Model%pgcon_shal, Model%asolfac_shal)
 !*## CCPP ##
 !## CCPP ##* samfshalcnv.f/samfshalcnv_post_run
@@ -4406,7 +4439,7 @@ module module_physics_driver
 !## CCPP ## GFS_SCNV_generic.F90/GFS_SCNV_generic_post_run
         if (Model%lssav) then
 !          update dqdt_v to include moisture tendency due to shallow convection
-          if (Model%lgocart) then
+          if (Model%lgocart .and. .not.Model%cplchm) then
             do k=1,levs
               do i=1,im
                 tem  = (Stateout%gq0(i,k,1)-dqdt(i,k,1)) * frain
@@ -4423,6 +4456,15 @@ module module_physics_driver
             enddo
           endif
         endif   ! end if_lssav
+
+        if (Model%cplchm) then
+          do k=1,levs
+            do i=1,im
+              tem  = (Stateout%gq0(i,k,1)-dqdt(i,k,1)) * frain
+              Coupling%dqdti(i,k) = Coupling%dqdti(i,k)  + tem
+            enddo
+          enddo
+        endif
 !
         do k=1,levs
           do i=1,im
@@ -4562,8 +4604,9 @@ module module_physics_driver
       if (ntcw > 0) then
 
 !  for microphysics
-        if (imp_physics == 99 .or. imp_physics == 98    &
-                              .or. imp_physics == Model%imp_physics_gfdl) then
+        if (imp_physics == Model%imp_physics_zhao_carr     .or. &
+            imp_physics == Model%imp_physics_zhao_carr_pdf .or. &
+            imp_physics == Model%imp_physics_gfdl) then
           Stateout%gq0(1:im,:,ntcw) = clw(1:im,:,1) + clw(1:im,:,2)
         elseif (ntiw > 0) then
           do k=1,levs
@@ -4678,7 +4721,7 @@ module module_physics_driver
 ! dqdt_v : instaneous moisture tendency (kg/kg/sec)
 !## CCPP ##* GFS_suite_interstitial.F90/GFS_suite_interstitial_4_run 
 ! Note: ( these lines are relevant for shallow and deep convection)
-      if (Model%lgocart) then
+      if (Model%lgocart .or. Model%cplchm) then
         do k=1,levs
           do i=1,im
             Coupling%dqdti(i,k) = Coupling%dqdti(i,k) * (1.0 / dtf)
@@ -4696,7 +4739,7 @@ module module_physics_driver
                      Statein%prsl, del, Statein%prslk, rain1, clw)
 !*## CCPP ##
       else                                  ! all microphysics
-        if (imp_physics == 99) then         ! call zhao/carr/sundqvist microphysics
+        if (imp_physics == Model%imp_physics_zhao_carr) then         ! call zhao/carr/sundqvist microphysics
                                             ! ------------
 
 !         if (lprnt) then
@@ -4739,7 +4782,7 @@ module module_physics_driver
 !           write(0,*)' aft precpd rain1=',rain1(1:3),' lat=',lat
 !           endif
 
-        elseif (imp_physics == 98) then       ! with pdf clouds       
+        elseif (imp_physics == Model%imp_physics_zhao_carr_pdf) then       ! with pdf clouds
 !## CCPP ##* These schemes are not in the CCPP yet.    
             call gscondp (im, ix, levs, dtp, dtf, Statein%prsl,        &
                           Statein%pgr, Stateout%gq0(1,1,1),            &
@@ -5170,7 +5213,9 @@ module module_physics_driver
 !*## CCPP ##
 !## CCPP ##* maximum_hourly_diagnostics.F90/maximum_hourly_diagnsostics_run
 !Calculate hourly max 1-km agl and -10C reflectivity
-        if(Model%lradar .and. (imp_physics == Model%imp_physics_gfdl .or. imp_physics == Model%imp_physics_thompson)) then
+        if(Model%lradar .and. &
+           (imp_physics == Model%imp_physics_gfdl .or. &
+            imp_physics == Model%imp_physics_thompson)) then
           allocate(refd(im))
           allocate(refd263k(im))
           call max_fields(Statein%phil,Diag%refl_10cm,con_g,im,levs,refd,Stateout%gt0,refd263k)
