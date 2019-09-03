@@ -2895,11 +2895,7 @@ module module_physics_driver
 !            Orographic gravity wave drag parameterization
 !            ---------------------------------------------
 
-!## CCPP ##* gwdps.f/gwdps_pre_run Note: sections in this block related to 
-! CIRES UGWP are not in the CCPP yet (lines noted below). Since this block
-! now applies to orgraphic and unified GWD, it will be moved to a more
-! generic gwd_pre scheme in the future.
-
+!## CCPP ##* GFS_GWD_generic.F90/GFS_GWD_generic_pre_run
       if (nmtvr == 14) then         ! current operational - as of 2014
         do i=1,im
 ! vay-2018
@@ -2958,7 +2954,7 @@ module module_physics_driver
       endif   ! end if_nmtvr
 !*## CCPP ##
 
-!## CCPP ##* CIRES UGWD and associated driver code is not yet in CCPP.
+!## CCPP ##* cires_ugwp.F90/cires_ugwp_run - only V0 is implemented
 !
 !===== UGWP-start: two versions V0 (knob_ugwp_version=0) and V1(knob_ugwp_version=1)
 !
@@ -3112,7 +3108,7 @@ module module_physics_driver
                    nmtvr, Model%cdmbgwd, me, lprnt, ipr,         &
                    Diag%zmtnblck)
 !*## CCPP ##
-!## CCPP ## Not yet in the CCPP
+!## CCPP ## Not required in CCPP
           do_congwd =.true.
 !*## CCPP ##
 !## CCPP ## gwdps.f/gwdps_post_run

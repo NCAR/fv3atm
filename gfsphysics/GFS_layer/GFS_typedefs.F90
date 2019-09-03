@@ -8,7 +8,7 @@ module GFS_typedefs
                                            con_hvap, con_hfus, con_pi, con_rd, con_rv, &
                                            con_t0c, con_cvap, con_cliq, con_eps, &
                                            con_epsm1, con_ttp, rlapse, con_jcal, con_rhw0, &
-                                           con_sbc, con_tice, cimin, rhowater
+                                           con_sbc, con_tice, cimin, con_p0, rhowater
        use module_radsw_parameters,  only: topfsw_type, sfcfsw_type, cmpfsw_type, NBDSW
        use module_radlw_parameters,  only: topflw_type, sfcflw_type, NBDLW
 #else
@@ -1640,6 +1640,7 @@ module GFS_typedefs
     logical,               pointer      :: ocean(:)         => null()  !<
     integer                             :: ipr                         !<
     integer,               pointer      :: islmsk(:)        => null()  !<
+    integer,               pointer      :: islmsk_cice(:)   => null()  !<
     logical,               pointer      :: wet(:)           => null()  !<
     integer                             :: ix                          !<
     integer                             :: kb                          !<
@@ -1763,6 +1764,10 @@ module GFS_typedefs
     real (kind=kind_phys), pointer      :: tsurf_ocean(:)   => null()  !<
     real (kind=kind_phys), pointer      :: ud_mf(:,:)       => null()  !<
     real (kind=kind_phys), pointer      :: ulwsfc_cice(:)   => null()  !<
+    real (kind=kind_phys), pointer      :: dusfc_cice(:)    => null()  !<
+    real (kind=kind_phys), pointer      :: dvsfc_cice(:)    => null()  !<
+    real (kind=kind_phys), pointer      :: dqsfc_cice(:)    => null()  !<
+    real (kind=kind_phys), pointer      :: dtsfc_cice(:)    => null()  !<
     real (kind=kind_phys), pointer      :: uustar_ice(:)    => null()  !<
     real (kind=kind_phys), pointer      :: uustar_land(:)   => null()  !<
     real (kind=kind_phys), pointer      :: uustar_ocean(:)  => null()  !<
@@ -1786,6 +1791,22 @@ module GFS_typedefs
     real (kind=kind_phys), pointer      :: zorl_land(:)     => null()  !<
     real (kind=kind_phys), pointer      :: zorl_ocean(:)    => null()  !<
     real (kind=kind_phys), pointer      :: zt1d(:)          => null()  !<
+!WL* CIRES UGWP v0
+    real (kind=kind_phys), pointer      :: gw_dudt(:,:)     => null()  !<
+    real (kind=kind_phys), pointer      :: gw_dvdt(:,:)     => null()  !<
+    real (kind=kind_phys), pointer      :: gw_dtdt(:,:)     => null()  !<
+    real (kind=kind_phys), pointer      :: gw_kdis(:,:)     => null()  !<
+    real (kind=kind_phys), pointer      :: tau_tofd(:)      => null()   !< instantaneous momentum flux due to TOFD
+    real (kind=kind_phys), pointer      :: tau_mtb(:)       => null()   !< instantaneous momentum flux due to mountain blocking drag
+    real (kind=kind_phys), pointer      :: tau_ogw(:)       => null()   !< instantaneous momentum flux due to orographic gravity wave drag
+    real (kind=kind_phys), pointer      :: tau_ngw(:)       => null()   !< instantaneous momentum flux due to nonstationary gravity waves
+    real (kind=kind_phys), pointer      :: zmtb(:)          => null()   !< mountain blocking height
+    real (kind=kind_phys), pointer      :: zlwb(:)          => null()   !< low level wave breaking height
+    real (kind=kind_phys), pointer      :: zogw(:)          => null()   !< height of drag due to orographic gravity wave
+    real (kind=kind_phys), pointer      :: dudt_mtb(:,:)    => null()   !< daily aver u-wind tend due to mountain blocking drag
+    real (kind=kind_phys), pointer      :: dudt_ogw(:,:)    => null()   !< daily aver u-wind tend due to orographic gravity wave drag
+    real (kind=kind_phys), pointer      :: dudt_tms(:,:)    => null()   !< daily aver u-wind tend due to TMS
+!*WL
 
     contains
       procedure :: create      => interstitial_create     !<   allocate array data
@@ -2573,9 +2594,6 @@ module GFS_typedefs
     real(kind=kind_phys) :: rinc(5)
     real(kind=kind_phys) :: wrk(1)
     real(kind=kind_phys), parameter :: con_hr = 3600.
-#ifdef CCPP
-    real(kind=kind_phys), parameter   :: p_ref = 101325.0d0
-#endif
 
 !--- BEGIN NAMELIST VARIABLES
     real(kind=kind_phys) :: fhzero         = 0.0             !< hours between clearing of diagnostic buckets
@@ -3082,13 +3100,7 @@ module GFS_typedefs
     Model%ldiag_ugwp       = ldiag_ugwp
     Model%do_ugwp          = do_ugwp
     Model%do_tofd          = do_tofd
-#ifdef CCPP
-    if (Model%ldiag_ugwp .or. Model%do_ugwp .or. Model%do_tofd) then
-      print *, "Error, unified gravity wavedrag parameterization not yet available in CCPP"
-      stop
-    endif
-#endif
-!
+
     Model%lssav            = lssav
     Model%fhcyc            = fhcyc
     Model%lgocart          = lgocart
@@ -3616,7 +3628,7 @@ module GFS_typedefs
     !--- The formula converting hybrid sigma pressure coefficients to sigma coefficients follows Eckermann (2009, MWR)
     !--- ps is replaced with p0. The value of p0 uses that in http://www.emc.ncep.noaa.gov/officenotes/newernotes/on461.pdf
     !--- ak/bk have been flipped from their original FV3 orientation and are defined sfc -> toa
-    Model%si = (ak + bk * p_ref - ak(Model%levr+1)) / (p_ref - ak(Model%levr+1))
+    Model%si = (ak + bk * con_p0 - ak(Model%levr+1)) / (con_p0 - ak(Model%levr+1))
 #endif
 
 #ifndef CCPP
@@ -3982,13 +3994,22 @@ module GFS_typedefs
 
     elseif (Model%imp_physics == Model%imp_physics_gfdl) then !GFDL microphysics
       Model%npdf3d  = 0
-      Model%num_p3d = 1 
-      if(Model%effr_in) Model%num_p3d = 5
-      Model%nleffr = 1
-      Model%nieffr = 2
-      Model%nreffr = 3
-      Model%nseffr = 4
-      Model%ngeffr = 5
+      if(Model%effr_in) then
+        Model%num_p3d = 5
+        Model%nleffr = 1
+        Model%nieffr = 2
+        Model%nreffr = 3
+        Model%nseffr = 4
+        Model%ngeffr = 5
+      else
+        Model%num_p3d = 1
+        ! Effective radii not used, point to valid index in dummy phy_f3d array
+        Model%nleffr = 1
+        Model%nieffr = 1
+        Model%nreffr = 1
+        Model%nseffr = 1
+        Model%ngeffr = 1
+      end if
       Model%num_p2d = 1
       Model%pdfcld  = .false.
       Model%shcnvcw = .false.
@@ -4633,7 +4654,7 @@ module GFS_typedefs
    if (Model%imfdeepcnv == 3) then
       allocate(Tbd%cactiv(IM))
       Tbd%cactiv = zero
-  end if
+   end if
 
    if (Model%lsm == Model%lsm_ruc) then
        allocate(Tbd%raincprv  (IM))
@@ -5473,6 +5494,7 @@ module GFS_typedefs
     allocate (Interstitial%lake       (IM))
     allocate (Interstitial%ocean      (IM))
     allocate (Interstitial%islmsk     (IM))
+    allocate (Interstitial%islmsk_cice (IM))
     allocate (Interstitial%wet        (IM))
     allocate (Interstitial%kbot       (IM))
     allocate (Interstitial%kcnv       (IM))
@@ -5547,6 +5569,10 @@ module GFS_typedefs
     allocate (Interstitial%tsurf_ocean(IM))
     allocate (Interstitial%ud_mf      (IM,Model%levs))
     allocate (Interstitial%ulwsfc_cice(IM))
+    allocate (Interstitial%dusfc_cice (IM))
+    allocate (Interstitial%dvsfc_cice (IM))
+    allocate (Interstitial%dtsfc_cice (IM))
+    allocate (Interstitial%dqsfc_cice (IM))
     allocate (Interstitial%uustar_ice (IM))
     allocate (Interstitial%uustar_land(IM))
     allocate (Interstitial%uustar_ocean(IM))
@@ -5569,6 +5595,22 @@ module GFS_typedefs
     allocate (Interstitial%zorl_land  (IM))
     allocate (Interstitial%zorl_ocean (IM))
     allocate (Interstitial%zt1d       (IM))
+!WL* CIRES UGWP v0
+    allocate (Interstitial%gw_dudt    (IM,Model%levs))
+    allocate (Interstitial%gw_dvdt    (IM,Model%levs))
+    allocate (Interstitial%gw_dtdt    (IM,Model%levs))
+    allocate (Interstitial%gw_kdis    (IM,Model%levs))
+    allocate (Interstitial%tau_mtb    (IM))
+    allocate (Interstitial%tau_ogw    (IM))
+    allocate (Interstitial%tau_tofd   (IM))
+    allocate (Interstitial%tau_ngw    (IM))
+    allocate (Interstitial%zmtb       (IM))
+    allocate (Interstitial%zlwb       (IM))
+    allocate (Interstitial%zogw       (IM))
+    allocate (Interstitial%dudt_mtb   (IM,Model%levs))
+    allocate (Interstitial%dudt_ogw   (IM,Model%levs))
+    allocate (Interstitial%dudt_tms   (IM,Model%levs))
+!*WL
     ! Allocate arrays that are conditional on physics choices
     if (Model%imp_physics == Model%imp_physics_gfdl .or. Model%imp_physics == Model%imp_physics_thompson) then
        allocate (Interstitial%graupelmp  (IM))
@@ -5935,6 +5977,7 @@ module GFS_typedefs
     Interstitial%lake         = .false.
     Interstitial%ocean        = .false.
     Interstitial%islmsk       = 0
+    Interstitial%islmsk_cice  = 0
     Interstitial%wet          = .false.
     Interstitial%kbot         = Model%levs
     Interstitial%kcnv         = 0
@@ -5996,6 +6039,10 @@ module GFS_typedefs
     Interstitial%tsurf_ocean  = huge
     Interstitial%ud_mf        = clear_val
     Interstitial%ulwsfc_cice  = clear_val
+    Interstitial%dusfc_cice  = clear_val
+    Interstitial%dvsfc_cice  = clear_val
+    Interstitial%dtsfc_cice  = clear_val
+    Interstitial%dqsfc_cice  = clear_val
     Interstitial%uustar_ice   = huge
     Interstitial%uustar_land  = huge
     Interstitial%uustar_ocean = huge
@@ -6018,6 +6065,22 @@ module GFS_typedefs
     Interstitial%zorl_land    = huge
     Interstitial%zorl_ocean   = huge
     Interstitial%zt1d         = clear_val
+!WL* CIRES UGWP v0
+    Interstitial%gw_dudt      = clear_val
+    Interstitial%gw_dvdt      = clear_val
+    Interstitial%gw_dtdt      = clear_val
+    Interstitial%gw_kdis      = clear_val
+    Interstitial%tau_mtb      = clear_val
+    Interstitial%tau_ogw      = clear_val
+    Interstitial%tau_tofd     = clear_val
+    Interstitial%tau_ngw      = clear_val
+    Interstitial%zmtb         = clear_val
+    Interstitial%zlwb         = clear_val
+    Interstitial%zogw         = clear_val
+    Interstitial%dudt_mtb     = clear_val
+    Interstitial%dudt_ogw     = clear_val
+    Interstitial%dudt_tms     = clear_val
+!*WL
     ! Reset fields that are conditional on physics choices
     if (Model%imp_physics == Model%imp_physics_gfdl .or. Model%imp_physics == Model%imp_physics_thompson) then
        Interstitial%graupelmp = clear_val
@@ -6211,6 +6274,7 @@ module GFS_typedefs
     write (0,*) 'Interstitial%lake(:)==.true.   = ', count(Interstitial%lake(:))
     write (0,*) 'Interstitial%ocean(:)==.true.  = ', count(Interstitial%ocean(:))
     write (0,*) 'sum(Interstitial%islmsk      ) = ', sum(Interstitial%islmsk      )
+    write (0,*) 'sum(Interstitial%islmsk_cice ) = ', sum(Interstitial%islmsk_cice )
     write (0,*) 'Interstitial%wet(:)==.true.    = ', count(Interstitial%wet(:))
     write (0,*) 'Interstitial%kb                = ', Interstitial%kb
     write (0,*) 'sum(Interstitial%kbot        ) = ', sum(Interstitial%kbot        )
@@ -6295,6 +6359,10 @@ module GFS_typedefs
     write (0,*) 'sum(Interstitial%tsurf_ocean ) = ', sum(Interstitial%tsurf_ocean )
     write (0,*) 'sum(Interstitial%ud_mf       ) = ', sum(Interstitial%ud_mf       )
     write (0,*) 'sum(Interstitial%ulwsfc_cice ) = ', sum(Interstitial%ulwsfc_cice )
+    write (0,*) 'sum(Interstitial%dusfc_cice  ) = ', sum(Interstitial%dusfc_cice  )
+    write (0,*) 'sum(Interstitial%dvsfc_cice  ) = ', sum(Interstitial%dvsfc_cice  )
+    write (0,*) 'sum(Interstitial%dtsfc_cice  ) = ', sum(Interstitial%dtsfc_cice  )
+    write (0,*) 'sum(Interstitial%dqsfc_cice  ) = ', sum(Interstitial%dqsfc_cice  )
     write (0,*) 'sum(Interstitial%uustar_ice  ) = ', sum(Interstitial%uustar_ice  )
     write (0,*) 'sum(Interstitial%uustar_land ) = ', sum(Interstitial%uustar_land )
     write (0,*) 'sum(Interstitial%uustar_ocean) = ', sum(Interstitial%uustar_ocean)
@@ -6317,6 +6385,22 @@ module GFS_typedefs
     write (0,*) 'sum(Interstitial%zorl_land   ) = ', sum(Interstitial%zorl_land   )
     write (0,*) 'sum(Interstitial%zorl_ocean  ) = ', sum(Interstitial%zorl_ocean  )
     write (0,*) 'sum(Interstitial%zt1d        ) = ', sum(Interstitial%zt1d        )
+!WL* CIRES UGWP v0
+    write (0,*) 'sum(Interstitial%gw_dudt     ) = ', sum(Interstitial%gw_dudt     )
+    write (0,*) 'sum(Interstitial%gw_dvdt     ) = ', sum(Interstitial%gw_dvdt     )
+    write (0,*) 'sum(Interstitial%gw_dtdt     ) = ', sum(Interstitial%gw_dtdt     )
+    write (0,*) 'sum(Interstitial%gw_kdis     ) = ', sum(Interstitial%gw_kdis     )
+    write (0,*) 'sum(Interstitial%tau_mtb     ) = ', sum(Interstitial%tau_mtb     ) 
+    write (0,*) 'sum(Interstitial%tau_ogw     ) = ', sum(Interstitial%tau_ogw     )
+    write (0,*) 'sum(Interstitial%tau_tofd    ) = ', sum(Interstitial%tau_tofd    )
+    write (0,*) 'sum(Interstitial%tau_ngw     ) = ', sum(Interstitial%tau_ngw     )
+    write (0,*) 'sum(Interstitial%zmtb        ) = ', sum(Interstitial%zmtb        )
+    write (0,*) 'sum(Interstitial%zlwb        ) = ', sum(Interstitial%zlwb        )
+    write (0,*) 'sum(Interstitial%zogw        ) = ', sum(Interstitial%zogw        )
+    write (0,*) 'sum(Interstitial%dudt_mtb    ) = ', sum(Interstitial%dudt_mtb    )
+    write (0,*) 'sum(Interstitial%dudt_ogw    ) = ', sum(Interstitial%dudt_ogw    )
+    write (0,*) 'sum(Interstitial%dudt_tms    ) = ', sum(Interstitial%dudt_tms    )
+!*WL
     ! Print arrays that are conditional on physics choices
     if (Model%imp_physics == Model%imp_physics_gfdl .or. Model%imp_physics == Model%imp_physics_thompson) then
        write (0,*) 'Interstitial_print: values specific to GFDL/Thompson microphysics'
