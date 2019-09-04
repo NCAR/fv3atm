@@ -5496,10 +5496,9 @@ module module_physics_driver
 !  --- ...  total runoff is composed of drainage into water table and
 !           runoff at the surface and is accumulated in unit of meters
       if (Model%lssav) then
-        tem = dtf * 0.001
         do i=1,im
-          Diag%runoff(i)  = Diag%runoff(i)  + (drain(i)+runof(i)) * tem
-          Diag%srunoff(i) = Diag%srunoff(i) + runof(i) * tem
+          Diag%runoff(i)  = Diag%runoff(i)  + (drain(i)+runof(i)) * dtf
+          Diag%srunoff(i) = Diag%srunoff(i) + runof(i) * dtf
         enddo
       endif
 !*## CCPP ##
