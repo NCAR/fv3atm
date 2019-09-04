@@ -2247,12 +2247,6 @@
   units = count
   dimensions = ()
   type = integer
-[make_number_concentrations]
-  standard_name = flag_for_initial_number_concentration_calculation
-  long_name = flag for initial number concentration calculation for Thompson MP
-  units = flag
-  dimensions = ()
-  type = logical
 [ltaerosol]
   standard_name = flag_for_aerosol_physics
   long_name = flag for aerosol physics

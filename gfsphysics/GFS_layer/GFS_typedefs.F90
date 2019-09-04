@@ -698,8 +698,6 @@ module GFS_typedefs
     integer              :: ncnd            !< number of cloud condensate types
 
     !--- Thompson's microphysical parameters
-    logical              :: make_number_concentrations !< flag to calculate initial number concentrations
-                                                       !< from mass concentrations if not in ICs/BCs
     logical              :: ltaerosol       !< flag for aerosol version
     logical              :: lradar          !< flag for radar reflectivity 
     real(kind=kind_phys) :: ttendlim        !< temperature tendency limiter per time step in K/s
@@ -2684,8 +2682,6 @@ module GFS_typedefs
 
 
     !--- Thompson microphysical parameters
-    logical              :: make_number_concentrations = .false.!< flag to calculate initial number concentrations
-                                                                !< from mass concentrations if not in ICs/BCs
     logical              :: ltaerosol      = .false.            !< flag for aerosol version
     logical              :: lradar         = .false.            !< flag for radar reflectivity 
     real(kind=kind_phys) :: ttendlim       = -999.0             !< temperature tendency limiter, set to <0 to deactivate
@@ -2952,7 +2948,6 @@ module GFS_typedefs
                                mg_do_graupel, mg_do_hail, mg_nccons, mg_nicons, mg_ngcons,  &
                                mg_ncnst, mg_ninst, mg_ngnst, sed_supersat, do_sb_physics,   &
                                mg_alf,   mg_qcmin, mg_do_ice_gmao, mg_do_liq_liu,           &
-                               make_number_concentrations,                                  &
                                ltaerosol, lradar, ttendlim, lgfdlmprad,                     &
                           !--- max hourly
                                avg_max_length,                                              &
@@ -3234,7 +3229,6 @@ module GFS_typedefs
 #endif
 
 !--- Thompson MP parameters
-    Model%make_number_concentrations = make_number_concentrations
     Model%ltaerosol        = ltaerosol
     Model%lradar           = lradar
     Model%ttendlim         = ttendlim
@@ -3895,7 +3889,6 @@ module GFS_typedefs
       Model%nseffr = 3
       if (Model%me == Model%master) print *,' Using Thompson double moment', &
                                           ' microphysics',' ltaerosol = ',Model%ltaerosol, &
-                                          ' make_number_concentrations = ',Model%make_number_concentrations, &
                                           ' ttendlim =',Model%ttendlim, &
                                           ' lradar =',Model%lradar,Model%num_p3d,Model%num_p2d
 
@@ -4166,7 +4159,6 @@ module GFS_typedefs
       endif
       if (Model%imp_physics == Model%imp_physics_wsm6 .or. Model%imp_physics == Model%imp_physics_thompson) then
         print *, ' Thompson microphysical parameters'
-        print *, ' make_number_concentrations : ', Model%make_number_concentrations
         print *, ' ltaerosol         : ', Model%ltaerosol
         print *, ' lradar            : ', Model%lradar
         print *, ' ttendlim          : ', Model%ttendlim
