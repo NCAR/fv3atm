@@ -3027,6 +3027,13 @@
   units = flag
   dimensions = (number_of_chemical_tracers)
   type = logical
+[fscav]
+  standard_name = coefficients_for_aerosol_scavenging
+  long_name = array of aerosol scavenging coefficients
+  units = none
+  dimensions = (number_of_chemical_tracers)
+  type = real
+  kind = kind_phys
 [ntot2d]
   standard_name = number_of_fields_in_phyf2d
   long_name = total number of variables for phyf2d
@@ -6207,6 +6214,12 @@
   units = flag
   dimensions = (horizontal_dimension)
   type = integer
+[itc]
+  standard_name = number_of_aerosol_tracers_for_convection
+  long_name = number of aerosol tracers transported/scavenged by convection
+  units = count
+  dimensions = ()
+  type = integer
 [wet]
   standard_name = flag_nonzero_wet_surface_fraction
   long_name = flag indicating presence of some ocean or lake surface area fraction
@@ -6954,6 +6967,12 @@
   units = count
   dimensions = ()
   type = integer
+[trans_aero]
+  standard_name = flag_for_aerosol_convective_transport_and_PBL_diffusion
+  long_name = flag for aerosol convective transport and PBL diffusion
+  units = flag
+  dimensions = ()
+  type = logical
 [trans]
   standard_name = transpiration_flux
   long_name = total plant transpiration rate
@@ -7364,7 +7383,7 @@
   type = GFS_radtend_type
 [Intdiag]
   standard_name = GFS_diag_type_instance
-  long_name = fields targetted for diagnostic output
+  long_name = fields targeted for diagnostic output
   units = DDT
   dimensions = ()
   type = GFS_diag_type

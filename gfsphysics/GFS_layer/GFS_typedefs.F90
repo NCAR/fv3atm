@@ -1627,6 +1627,7 @@ module GFS_typedefs
     integer                             :: ipr                         !<
     integer,               pointer      :: islmsk(:)        => null()  !<
     integer,               pointer      :: islmsk_cice(:)   => null()  !<
+    integer                             :: itc                         !<
     logical,               pointer      :: wet(:)           => null()  !<
     integer                             :: kb                          !<
     integer,               pointer      :: kbot(:)          => null()  !<
@@ -1735,6 +1736,7 @@ module GFS_typedefs
     integer                             :: tracers_start_index         !<
     integer                             :: tracers_total               !<
     integer                             :: tracers_water               !<
+    logical                             :: trans_aero                  !<
     real (kind=kind_phys), pointer      :: trans(:)         => null()  !<
     real (kind=kind_phys), pointer      :: tseal(:)         => null()  !<
     real (kind=kind_phys), pointer      :: tsfa(:)          => null()  !<
@@ -5655,6 +5657,7 @@ module GFS_typedefs
     Interstitial%nvdiff           = Model%ntrac
     Interstitial%mg3_as_mg2       = .false.
     Interstitial%nn               = Model%ntrac + 1
+    Interstitial%itc              = 0
     Interstitial%ntk              = 0
     Interstitial%ntkev            = 0
     Interstitial%tracers_total    = 0
@@ -5662,6 +5665,9 @@ module GFS_typedefs
     Interstitial%nsamftrac        = 0
     Interstitial%ncstrac          = 0
     Interstitial%nscav            = Model%ntrac-Model%ncld+2
+
+    ! perform aerosol convective transport and PBL diffusion
+    Interstitial%trans_aero = Model%cplchm .and. Model%trans_trac
 
     if (Model%imp_physics == Model%imp_physics_thompson) then
       if (Model%ltaerosol) then
@@ -5721,21 +5727,21 @@ module GFS_typedefs
     ! *DH
 
     if (Model%cplchm) then
+      ! Only Zhao/Carr/Sundqvist and GFDL microphysics schemes are supported
+      ! when coupling with chemistry. PBL diffusion of aerosols is only supported
+      ! for GFDL microphysics.
       if (Model%imp_physics == Model%imp_physics_zhao_carr) then
         Interstitial%nvdiff = 3
-      elseif (Model%imp_physics == Model%imp_physics_mg) then
-        if (Model%ntgl > 0) then
-          Interstitial%nvdiff = 12
-        else
-          Interstitial%nvdiff = 10
-        endif
+        if (Model%ntke > 0) Interstitial%nvdiff = Interstitial%nvdiff + 1    ! adding tke to the list
       elseif (Model%imp_physics == Model%imp_physics_gfdl) then
-        Interstitial%nvdiff = 7
-      elseif (Model%imp_physics == Model%imp_physics_thompson) then
-        write(0,*) "Error in interstitial_setup_tracers, Thompson MP not configured for cplchm"
+        if (.not. Model%trans_trac) then
+          Interstitial%nvdiff = 7
+          if (Model%ntke > 0) Interstitial%nvdiff = Interstitial%nvdiff + 1    ! adding tke to the list
+        endif
+      else
+        write(0,*) "Only Zhao/Carr/Sundqvist and GFDL microphysics schemes are supported when coupling with chemistry"
         stop
       endif
-      if (Model%ntke > 0) Interstitial%nvdiff = Interstitial%nvdiff + 1    ! adding tke to the list
     endif
 
     Interstitial%ntkev = Interstitial%nvdiff
@@ -5769,6 +5775,7 @@ module GFS_typedefs
 !           if (ntlnc == n .or. ntinc == n .or. ntrnc == n .or. ntsnc == n .or.&
 !               ntrw  == n .or. ntsw  == n .or. ntgl  == n)                    &
                   Interstitial%otspt(tracers+1,1) = .false.
+          if (Interstitial%trans_aero .and. Model%ntchs == n) Interstitial%itc = tracers
         endif
       enddo
       Interstitial%tracers_total = tracers - 2
@@ -6095,6 +6102,7 @@ module GFS_typedefs
     write (0,*) 'Interstitial%h2o_coeff         = ', Interstitial%h2o_coeff
     write (0,*) 'sum(Interstitial%h2o_pres)     = ', sum(Interstitial%h2o_pres)
     write (0,*) 'Interstitial%ipr               = ', Interstitial%ipr
+    write (0,*) 'Interstitial%itc               = ', Interstitial%itc
     write (0,*) 'Interstitial%latidxprnt        = ', Interstitial%latidxprnt
     write (0,*) 'Interstitial%levi              = ', Interstitial%levi
     write (0,*) 'Interstitial%levh2o            = ', Interstitial%levh2o
@@ -6114,6 +6122,7 @@ module GFS_typedefs
     write (0,*) 'sum(Interstitial%oz_pres)      = ', sum(Interstitial%oz_pres)
     write (0,*) 'Interstitial%phys_hydrostatic  = ', Interstitial%phys_hydrostatic
     write (0,*) 'Interstitial%skip_macro        = ', Interstitial%skip_macro
+    write (0,*) 'Interstitial%trans_aero        = ', Interstitial%trans_aero
     ! Print all other variables
     write (0,*) 'Interstitial_print: values that change'
     write (0,*) 'sum(Interstitial%adjnirbmd   ) = ', sum(Interstitial%adjnirbmd   )
