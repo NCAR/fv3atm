@@ -4159,15 +4159,15 @@
   type = real
   kind = kind_phys
 [draincprv]
-  standard_name = explicit_rainfall_rate_from_previous_timestep
-  long_name = explicit rainfall rate previous timestep
+  standard_name = convective_precipitation_rate_from_previous_timestep
+  long_name = convective precipitation rate from previous timestep
   units = mm s-1
   dimensions = (horizontal_dimension)
   type = real
   kind = kind_phys
 [drainncprv]
-  standard_name = convective_precipitation_rate_from_previous_timestep
-  long_name = convective precipitation rate from previous timestep
+  standard_name = explicit_rainfall_rate_from_previous_timestep
+  long_name = explicit rainfall rate previous timestep
   units = mm s-1
   dimensions = (horizontal_dimension)
   type = real
