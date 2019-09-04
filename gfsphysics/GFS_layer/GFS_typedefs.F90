@@ -551,6 +551,9 @@ module GFS_typedefs
 #ifdef CCPP
     integer              :: levsp1          !< number of vertical levels plus one
     integer              :: levsm1          !< number of vertical levels minus one
+    !--- ak/bk for pressure level calculations
+    real(kind=kind_phys), pointer :: ak(:)  !< from surface (k=1) to TOA (k=levs)
+    real(kind=kind_phys), pointer :: bk(:)  !< from surface (k=1) to TOA (k=levs)
 #endif
     integer              :: cnx             !< number of points in the i-dir for this cubed-sphere face
     integer              :: cny             !< number of points in the j-dir for this cubed-sphere face
@@ -3090,12 +3093,15 @@ module GFS_typedefs
 #ifdef CCPP
     Model%levsp1           = Model%levs + 1
     Model%levsm1           = Model%levs - 1
+    allocate(Model%ak(1:size(ak)))
+    allocate(Model%bk(1:size(bk)))
+    Model%ak               = ak
+    Model%bk               = bk
 #endif
     Model%cnx              = cnx
     Model%cny              = cny
     Model%lonr             = gnx         ! number longitudinal points
     Model%latr             = gny         ! number of latitudinal points from pole to pole
-#ifdef CCPP
     Model%nblks            = size(blksz)
     allocate(Model%blksz(1:Model%nblks))
     Model%blksz            = blksz

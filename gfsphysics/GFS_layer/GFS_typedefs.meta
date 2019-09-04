@@ -1659,6 +1659,18 @@
   units = count
   dimensions = ()
   type = integer
+[ak]
+  standard_name = a_parameter_of_the_hybrid_coordinate
+  long_name = a parameter for sigma pressure level calculations
+  units = Pa
+  dimensions = (number_of_vertical_layers_for_radiation_calculations_plus_one)
+  type = real
+[bk]
+  standard_name = b_parameter_of_the_hybrid_coordinate
+  long_name = b parameter for sigma pressure level calculations
+  units = none
+  dimensions = (number_of_vertical_layers_for_radiation_calculations_plus_one)
+  type = real
 [levsp1]
   standard_name = vertical_dimension_plus_one
   long_name = number of vertical levels plus one
