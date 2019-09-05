@@ -1692,6 +1692,7 @@ module GFS_typedefs
     real (kind=kind_phys), pointer      :: plyr(:,:)        => null()  !<
     real (kind=kind_phys), pointer      :: prcpmp(:)        => null()  !<
     real (kind=kind_phys), pointer      :: prnum(:,:)       => null()  !<
+    real (kind=kind_phys), pointer      :: q2mp(:)          => null()  !<
     real (kind=kind_phys), pointer      :: qgl(:,:)         => null()  !<
     real (kind=kind_phys), pointer      :: qicn(:,:)        => null()  !<
     real (kind=kind_phys), pointer      :: qlcn(:,:)        => null()  !<
@@ -1740,6 +1741,7 @@ module GFS_typedefs
     real (kind=kind_phys), pointer      :: stress_ice(:)    => null()  !<
     real (kind=kind_phys), pointer      :: stress_land(:)   => null()  !<
     real (kind=kind_phys), pointer      :: stress_ocean(:)  => null()  !<
+    real (kind=kind_phys), pointer      :: t2mmp(:)         => null()  !<
     real (kind=kind_phys), pointer      :: theta(:)         => null()  !<
     real (kind=kind_phys), pointer      :: tice(:)          => null()  !<
     real (kind=kind_phys), pointer      :: tlvl(:,:)        => null()  !<
@@ -5644,6 +5646,10 @@ module GFS_typedefs
        allocate (Interstitial%ncpi (IM,Model%levs))
        allocate (Interstitial%ncpl (IM,Model%levs))
     end if
+    if (Model%lsm == Model%lsm_noahmp) then
+       allocate (Interstitial%t2mmp (IM))
+       allocate (Interstitial%q2mp  (IM))
+    end if
     !
     ! Set components that do not change
     Interstitial%im               = IM
@@ -6114,6 +6120,10 @@ module GFS_typedefs
        Interstitial%ncpi      = clear_val
        Interstitial%ncpl      = clear_val
     end if
+    if (Model%lsm == Model%lsm_noahmp) then
+       Interstitial%t2mmp     = clear_val
+       Interstitial%q2mp      = clear_val
+    end if
     !
     ! Set flag for resetting maximum hourly output fields
     Interstitial%reset = mod(Model%kdt-1, nint(Model%avg_max_length/Model%dtp)) == 0
@@ -6435,6 +6445,10 @@ module GFS_typedefs
        write (0,*) 'sum(Interstitial%qgl      ) = ', sum(Interstitial%qgl         )
        write (0,*) 'sum(Interstitial%ncpi     ) = ', sum(Interstitial%ncpi        )
        write (0,*) 'sum(Interstitial%ncpl     ) = ', sum(Interstitial%ncpl        )
+    end if
+    if (Model%lsm == Model%lsm_noahmp) then
+       write (0,*) 'sum(Interstitial%t2mmp    ) = ', sum(Interstitial%t2mmp       )
+       write (0,*) 'sum(Interstitial%q2mp     ) = ', sum(Interstitial%q2mp        )
     end if
     write (0,*) 'Interstitial_print: end'
     !
