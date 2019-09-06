@@ -922,7 +922,10 @@ module module_physics_driver
       endif
 !*## CCPP ##
 !
-!## CCPP ##* this block not yet in CCPP
+!## CCPP ##* initialization in GFS_typedefs.F90/tbd_create; calculation in sfc_noahmp_pre.F90/sfc_noahmp_pre_run,
+!            although similar variables are calculated in GFS_MP_generic_post_run using up-to-date values of Diag%X,
+!            which arguably makes more sense (the way it is done probably erroneously causes NoahMP to use 0 for 
+!            these values after diagnostics are zeroed.)
 !  ---  initization for those precip type used in Noah MP
          if (Model%lsm == 2) then
            do  i=1,im
