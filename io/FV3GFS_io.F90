@@ -981,7 +981,7 @@ module FV3GFS_io_mod
 ! Noah MP
 ! -------
         if (Model%lsm == Model%lsm_noahmp) then
-
+#endif
           Sfcprop(nb)%snowxy(ix)     = sfc_var2(i,j,nvar_s2m+19)
           Sfcprop(nb)%tvxy(ix)       = sfc_var2(i,j,nvar_s2m+20)
           Sfcprop(nb)%tgxy(ix)       = sfc_var2(i,j,nvar_s2m+21)
@@ -1011,7 +1011,6 @@ module FV3GFS_io_mod
           Sfcprop(nb)%smcwtdxy(ix)   = sfc_var2(i,j,nvar_s2m+45)
           Sfcprop(nb)%deeprechxy(ix) = sfc_var2(i,j,nvar_s2m+46)
           Sfcprop(nb)%rechxy(ix)     = sfc_var2(i,j,nvar_s2m+47)
-#endif
         endif
 
 #ifdef CCPP
@@ -1516,7 +1515,7 @@ module FV3GFS_io_mod
       allocate(sfc_name2(nvar2m+nvar2o+nvar2mp+nvar2r))
       allocate(sfc_name3(nvar3+nvar3mp))
       allocate(sfc_var2(nx,ny,nvar2m+nvar2o+nvar2mp+nvar2r))
-      if (Model%lsm == Model%lsm_noah) then
+      if (Model%lsm == Model%lsm_noah .or. Model%lsm == Model%lsm_noahmp) then
         allocate(sfc_var3(nx,ny,Model%lsoil,nvar3))
       else if (Model%lsm == Model%lsm_ruc) then
         allocate(sfc_var3(nx,ny,Model%lsoil_lsm,nvar3))
@@ -1619,6 +1618,7 @@ module FV3GFS_io_mod
 #else
 ! Only needed when Noah MP LSM is used - 29 2D
       if(Model%lsm == Model%lsm_noahmp) then
+#endif
        sfc_name2(nvar2m+19) =  'snowxy'
        sfc_name2(nvar2m+20) =  'tvxy'
        sfc_name2(nvar2m+21) =  'tgxy'
@@ -1648,7 +1648,6 @@ module FV3GFS_io_mod
        sfc_name2(nvar2m+45) =  'smcwtdxy'
        sfc_name2(nvar2m+46) =  'deeprechxy'
        sfc_name2(nvar2m+47) =  'rechxy'
-#endif
       endif
  
       !--- register the 2D fields
@@ -1853,7 +1852,7 @@ module FV3GFS_io_mod
       endif
 
 #ifdef CCPP
-        if (Model%lsm == Model%lsm_noah) then
+        if (Model%lsm == Model%lsm_noah .or. Model%lsm == Model%lsm_noahmp) then
           !--- 3D variables
           do lsoil = 1,Model%lsoil
             sfc_var3(i,j,lsoil,1) = Sfcprop(nb)%stc(ix,lsoil) !--- stc
@@ -1896,23 +1895,23 @@ module FV3GFS_io_mod
           sfc_var3(i,j,lsoil,3) = Sfcprop(nb)%slc(ix,lsoil) !--- slc
         enddo
 ! 5 Noah MP 3D
-         if (Model%lsm == Model%lsm_noahmp) then
+        if (Model%lsm == Model%lsm_noahmp) then
 
-        do lsoil = -2,0
-           sfc_var3sn(i,j,lsoil,4) = Sfcprop(nb)%snicexy(ix,lsoil)
-           sfc_var3sn(i,j,lsoil,5) = Sfcprop(nb)%snliqxy(ix,lsoil)
-           sfc_var3sn(i,j,lsoil,6) = Sfcprop(nb)%tsnoxy(ix,lsoil)
-        enddo
+          do lsoil = -2,0
+             sfc_var3sn(i,j,lsoil,4) = Sfcprop(nb)%snicexy(ix,lsoil)
+             sfc_var3sn(i,j,lsoil,5) = Sfcprop(nb)%snliqxy(ix,lsoil)
+             sfc_var3sn(i,j,lsoil,6) = Sfcprop(nb)%tsnoxy(ix,lsoil)
+          enddo
 
-        do lsoil = 1,Model%lsoil
-          sfc_var3eq(i,j,lsoil,7)  = Sfcprop(nb)%smoiseq(ix,lsoil)
-        enddo
+          do lsoil = 1,Model%lsoil
+            sfc_var3eq(i,j,lsoil,7)  = Sfcprop(nb)%smoiseq(ix,lsoil)
+          enddo
 
-        do lsoil = -2,4
-          sfc_var3zn(i,j,lsoil,8)  = Sfcprop(nb)%zsnsoxy(ix,lsoil)
-        enddo
+          do lsoil = -2,4
+            sfc_var3zn(i,j,lsoil,8)  = Sfcprop(nb)%zsnsoxy(ix,lsoil)
+          enddo
 
-       endif  ! Noah MP
+        endif  ! Noah MP
 #endif
       enddo
     enddo
