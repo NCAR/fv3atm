@@ -1875,7 +1875,7 @@ module module_physics_driver
 !     if (lprnt) write(0,*)' tseae=',tseal(ipr),' tsurf=',tsurf(ipr),iter  
 !    &,' phy_f2d=',phy_f2d(ipr,num_p2d)
 
-!## CCPP ##* This block not yet in CCPP.
+!## CCPP ##* sfc_noahmp_drv.f/noahmpdrv_run
 ! Noah MP call
 !
        elseif (Model%lsm == Model%lsm_noahmp) then
@@ -2154,7 +2154,7 @@ module module_physics_driver
 !## CCPP ##* This block is not in the CCPP
       Tbd%phy_f2d(:,Model%num_p2d) = 0.0
 !*## CCPP ##
-!## CCPP ##* This block is executed inside sfc_noahmp_drv.f/noahmpdrv_run
+!## CCPP ##* This block is executed inside sfc_diag_post.F90/sfc_diag_post_run
       if (Model%lsm == Model%lsm_noahmp) then
         do i=1,im
           if(dry(i)) then
@@ -5506,7 +5506,7 @@ module module_physics_driver
                        Sfcprop%q2m,  work3, evap, Sfcprop%ffmm,         &
                        Sfcprop%ffhh, fm10, fh2)
 !*## CCPP ##
-!## CCPP ##* This block is executed inside sfc_noahmp_drv.f/noahmpdrv_run  
+!## CCPP ##* This block is executed inside sfc_diag_post.F90/sfc_diag_post_run
       if (Model%lsm == Model%lsm_noahmp) then
         do i=1,im
           if (dry(i)) then
