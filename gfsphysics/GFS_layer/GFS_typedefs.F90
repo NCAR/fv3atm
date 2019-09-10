@@ -560,9 +560,9 @@ module GFS_typedefs
     integer              :: lonr            !< number of global points in x-dir (i) along the equator
     integer              :: latr            !< number of global points in y-dir (j) along any meridian
     integer              :: tile_num
-#ifdef CCPP
     integer              :: nblks           !< for explicit data blocking: number of blocks
     integer,     pointer :: blksz(:)        !< for explicit data blocking: block sizes of all blocks
+#ifdef CCPP
     integer,     pointer :: blksz2(:)       !< for explicit data blocking: block sizes of all blocks (duplicate)
 #endif
 
@@ -702,8 +702,6 @@ module GFS_typedefs
     integer              :: ncnd            !< number of cloud condensate types
 
     !--- Thompson's microphysical parameters
-    logical              :: make_number_concentrations !< flag to calculate initial number concentrations
-                                                       !< from mass concentrations if not in ICs/BCs
     logical              :: ltaerosol       !< flag for aerosol version
     logical              :: lradar          !< flag for radar reflectivity 
     real(kind=kind_phys) :: ttendlim        !< temperature tendency limiter per time step in K/s
@@ -955,7 +953,8 @@ module GFS_typedefs
     integer              :: ntia            !< tracer index for ice friendly aerosol
     integer              :: ntchm           !< number of chemical tracers
     integer              :: ntchs           !< tracer index for first chemical tracer
-    logical, pointer     :: ntdiag(:) => null() !< array to control diagnostics for chemical tracers
+    logical,              pointer :: ntdiag(:) => null() !< array to control diagnostics for chemical tracers
+    real(kind=kind_phys), pointer :: fscav(:)  => null() !< array of aerosol scavenging coefficients
 
     !--- derived totals for phy_f*d
     integer              :: ntot2d          !< total number of variables for phyf2d
@@ -1636,13 +1635,12 @@ module GFS_typedefs
     integer,               pointer      :: idxday(:)        => null()  !<
     logical,               pointer      :: icy(:)           => null()  !<
     logical,               pointer      :: lake(:)          => null()  !<
-    integer                             :: im                          !<
     logical,               pointer      :: ocean(:)         => null()  !<
     integer                             :: ipr                         !<
     integer,               pointer      :: islmsk(:)        => null()  !<
     integer,               pointer      :: islmsk_cice(:)   => null()  !<
+    integer                             :: itc                         !<
     logical,               pointer      :: wet(:)           => null()  !<
-    integer                             :: ix                          !<
     integer                             :: kb                          !<
     integer,               pointer      :: kbot(:)          => null()  !<
     integer,               pointer      :: kcnv(:)          => null()  !<
@@ -1752,6 +1750,7 @@ module GFS_typedefs
     integer                             :: tracers_start_index         !<
     integer                             :: tracers_total               !<
     integer                             :: tracers_water               !<
+    logical                             :: trans_aero                  !<
     real (kind=kind_phys), pointer      :: trans(:)         => null()  !<
     real (kind=kind_phys), pointer      :: tseal(:)         => null()  !<
     real (kind=kind_phys), pointer      :: tsfa(:)          => null()  !<
@@ -2456,12 +2455,14 @@ module GFS_typedefs
       !--- outgoing instantaneous quantities
       allocate (Coupling%ushfsfci  (IM))
       allocate (Coupling%dkt       (IM,Model%levs))
+      allocate (Coupling%dqdti     (IM,Model%levs))
       !--- accumulated convective rainfall
       allocate (Coupling%rainc_cpl (IM))
 
       Coupling%rainc_cpl = clear_val
       Coupling%ushfsfci  = clear_val
       Coupling%dkt       = clear_val
+      Coupling%dqdti     = clear_val
     endif
 
     !--- stochastic physics option
@@ -2494,14 +2495,16 @@ module GFS_typedefs
 
     !--- needed for either GoCart or 3D diagnostics
     if (Model%lgocart .or. Model%ldiag3d) then
-      allocate (Coupling%dqdti   (IM,Model%levs))
       allocate (Coupling%cnvqci  (IM,Model%levs))
       allocate (Coupling%upd_mfi (IM,Model%levs))
       allocate (Coupling%dwn_mfi (IM,Model%levs))
       allocate (Coupling%det_mfi (IM,Model%levs))
       allocate (Coupling%cldcovi (IM,Model%levs))
 
-      Coupling%dqdti   = clear_val
+      if (.not.Model%cplchm) then
+        allocate (Coupling%dqdti (IM,Model%levs))
+        Coupling%dqdti = clear_val
+      endif
       Coupling%cnvqci  = clear_val
       Coupling%upd_mfi = clear_val
       Coupling%dwn_mfi = clear_val
@@ -2528,10 +2531,9 @@ module GFS_typedefs
                                  cnx, cny, gnx, gny, dt_dycore,     &
                                  dt_phys, iau_offset, idat, jdat,   &
                                  tracer_names,                      &
-                                 input_nml_file, tile_num           &
+                                 input_nml_file, tile_num, blksz    &
 #ifdef CCPP
-                                ,ak, bk, blksz,                     &
-                                 restart, hydrostatic,              &
+                                ,ak, bk, restart, hydrostatic,      &
                                  communicator, ntasks, nthreads     &
 #endif
                                  )
@@ -2577,10 +2579,10 @@ module GFS_typedefs
     integer,                intent(in) :: jdat(8)
     character(len=32),      intent(in) :: tracer_names(:)
     character(len=256),     intent(in), pointer :: input_nml_file(:)
+    integer,                intent(in) :: blksz(:)
 #ifdef CCPP
     real(kind=kind_phys), dimension(:), intent(in) :: ak
     real(kind=kind_phys), dimension(:), intent(in) :: bk
-    integer,                intent(in) :: blksz(:)
     logical,                intent(in) :: restart
     logical,                intent(in) :: hydrostatic
     integer,                intent(in) :: communicator
@@ -2588,7 +2590,7 @@ module GFS_typedefs
     integer,                intent(in) :: nthreads
 #endif
     !--- local variables
-    integer :: n
+    integer :: i, j, n
     integer :: ios
     integer :: seed0
     logical :: exists
@@ -2709,8 +2711,6 @@ module GFS_typedefs
 
 
     !--- Thompson microphysical parameters
-    logical              :: make_number_concentrations = .false.!< flag to calculate initial number concentrations
-                                                                !< from mass concentrations if not in ICs/BCs
     logical              :: ltaerosol      = .false.            !< flag for aerosol version
     logical              :: lradar         = .false.            !< flag for radar reflectivity 
     real(kind=kind_phys) :: ttendlim       = -999.0             !< temperature tendency limiter, set to <0 to deactivate
@@ -2952,6 +2952,9 @@ module GFS_typedefs
     real(kind=kind_phys) :: pertlai  = -999.
     real(kind=kind_phys) :: pertalb  = -999.
     real(kind=kind_phys) :: pertvegf = -999.
+
+!--- aerosol scavenging factors
+    character(len=20) :: fscav_aero(20) = 'default'
 !--- END NAMELIST VARIABLES
 
     NAMELIST /gfs_physics_nml/                                                              &
@@ -2978,7 +2981,6 @@ module GFS_typedefs
                                mg_do_graupel, mg_do_hail, mg_nccons, mg_nicons, mg_ngcons,  &
                                mg_ncnst, mg_ninst, mg_ngnst, sed_supersat, do_sb_physics,   &
                                mg_alf,   mg_qcmin, mg_do_ice_gmao, mg_do_liq_liu,           &
-                               make_number_concentrations,                                  &
                                ltaerosol, lradar, ttendlim, lgfdlmprad,                     &
                           !--- max hourly
                                avg_max_length,                                              &
@@ -3009,9 +3011,7 @@ module GFS_typedefs
                                do_deep, jcap,                                               &
                                cs_parm, flgmin, cgwf, ccwf, cdmbgwd, sup, ctei_rm, crtrh,   &
                                dlqf, rbcr, shoc_parm, psauras, prauras, wminras,            &
-#ifdef CCPP
                                do_sppt, do_shum, do_skeb, do_sfcperts,                      &
-#endif
                           !--- Rayleigh friction
                                prslrd0, ral_ts,  ldiag_ugwp, do_ugwp, do_tofd,              &
                           !--- mass flux deep convection
@@ -3036,7 +3036,10 @@ module GFS_typedefs
                                debug, pre_rad,                                              &
                           !--- parameter range for critical relative humidity
                                max_lon, max_lat, min_lon, min_lat, rhcmax,                  &
-                               phys_version
+                               phys_version,                                                &
+                          !--- aerosol scavenging factors ('name:value' string array)
+                               fscav_aero
+
 
 !--- other parameters 
     integer :: nctp    =  0                !< number of cloud types in CS scheme
@@ -3130,11 +3133,11 @@ module GFS_typedefs
     Model%cny              = cny
     Model%lonr             = gnx         ! number longitudinal points
     Model%latr             = gny         ! number of latitudinal points from pole to pole
-#ifdef CCPP
     Model%nblks            = size(blksz)
     allocate(Model%blksz(1:Model%nblks))
-    allocate(Model%blksz2(1:Model%nblks))
     Model%blksz            = blksz
+#ifdef CCPP
+    allocate(Model%blksz2(1:Model%nblks))
     Model%blksz2           = blksz
 #endif
 
@@ -3262,7 +3265,6 @@ module GFS_typedefs
 #endif
 
 !--- Thompson MP parameters
-    Model%make_number_concentrations = make_number_concentrations
     Model%ltaerosol        = ltaerosol
     Model%lradar           = lradar
     Model%ttendlim         = ttendlim
@@ -3443,21 +3445,9 @@ module GFS_typedefs
     Model%moninq_fac       = moninq_fac
 
 !--- stochastic physics options
-    ! DH* 20180730
-    ! For the standard/non-CCPP build, do_sppt, do_shum, do_skeb and do_sfcperts
-    ! are set to false here and updated later as part of init_stochastic_physics,
-    ! depending on values of other namelist parameters. Since these values are used
-    ! as conditionals for allocating components of Coupling and other DDTs, the call
-    ! to init_stochastic_physics is placed between creating the "Model" DDT and the
-    ! other DDTs.
-    ! This is confusing and not compatible with CCPP, because the CCPP physics init
-    ! can happen only after ALL DDTs are created and added to the CCPP data structure
-    ! (cdata). Hence, for CCPP do_sppt, do_shum, do_skeb and do_sfcperts are additional
-    ! namelist variables in group physics that are parsed here and then compared in
-    ! stochastic_physics_init (the CCPP version of init_stochastic_physics) to the
-    ! stochastic physics namelist parameters to ensure consistency.
-    ! DH* 20190518 - the same functionality is needed for separating stochastic_physics
-    ! from both IPD and CCPP, i.e. keep this code *DH
+    ! do_sppt, do_shum, do_skeb and do_sfcperts are namelist variables in group
+    ! physics that are parsed here and then compared in init_stochastic_physics
+    ! to the stochastic physics namelist parametersto ensure consistency.
     Model%do_sppt          = do_sppt
     Model%use_zmtnblck     = use_zmtnblck
     Model%do_shum          = do_shum
@@ -3470,7 +3460,6 @@ module GFS_typedefs
     Model%pertlai          = pertlai
     Model%pertalb          = pertalb
     Model%pertvegf         = pertvegf
-    ! *DH 20180730
 
     !--- cellular automata options
     Model%nca              = nca
@@ -3480,14 +3469,6 @@ module GFS_typedefs
     Model%nseed            = nseed
     Model%ca_global        = ca_global
     Model%do_ca            = do_ca
-#ifdef CCPP
-    if(Model%do_ca)then
-      print *,'Cellular automata cannot be used when CCPP is turned on until'
-      print *,'the stochastic physics pattern generation code has been pulled'
-      print *,'out of the FV3 repository and updated with the CCPP version.'
-      stop
-    endif
-#endif
     Model%ca_sgs           = ca_sgs
     Model%iseed_ca         = iseed_ca
     Model%ca_smooth        = ca_smooth
@@ -3551,6 +3532,38 @@ module GFS_typedefs
         n = get_tracer_index(Model%tracer_names, 'msa', Model%me, Model%master, Model%debug) - Model%ntchs + 1
         if (n > 0) Model%ntdiag(n) = .false.
       endif
+    endif
+    ! -- setup aerosol scavenging factors
+    allocate(Model%fscav(Model%ntchm))
+    if (Model%ntchm > 0) then
+      ! -- initialize to default
+      Model%fscav = 0.6_kind_phys
+      n = get_tracer_index(Model%tracer_names, 'seas1', Model%me, Model%master, Model%debug) - Model%ntchs + 1
+      if (n > 0) Model%fscav(n) = 1.0_kind_phys
+      n = get_tracer_index(Model%tracer_names, 'seas2', Model%me, Model%master, Model%debug) - Model%ntchs + 1
+      if (n > 0) Model%fscav(n) = 1.0_kind_phys
+      n = get_tracer_index(Model%tracer_names, 'seas3', Model%me, Model%master, Model%debug) - Model%ntchs + 1
+      if (n > 0) Model%fscav(n) = 1.0_kind_phys
+      n = get_tracer_index(Model%tracer_names, 'seas4', Model%me, Model%master, Model%debug) - Model%ntchs + 1
+      if (n > 0) Model%fscav(n) = 1.0_kind_phys
+      n = get_tracer_index(Model%tracer_names, 'seas5', Model%me, Model%master, Model%debug) - Model%ntchs + 1
+      if (n > 0) Model%fscav(n) = 1.0_kind_phys
+      ! -- read factors from namelist
+      do i = 1, size(fscav_aero)
+        j = index(fscav_aero(i),":")
+        if (j > 1) then
+          read(fscav_aero(i)(j+1:), *, iostat=ios) tem
+          if (ios /= 0) cycle
+          if (adjustl(fscav_aero(i)(:j-1)) == "*") then
+            Model%fscav = tem
+            exit
+          else
+            n = get_tracer_index(Model%tracer_names, adjustl(fscav_aero(i)(:j-1)), Model%me, Model%master, Model%debug) &
+                - Model%ntchs + 1
+            if (n > 0) Model%fscav(n) = tem
+          endif
+        endif
+      enddo
     endif
 
 #ifdef CCPP
@@ -3954,7 +3967,6 @@ module GFS_typedefs
       Model%nseffr = 3
       if (Model%me == Model%master) print *,' Using Thompson double moment', &
                                           ' microphysics',' ltaerosol = ',Model%ltaerosol, &
-                                          ' make_number_concentrations = ',Model%make_number_concentrations, &
                                           ' ttendlim =',Model%ttendlim, &
                                           ' lradar =',Model%lradar,Model%num_p3d,Model%num_p2d
 
@@ -4159,10 +4171,8 @@ module GFS_typedefs
       print *, ' cny               : ', Model%cny
       print *, ' lonr              : ', Model%lonr
       print *, ' latr              : ', Model%latr
-#ifdef CCPP
       print *, ' blksz(1)          : ', Model%blksz(1)
       print *, ' blksz(nblks)      : ', Model%blksz(Model%nblks)
-#endif
       print *, ' '
       print *, 'coupling parameters'
       print *, ' cplflx            : ', Model%cplflx
@@ -4227,7 +4237,6 @@ module GFS_typedefs
       endif
       if (Model%imp_physics == Model%imp_physics_wsm6 .or. Model%imp_physics == Model%imp_physics_thompson) then
         print *, ' Thompson microphysical parameters'
-        print *, ' make_number_concentrations : ', Model%make_number_concentrations
         print *, ' ltaerosol         : ', Model%ltaerosol
         print *, ' lradar            : ', Model%lradar
         print *, ' ttendlim          : ', Model%ttendlim
@@ -4422,6 +4431,7 @@ module GFS_typedefs
       print *, ' ntia              : ', Model%ntia
       print *, ' ntchm             : ', Model%ntchm
       print *, ' ntchs             : ', Model%ntchs
+      print *, ' fscav             : ', Model%fscav
       print *, ' '
       print *, 'derived totals for phy_f*d'
       print *, ' ntot2d            : ', Model%ntot2d
@@ -5652,9 +5662,7 @@ module GFS_typedefs
     end if
     !
     ! Set components that do not change
-    Interstitial%im               = IM
     Interstitial%ipr              = min(IM,10)
-    Interstitial%ix               = IM
     Interstitial%latidxprnt       = 1
     Interstitial%levi             = Model%levs+1
     Interstitial%levh2o           = levh2o
@@ -5700,6 +5708,7 @@ module GFS_typedefs
     Interstitial%nvdiff           = Model%ntrac
     Interstitial%mg3_as_mg2       = .false.
     Interstitial%nn               = Model%ntrac + 1
+    Interstitial%itc              = 0
     Interstitial%ntk              = 0
     Interstitial%ntkev            = 0
     Interstitial%tracers_total    = 0
@@ -5707,6 +5716,9 @@ module GFS_typedefs
     Interstitial%nsamftrac        = 0
     Interstitial%ncstrac          = 0
     Interstitial%nscav            = Model%ntrac-Model%ncld+2
+
+    ! perform aerosol convective transport and PBL diffusion
+    Interstitial%trans_aero = Model%cplchm .and. Model%trans_trac
 
     if (Model%imp_physics == Model%imp_physics_thompson) then
       if (Model%ltaerosol) then
@@ -5766,21 +5778,21 @@ module GFS_typedefs
     ! *DH
 
     if (Model%cplchm) then
+      ! Only Zhao/Carr/Sundqvist and GFDL microphysics schemes are supported
+      ! when coupling with chemistry. PBL diffusion of aerosols is only supported
+      ! for GFDL microphysics.
       if (Model%imp_physics == Model%imp_physics_zhao_carr) then
         Interstitial%nvdiff = 3
-      elseif (Model%imp_physics == Model%imp_physics_mg) then
-        if (Model%ntgl > 0) then
-          Interstitial%nvdiff = 12
-        else
-          Interstitial%nvdiff = 10
-        endif
+        if (Model%ntke > 0) Interstitial%nvdiff = Interstitial%nvdiff + 1    ! adding tke to the list
       elseif (Model%imp_physics == Model%imp_physics_gfdl) then
-        Interstitial%nvdiff = 7
-      elseif (Model%imp_physics == Model%imp_physics_thompson) then
-        write(0,*) "Error in interstitial_setup_tracers, Thompson MP not configured for cplchm"
+        if (.not. Model%trans_trac) then
+          Interstitial%nvdiff = 7
+          if (Model%ntke > 0) Interstitial%nvdiff = Interstitial%nvdiff + 1    ! adding tke to the list
+        endif
+      else
+        write(0,*) "Only Zhao/Carr/Sundqvist and GFDL microphysics schemes are supported when coupling with chemistry"
         stop
       endif
-      if (Model%ntke > 0) Interstitial%nvdiff = Interstitial%nvdiff + 1    ! adding tke to the list
     endif
 
     Interstitial%ntkev = Interstitial%nvdiff
@@ -5814,6 +5826,7 @@ module GFS_typedefs
 !           if (ntlnc == n .or. ntinc == n .or. ntrnc == n .or. ntsnc == n .or.&
 !               ntrw  == n .or. ntsw  == n .or. ntgl  == n)                    &
                   Interstitial%otspt(tracers+1,1) = .false.
+          if (Interstitial%trans_aero .and. Model%ntchs == n) Interstitial%itc = tracers
         endif
       enddo
       Interstitial%tracers_total = tracers - 2
@@ -6143,9 +6156,8 @@ module GFS_typedefs
     write (0,*) 'Interstitial_print: values that do not change'
     write (0,*) 'Interstitial%h2o_coeff         = ', Interstitial%h2o_coeff
     write (0,*) 'sum(Interstitial%h2o_pres)     = ', sum(Interstitial%h2o_pres)
-    write (0,*) 'Interstitial%im                = ', Interstitial%im
     write (0,*) 'Interstitial%ipr               = ', Interstitial%ipr
-    write (0,*) 'Interstitial%ix                = ', Interstitial%ix
+    write (0,*) 'Interstitial%itc               = ', Interstitial%itc
     write (0,*) 'Interstitial%latidxprnt        = ', Interstitial%latidxprnt
     write (0,*) 'Interstitial%levi              = ', Interstitial%levi
     write (0,*) 'Interstitial%levh2o            = ', Interstitial%levh2o
@@ -6165,6 +6177,7 @@ module GFS_typedefs
     write (0,*) 'sum(Interstitial%oz_pres)      = ', sum(Interstitial%oz_pres)
     write (0,*) 'Interstitial%phys_hydrostatic  = ', Interstitial%phys_hydrostatic
     write (0,*) 'Interstitial%skip_macro        = ', Interstitial%skip_macro
+    write (0,*) 'Interstitial%trans_aero        = ', Interstitial%trans_aero
     ! Print all other variables
     write (0,*) 'Interstitial_print: values that change'
     write (0,*) 'sum(Interstitial%adjnirbmd   ) = ', sum(Interstitial%adjnirbmd   )

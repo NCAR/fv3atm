@@ -193,9 +193,10 @@ module GFS_driver
                      Init_parm%dt_dycore, Init_parm%dt_phys,       &
                      Init_parm%iau_offset, Init_parm%bdat,         &
                      Init_parm%cdat, Init_parm%tracer_names,       &
-                     Init_parm%input_nml_file, Init_parm%tile_num  &
+                     Init_parm%input_nml_file, Init_parm%tile_num, &
+                     Init_parm%blksz                               &
 #ifdef CCPP
-                    ,Init_parm%ak, Init_parm%bk, Init_parm%blksz,  &
+                    ,Init_parm%ak, Init_parm%bk,                   &
                      Init_parm%restart, Init_parm%hydrostatic,     &
                      communicator, ntasks, nthrds                  &
 #endif
@@ -215,17 +216,6 @@ module GFS_driver
     if (Model%iccn) then
       call read_cidata  ( Model%me, Model%master)
     endif
-#endif
-!*## CCPP ##
-
-!## CCPP ##* The functionality below is now in 
-! ccpp/physics/stochastic_physics/stochastic_physics.F90/stochastic_physics_init 
-! and is called automatically as part of CCPP physics init. Note: The location of 
-! stochastic_physics.F90 will change when stochastic physics is in its own repository.
-#ifndef CCPP
-    !--- initializing stochastic physics
-    call init_stochastic_physics(Model,Init_parm,nblks)
-    if(Model%me == Model%master) print*,'do_skeb=',Model%do_skeb
 #endif
 !*## CCPP ##
 
@@ -284,18 +274,6 @@ module GFS_driver
 
     !--- populate the grid components
     call GFS_grid_populate (Grid, Init_parm%xlon, Init_parm%xlat, Init_parm%area)
-
-!## CCPP ##* The functionality below is now in 
-! ccpp/physics/stochastic_physics/stochastic_physics.F90/stochastic_physics_sfc_init 
-! and is called automatically as part of CCPP physics init. Note: The location of 
-! stochastic_physics.F90 will change when stochastic physics is in its own repository.
-! For CCPP, stochastic_physics_sfc_init is called automatically as part of CCPP physics init
-#ifndef CCPP
-!   get land surface perturbations here (move to GFS_time_vary if wanting to
-!   update each time-step
-    call run_stochastic_physics_sfc(nblks,Model,Grid,Coupling)
-#endif
-!*## CCPP ##
 
 !## CCPP ##* GFS_phys_time_vary.fv3.F90/GFS_phys_time_vary_init; Note: this is run
 ! automatically during the CCPP physics initialization stage.
@@ -488,19 +466,6 @@ module GFS_driver
     endif
 #endif
 
-!## CCPP ##* This is not in the CCPP due to its grid dependency.
-#ifndef CCPP
-    !--- Initialize cellular automata
-    if(Model%do_ca)then
-    blocksize=size(Grid(1)%xlon)
-    call cellular_automata(Model%kdt, Statein, Coupling, Diag, nblks, Model%levs,     &
-                           Model%nca, Model%ncells, Model%nlives, Model%nfracseed,    &
-                           Model%nseed, Model%nthresh, Model%ca_global, Model%ca_sgs, &
-                           Model%iseed_ca, Model%ca_smooth, Model%nspinup, blocksize)
-    endif
-#endif
-!*## CCPP ##
-
     !--- sncovr may not exist in ICs from chgres.
     !--- FV3GFS handles this as part of the IC ingest
     !--- this note is placed here to alert users to study
@@ -646,22 +611,6 @@ module GFS_driver
     endif
 !*## CCPP ##
 
-!## CCPP ##* This functionality is now in stochastic_physics/stochastic_physics.F90/stochastic_physics_run
-    call run_stochastic_physics(nblks,Model,Grid(:),Coupling(:))
-!*## CCPP ##
-
-!## CCPP ##* This is not in the CCPP due to its grid dependency.
-    if(Model%do_ca)then
-      blocksize = size(Grid(1)%xlon)
-      call cellular_automata(Model%kdt,Statein,Coupling,Diag,nblks,Model%levs,      &
-              Model%nca,Model%ncells,Model%nlives,Model%nfracseed,                  &
-              Model%nseed,Model%nthresh,Model%ca_global,Model%ca_sgs,Model%iseed_ca,&
-              Model%ca_smooth,Model%nspinup,blocksize)
-    endif
-!*## CCPP ##
-
-!## CCPP ##* GFS_stochastics.F90/GFS_stochastics_run; Note: these lines are not 
-! verbatim in the CCPP, but functionally equivalent.
 ! kludge for output
     if (Model%do_skeb) then
       do nb = 1,nblks
