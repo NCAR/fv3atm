@@ -435,10 +435,8 @@ module GFS_driver
     if (Model%ras) call ras_init (Model%levs, Model%me)
 #endif
 
-!## CCPP ##* sfc_drv.f/lsm_noah_init; Note: This is automatically called during the 
-! CCPP physics initialization stage. HOWEVER, we also need to do this here as long as 
-! FV3GFS_io.F90 is calculating Sfcprop%sncovr when reading restart files 
-! (which it shouldn't, this should be moved to physics).
+!## CCPP ##* sfc_drv.f/lsm_noah_init and sfc_noahmp_drv.f/noahmpdrv_init; Note: This is
+! automatically called during the CCPP physics initialization stage.
 #ifndef CCPP
     !--- initialize soil vegetation
     call set_soilveg(Model%me, Model%isot, Model%ivegsrc, Model%nlunit)
