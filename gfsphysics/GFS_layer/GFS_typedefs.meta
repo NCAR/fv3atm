@@ -272,7 +272,7 @@
   kind = kind_phys
 [gu0(:,1)]
   standard_name = x_wind_at_lowest_model_layer_updated_by_physics
-  long_name = zonal wind at lowest model level updated by physics
+  long_name = zonal wind at lowest model layer updated by physics
   units = m s-1
   dimensions = (horizontal_dimension)
   type = real
@@ -286,7 +286,7 @@
   kind = kind_phys
 [gv0(:,1)]
   standard_name = y_wind_at_lowest_model_layer_updated_by_physics
-  long_name = meridional wind at lowest model level updated by physics
+  long_name = meridional wind at lowest model layer updated by physics
   units = m s-1
   dimensions = (horizontal_dimension)
   type = real
@@ -2298,7 +2298,7 @@
   type = integer
 [lsoil_lsm]
   standard_name = soil_vertical_dimension_for_land_surface_model
-  long_name = number of soil layers for land surface model
+  long_name = number of soil layers internal to land surface model
   units = count
   dimensions = ()
   type = integer
@@ -2582,7 +2582,7 @@
   kind = kind_phys
 [clam_deep]
   standard_name = entrainment_rate_coefficient_deep_convection
-  long_name = entrainment rate coefficient for deep conv.
+  long_name = entrainment rate coefficient for deep convection
   units = none
   dimensions = ()
   type = real
