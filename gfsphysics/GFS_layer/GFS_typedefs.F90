@@ -369,7 +369,6 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: chs2(:)          => null()  !exch coeff for heat at 2m
     real (kind=kind_phys), pointer :: cqs2(:)          => null()  !exch coeff for moisture at 2m
     real (kind=kind_phys), pointer :: lh(:)            => null()  !latent heating at the surface
-
 #endif
 
     contains
