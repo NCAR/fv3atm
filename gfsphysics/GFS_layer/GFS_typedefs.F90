@@ -8,7 +8,7 @@ module GFS_typedefs
                                            con_hvap, con_hfus, con_pi, con_rd, con_rv, &
                                            con_t0c, con_cvap, con_cliq, con_eps, &
                                            con_epsm1, con_ttp, rlapse, con_jcal, con_rhw0, &
-                                           con_sbc, con_tice, cimin, con_p0
+                                           con_sbc, con_tice, cimin, con_p0, rhowater
        use module_radsw_parameters,  only: topfsw_type, sfcfsw_type, cmpfsw_type, NBDSW
        use module_radlw_parameters,  only: topflw_type, sfcflw_type, NBDLW
 #else
@@ -589,6 +589,10 @@ module GFS_typedefs
                                             !< (yr, mon, day, t-zone, hr, min, sec, mil-sec)
     integer              :: idate(4)        !< initial date with different size and ordering
                                             !< (hr, mon, day, yr)
+#ifdef CCPP
+    real(kind=kind_phys) :: julian          !< julian day using midnight of January 1 of forecast year as initial epoch
+    integer              :: yearlen         !< length of the forecast year in days
+#endif
 !--- radiation control parameters
     real(kind=kind_phys) :: fhswr           !< frequency for shortwave radiation (secs)
     real(kind=kind_phys) :: fhlwr           !< frequency for longwave radiation (secs)
@@ -713,6 +717,7 @@ module GFS_typedefs
     integer              :: lsoil           !< number of soil layers
 #ifdef CCPP
     integer              :: lsoil_lsm       !< number of soil layers internal to land surface model
+    integer              :: lsnow_lsm       !< maximum number of snow layers internal to land surface model
 #endif
     integer              :: ivegsrc         !< ivegsrc = 0   => USGS, 
                                             !< ivegsrc = 1   => IGBP (20 category)
@@ -995,7 +1000,7 @@ module GFS_typedefs
     real(kind=kind_phys) :: clstp           !< index used by cnvc90 (for convective clouds) 
                                             !< legacy stuff - does not affect forecast
     real(kind=kind_phys) :: phour           !< previous forecast hour
-    real(kind=kind_phys) :: fhour           !< curent forecast hour
+    real(kind=kind_phys) :: fhour           !< current forecast hour
     real(kind=kind_phys) :: zhour           !< previous hour diagnostic buckets emptied
     integer              :: kdt             !< current forecast iteration
 #ifdef CCPP
@@ -1155,6 +1160,13 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: iceprv    (:)    => null()  !< ice amount from previous timestep
     real (kind=kind_phys), pointer :: snowprv   (:)    => null()  !< snow amount from previous timestep
     real (kind=kind_phys), pointer :: graupelprv(:)    => null()  !< graupel amount from previous timestep
+    
+    !---- precipitation rates from previous time step for NoahMP LSM
+    real (kind=kind_phys), pointer :: draincprv  (:)    => null()  !< convective precipitation rate from previous timestep
+    real (kind=kind_phys), pointer :: drainncprv (:)    => null()  !< explicit rainfall rate from previous timestep
+    real (kind=kind_phys), pointer :: diceprv    (:)    => null()  !< ice precipitation rate from previous timestep
+    real (kind=kind_phys), pointer :: dsnowprv   (:)    => null()  !< snow precipitation rate from previous timestep
+    real (kind=kind_phys), pointer :: dgraupelprv(:)    => null()  !< graupel precipitation rate from previous timestep
 
     !--- MYNN prognostic variables that can't be in the Intdiag or Interstitial DDTs
     real (kind=kind_phys), pointer :: CLDFRA_BL  (:,:)   => null()  !
@@ -1696,6 +1708,7 @@ module GFS_typedefs
     real (kind=kind_phys), pointer      :: plyr(:,:)        => null()  !<
     real (kind=kind_phys), pointer      :: prcpmp(:)        => null()  !<
     real (kind=kind_phys), pointer      :: prnum(:,:)       => null()  !<
+    real (kind=kind_phys), pointer      :: q2mp(:)          => null()  !<
     real (kind=kind_phys), pointer      :: qgl(:,:)         => null()  !<
     real (kind=kind_phys), pointer      :: qicn(:,:)        => null()  !<
     real (kind=kind_phys), pointer      :: qlcn(:,:)        => null()  !<
@@ -1744,6 +1757,7 @@ module GFS_typedefs
     real (kind=kind_phys), pointer      :: stress_ice(:)    => null()  !<
     real (kind=kind_phys), pointer      :: stress_land(:)   => null()  !<
     real (kind=kind_phys), pointer      :: stress_ocean(:)  => null()  !<
+    real (kind=kind_phys), pointer      :: t2mmp(:)         => null()  !<
     real (kind=kind_phys), pointer      :: theta(:)         => null()  !<
     real (kind=kind_phys), pointer      :: tice(:)          => null()  !<
     real (kind=kind_phys), pointer      :: tlvl(:,:)        => null()  !<
@@ -2146,11 +2160,19 @@ module GFS_typedefs
     allocate (Sfcprop%smcwtdxy (IM))
     allocate (Sfcprop%deeprechxy (IM))
     allocate (Sfcprop%rechxy    (IM))
+#ifdef CCPP
+    allocate (Sfcprop%snicexy    (IM, -Model%lsnow_lsm+1:0))
+    allocate (Sfcprop%snliqxy    (IM, -Model%lsnow_lsm+1:0))
+    allocate (Sfcprop%tsnoxy     (IM, -Model%lsnow_lsm+1:0))
+    allocate (Sfcprop%smoiseq    (IM, Model%lsoil_lsm))
+    allocate (Sfcprop%zsnsoxy    (IM, -Model%lsnow_lsm+1:Model%lsoil_lsm))
+#else
     allocate (Sfcprop%snicexy    (IM,-2:0))
     allocate (Sfcprop%snliqxy    (IM,-2:0))
     allocate (Sfcprop%tsnoxy     (IM,-2:0))
     allocate (Sfcprop%smoiseq    (IM, 1:4))
     allocate (Sfcprop%zsnsoxy    (IM,-2:4))
+#endif
 
     Sfcprop%snowxy     = clear_val
     Sfcprop%tvxy       = clear_val
@@ -2719,6 +2741,7 @@ module GFS_typedefs
     integer              :: lsoil          =  4              !< number of soil layers
 #ifdef CCPP
     integer              :: lsoil_lsm      =  -1             !< number of soil layers internal to land surface model; -1 use lsoil
+    integer              :: lsnow_lsm      =  3              !< maximum number of snow layers internal to land surface model
 #endif
     integer              :: ivegsrc        =  2              !< ivegsrc = 0   => USGS,
                                                              !< ivegsrc = 1   => IGBP (20 category)
@@ -2983,7 +3006,7 @@ module GFS_typedefs
                                avg_max_length,                                              &
                           !--- land/surface model control
 #ifdef CCPP
-                               lsm, lsoil, lsoil_lsm, nmtvr, ivegsrc, use_ufo,              &
+                               lsm, lsoil, lsoil_lsm, lsnow_lsm, nmtvr, ivegsrc, use_ufo,   &
 #else
                                lsm, lsoil, nmtvr, ivegsrc, use_ufo,                         &
 #endif
@@ -3283,6 +3306,12 @@ module GFS_typedefs
       Model%lsoil_lsm      = lsoil
     else
       Model%lsoil_lsm      = lsoil_lsm
+    end if
+    if (lsnow_lsm /= 3) then
+      write(0,*) 'Logic error: NoahMP expects the maximum number of snow layers to be exactly 3 (see sfc_noahmp_drv.f)'
+      stop
+    else
+      Model%lsnow_lsm      = lsnow_lsm
     end if
 #endif
     Model%ivegsrc          = ivegsrc
@@ -3622,6 +3651,13 @@ module GFS_typedefs
     Model%jdat(1:8)        = jdat(1:8)
 #ifdef CCPP
     Model%sec              = 0
+    
+#ifdef CCPP
+    if (Model%lsm == Model%lsm_noahmp) then
+      Model%yearlen          = 365
+      Model%julian           = -9999.
+    endif
+#endif    
     ! DH* what happens if LTP>0? Does this have to change? 
     ! A conversation with Yu-Tai suggests that we can probably
     ! eliminate LTP altogether *DH
@@ -3743,13 +3779,6 @@ module GFS_typedefs
       elseif (Model%lsm == 0) then
         print *,' OSU no longer supported - job aborted'
         stop
-#ifdef CCPP
-      elseif (Model%lsm == Model%lsm_ruc) then
-        print *,' RUC Land Surface Model used'
-      elseif (Model%lsm == Model%lsm_noahmp) then
-        print *,' Error, NOAH MP Land Surface Model not yet available in CCPP - job aborted'
-        stop
-#else
       elseif (Model%lsm == Model%lsm_noahmp) then
         if (Model%ivegsrc /= 1) then
           print *,'Vegetation type must be IGBP if Noah MP is used'
@@ -3773,6 +3802,10 @@ module GFS_typedefs
         print *,'iopt_snf   =  ', Model%iopt_snf
         print *,'iopt_tbot   =  ',Model%iopt_tbot
         print *,'iopt_stc   =  ', Model%iopt_stc
+#ifdef CCPP
+      elseif (Model%lsm == Model%lsm_ruc) then
+        print *,' RUC Land Surface Model used'
+#else
       elseif (Model%lsm == Model%lsm_ruc) then
         print *,' RUC Land Surface Model only available through CCPP - job aborted'
         stop
@@ -4256,6 +4289,7 @@ module GFS_typedefs
       print *, ' lsoil             : ', Model%lsoil
 #ifdef CCPP
       print *, ' lsoil_lsm         : ', Model%lsoil_lsm
+      print *, ' lsnow_lsm         : ', Model%lsnow_lsm
 #endif
       print *, ' ivegsrc           : ', Model%ivegsrc
       print *, ' isot              : ', Model%isot
@@ -4672,6 +4706,19 @@ module GFS_typedefs
        Tbd%iceprv     = clear_val
        Tbd%snowprv    = clear_val
        Tbd%graupelprv = clear_val
+    end if
+    
+    if (Model%lsm == Model%lsm_noahmp) then
+        allocate(Tbd%draincprv  (IM))
+        allocate(Tbd%drainncprv (IM))
+        allocate(Tbd%diceprv    (IM))
+        allocate(Tbd%dsnowprv   (IM))
+        allocate(Tbd%dgraupelprv(IM))
+        Tbd%draincprv   = clear_val
+        Tbd%drainncprv  = clear_val
+        Tbd%diceprv     = clear_val
+        Tbd%dsnowprv    = clear_val
+        Tbd%dgraupelprv = clear_val
     end if
 
     !--- MYNN variables:
@@ -5668,6 +5715,10 @@ module GFS_typedefs
        allocate (Interstitial%ncpi (IM,Model%levs))
        allocate (Interstitial%ncpl (IM,Model%levs))
     end if
+    if (Model%lsm == Model%lsm_noahmp) then
+       allocate (Interstitial%t2mmp (IM))
+       allocate (Interstitial%q2mp  (IM))
+    end if
     !
     ! Set components that do not change
     Interstitial%ipr              = min(IM,10)
@@ -6141,6 +6192,10 @@ module GFS_typedefs
        Interstitial%ncpi      = clear_val
        Interstitial%ncpl      = clear_val
     end if
+    if (Model%lsm == Model%lsm_noahmp) then
+       Interstitial%t2mmp     = clear_val
+       Interstitial%q2mp      = clear_val
+    end if
     !
     ! Set flag for resetting maximum hourly output fields
     Interstitial%reset = mod(Model%kdt-1, nint(Model%avg_max_length/Model%dtp)) == 0
@@ -6462,6 +6517,10 @@ module GFS_typedefs
        write (0,*) 'sum(Interstitial%qgl      ) = ', sum(Interstitial%qgl         )
        write (0,*) 'sum(Interstitial%ncpi     ) = ', sum(Interstitial%ncpi        )
        write (0,*) 'sum(Interstitial%ncpl     ) = ', sum(Interstitial%ncpl        )
+    end if
+    if (Model%lsm == Model%lsm_noahmp) then
+       write (0,*) 'sum(Interstitial%t2mmp    ) = ', sum(Interstitial%t2mmp       )
+       write (0,*) 'sum(Interstitial%q2mp     ) = ', sum(Interstitial%q2mp        )
     end if
     write (0,*) 'Interstitial_print: end'
     !

@@ -31,9 +31,11 @@ module FV3GFS_io_mod
   use constants_mod,      only: grav, rdgas
 !
 !--- GFS physics modules
+#ifndef CCPP
 !--- variables needed for calculating 'sncovr'
   use namelist_soilveg,   only: salp_data, snupx
-#ifndef CCPP
+#endif
+
 !
 ! --- variables needed for Noah MP init
 !
@@ -42,7 +44,7 @@ module FV3GFS_io_mod
                                 dwsat_table,dksat_table,psisat_table, &
                                 isurban_table,isbarren_table,         &
                                 isice_table,iswater_table
-#endif
+
 !
 !--- GFS_typedefs
 !rab  use GFS_typedefs,       only: GFS_sfcprop_type, GFS_diag_type, &
@@ -979,7 +981,7 @@ module FV3GFS_io_mod
 ! Noah MP
 ! -------
         if (Model%lsm == Model%lsm_noahmp) then
-
+#endif
           Sfcprop(nb)%snowxy(ix)     = sfc_var2(i,j,nvar_s2m+19)
           Sfcprop(nb)%tvxy(ix)       = sfc_var2(i,j,nvar_s2m+20)
           Sfcprop(nb)%tgxy(ix)       = sfc_var2(i,j,nvar_s2m+21)
@@ -1009,7 +1011,6 @@ module FV3GFS_io_mod
           Sfcprop(nb)%smcwtdxy(ix)   = sfc_var2(i,j,nvar_s2m+45)
           Sfcprop(nb)%deeprechxy(ix) = sfc_var2(i,j,nvar_s2m+46)
           Sfcprop(nb)%rechxy(ix)     = sfc_var2(i,j,nvar_s2m+47)
-#endif
         endif
 
 #ifdef CCPP
@@ -1092,6 +1093,7 @@ module FV3GFS_io_mod
     ! TODO: move to physics and stop building namelist_soilveg/set_soilveg
     ! in the FV3/non-CCPP physics when the CCPP-enabled executable is built.
 #endif
+#ifndef CCPP
     !--- if sncovr does not exist in the restart, need to create it
     if (nint(sfc_var2(1,1,32)) == -9999) then
       if (Model%me == Model%master ) call mpp_error(NOTE, 'gfs_driver::surface_props_input - computing sncovr') 
@@ -1113,6 +1115,7 @@ module FV3GFS_io_mod
         enddo
       enddo
     endif
+#endif    
 
     if (.not.Model%frac_grid) then ! tsfcl/zorll don't exist in the restart, need to create them
       if (Model%me == Model%master ) call mpp_error(NOTE, 'gfs_driver::surface_props_input - computing tsfcl & zorll') 
@@ -1162,7 +1165,6 @@ module FV3GFS_io_mod
       enddo
     enddo
 
-#ifndef CCPP
     if (Model%lsm == Model%lsm_noahmp) then 
       if (nint(sfc_var2(1,1,nvar_s2m+19)) == -66666) then
         if (Model%me == Model%master ) call mpp_error(NOTE, 'gfs_driver:: - Cold start Noah MP ')
@@ -1426,7 +1428,6 @@ module FV3GFS_io_mod
         enddo  ! nb
       endif
     endif   !if Noah MP cold start ends
-#endif
 
   end subroutine sfc_prop_restart_read
 
@@ -1514,7 +1515,7 @@ module FV3GFS_io_mod
       allocate(sfc_name2(nvar2m+nvar2o+nvar2mp+nvar2r))
       allocate(sfc_name3(nvar3+nvar3mp))
       allocate(sfc_var2(nx,ny,nvar2m+nvar2o+nvar2mp+nvar2r))
-      if (Model%lsm == Model%lsm_noah) then
+      if (Model%lsm == Model%lsm_noah .or. Model%lsm == Model%lsm_noahmp) then
         allocate(sfc_var3(nx,ny,Model%lsoil,nvar3))
       else if (Model%lsm == Model%lsm_ruc) then
         allocate(sfc_var3(nx,ny,Model%lsoil_lsm,nvar3))
@@ -1617,6 +1618,7 @@ module FV3GFS_io_mod
 #else
 ! Only needed when Noah MP LSM is used - 29 2D
       if(Model%lsm == Model%lsm_noahmp) then
+#endif
        sfc_name2(nvar2m+19) =  'snowxy'
        sfc_name2(nvar2m+20) =  'tvxy'
        sfc_name2(nvar2m+21) =  'tgxy'
@@ -1646,7 +1648,6 @@ module FV3GFS_io_mod
        sfc_name2(nvar2m+45) =  'smcwtdxy'
        sfc_name2(nvar2m+46) =  'deeprechxy'
        sfc_name2(nvar2m+47) =  'rechxy'
-#endif
       endif
  
       !--- register the 2D fields
@@ -1851,7 +1852,7 @@ module FV3GFS_io_mod
       endif
 
 #ifdef CCPP
-        if (Model%lsm == Model%lsm_noah) then
+        if (Model%lsm == Model%lsm_noah .or. Model%lsm == Model%lsm_noahmp) then
           !--- 3D variables
           do lsoil = 1,Model%lsoil
             sfc_var3(i,j,lsoil,1) = Sfcprop(nb)%stc(ix,lsoil) !--- stc
@@ -1894,23 +1895,23 @@ module FV3GFS_io_mod
           sfc_var3(i,j,lsoil,3) = Sfcprop(nb)%slc(ix,lsoil) !--- slc
         enddo
 ! 5 Noah MP 3D
-         if (Model%lsm == Model%lsm_noahmp) then
+        if (Model%lsm == Model%lsm_noahmp) then
 
-        do lsoil = -2,0
-           sfc_var3sn(i,j,lsoil,4) = Sfcprop(nb)%snicexy(ix,lsoil)
-           sfc_var3sn(i,j,lsoil,5) = Sfcprop(nb)%snliqxy(ix,lsoil)
-           sfc_var3sn(i,j,lsoil,6) = Sfcprop(nb)%tsnoxy(ix,lsoil)
-        enddo
+          do lsoil = -2,0
+             sfc_var3sn(i,j,lsoil,4) = Sfcprop(nb)%snicexy(ix,lsoil)
+             sfc_var3sn(i,j,lsoil,5) = Sfcprop(nb)%snliqxy(ix,lsoil)
+             sfc_var3sn(i,j,lsoil,6) = Sfcprop(nb)%tsnoxy(ix,lsoil)
+          enddo
 
-        do lsoil = 1,Model%lsoil
-          sfc_var3eq(i,j,lsoil,7)  = Sfcprop(nb)%smoiseq(ix,lsoil)
-        enddo
+          do lsoil = 1,Model%lsoil
+            sfc_var3eq(i,j,lsoil,7)  = Sfcprop(nb)%smoiseq(ix,lsoil)
+          enddo
 
-        do lsoil = -2,4
-          sfc_var3zn(i,j,lsoil,8)  = Sfcprop(nb)%zsnsoxy(ix,lsoil)
-        enddo
+          do lsoil = -2,4
+            sfc_var3zn(i,j,lsoil,8)  = Sfcprop(nb)%zsnsoxy(ix,lsoil)
+          enddo
 
-       endif  ! Noah MP
+        endif  ! Noah MP
 #endif
       enddo
     enddo

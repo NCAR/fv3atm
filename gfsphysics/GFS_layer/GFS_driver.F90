@@ -439,8 +439,10 @@ module GFS_driver
 ! CCPP physics initialization stage. HOWEVER, we also need to do this here as long as 
 ! FV3GFS_io.F90 is calculating Sfcprop%sncovr when reading restart files 
 ! (which it shouldn't, this should be moved to physics).
+#ifndef CCPP
     !--- initialize soil vegetation
     call set_soilveg(Model%me, Model%isot, Model%ivegsrc, Model%nlunit)
+#endif
 !*## CCPP ##
 
     !--- lsidea initialization
