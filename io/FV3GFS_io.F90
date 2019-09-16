@@ -31,7 +31,8 @@ module FV3GFS_io_mod
   use constants_mod,      only: grav, rdgas
 !
 !--- GFS physics modules
-#ifndef CCPP
+#if 1
+!ifndef CCPP
 !--- variables needed for calculating 'sncovr'
   use namelist_soilveg,   only: salp_data, snupx
 #endif
@@ -1093,7 +1094,8 @@ module FV3GFS_io_mod
     ! TODO: move to physics and stop building namelist_soilveg/set_soilveg
     ! in the FV3/non-CCPP physics when the CCPP-enabled executable is built.
 #endif
-#ifndef CCPP
+#if 1
+!ifndef CCPP
     !--- if sncovr does not exist in the restart, need to create it
     if (nint(sfc_var2(1,1,32)) == -9999) then
       if (Model%me == Model%master ) call mpp_error(NOTE, 'gfs_driver::surface_props_input - computing sncovr') 

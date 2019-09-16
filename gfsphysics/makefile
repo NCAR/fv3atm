@@ -34,13 +34,18 @@ else
     CCPP_STATIC_API = 
 endif
 # Set physics source files
+# DH* 20190916 - can remove namelist_soilveg and set_soilveg
+# once calculation of snocvr is moved from FV3GFS_io.F90/GFS_driver.F90
+# to CCPP (GFS_phys_time_vary.fv3.F90) *DH
 SRCS_f = \
 	   ./physics/mersenne_twister.f                                              \
+	   ./physics/namelist_soilveg.f                                              \
 	   ./physics/physparam.f                                                     \
 	   ./physics/radlw_param.f                                                   \
-	   ./physics/radsw_param.f
+	   ./physics/radsw_param.f                                                   \
+	   ./physics/set_soilveg.f
 SRCS_f90 = \
-     ./physics/noahmp_tables.f90
+	     ./physics/noahmp_tables.f90
 SRCS_F = \
 	   ./physics/machine.F
 SRCS_F90 = \

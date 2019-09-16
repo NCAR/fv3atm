@@ -437,7 +437,8 @@ module GFS_driver
 
 !## CCPP ##* sfc_drv.f/lsm_noah_init and sfc_noahmp_drv.f/noahmpdrv_init; Note: This is
 ! automatically called during the CCPP physics initialization stage.
-#ifndef CCPP
+#if 1
+!ifndef CCPP
     !--- initialize soil vegetation
     call set_soilveg(Model%me, Model%isot, Model%ivegsrc, Model%nlunit)
 #endif
