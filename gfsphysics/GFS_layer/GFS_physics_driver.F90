@@ -925,7 +925,10 @@ module module_physics_driver
       endif
 !*## CCPP ##
 !
-!## CCPP ##* this block not yet in CCPP
+!## CCPP ##* initialization in GFS_typedefs.F90/tbd_create; calculation in sfc_noahmp_pre.F90/sfc_noahmp_pre_run,
+!            although similar variables are calculated in GFS_MP_generic_post_run using up-to-date values of Diag%X,
+!            which arguably makes more sense (the way it is done probably erroneously causes NoahMP to use 0 for 
+!            these values after diagnostics are zeroed.)
 !  ---  initization for those precip type used in Noah MP
          if (Model%lsm == 2) then
            do  i=1,im
@@ -1085,7 +1088,7 @@ module module_physics_driver
 #endif
 !*## CCPP ##
 
-!## CCPP ##* this block not yet in CCPP
+!## CCPP ##* GFS_time_vary_pre.fv3.F90/GFS_time_vary_pre_run
 !
 ! Julian day calculation (fcst day of the year)
 ! we need imn to init lai and sai and yearln and julian to
@@ -1255,7 +1258,7 @@ module module_physics_driver
       enddo
 !*## CCPP ##
 
-!## CCPP ##* note: this block is not yet in CCPP
+!## CCPP ##* global to local variable transfer not necessary for these variables
 ! -- Noah MP 3D global to local
      if (Model%lsm == Model%lsm_noahmp) then
 
@@ -1872,7 +1875,7 @@ module module_physics_driver
 !     if (lprnt) write(0,*)' tseae=',tseal(ipr),' tsurf=',tsurf(ipr),iter  
 !    &,' phy_f2d=',phy_f2d(ipr,num_p2d)
 
-!## CCPP ##* This block not yet in CCPP.
+!## CCPP ##* sfc_noahmp_drv.f/noahmpdrv_run
 ! Noah MP call
 !
        elseif (Model%lsm == Model%lsm_noahmp) then
@@ -2150,7 +2153,8 @@ module module_physics_driver
 !*## CCPP ##
 !## CCPP ##* This block is not in the CCPP
       Tbd%phy_f2d(:,Model%num_p2d) = 0.0
-
+!*## CCPP ##
+!## CCPP ##* This block is executed inside sfc_diag_post.F90/sfc_diag_post_run
       if (Model%lsm == Model%lsm_noahmp) then
         do i=1,im
           if(dry(i)) then
@@ -5501,7 +5505,8 @@ module module_physics_driver
                        Sfcprop%f10m, Diag%u10m, Diag%v10m, Sfcprop%t2m, &
                        Sfcprop%q2m,  work3, evap, Sfcprop%ffmm,         &
                        Sfcprop%ffhh, fm10, fh2)
-      
+!*## CCPP ##
+!## CCPP ##* This block is executed inside sfc_diag_post.F90/sfc_diag_post_run
       if (Model%lsm == Model%lsm_noahmp) then
         do i=1,im
           if (dry(i)) then
@@ -5556,7 +5561,7 @@ module module_physics_driver
         enddo
       enddo
 !*## CCPP ##
-!## CCPP ##* This block not yet in CCPP.
+!## CCPP ##* global to local variable transfer not necessary for these variables
 ! Noah MP
      if (Model%lsm == Model%lsm_noahmp) then
 
