@@ -3653,7 +3653,7 @@ module module_physics_driver
 !    &,              Stateout%gq0(1:ix,1:levs,1),clw(1,1,2),clw(1,1,1)      &
 !    &,              '   shoc   ', grid%xlon(1:im), grid%xlat(1:im))
 
-! DH* as of now, this is in CCPP's gcm_shoc (but commented out because not needed)
+!## CCPP ## this is in CCPP's gcm_shoc (but commented out because not needed)
           if (imp_physics == Model%imp_physics_mg) then
             do k=1,levs
               do i=1,im
@@ -3662,7 +3662,7 @@ module module_physics_driver
               enddo
             enddo
           endif
-! *DH
+!*## CCPP ##
 !       do k=1,levs
 !         do i=1,im
 !           sgs_cld(i,k) = sgs_cld(i,k) + shoc_cld(i,k)

@@ -1811,22 +1811,22 @@ module GFS_typedefs
     real (kind=kind_phys), pointer      :: zorl_land(:)     => null()  !<
     real (kind=kind_phys), pointer      :: zorl_ocean(:)    => null()  !<
     real (kind=kind_phys), pointer      :: zt1d(:)          => null()  !<
-!WL* CIRES UGWP v0
+! CIRES UGWP v0
     real (kind=kind_phys), pointer      :: gw_dudt(:,:)     => null()  !<
     real (kind=kind_phys), pointer      :: gw_dvdt(:,:)     => null()  !<
     real (kind=kind_phys), pointer      :: gw_dtdt(:,:)     => null()  !<
     real (kind=kind_phys), pointer      :: gw_kdis(:,:)     => null()  !<
-    real (kind=kind_phys), pointer      :: tau_tofd(:)      => null()   !< instantaneous momentum flux due to TOFD
-    real (kind=kind_phys), pointer      :: tau_mtb(:)       => null()   !< instantaneous momentum flux due to mountain blocking drag
-    real (kind=kind_phys), pointer      :: tau_ogw(:)       => null()   !< instantaneous momentum flux due to orographic gravity wave drag
-    real (kind=kind_phys), pointer      :: tau_ngw(:)       => null()   !< instantaneous momentum flux due to nonstationary gravity waves
-    real (kind=kind_phys), pointer      :: zmtb(:)          => null()   !< mountain blocking height
-    real (kind=kind_phys), pointer      :: zlwb(:)          => null()   !< low level wave breaking height
-    real (kind=kind_phys), pointer      :: zogw(:)          => null()   !< height of drag due to orographic gravity wave
-    real (kind=kind_phys), pointer      :: dudt_mtb(:,:)    => null()   !< daily aver u-wind tend due to mountain blocking drag
-    real (kind=kind_phys), pointer      :: dudt_ogw(:,:)    => null()   !< daily aver u-wind tend due to orographic gravity wave drag
-    real (kind=kind_phys), pointer      :: dudt_tms(:,:)    => null()   !< daily aver u-wind tend due to TMS
-!*WL
+    real (kind=kind_phys), pointer      :: tau_tofd(:)      => null()  !< instantaneous momentum flux due to TOFD
+    real (kind=kind_phys), pointer      :: tau_mtb(:)       => null()  !< instantaneous momentum flux due to mountain blocking drag
+    real (kind=kind_phys), pointer      :: tau_ogw(:)       => null()  !< instantaneous momentum flux due to orographic gravity wave drag
+    real (kind=kind_phys), pointer      :: tau_ngw(:)       => null()  !< instantaneous momentum flux due to nonstationary gravity waves
+    real (kind=kind_phys), pointer      :: zmtb(:)          => null()  !< mountain blocking height
+    real (kind=kind_phys), pointer      :: zlwb(:)          => null()  !< low level wave breaking height
+    real (kind=kind_phys), pointer      :: zogw(:)          => null()  !< height of drag due to orographic gravity wave
+    real (kind=kind_phys), pointer      :: dudt_mtb(:,:)    => null()  !< daily aver u-wind tend due to mountain blocking drag
+    real (kind=kind_phys), pointer      :: dudt_ogw(:,:)    => null()  !< daily aver u-wind tend due to orographic gravity wave drag
+    real (kind=kind_phys), pointer      :: dudt_tms(:,:)    => null()  !< daily aver u-wind tend due to TMS
+!
 
     contains
       procedure :: create      => interstitial_create     !<   allocate array data
@@ -5669,7 +5669,7 @@ module GFS_typedefs
     allocate (Interstitial%zorl_land  (IM))
     allocate (Interstitial%zorl_ocean (IM))
     allocate (Interstitial%zt1d       (IM))
-!WL* CIRES UGWP v0
+! CIRES UGWP v0
     allocate (Interstitial%gw_dudt    (IM,Model%levs))
     allocate (Interstitial%gw_dvdt    (IM,Model%levs))
     allocate (Interstitial%gw_dtdt    (IM,Model%levs))
@@ -5684,7 +5684,7 @@ module GFS_typedefs
     allocate (Interstitial%dudt_mtb   (IM,Model%levs))
     allocate (Interstitial%dudt_ogw   (IM,Model%levs))
     allocate (Interstitial%dudt_tms   (IM,Model%levs))
-!*WL
+!
     ! Allocate arrays that are conditional on physics choices
     if (Model%imp_physics == Model%imp_physics_gfdl .or. Model%imp_physics == Model%imp_physics_thompson) then
        allocate (Interstitial%graupelmp  (IM))
@@ -6146,7 +6146,7 @@ module GFS_typedefs
     Interstitial%zorl_land    = huge
     Interstitial%zorl_ocean   = huge
     Interstitial%zt1d         = clear_val
-!WL* CIRES UGWP v0
+! CIRES UGWP v0
     Interstitial%gw_dudt      = clear_val
     Interstitial%gw_dvdt      = clear_val
     Interstitial%gw_dtdt      = clear_val
@@ -6161,7 +6161,7 @@ module GFS_typedefs
     Interstitial%dudt_mtb     = clear_val
     Interstitial%dudt_ogw     = clear_val
     Interstitial%dudt_tms     = clear_val
-!*WL
+!
     ! Reset fields that are conditional on physics choices
     if (Model%imp_physics == Model%imp_physics_gfdl .or. Model%imp_physics == Model%imp_physics_thompson) then
        Interstitial%graupelmp = clear_val
@@ -6470,7 +6470,7 @@ module GFS_typedefs
     write (0,*) 'sum(Interstitial%zorl_land   ) = ', sum(Interstitial%zorl_land   )
     write (0,*) 'sum(Interstitial%zorl_ocean  ) = ', sum(Interstitial%zorl_ocean  )
     write (0,*) 'sum(Interstitial%zt1d        ) = ', sum(Interstitial%zt1d        )
-!WL* CIRES UGWP v0
+! CIRES UGWP v0
     write (0,*) 'sum(Interstitial%gw_dudt     ) = ', sum(Interstitial%gw_dudt     )
     write (0,*) 'sum(Interstitial%gw_dvdt     ) = ', sum(Interstitial%gw_dvdt     )
     write (0,*) 'sum(Interstitial%gw_dtdt     ) = ', sum(Interstitial%gw_dtdt     )
@@ -6485,7 +6485,7 @@ module GFS_typedefs
     write (0,*) 'sum(Interstitial%dudt_mtb    ) = ', sum(Interstitial%dudt_mtb    )
     write (0,*) 'sum(Interstitial%dudt_ogw    ) = ', sum(Interstitial%dudt_ogw    )
     write (0,*) 'sum(Interstitial%dudt_tms    ) = ', sum(Interstitial%dudt_tms    )
-!*WL
+!
     ! Print arrays that are conditional on physics choices
     if (Model%imp_physics == Model%imp_physics_gfdl .or. Model%imp_physics == Model%imp_physics_thompson) then
        write (0,*) 'Interstitial_print: values specific to GFDL/Thompson microphysics'
