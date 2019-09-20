@@ -252,34 +252,6 @@ FFLAGS_LOPT1=$(subst CORE-AVX512,CORE-AVX-I,\
 ./GFS_layer/GFS_diagnostics.o : ./GFS_layer/GFS_diagnostics.F90
 	$(FC) $(CPPDEFS) $(FFLAGS) $(OTHER_FFLAGS) -O0 -c $< -o $@
 
-# Force consistent results of math calculations for MG microphysics
-# in DEBUG or REPRO mode; without this flag, the results of the intrinsic
-# gamma function differ for the non-CCPP and CCPP version (Theia/Intel 18).
-# This is only required for the dynamic CCPP build, not for the static build.
-ifneq (,$(findstring TRANSITION,$(CPPDEFS)))
-FFLAGS_LOPT2=$(subst CORE-AVX2,CORE-AVX-I,\
-               $(subst no-prec-sqrt,prec-sqrt,\
-                 $(subst no-prec-div,prec-div,$(FFLAGS))))
-./physics/micro_mg2_0.o : ./physics/micro_mg2_0.F90
-	$(FC) $(CPPDEFS) $(FFLAGS_LOPT2) $(OTHER_FFLAGS) -c $< -o $@
-./physics/micro_mg3_0.o : ./physics/micro_mg3_0.F90
-	$(FC) $(CPPDEFS) $(FFLAGS_LOPT2) $(OTHER_FFLAGS) -c $< -o $@
-./physics/aer_cloud.o : ./physics/aer_cloud.F
-	$(FC) $(CPPDEFS) $(FFLAGS_LOPT2) $(OTHER_FFLAGS) -c $< -o $@
-./physics/cldmacro.o : ./physics/cldmacro.F
-	$(FC) $(CPPDEFS) $(FFLAGS_LOPT2) $(OTHER_FFLAGS) -c $< -o $@
-./physics/sflx.o : ./physics/sflx.f
-	$(FC) $(CPPDEFS) $(FFLAGS_LOPT2) $(OTHER_FFLAGS) -c $< -o $@
-./physics/gfdl_cloud_microphys.o: ./physics/gfdl_cloud_microphys.F90
-	$(FC) $(CPPDEFS) $(FFLAGS_LOPT2) $(OTHER_FFLAGS) -c $< -o $@
-./physics/satmedmfvdif.o : ./physics/satmedmfvdif.f
-	$(FC) $(CPPDEFS) $(FFLAGS_LOPT2) $(OTHER_FFLAGS) -c $< -o $@
-./physics/cs_conv.o : ./physics/cs_conv.F90
-	$(FC) $(CPPDEFS) $(FFLAGS_LOPT2) $(OTHER_FFLAGS) -c $< -o $@
-./physics/gcm_shoc.o : ./physics/gcm_shoc.f90
-	$(FC) $(CPPDEFS) $(FFLAGS_LOPT2) $(OTHER_FFLAGS) -c $< -o $@
-endif
-
 # Do preprocessing of the GFS drivers in two steps to be able
 # to look at the actual .f90 file that is compiled
 ./GFS_layer/GFS_driver.o: ./GFS_layer/GFS_driver.F90
