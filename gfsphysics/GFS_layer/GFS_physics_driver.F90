@@ -696,10 +696,6 @@ module module_physics_driver
       real    ::  julian,fjd
       integer ::  iw3jdn
 
-#ifdef TRANSITION
-      real(kind=kind_phys), volatile :: volatile_var1, volatile_var2
-#endif
-
       !! Initialize local variables (mainly for debugging purposes, because the
       !! corresponding variables Interstitial(nt)%... are reset to zero every time);
       !! these variables are only modified over parts of the entire domain (related
@@ -3653,7 +3649,7 @@ module module_physics_driver
 !    &,              Stateout%gq0(1:ix,1:levs,1),clw(1,1,2),clw(1,1,1)      &
 !    &,              '   shoc   ', grid%xlon(1:im), grid%xlat(1:im))
 
-! DH* as of now, this is in CCPP's gcm_shoc (but commented out because not needed)
+!## CCPP ## this is in CCPP's gcm_shoc (but commented out because not needed)
           if (imp_physics == Model%imp_physics_mg) then
             do k=1,levs
               do i=1,im
@@ -3662,7 +3658,7 @@ module module_physics_driver
               enddo
             enddo
           endif
-! *DH
+!*## CCPP ##
 !       do k=1,levs
 !         do i=1,im
 !           sgs_cld(i,k) = sgs_cld(i,k) + shoc_cld(i,k)
@@ -5160,29 +5156,18 @@ module module_physics_driver
               graupel0(i,1) = 0.0
             endif
 
-#ifdef TRANSITION
-            volatile_var1   = rain0(i,1)+snow0(i,1)+ice0(i,1)+graupel0(i,1)
-            volatile_var2   = snow0(i,1)+ice0(i,1)+graupel0(i,1)
-            rain1(i)        = volatile_var1 * tem
-#else
             rain1(i)        = (rain0(i,1)+snow0(i,1)+ice0(i,1)+graupel0(i,1)) * tem
-#endif
             Diag%ice(i)     = ice0    (i,1) * tem
             Diag%snow(i)    = snow0   (i,1) * tem
             Diag%graupel(i) = graupel0(i,1) * tem
-#ifdef TRANSITION
-            if ( volatile_var1 * tem > rainmin ) then
-              Diag%sr(i) = volatile_var2 / volatile_var1
-#else
             if ( rain1(i) > rainmin ) then
               Diag%sr(i) = (snow0(i,1) + ice0(i,1)  + graupel0(i,1)) &
                          / (rain0(i,1) + snow0(i,1) + ice0(i,1) + graupel0(i,1))
-#endif
             else
               Diag%sr(i) = 0.0
             endif
           enddo
-#if defined(TRANSITION) || defined(REPRO)
+#ifdef REPRO
           ! Convert rain0, ice0, graupel0 and snow0 from mm/day to m/physics-timestep
           ! for later use (approx. lines 7970, calculation of srflag)
           rain0 = tem*rain0
@@ -5437,7 +5422,7 @@ module module_physics_driver
 !            Sfcprop%srflag(i) = 1.                   ! clu: set srflag to 'snow' (i.e. 1)
 !          endif
 ! compute fractional srflag
-#if defined(TRANSITION) || defined(REPRO)
+#ifdef REPRO
           ! For bit-for-bit identical results with CCPP code, snow0/ice0/graupel0/rain0
           ! were converted from mm per day to m per physics timestep previously in the code
           total_precip = snow0(i,1)+ice0(i,1)+graupel0(i,1)+rain0(i,1)+Diag%rainc(i)
