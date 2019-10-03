@@ -749,6 +749,12 @@ module GFS_typedefs
     logical              :: trans_trac      !< flag for convective transport of tracers (RAS, CS, or SAMF)
     logical              :: old_monin       !< flag for diff monin schemes
     logical              :: cnvgwd          !< flag for conv gravity wave drag
+#ifdef CCPP
+    integer              :: gwd_opt         !< gwd_opt = 1  => original GFS gwd (gwdps.f)
+                                            !< gwd_opt = 2  => unified GWD (placeholder)
+                                            !< gwd_opt = 3  => GSD drag suite
+                                            !< gwd_opt = 33 => GSD drag suite with extra output
+#endif
     logical              :: mstrat          !< flag for moorthi approach for stratus
     logical              :: moist_adj       !< flag for moist convective adjustment
     logical              :: cscnv           !< flag for Chikira-Sugiyama convection
@@ -1349,7 +1355,25 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: exch_h     (:,:)   => null()  !
     real (kind=kind_phys), pointer :: exch_m     (:,:)   => null()  !
 #endif
-
+#ifdef CCPP
+    !--- Drag Suite variables
+    real (kind=kind_phys), pointer :: dtaux2d_ls  (:,:)   => null()  !
+    real (kind=kind_phys), pointer :: dtauy2d_ls  (:,:)   => null()  !
+    real (kind=kind_phys), pointer :: dtaux2d_bl  (:,:)   => null()  !
+    real (kind=kind_phys), pointer :: dtauy2d_bl  (:,:)   => null()  !
+    real (kind=kind_phys), pointer :: dtaux2d_ss  (:,:)   => null()  !
+    real (kind=kind_phys), pointer :: dtauy2d_ss  (:,:)   => null()  !
+    real (kind=kind_phys), pointer :: dtaux2d_fd  (:,:)   => null()  !
+    real (kind=kind_phys), pointer :: dtauy2d_fd  (:,:)   => null()  !
+    real (kind=kind_phys), pointer :: dusfc_ls    (:)     => null()  !
+    real (kind=kind_phys), pointer :: dvsfc_ls    (:)     => null()  !
+    real (kind=kind_phys), pointer :: dusfc_bl    (:)     => null()  !
+    real (kind=kind_phys), pointer :: dvsfc_bl    (:)     => null()  !
+    real (kind=kind_phys), pointer :: dusfc_ss    (:)     => null()  !
+    real (kind=kind_phys), pointer :: dvsfc_ss    (:)     => null()  !
+    real (kind=kind_phys), pointer :: dusfc_fd    (:)     => null()  !
+    real (kind=kind_phys), pointer :: dvsfc_fd    (:)     => null()  !
+#endif
 ! Output - only in physics
     real (kind=kind_phys), pointer :: u10m   (:)     => null()   !< 10 meter u/v wind speed
     real (kind=kind_phys), pointer :: v10m   (:)     => null()   !< 10 meter u/v wind speed
@@ -2775,6 +2799,11 @@ module GFS_typedefs
     logical              :: trans_trac     = .false.                  !< flag for convective transport of tracers (RAS, CS, or SAMF)
     logical              :: old_monin      = .false.                  !< flag for diff monin schemes
     logical              :: cnvgwd         = .false.                  !< flag for conv gravity wave drag
+#ifdef CCPP
+    integer              :: gwd_opt        =  1                       !< flag for configuring gwd scheme
+                                                                      !< gwd_opt = 3 : GSDdrag suite
+                                                                      !< gwd_opt = 33: GSDdrag suite with extra output
+#endif
     logical              :: mstrat         = .false.                  !< flag for moorthi approach for stratus
     logical              :: moist_adj      = .false.                  !< flag for moist convective adjustment
     logical              :: cscnv          = .false.                  !< flag for Chikira-Sugiyama convection
@@ -3023,7 +3052,7 @@ module GFS_typedefs
                                ! DH* TODO - move to MYNN namelist section
                                bl_mynn_cloudpdf, bl_mynn_edmf, bl_mynn_edmf_mom,            &
                                bl_mynn_edmf_tke, bl_mynn_edmf_part, bl_mynn_cloudmix,       &
-                               bl_mynn_mixqt, icloud_bl, bl_mynn_tkeadvect,                 &
+                               bl_mynn_mixqt, icloud_bl, bl_mynn_tkeadvect, gwd_opt,        &
                                ! *DH
                                do_myjsfc, do_myjpbl,                                           &
 #endif
@@ -3426,6 +3455,7 @@ module GFS_typedefs
     Model%grav_settling     = grav_settling
     Model%icloud_bl         = icloud_bl
     ! *DH
+    Model%gwd_opt           = gwd_opt
     Model%do_myjsfc         = do_myjsfc
     Model%do_myjpbl         = do_myjpbl
 #endif
@@ -4372,6 +4402,7 @@ module GFS_typedefs
       print *, ' do_mynnsfclay     : ', Model%do_mynnsfclay
       print *, ' do_myjsfc         : ', Model%do_myjsfc
       print *, ' do_myjpbl         : ', Model%do_myjpbl
+      print *, ' gwd_opt           : ', Model%gwd_opt
 #endif
       print *, ' '
       print *, 'Rayleigh friction'
@@ -5095,6 +5126,43 @@ module GFS_typedefs
       Diag%ktop_shallow  = 0
       Diag%exch_h        = clear_val
       Diag%exch_m        = clear_val
+    endif
+
+    !--- Drag Suite variables:
+    if (Model%gwd_opt == 33) then
+      !print*,"Allocating all Drag Suite variables:"
+      allocate (Diag%dtaux2d_ls  (IM,Model%levs))
+      allocate (Diag%dtauy2d_ls  (IM,Model%levs))
+      allocate (Diag%dtaux2d_bl  (IM,Model%levs))
+      allocate (Diag%dtauy2d_bl  (IM,Model%levs))
+      allocate (Diag%dtaux2d_ss  (IM,Model%levs))
+      allocate (Diag%dtauy2d_ss  (IM,Model%levs))
+      allocate (Diag%dtaux2d_fd  (IM,Model%levs))
+      allocate (Diag%dtauy2d_fd  (IM,Model%levs))
+      Diag%dtaux2d_ls    = clear_val
+      Diag%dtauy2d_ls    = clear_val
+      Diag%dtaux2d_bl    = clear_val
+      Diag%dtauy2d_bl    = clear_val
+      Diag%dtaux2d_ss    = clear_val
+      Diag%dtauy2d_ss    = clear_val
+      Diag%dtaux2d_fd    = clear_val
+      Diag%dtauy2d_fd    = clear_val
+      allocate (Diag%dusfc_ls    (IM))
+      allocate (Diag%dvsfc_ls    (IM))
+      allocate (Diag%dusfc_bl    (IM))
+      allocate (Diag%dvsfc_bl    (IM))
+      allocate (Diag%dusfc_ss    (IM))
+      allocate (Diag%dvsfc_ss    (IM))
+      allocate (Diag%dusfc_fd    (IM))
+      allocate (Diag%dvsfc_fd    (IM))
+      Diag%dusfc_ls      = 0
+      Diag%dvsfc_ls      = 0
+      Diag%dusfc_bl      = 0
+      Diag%dvsfc_bl      = 0
+      Diag%dusfc_ss      = 0
+      Diag%dvsfc_ss      = 0
+      Diag%dusfc_fd      = 0
+      Diag%dvsfc_fd      = 0
     endif
 #endif
 

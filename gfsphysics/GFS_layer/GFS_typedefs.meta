@@ -3666,6 +3666,12 @@
   dimensions = ()
   type = real
   kind = kind_phys
+[gwd_opt]
+  standard_name = gwd_opt
+  long_name = flag to choose gwd scheme
+  units = flag
+  dimensions = () 
+  type = integer
 [do_mynnedmf]
   standard_name = do_mynnedmf
   long_name = flag to activate MYNN-EDMF
@@ -4578,6 +4584,118 @@
   long_name = cumulative sfc latent heat flux multiplied by timestep
   units = W m-2 s
   dimensions = (horizontal_dimension)
+  type = real
+  kind = kind_phys
+[dusfc_ls]
+  standard_name = integrated_x_momentum_flux_from_large_scale_gwd
+  long_name = integrated x momentum flux from large scale gwd
+  units = Pa s
+  dimensions = (horizontal_dimension)
+  type = real 
+  kind = kind_phys
+[dvsfc_ls]
+  standard_name = integrated_y_momentum_flux_from_large_scale_gwd
+  long_name = integrated y momentum flux from large scale gwd
+  units = Pa s
+  dimensions = (horizontal_dimension)
+  type = real
+  kind = kind_phys
+[dusfc_bl]
+  standard_name = integrated_x_momentum_flux_from_blocking_drag
+  long_name = integrated x momentum flux from blocking drag
+  units = Pa s
+  dimensions = (horizontal_dimension)
+  type = real
+  kind = kind_phys
+[dvsfc_bl]
+  standard_name = integrated_y_momentum_flux_from_blocking_drag
+  long_name = integrated y momentum flux from blocking drag
+  units = Pa s
+  dimensions = (horizontal_dimension)
+  type = real
+  kind = kind_phys
+[dusfc_ss]
+  standard_name = integrated_x_momentum_flux_from_small_scale_gwd
+  long_name = integrated x momentum flux from small scale gwd
+  units = Pa s
+  dimensions = (horizontal_dimension)
+  type = real
+  kind = kind_phys
+[dvsfc_ss]
+  standard_name = integrated_y_momentum_flux_from_small_scale_gwd
+  long_name = integrated y momentum flux from small scale gwd
+  units = Pa s
+  dimensions = (horizontal_dimension)
+  type = real
+  kind = kind_phys
+[dusfc_fd]
+  standard_name = integrated_x_momentum_flux_from_form_drag
+  long_name = integrated x momentum flux from form drag
+  units = Pa s
+  dimensions = (horizontal_dimension)
+  type = real
+  kind = kind_phys
+[dvsfc_fd]
+  standard_name = integrated_y_momentum_flux_from_form_drag
+  long_name = integrated y momentum flux from form drag
+  units = Pa s
+  dimensions = (horizontal_dimension)
+  type = real
+  kind = kind_phys
+[dtaux2d_ls]
+  standard_name = x_momentum_tendency_from_large_scale_gwd
+  long_name = x momentum tendency from large scale gwd
+  units = m s-2
+  dimensions = (horizontal_dimension,vertical_dimension)
+  type = real
+  kind = kind_phys
+[dtauy2d_ls]
+  standard_name = y_momentum_tendency_from_large_scale_gwd
+  long_name = y momentum tendency from large scale gwd
+  units = m s-2
+  dimensions = (horizontal_dimension,vertical_dimension)
+  type = real
+  kind = kind_phys
+[dtaux2d_bl]
+  standard_name = x_momentum_tendency_from_blocking_drag
+  long_name = x momentum tendency from blocking drag
+  units = m s-2
+  dimensions = (horizontal_dimension,vertical_dimension)
+  type = real
+  kind = kind_phys
+[dtauy2d_bl]
+  standard_name = y_momentum_tendency_from_blocking_drag
+  long_name = y momentum tendency from blocking drag
+  units = m s-2
+  dimensions = (horizontal_dimension,vertical_dimension)
+  type = real
+  kind = kind_phys
+[dtaux2d_ss]
+  standard_name = x_momentum_tendency_from_small_scale_gwd
+  long_name = x momentum tendency from small scale gwd
+  units = m s-2
+  dimensions = (horizontal_dimension,vertical_dimension)
+  type = real
+  kind = kind_phys
+[dtauy2d_ss]
+  standard_name = y_momentum_tendency_from_small_scale_gwd
+  long_name = y momentum tendency from small scale gwd
+  units = m s-2
+  dimensions = (horizontal_dimension,vertical_dimension)
+  type = real
+  kind = kind_phys
+[dtaux2d_fd]
+  standard_name = x_momentum_tendency_from_form_drag
+  long_name = x momentum tendency from form drag
+  units = m s-2
+  dimensions = (horizontal_dimension,vertical_dimension)
+  type = real
+  kind = kind_phys
+[dtauy2d_fd]
+  standard_name = y_momentum_tendency_from_form_drag
+  long_name = y momentum tendency from form drag
+  units = m s-2
+  dimensions = (horizontal_dimension,vertical_dimension)
   type = real
   kind = kind_phys
 [totprcp]
