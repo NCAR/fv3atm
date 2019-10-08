@@ -585,10 +585,6 @@ module GFS_typedefs
                                             !< (yr, mon, day, t-zone, hr, min, sec, mil-sec)
     integer              :: idate(4)        !< initial date with different size and ordering
                                             !< (hr, mon, day, yr)
-#ifdef CCPP
-    real(kind=kind_phys) :: julian          !< julian day using midnight of January 1 of forecast year as initial epoch
-    integer              :: yearlen         !< length of the forecast year in days
-#endif
 !--- radiation control parameters
     real(kind=kind_phys) :: fhswr           !< frequency for shortwave radiation (secs)
     real(kind=kind_phys) :: fhlwr           !< frequency for longwave radiation (secs)
@@ -1020,7 +1016,7 @@ module GFS_typedefs
     integer              :: jdat(1:8)       !< current forecast date and time
                                             !< (yr, mon, day, t-zone, hr, min, sec, mil-sec)
     integer              :: imn             !< current forecast month
-    integer              :: julian          !< current forecast julian date
+    real(kind=kind_phys) :: julian          !< current forecast julian date
     integer              :: yearlen         !< current length of the year
 !
     logical              :: iccn            !< using IN CCN forcing for MG2/3
@@ -1742,6 +1738,7 @@ module GFS_typedefs
     real (kind=kind_phys), pointer      :: plyr(:,:)          => null()  !<
     real (kind=kind_phys), pointer      :: prcpmp(:)          => null()  !<
     real (kind=kind_phys), pointer      :: prnum(:,:)         => null()  !<
+    real (kind=kind_phys), pointer      :: q2mp(:)            => null()  !<
     real (kind=kind_phys), pointer      :: qgl(:,:)           => null()  !<
     real (kind=kind_phys), pointer      :: qicn(:,:)          => null()  !<
     real (kind=kind_phys), pointer      :: qlcn(:,:)          => null()  !<
@@ -1793,6 +1790,7 @@ module GFS_typedefs
     real (kind=kind_phys), pointer      :: stress_ice(:)      => null()  !<
     real (kind=kind_phys), pointer      :: stress_land(:)     => null()  !<
     real (kind=kind_phys), pointer      :: stress_ocean(:)    => null()  !<
+    real (kind=kind_phys), pointer      :: t2mmp(:)           => null()  !<
     real (kind=kind_phys), pointer      :: theta(:)           => null()  !<
     real (kind=kind_phys), pointer      :: tice(:)            => null()  !<
     real (kind=kind_phys), pointer      :: tlvl(:,:)          => null()  !<
@@ -3692,13 +3690,10 @@ module GFS_typedefs
     Model%jdat(1:8)        = jdat(1:8)
 #ifdef CCPP
     Model%sec              = 0
-    
-#ifdef CCPP
     if (Model%lsm == Model%lsm_noahmp) then
       Model%yearlen          = 365
       Model%julian           = -9999.
     endif
-#endif    
     ! DH* what happens if LTP>0? Does this have to change? 
     ! A conversation with Yu-Tai suggests that we can probably
     ! eliminate LTP altogether *DH
@@ -5960,7 +5955,7 @@ module GFS_typedefs
         write(0,*) "Only Zhao/Carr/Sundqvist and GFDL microphysics schemes are supported when coupling with chemistry"
         stop
       endif
-      if (Model%trans_aero) Interstitial%nvdiff = Interstitial%nvdiff + Model%ntchm
+      if (Interstitial%trans_aero) Interstitial%nvdiff = Interstitial%nvdiff + Model%ntchm
       if (Model%ntke > 0) Interstitial%nvdiff = Interstitial%nvdiff + 1    ! adding tke to the list
     endif
 
