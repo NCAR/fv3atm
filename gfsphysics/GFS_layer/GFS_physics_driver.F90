@@ -2822,15 +2822,13 @@ module module_physics_driver
           enddo
 
         elseif (imp_physics == Model%imp_physics_zhao_carr) then   !  Zhao/Carr/Sundqvist
-          if (Model%cplchm) then
-            do k=1,levs
-              do i=1,im
-                dqdt(i,k,1)    = dvdftra(i,k,1)
-                dqdt(i,k,ntcw) = dvdftra(i,k,2)
-                dqdt(i,k,ntoz) = dvdftra(i,k,3)
-              enddo
+          do k=1,levs
+            do i=1,im
+              dqdt(i,k,1)    = dvdftra(i,k,1)
+              dqdt(i,k,ntcw) = dvdftra(i,k,2)
+              dqdt(i,k,ntoz) = dvdftra(i,k,3)
             enddo
-          endif
+          enddo
         endif
 !
         deallocate(vdftra, dvdftra)
