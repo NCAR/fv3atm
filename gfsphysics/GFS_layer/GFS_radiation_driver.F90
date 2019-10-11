@@ -1857,13 +1857,13 @@
 !>  - Call module_radiation_surface::setalb() to setup surface albedo.
 !!  for SW radiation.
 
-        call setalb (Sfcprop%slmsk, Sfcprop%snowd, Sfcprop%sncovr,&    !  ---  inputs:
-                     Sfcprop%snoalb, Sfcprop%zorl, Radtend%coszen,&
-                     tsfg, tsfa, Sfcprop%hprim, Sfcprop%alvsf,    &
-                     Sfcprop%alnsf, Sfcprop%alvwf, Sfcprop%alnwf, &
-                     Sfcprop%facsf, Sfcprop%facwf, Sfcprop%fice,  &
-                     Sfcprop%tisfc, IM,                           &
-                     alb1d, Model%pertalb,                        &    !  mg, sfc-perts
+        call setalb (Sfcprop%slmsk, Sfcprop%snowd, Sfcprop%sncovr,   & !  ---  inputs:
+                     Sfcprop%snoalb, Sfcprop%zorl, Radtend%coszen,   &
+                     tsfg, tsfa, Sfcprop%hprime(:,1), Sfcprop%alvsf, &
+                     Sfcprop%alnsf, Sfcprop%alvwf, Sfcprop%alnwf,    &
+                     Sfcprop%facsf, Sfcprop%facwf, Sfcprop%fice,     &
+                     Sfcprop%tisfc, IM,                              &
+                     alb1d, Model%pertalb,                           & !  mg, sfc-perts
                      sfcalb)                                           !  ---  outputs
 
 !> -# Approximate mean surface albedo from vis- and nir-  diffuse values.
@@ -1985,7 +1985,7 @@
 
         call setemis (Grid%xlon, Grid%xlat, Sfcprop%slmsk,         &        !  ---  inputs
                       Sfcprop%snowd, Sfcprop%sncovr, Sfcprop%zorl, &
-                      tsfg, tsfa, Sfcprop%hprim, IM,               & 
+                      tsfg, tsfa, Sfcprop%hprime(:,1), IM,         & 
                       Radtend%semis)                                              !  ---  outputs
 !*## CCPP ##
 
@@ -2149,13 +2149,6 @@
           enddo
         endif
 
-!       if (.not. Model%uni_cld) then
-        if (Model%lgocart .or. Model%ldiag3d) then
-          do k = 1, LM
-            k1 = k + kd
-            Coupling%cldcovi(1:im,k) = clouds(1:im,k1,1)
-          enddo
-        endif
       endif                                ! end_if_lssav
 !*## CCPP ##
       return
