@@ -33,13 +33,6 @@ ifneq (,$(findstring STATIC,$(CPPDEFS)))
 else
     CCPP_STATIC_API = 
 endif
-
-# CCPP directory
-CCPP_DIR = /home/Dustin.Swales/Projects/FV3/NEMSfv3gfs/ccpp
-
-# Link to ccpp library                                                                                                                                                       
-FFLAGS += -I$(CCPP_DIR)/build/physics
-
 # Set physics source files
 # DH* 20190916 - can remove namelist_soilveg and set_soilveg
 # once calculation of snocvr is moved from FV3GFS_io.F90/GFS_driver.F90
@@ -244,7 +237,7 @@ OBJS = $(OBJS_f) $(OBJS_f90) $(OBJS_F) $(OBJS_F90) $(OBJS_c)
 
 all default: depend $(LIBRARY)
 
-$(LIBRARY): $(OBJS)  -I$(CCPP_DIR)/build/physics
+$(LIBRARY): $(OBJS)
 	$(AR) $(ARFLAGS) $@ $?
 
 # this is the place to override default (implicit) compilation rules
