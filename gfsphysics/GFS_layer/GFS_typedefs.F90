@@ -658,6 +658,7 @@ module GFS_typedefs
                                                  !< = 2 ; USE RRTMGP (LUT)
     integer              :: rrtmgp_nrghice    !< Number of ice-roughness categories
     logical              :: do_GPsw_Glw       ! If set to true use rrtmgp for SW calculation, rrtmg for LW.
+    character(len=128)   :: active_gases_array(100)          !< character array for each trace gas name 
 #endif
 !--- microphysical switch
     integer              :: ncld            !< choice of cloud scheme
@@ -1304,8 +1305,6 @@ module GFS_typedefs
          sfc_alb_uvvis_dif(:,:)   => null(), & !
          toa_src_lw(:,:)          => null(), & !
          toa_src_sw(:,:)          => null()    !
-    character(len=128),pointer :: &
-         active_gases(:,:) => null()
 #endif
 
     contains
@@ -3392,6 +3391,7 @@ module GFS_typedefs
     Model%rrtmgp_nBandsSW   = rrtmgp_nBandsSW
     Model%rrtmgp_nGptsSW    = rrtmgp_nGptsSW
     Model%rrtmgp_cld_optics = RRTMGP_CLD_OPTICS
+
     ! The CCPP versions of the RRTMG lw/sw schemes are configured
     ! such that lw and sw heating rate are output, i.e. they rely
     ! on the corresponding arrays to be allocated.
@@ -5058,7 +5058,6 @@ module GFS_typedefs
     Radtend%sfc_alb_nir_dif    = clear_val
     Radtend%sfc_alb_uvvis_dir  = clear_val
     Radtend%sfc_alb_uvvis_dif  = clear_val
-    allocate(Radtend%active_gases(Model%nGases,IM))
     allocate(Radtend%toa_src_sw(IM,Model%rrtmgp_nGptsSW))
     allocate(Radtend%toa_src_lw(IM,Model%rrtmgp_nGptsLW))
     Radtend%toa_src_lw         = clear_val
