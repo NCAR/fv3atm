@@ -1295,18 +1295,6 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: lwhc (:,:)   => null()  !< clear sky lw heating rates ( k/s )
     real (kind=kind_phys), pointer :: lwhd (:,:,:) => null()  !< idea sky lw heating rates ( k/s )
 
-   ! RRTMGP
-#ifdef CCPP
-    real(kind_phys),pointer ::               & !
-         sfc_emiss_byband(:,:)    => null(), & !
-         sfc_alb_nir_dir(:,:)     => null(), & !
-         sfc_alb_nir_dif(:,:)     => null(), & !
-         sfc_alb_uvvis_dir(:,:)   => null(), & !
-         sfc_alb_uvvis_dif(:,:)   => null(), & !
-         toa_src_lw(:,:)          => null(), & !
-         toa_src_sw(:,:)          => null()    !
-#endif
-
     contains
       procedure :: create  => radtend_create   !<   allocate array data
   end type GFS_radtend_type
@@ -1932,7 +1920,14 @@ module GFS_typedefs
          fluxswUP_allsky(:,:)   => null(), & ! RRTMGP upward   shortwave all-sky flux profile
          fluxswDOWN_allsky(:,:) => null(), & ! RRTMGP downward shortwave all-sky flux profile
          fluxswUP_clrsky(:,:)   => null(), & ! RRTMGP upward   shortwave clr-sky flux profile
-         fluxswDOWN_clrsky(:,:) => null()    ! RRTMGP downward shortwave clr-sky flux profile
+         fluxswDOWN_clrsky(:,:) => null(), & ! RRTMGP downward shortwave clr-sky flux profile
+         sfc_emiss_byband(:,:)  => null(), & !
+         sfc_alb_nir_dir(:,:)   => null(), & !
+         sfc_alb_nir_dif(:,:)   => null(), & !
+         sfc_alb_uvvis_dir(:,:) => null(), & !
+         sfc_alb_uvvis_dif(:,:) => null(), & !
+         toa_src_lw(:,:)        => null(), & !
+         toa_src_sw(:,:)        => null()    !
     integer, pointer :: &
          icseed_lw(:)           => null(), & ! RRTMGP seed for RNG for longwave radiation
          icseed_sw(:)           => null()    ! RRTMGP seed for RNG for shortwave radiation
@@ -5045,25 +5040,6 @@ module GFS_typedefs
     allocate (Radtend%coszen (IM))
     allocate (Radtend%tsflw  (IM))
     allocate (Radtend%semis  (IM))
-
-    ! RRTMGP
-#ifdef CCPP
-    allocate(Radtend%sfc_emiss_byband(Model%rrtmgp_nBandsLW,IM))
-    allocate(Radtend%sfc_alb_nir_dir(Model%rrtmgp_nBandsSW,IM))
-    allocate(Radtend%sfc_alb_nir_dif(Model%rrtmgp_nBandsSW,IM))
-    allocate(Radtend%sfc_alb_uvvis_dir(Model%rrtmgp_nBandsSW,IM))
-    allocate(Radtend%sfc_alb_uvvis_dif(Model%rrtmgp_nBandsSW,IM))
-    Radtend%sfc_emiss_byband   = clear_val
-    Radtend%sfc_alb_nir_dir    = clear_val
-    Radtend%sfc_alb_nir_dif    = clear_val
-    Radtend%sfc_alb_uvvis_dir  = clear_val
-    Radtend%sfc_alb_uvvis_dif  = clear_val
-    allocate(Radtend%toa_src_sw(IM,Model%rrtmgp_nGptsSW))
-    allocate(Radtend%toa_src_lw(IM,Model%rrtmgp_nGptsLW))
-    Radtend%toa_src_lw         = clear_val
-    Radtend%toa_src_sw         = clear_val
-#endif
-
     Radtend%htrsw  = clear_val
     Radtend%htrlw  = clear_val
     Radtend%sfalb  = clear_val
@@ -5981,6 +5957,13 @@ module GFS_typedefs
     allocate (Interstitial%icseed_sw         (IM))
     allocate (Interstitial%flxprf_lw         (IM, Model%levs+1))
     allocate (Interstitial%flxprf_sw         (IM, Model%levs+1))    
+    allocate (Interstitial%sfc_emiss_byband  (Model%rrtmgp_nBandsLW,IM))
+    allocate (Interstitial%sfc_alb_nir_dir   (Model%rrtmgp_nBandsSW,IM))
+    allocate (Interstitial%sfc_alb_nir_dif   (Model%rrtmgp_nBandsSW,IM))
+    allocate (Interstitial%sfc_alb_uvvis_dir (Model%rrtmgp_nBandsSW,IM))
+    allocate (Interstitial%sfc_alb_uvvis_dif (Model%rrtmgp_nBandsSW,IM))
+    allocate (Interstitial%toa_src_sw        (IM,Model%rrtmgp_nGptsSW))
+    allocate (Interstitial%toa_src_lw        (IM,Model%rrtmgp_nGptsLW))
 #endif
 ! CIRES UGWP v0
     allocate (Interstitial%gw_dudt         (IM,Model%levs))
@@ -6507,6 +6490,20 @@ module GFS_typedefs
     Interstitial%fluxswDOWN_clrsky = clear_val
     Interstitial%icseed_lw         = clear_val
     Interstitial%icseed_sw         = clear_val
+    Interstitial%relhum            = clear_val
+    Interstitial%p_lay             = clear_val
+    Interstitial%p_lev             = clear_val
+    Interstitial%t_lay             = clear_val
+    Interstitial%t_lev             = clear_val
+    Interstitial%tv_lay            = clear_val
+    Interstitial%tracer            = clear_val
+    Interstitial%sfc_emiss_byband  = clear_val
+    Interstitial%sfc_alb_nir_dir   = clear_val
+    Interstitial%sfc_alb_nir_dif   = clear_val
+    Interstitial%sfc_alb_uvvis_dir = clear_val
+    Interstitial%sfc_alb_uvvis_dif = clear_val
+    Interstitial%toa_src_lw        = clear_val
+    Interstitial%toa_src_sw        = clear_val
 #endif
 ! CIRES UGWP v0
     Interstitial%gw_dudt         = clear_val
