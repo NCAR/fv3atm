@@ -300,6 +300,7 @@
                      call print_var(mpirank,omprank, blkno, 'Diag%tdomzr      ',    Diag%tdomzr)
                      call print_var(mpirank,omprank, blkno, 'Diag%tdomip      ',    Diag%tdomip)
                      call print_var(mpirank,omprank, blkno, 'Diag%tdoms       ',    Diag%tdoms)
+
                      ! CCPP only
                      !if (Model%lsm == Model%lsm_ruc) then
                      !  call print_var(mpirank,omprank, blkno, 'Diag%wet1        ',  Sfcprop%wetness)
