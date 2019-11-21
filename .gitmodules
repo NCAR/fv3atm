@@ -1,6 +1,6 @@
 [submodule "atmos_cubed_sphere"]
 	path = atmos_cubed_sphere
-	url = https://github.com/NCAR/GFDL_atmos_cubed_sphere
+	url = https://github.com/NCAR/GFDL_atmos_cubed_sphere.git
 	branch = dtc/develop
 [submodule "ccpp/framework"]
 	path = ccpp/framework
