@@ -25,7 +25,7 @@ CPPDEFS += -DNEW_TAUCTMAX -DSMALL_PE -DNEMS_GSM -DINTERNAL_FILE_NML
 ifneq (,$(findstring CCPP,$(CPPDEFS)))
 
 # CCPP directory
-CCPP_DIR = /home/Dustin.Swales/Projects/FV3/NEMSfv3gfs/ccpp
+CCPP_DIR = /home/Dustin.Swales/Projects/UFS/ufs-weather-model/FV3/ccpp
 FFLAGS += -I$(CCPP_DIR)/build/physics
 
 # Set flags for 32-bit dynamics build
