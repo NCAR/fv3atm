@@ -101,8 +101,7 @@ module FV3GFS_io_mod
   logical                    :: uwork_set = .false.
   character(128)             :: uwindname
   integer, parameter, public :: DIAG_SIZE = 500
-! real(kind=kind_phys), parameter :: missing_value = 1.d30
-  real(kind=kind_phys), parameter :: missing_value = 9.99e20
+  real, parameter :: missing_value = 9.99e20
   real, parameter:: stndrd_atmos_ps = 101325.
   real, parameter:: stndrd_atmos_lapse = 0.0065
  
@@ -513,10 +512,18 @@ module FV3GFS_io_mod
     nvar_s2o = 18
 #ifdef CCPP
     if (Model%lsm == Model%lsm_ruc .and. warm_start) then
-      nvar_s2r = 6
+      if(Model%rdlai) then
+        nvar_s2r = 7
+      else
+        nvar_s2r = 6
+      end if
       nvar_s3  = 5
     else
-      nvar_s2r = 0
+      if(Model%rdlai) then
+       nvar_s2r = 1
+      else
+       nvar_s2r = 0
+      endif
       nvar_s3  = 3
     endif
 #else
@@ -759,6 +766,11 @@ module FV3GFS_io_mod
         sfc_name2(nvar_s2m+22) = 'tsnow'
         sfc_name2(nvar_s2m+23) = 'snowfall_acc'
         sfc_name2(nvar_s2m+24) = 'swe_snowfall_acc'
+        if (Model%rdlai) then
+          sfc_name2(nvar_s2m+25) = 'lai'
+        endif
+      else if (Model%lsm == Model%lsm_ruc .and. Model%rdlai) then
+        sfc_name2(nvar_s2m+19) = 'lai'
 #endif
       endif
 
@@ -957,6 +969,11 @@ module FV3GFS_io_mod
           Sfcprop(nb)%tsnow(ix)      = sfc_var2(i,j,nvar_s2m+22)
           Sfcprop(nb)%snowfallac(ix) = sfc_var2(i,j,nvar_s2m+23)
           Sfcprop(nb)%acsnow(ix)     = sfc_var2(i,j,nvar_s2m+24)
+          if (Model%rdlai) then
+            Sfcprop(nb)%xlaixy(ix)   = sfc_var2(i,j,nvar_s2m+25)
+          endif
+        else if (Model%lsm == Model%lsm_ruc .and. Model%rdlai) then
+          Sfcprop(nb)%xlaixy(ix)     = sfc_var2(i,j,nvar_s2m+19)
         elseif (Model%lsm == Model%lsm_noahmp) then
           !--- Extra Noah MP variables
 #else
@@ -1118,15 +1135,10 @@ module FV3GFS_io_mod
           Sfcprop(nb)%zorll(ix) = Sfcprop(nb)%zorlo(ix)
           Sfcprop(nb)%zorl(ix)  = Sfcprop(nb)%zorlo(ix)
           Sfcprop(nb)%tsfc(ix)  = Sfcprop(nb)%tsfco(ix)
-          if (Sfcprop(nb)%slmsk(ix) < 0.1 .or. Sfcprop(nb)%slmsk(ix) > 1.9) then
+          if (Sfcprop(nb)%slmsk(ix) > 1.9) then
             Sfcprop(nb)%landfrac(ix) = 0.0
-            if (Sfcprop(nb)%oro_uf(ix) > 0.01) then
-              Sfcprop(nb)%lakefrac(ix) = 1.0        ! lake
-            else
-              Sfcprop(nb)%lakefrac(ix) = 0.0        ! ocean
-            endif
           else
-            Sfcprop(nb)%landfrac(ix) = 1.0          ! land
+            Sfcprop(nb)%landfrac(ix) = Sfcprop(nb)%slmsk(ix)
           endif
         enddo
       enddo
@@ -1452,7 +1464,11 @@ module FV3GFS_io_mod
     nvar2o = 18
 #ifdef CCPP
     if (Model%lsm == Model%lsm_ruc) then
-      nvar2r = 6
+      if (Model%rdlai) then
+        nvar2r = 7
+      else
+        nvar2r = 6
+      endif
       nvar3  = 5
     else
       nvar2r = 0
@@ -1586,6 +1602,9 @@ module FV3GFS_io_mod
         sfc_name2(nvar2m+22) = 'tsnow'
         sfc_name2(nvar2m+23) = 'snowfall_acc'
         sfc_name2(nvar2m+24) = 'swe_snowfall_acc'
+        if (Model%rdlai) then
+          sfc_name2(nvar2m+25) = 'lai'
+        endif
       else if(Model%lsm == Model%lsm_noahmp) then
 #else
 ! Only needed when Noah MP LSM is used - 29 2D
@@ -1788,6 +1807,9 @@ module FV3GFS_io_mod
           sfc_var2(i,j,nvar2m+22) = Sfcprop(nb)%tsnow(ix)
           sfc_var2(i,j,nvar2m+23) = Sfcprop(nb)%snowfallac(ix)
           sfc_var2(i,j,nvar2m+24) = Sfcprop(nb)%acsnow(ix)
+          if (Model%rdlai) then
+            sfc_var2(i,j,nvar2m+25) = Sfcprop(nb)%xlaixy(ix)
+          endif
         else if (Model%lsm == Model%lsm_noahmp) then
 
 #else
