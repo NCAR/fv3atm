@@ -6076,7 +6076,6 @@ module GFS_typedefs
     allocate (Interstitial%zorl_ocean      (IM))
     allocate (Interstitial%zt1d            (IM))
    ! RRTMGP
-#ifdef CCPP
     allocate (Interstitial%tracer            (IM, Model%levs,Model%ntrac))
     allocate (Interstitial%tv_lay            (IM, Model%levs))
     allocate (Interstitial%relhum            (IM, Model%levs))
@@ -6120,7 +6119,6 @@ module GFS_typedefs
     allocate (Interstitial%sfc_alb_uvvis_dif (Model%rrtmgp_nBandsSW,IM))
     allocate (Interstitial%toa_src_sw        (IM,Model%rrtmgp_nGptsSW))
     allocate (Interstitial%toa_src_lw        (IM,Model%rrtmgp_nGptsLW))
-#endif
 
 ! CIRES UGWP v0
     allocate (Interstitial%gw_dudt         (IM,Model%levs))
@@ -6648,7 +6646,6 @@ module GFS_typedefs
     Interstitial%zorl_ocean      = huge
     Interstitial%zt1d            = clear_val
     ! RRTMGP
-#ifdef CCPP
     Interstitial%tracer            = clear_val
     Interstitial%relhum            = clear_val
     Interstitial%tv_lay            = clear_val
@@ -6697,7 +6694,6 @@ module GFS_typedefs
     Interstitial%sfc_alb_uvvis_dif = clear_val
     Interstitial%toa_src_lw        = clear_val
     Interstitial%toa_src_sw        = clear_val
-#endif
 ! CIRES UGWP v0
     Interstitial%gw_dudt         = clear_val
     Interstitial%gw_dvdt         = clear_val
