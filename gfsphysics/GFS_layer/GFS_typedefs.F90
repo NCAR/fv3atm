@@ -1920,10 +1920,10 @@ module GFS_typedefs
 
     ! RRTMGP
 #ifdef CCPP
-    integer :: &
-         ipsdlw0,                  & !
-         ipsdsw0                     !
-    real(kind_phys), pointer :: &
+    integer ::                             &
+         ipsdlw0,                          & !
+         ipsdsw0                             !
+    real(kind_phys), pointer ::            &
          p_lay(:,:)             => null(), & !
          p_lev(:,:)             => null(), & !
          t_lev(:,:)             => null(), & !
@@ -1963,31 +1963,35 @@ module GFS_typedefs
          sfc_alb_uvvis_dif(:,:) => null(), & !
          toa_src_lw(:,:)        => null(), & !
          toa_src_sw(:,:)        => null()    !
-    integer, pointer :: &
+    character(len=128), pointer :: &
+         active_gases_array(:)  => null()    ! Character array for each trace gas name 
+    integer, pointer ::                    &
          icseed_lw(:)           => null(), & ! RRTMGP seed for RNG for longwave radiation
          icseed_sw(:)           => null()    ! RRTMGP seed for RNG for shortwave radiation
-    type(proflw_type), pointer :: &
+    type(proflw_type), pointer ::          &
          flxprf_lw(:,:)         => null()    ! DDT containing RRTMGP longwave fluxes
-    type(profsw_type), pointer :: &
+    type(profsw_type), pointer ::          &
          flxprf_sw(:,:)         => null()    ! DDT containing RRTMGP shortwave fluxes
-    type(ty_gas_optics_rrtmgp) :: & !
-         lw_gas_props, & !
-         sw_gas_props !
-    type(ty_cloud_optics) :: & !
-         lw_cloud_props, & !
-         sw_cloud_props !
-    type(ty_optical_props_1scl)  ::  & !
-         lw_optical_props_clouds, & !
-         lw_optical_props_clrsky,&
-         lw_optical_props_aerosol   !
-    type(ty_optical_props_2str)  ::  & !
-         sw_optical_props_clouds,  & !
-         sw_optical_props_clrsky, & !
-         sw_optical_props_aerosol   !
-    type(ty_gas_concs) :: & !
-         gas_concentrations
-    type(ty_source_func_lw) :: &
-         sources
+    type(ty_gas_optics_rrtmgp) ::          &
+         lw_gas_props,                     & ! RRTMGP DDT  
+         sw_gas_props                        ! RRTMGP DDT  
+    type(ty_cloud_optics) ::               &
+         lw_cloud_props,                   & ! RRTMGP DDT  
+         sw_cloud_props                      ! RRTMGP DDT  
+    type(ty_optical_props_1scl)  ::        &
+         lw_optical_props_cloudsByBand,    & ! RRTMGP DDT  
+         lw_optical_props_clouds,          & ! RRTMGP DDT  
+         lw_optical_props_clrsky,          & ! RRTMGP DDT  
+         lw_optical_props_aerosol            ! RRTMGP DDT  
+    type(ty_optical_props_2str)  ::        &
+         sw_optical_props_cloudsByBand,    & ! RRTMGP DDT  
+         sw_optical_props_clouds,          & ! RRTMGP DDT  
+         sw_optical_props_clrsky,          & ! RRTMGP DDT  
+         sw_optical_props_aerosol            ! RRTMGP DDT  
+    type(ty_gas_concs) ::                  &
+         gas_concentrations                  ! RRTMGP DDT  
+    type(ty_source_func_lw) ::             &
+         sources                             ! RRTMGP DDT
 #endif
 
     !-- HWRF physics: dry mixing ratios
@@ -6119,7 +6123,7 @@ module GFS_typedefs
     allocate (Interstitial%sfc_alb_uvvis_dif (Model%rrtmgp_nBandsSW,IM))
     allocate (Interstitial%toa_src_sw        (IM,Model%rrtmgp_nGptsSW))
     allocate (Interstitial%toa_src_lw        (IM,Model%rrtmgp_nGptsLW))
-
+    allocate (Interstitial%active_gases_array(Model%nGases))
 ! CIRES UGWP v0
     allocate (Interstitial%gw_dudt         (IM,Model%levs))
     allocate (Interstitial%gw_dvdt         (IM,Model%levs))
@@ -6434,8 +6438,6 @@ module GFS_typedefs
          Interstitial%cwm       = clear_val
        end if
     end if
-
-    !
   end subroutine interstitial_rad_reset
 
   subroutine interstitial_phys_reset (Interstitial, Model)
@@ -6645,55 +6647,6 @@ module GFS_typedefs
     Interstitial%zorl_land       = huge
     Interstitial%zorl_ocean      = huge
     Interstitial%zt1d            = clear_val
-    ! RRTMGP
-    Interstitial%tracer            = clear_val
-    Interstitial%relhum            = clear_val
-    Interstitial%tv_lay            = clear_val
-    Interstitial%t_lev             = clear_val
-    Interstitial%t_lay             = clear_val
-    Interstitial%p_lay             = clear_val
-    Interstitial%p_lev             = clear_val
-    Interstitial%aerosolslw        = clear_val
-    Interstitial%aerosolssw        = clear_val
-    Interstitial%cld_frac          = clear_val
-    Interstitial%cld_lwp           = clear_val
-    Interstitial%cld_reliq         = clear_val
-    Interstitial%cld_iwp           = clear_val
-    Interstitial%cld_reice         = clear_val
-    Interstitial%cld_swp           = clear_val
-    Interstitial%cld_resnow        = clear_val
-    Interstitial%cld_rwp           = clear_val
-    Interstitial%cld_rerain        = clear_val
-    Interstitial%hsw0              = clear_val
-    Interstitial%hswc              = clear_val
-    Interstitial%hswb              = clear_val
-    Interstitial%hlw0              = clear_val
-    Interstitial%hlwc              = clear_val
-    Interstitial%hlwb              = clear_val
-    Interstitial%fluxlwUP_allsky   = clear_val
-    Interstitial%fluxlwDOWN_allsky = clear_val
-    Interstitial%fluxlwUP_clrsky   = clear_val
-    Interstitial%fluxlwDOWN_clrsky = clear_val
-    Interstitial%fluxswUP_allsky   = clear_val
-    Interstitial%fluxswDOWN_allsky = clear_val
-    Interstitial%fluxswUP_clrsky   = clear_val
-    Interstitial%fluxswDOWN_clrsky = clear_val
-    Interstitial%icseed_lw         = clear_val
-    Interstitial%icseed_sw         = clear_val
-    Interstitial%relhum            = clear_val
-    Interstitial%p_lay             = clear_val
-    Interstitial%p_lev             = clear_val
-    Interstitial%t_lay             = clear_val
-    Interstitial%t_lev             = clear_val
-    Interstitial%tv_lay            = clear_val
-    Interstitial%tracer            = clear_val
-    Interstitial%sfc_emiss_byband  = clear_val
-    Interstitial%sfc_alb_nir_dir   = clear_val
-    Interstitial%sfc_alb_nir_dif   = clear_val
-    Interstitial%sfc_alb_uvvis_dir = clear_val
-    Interstitial%sfc_alb_uvvis_dif = clear_val
-    Interstitial%toa_src_lw        = clear_val
-    Interstitial%toa_src_sw        = clear_val
 ! CIRES UGWP v0
     Interstitial%gw_dudt         = clear_val
     Interstitial%gw_dvdt         = clear_val

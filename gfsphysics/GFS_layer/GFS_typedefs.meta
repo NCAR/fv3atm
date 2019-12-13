@@ -2163,6 +2163,7 @@
   units = none
   dimensions =  ()
   type = character
+  kind = len=128 
 [nGases]
   standard_name = number_of_active_gases_used_by_RRTMGP
   long_name = number of gases available used by RRTMGP (Model%nGases)
@@ -2175,18 +2176,21 @@
   units = none
   dimensions =  ()
   type = character
+  kind = len=128
 [lw_file_gas]
   standard_name = rrtmgp_kdistribution_lw
   long_name = file containing RRTMGP LW k-distribution (Model%lw_file_gas)
   units = none
   dimensions =  ()
   type = character
+  kind = len=128
 [lw_file_clouds]
   standard_name = rrtmgp_coeff_lw_cloud_optics 
   long_name = file containing coefficients for RRTMGP LW cloud optics (Model%lw_file_clouds)
   units = none
   dimensions =  ()
   type = character
+  kind = len=128
 [rrtmgp_nBandsLW]
   standard_name = number_of_lw_bands_rrtmgp
   long_name = number of lw bands used in RRTMGP (Model%rrtmgp_nBandsLW)
@@ -2205,12 +2209,14 @@
   units = none
   dimensions =  ()
   type = character
+  kind = len=128
 [sw_file_clouds]
   standard_name = rrtmgp_coeff_sw_cloud_optics 
   long_name = file containing coefficients for RRTMGP SW cloud optics (Model%sw_file_clouds)
   units = none 
   dimensions =  ()
   type = character
+  kind = len=128
 [rrtmgp_nBandsSW]
   standard_name = number_of_sw_bands_rrtmgp
   long_name = number of sw bands used in RRTMGP (Model%rrtmgp_nBandsSW)
@@ -4699,63 +4705,6 @@
   dimensions = (horizontal_dimension,vertical_dimension,6)
   type = real
   kind = kind_phys
-
-[sfc_emiss_byband]
-  standard_name = surface_emissivity_in_each_RRTMGP_LW_band
-  long_name = surface emissivity in each RRTMGP LW band
-  units = none
-  dimensions = (number_of_lw_bands_rrtmgp,horizontal_dimension)
-  type = real
-  kind = kind_phys
-[sfc_alb_nir_dir]
-  standard_name = surface_albedo_nearIR_direct
-  long_name = near-IR (direct) surface albedo (Model%sfc_alb_nir_dir)
-  units = none
-  dimensions = (number_of_sw_bands_rrtmgp,horizontal_dimension)
-  type = real
-  kind = kind_phys
-[sfc_alb_nir_dif]
-  standard_name = surface_albedo_nearIR_diffuse
-  long_name = near-IR (diffuse) surface albedo (Model%sfc_alb_nir_dif) 
-  units = none
-  dimensions = (number_of_sw_bands_rrtmgp,horizontal_dimension)
-  type = real
-  kind = kind_phys
-[sfc_alb_uvvis_dir]
-  standard_name =  surface_albedo_uvvis_dir
-  long_name = UVVIS (direct) surface albedo (Model%sfc_alb_uvvis_dir)
-  units = none
-  dimensions = (number_of_sw_bands_rrtmgp,horizontal_dimension)
-  type = real
-  kind = kind_phys
-[sfc_alb_uvvis_dif]
-  standard_name =  surface_albedo_uvvis_dif
-  long_name = UVVIS (diffuse) surface albedo (Model%sfc_alb_uvvis_dif)
-  units = none
-  dimensions = (number_of_sw_bands_rrtmgp,horizontal_dimension)
-  type = real
-  kind = kind_phys
-[toa_src_lw]
-  standard_name = toa_incident_lw_flux_by_spectral_point 
-  long_name = TOA longwave incident flux at each spectral points (Radtend%toa_src_lw)
-  units = W m-2
-  dimensions = (horizontal_dimension,number_of_lw_spectral_points_rrtmgp)
-  type = real
-  kind = kind_phys
-[toa_src_sw]
-  standard_name = toa_incident_sw_flux_by_spectral_point
-  long_name = TOA shortwave incident flux at each spectral points (Radtend%toa_src_sw)
-  units = W m-2
-  dimensions = (horizontal_dimension,number_of_sw_spectral_points_rrtmgp)
-  type = real
-  kind = kind_phys
-[active_gases]
-  standard_name = active_gases_used_by_RRTMGP_2D
-  long_name = active gases used by RRTMGP at each gridpoint
-  units = none
-  dimensions = (active_gases_used_by_RRTMGP,horizontal_dimension)
-  type = character
-  kind = len=128
 
 ########################################################################
 [ccpp-arg-table]
@@ -8769,6 +8718,12 @@
   dimensions = ()
   type = ty_optical_props_2str
   optional = F
+[sw_optical_props_cloudsByBand]
+  standard_name = shortwave_optical_properties_for_cloudy_atmosphere_by_band
+  long_name = Fortran DDT containing RRTMGP optical properties
+  units = DDT
+  dimensions = ()
+  type = ty_optical_props_2str
 [sw_optical_props_clouds]
   standard_name = shortwave_optical_properties_for_cloudy_atmosphere
   long_name = Fortran DDT containing RRTMGP optical properties
@@ -8825,6 +8780,12 @@
   dimensions = ()
   type = ty_optical_props_1scl
   optional = F
+[lw_optical_props_cloudsByBand]
+  standard_name = longwave_optical_properties_for_cloudy_atmosphere_by_band
+  long_name = Fortran DDT containing RRTMGP optical properties
+  units = DDT
+  dimensions = ()
+  type = ty_optical_props_1scl
 [lw_optical_props_aerosol]
   standard_name = longwave_optical_properties_for_aerosols
   long_name = Fortran DDT containing RRTMGP optical properties
@@ -8832,7 +8793,62 @@
   dimensions = ()
   type = ty_optical_props_1scl
   optional = F
-
+[sfc_emiss_byband]
+  standard_name = surface_emissivity_in_each_RRTMGP_LW_band
+  long_name = surface emissivity in each RRTMGP LW band
+  units = none
+  dimensions = (number_of_lw_bands_rrtmgp,horizontal_dimension)
+  type = real
+  kind = kind_phys
+[sfc_alb_nir_dir]
+  standard_name = surface_albedo_nearIR_direct
+  long_name = near-IR (direct) surface albedo (sfc_alb_nir_dir)
+  units = none
+  dimensions = (number_of_sw_bands_rrtmgp,horizontal_dimension)
+  type = real
+  kind = kind_phys
+[sfc_alb_nir_dif]
+  standard_name = surface_albedo_nearIR_diffuse
+  long_name = near-IR (diffuse) surface albedo (sfc_alb_nir_dif)
+  units = none
+  dimensions = (number_of_sw_bands_rrtmgp,horizontal_dimension)
+  type = real
+  kind = kind_phys
+[sfc_alb_uvvis_dir]
+  standard_name =  surface_albedo_uvvis_dir
+  long_name = UVVIS (direct) surface albedo (sfc_alb_uvvis_dir)
+  units = none
+  dimensions = (number_of_sw_bands_rrtmgp,horizontal_dimension)
+  type = real
+  kind = kind_phys
+[sfc_alb_uvvis_dif]
+  standard_name =  surface_albedo_uvvis_dif
+  long_name = UVVIS (diffuse) surface albedo (sfc_alb_uvvis_dif)
+  units = none
+  dimensions = (number_of_sw_bands_rrtmgp,horizontal_dimension)
+  type = real
+  kind = kind_phys
+[toa_src_lw]
+  standard_name = toa_incident_lw_flux_by_spectral_point
+  long_name = TOA longwave incident flux at each spectral points
+  units = W m-2
+  dimensions = (horizontal_dimension,number_of_lw_spectral_points_rrtmgp)
+  type = real
+  kind = kind_phys
+[toa_src_sw]
+  standard_name = toa_incident_sw_flux_by_spectral_point
+  long_name = TOA shortwave incident flux at each spectral points
+  units = W m-2
+  dimensions = (horizontal_dimension,number_of_sw_spectral_points_rrtmgp)
+  type = real
+  kind = kind_phys
+[active_gases_array]
+  standard_name = list_of_active_gases_used_by_RRTMGP
+  long_name = list of active gases used by RRTMGP
+  units = none
+  dimensions =  (number_of_active_gases_used_by_RRTMGP)
+  type = character
+  kind = len=128
 ########################################################################
 [ccpp-arg-table]
   name = GFS_data_type
