@@ -658,6 +658,7 @@ module GFS_typedefs
                                                  !< = 1 ; Use RRTMGP (pade)
                                                  !< = 2 ; USE RRTMGP (LUT)
     integer              :: rrtmgp_nrghice    !< Number of ice-roughness categories
+    integer              :: rrtmgp_nGauss_ang !< Number of angles used in Gaussian quadrature
     logical              :: do_GPsw_Glw       ! If set to true use rrtmgp for SW calculation, rrtmg for LW.
     character(len=128)   :: active_gases_array(100)          !< character array for each trace gas name 
 #endif
@@ -1957,6 +1958,7 @@ module GFS_typedefs
          fluxswUP_clrsky(:,:)   => null(), & ! RRTMGP upward   shortwave clr-sky flux profile
          fluxswDOWN_clrsky(:,:) => null(), & ! RRTMGP downward shortwave clr-sky flux profile
          sfc_emiss_byband(:,:)  => null(), & !
+         sec_diff_byband(:,:)   => null(), & !
          sfc_alb_nir_dir(:,:)   => null(), & !
          sfc_alb_nir_dif(:,:)   => null(), & !
          sfc_alb_uvvis_dir(:,:) => null(), & !
@@ -2858,6 +2860,7 @@ module GFS_typedefs
                                                              !< = 1 ; Use RRTMGP (pade)
                                                              !< = 2 ; USE RRTMGP (LUT)
     integer              :: rrtmgp_nrghice = 0               !< Number of ice-roughness categories
+    integer              :: rrtmgp_nGauss_ang=1              !< Number of angles used in Gaussian quadrature
     logical              :: do_GPsw_Glw    = .false.         
 #endif
 !--- Z-C microphysical parameters
@@ -3197,7 +3200,8 @@ module GFS_typedefs
                                active_gases, nGases, rrtmgp_root, &
                                lw_file_gas, lw_file_clouds, rrtmgp_nBandsLW, rrtmgp_nGptsLW,&
                                sw_file_gas, sw_file_clouds, rrtmgp_nBandsSW, rrtmgp_nGptsSW,&
-                               rrtmgp_cld_optics, rrtmgp_nrghice, do_GPsw_Glw,              &
+                               rrtmgp_cld_optics, rrtmgp_nrghice, rrtmgp_nGauss_ang,        &
+                               do_GPsw_Glw,                                                 &
 #endif
                           ! IN CCN forcing
                                iccn,                                                        &
@@ -3445,6 +3449,7 @@ module GFS_typedefs
     Model%swhtr            = swhtr
 #ifdef CCPP
     Model%rrtmgp_nrghice    = rrtmgp_nrghice
+    Model%rrtmgp_nGauss_ang = rrtmgp_nGauss_ang
     Model%do_GPsw_Glw       = do_GPsw_Glw
     Model%active_gases      = active_gases
     Model%ngases            = nGases
@@ -4553,6 +4558,7 @@ module GFS_typedefs
       print *, ' lwhtr             : ', Model%lwhtr
       print *, ' swhtr             : ', Model%swhtr
 #ifdef CCPP
+      print *, ' rrtmgp_nrghice     : ', Model%rrtmgp_nrghice
       print *, ' rrtmgp_nrghice     : ', Model%rrtmgp_nrghice
       print *, ' do_GPsw_Glw        : ', Model%do_GPsw_Glw
       print *, ' active_gases       : ', Model%active_gases
@@ -6117,6 +6123,7 @@ module GFS_typedefs
     allocate (Interstitial%flxprf_lw         (IM, Model%levs+1))
     allocate (Interstitial%flxprf_sw         (IM, Model%levs+1))    
     allocate (Interstitial%sfc_emiss_byband  (Model%rrtmgp_nBandsLW,IM))
+    allocate (Interstitial%sec_diff_byband   (Model%rrtmgp_nBandsLW,IM))
     allocate (Interstitial%sfc_alb_nir_dir   (Model%rrtmgp_nBandsSW,IM))
     allocate (Interstitial%sfc_alb_nir_dif   (Model%rrtmgp_nBandsSW,IM))
     allocate (Interstitial%sfc_alb_uvvis_dir (Model%rrtmgp_nBandsSW,IM))
