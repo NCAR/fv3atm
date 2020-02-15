@@ -68,12 +68,12 @@ SRCS_F90 = \
 	   $(CCPP_DIR)/physics/physics/rte-rrtmgp/rrtmgp/mo_gas_optics.F90                           \
 	   $(CCPP_DIR)/physics/physics/rte-rrtmgp/rrtmgp/mo_gas_optics_rrtmgp.F90                    \
 	   $(CCPP_DIR)/physics/physics/rte-rrtmgp/rrtmgp/mo_rrtmgp_constants.F90                     \
-	   $(CCPP_DIR)/physics/physics/rte-rrtmgp/rrtmgp/mo_util_reorder.F90                         \
-	   $(CCPP_DIR)/physics/physics/rte-rrtmgp/rrtmgp/mo_util_string.F90                          \
+	   $(CCPP_DIR)/physics/physics/rte-rrtmgp/rrtmgp/mo_rrtmgp_util_reorder.F90                  \
+	   $(CCPP_DIR)/physics/physics/rte-rrtmgp/rrtmgp/mo_rrtmgp_util_string.F90                   \
 	   $(CCPP_DIR)/physics/physics/rte-rrtmgp/rrtmgp/kernels/mo_gas_optics_kernels.F90           \
-	   $(CCPP_DIR)/physics/physics/rte-rrtmgp/rrtmgp/kernels/mo_reorder_kernels.F90              \
+	   $(CCPP_DIR)/physics/physics/rte-rrtmgp/rrtmgp/kernels/mo_rrtmgp_util_reorder_kernels.F90  \
 	   $(CCPP_DIR)/physics/physics/rte-rrtmgp/rte/mo_fluxes.F90                                  \
-	   $(CCPP_DIR)/physics/physics/rte-rrtmgp/rte/mo_util_array.F90                              \
+	   $(CCPP_DIR)/physics/physics/rte-rrtmgp/rte/mo_rte_util_array.F90                          \
 	   $(CCPP_DIR)/physics/physics/rte-rrtmgp/rte/mo_optical_props.F90                           \
 	   $(CCPP_DIR)/physics/physics/rte-rrtmgp/rte/mo_rte_kind.F90                                \
 	   $(CCPP_DIR)/physics/physics/rte-rrtmgp/rte/mo_rte_lw.F90                                  \
