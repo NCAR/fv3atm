@@ -1367,13 +1367,6 @@
   dimensions = (horizontal_dimension)
   type = real
   kind = kind_phys
-[coszdg]
-  standard_name = daytime_mean_cosz_over_rad_call_period
-  long_name = daytime mean cosz over rad call period
-  units = none
-  dimensions = (horizontal_dimension)
-  type = real
-  kind = kind_phys
 
 ########################################################################
 [ccpp-arg-table]
@@ -4707,6 +4700,13 @@
 [coszen]
   standard_name = cosine_of_zenith_angle
   long_name = mean cos of zenith angle over rad call period
+  units = none
+  dimensions = (horizontal_dimension)
+  type = real
+  kind = kind_phys
+[coszdg]
+  standard_name = daytime_mean_cosz_over_rad_call_period
+  long_name = daytime mean cosz over rad call period
   units = none
   dimensions = (horizontal_dimension)
   type = real
