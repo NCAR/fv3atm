@@ -2011,6 +2011,7 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: f_rimef    (:,:)   => null()  !<
     real (kind=kind_phys), pointer :: cwm        (:,:)   => null()  !<
 
+
     contains
       procedure :: create      => interstitial_create     !<   allocate array data
       procedure :: rad_reset   => interstitial_rad_reset  !<   reset array data for radiation
@@ -6431,6 +6432,8 @@ module GFS_typedefs
          Interstitial%cwm       = clear_val
        end if
     end if
+
+    !
   end subroutine interstitial_rad_reset
 
   subroutine interstitial_phys_reset (Interstitial, Model)
