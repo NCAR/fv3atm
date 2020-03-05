@@ -79,6 +79,7 @@ post_gfs.o: post_gfs.F90
 post_gfs_stub.o: post_gfs_stub.F90
 	$(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) $(OTHER_FFLAGS) $(ESMF_INC) -c post_gfs_stub.F90
 
+
 .PHONY: clean
 clean:
 	@echo "Cleaning io ... "
