@@ -2345,6 +2345,12 @@
   units = count
   dimensions =  ()
   type = integer
+[doRRTMGP]
+  standard_name = flag_for_rrtmgp_radiation_scheme
+  long_name = flag for RRTMGP scheme
+  units = flag
+  dimensions =  ()
+  type = logical
 [do_GPsw_Glw]
   standard_name = scheme_flag
   long_name = When true GP is used for SW calculation and G is used for LW calculation

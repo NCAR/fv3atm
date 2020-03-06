@@ -656,6 +656,7 @@ module GFS_typedefs
     logical              :: swhtr           !< flag to output sw heating rate (Radtend%swhc)
 #ifdef CCPP
     ! RRTMGP
+    logical              :: doRRTMGP          !< Use RRTMGP
     character(len=128)   :: active_gases      !< Character list of active gases used in RRTMGP
     integer              :: nGases            !< Number of active gases
     character(len=128)   :: rrtmgp_root       !< Directory of rte+rrtmgp source code
@@ -2870,6 +2871,7 @@ module GFS_typedefs
     logical              :: swhtr             = .true.       !< flag to output sw heating rate (Radtend%swhc)
     ! RRTMGP                                                                                                                                                                                                                                                                                                                                             
 #ifdef CCPP
+    logical              :: doRRTMGP        = .false.        !< Use RRTMGP?
     character(len=128)   :: active_gases    = ''             !< Character list of active gases used in RRTMGP
     integer              :: nGases          = 0              !< Number of active gases
     character(len=128)   :: rrtmgp_root     = ''             !< Directory of rte+rrtmgp source code
@@ -3223,7 +3225,7 @@ module GFS_typedefs
                                isubc_lw, crick_proof, ccnorm, lwhtr, swhtr,                 &
 #ifdef CCPP
                           ! --- RRTMGP
-                               active_gases, nGases, rrtmgp_root, &
+                               doRRTMGP, active_gases, nGases, rrtmgp_root, &
                                lw_file_gas, lw_file_clouds, rrtmgp_nBandsLW, rrtmgp_nGptsLW,&
                                sw_file_gas, sw_file_clouds, rrtmgp_nBandsSW, rrtmgp_nGptsSW,&
                                rrtmgp_cld_optics, rrtmgp_nrghice, rrtmgp_nGauss_ang,        &
@@ -3476,6 +3478,7 @@ module GFS_typedefs
 #ifdef CCPP
     Model%rrtmgp_nrghice    = rrtmgp_nrghice
     Model%rrtmgp_nGauss_ang = rrtmgp_nGauss_ang
+    Model%doRRTMGP          = doRRTMGP
     Model%do_GPsw_Glw       = do_GPsw_Glw
     Model%active_gases      = active_gases
     Model%ngases            = nGases
@@ -4584,21 +4587,23 @@ module GFS_typedefs
       print *, ' lwhtr             : ', Model%lwhtr
       print *, ' swhtr             : ', Model%swhtr
 #ifdef CCPP
-      print *, ' rrtmgp_nrghice     : ', Model%rrtmgp_nrghice
-      print *, ' rrtmgp_nrghice     : ', Model%rrtmgp_nrghice
-      print *, ' do_GPsw_Glw        : ', Model%do_GPsw_Glw
-      print *, ' active_gases       : ', Model%active_gases
-      print *, ' nGases             : ', Model%ngases
-      print *, ' rrtmgp_root        : ', Model%rrtmgp_root
-      print *, ' lw_file_gas        : ', Model%lw_file_gas
-      print *, ' lw_file_clouds     : ', Model%lw_file_clouds
-      print *, ' rrtmgp_nBandsLW    : ', Model%rrtmgp_nBandsLW
-      print *, ' rrtmgp_nGptsLW     : ', Model%rrtmgp_nGptsLW
-      print *, ' sw_file_gas        : ', Model%sw_file_gas
-      print *, ' sw_file_clouds     : ', Model%sw_file_clouds
-      print *, ' rrtmgp_nBandsSW    : ', Model%rrtmgp_nBandsSW
-      print *, ' rrtmgp_nGptsSW     : ', Model%rrtmgp_nGptsSW
-      print *, ' rrtmgp_cld_optics  : ', Model%rrtmgp_cld_optics
+      if (Model%doRRTMGP) then
+         print *, ' rrtmgp_nrghice     : ', Model%rrtmgp_nrghice
+         print *, ' rrtmgp_nrghice     : ', Model%rrtmgp_nrghice
+         print *, ' do_GPsw_Glw        : ', Model%do_GPsw_Glw
+         print *, ' active_gases       : ', Model%active_gases
+         print *, ' nGases             : ', Model%ngases
+         print *, ' rrtmgp_root        : ', Model%rrtmgp_root
+         print *, ' lw_file_gas        : ', Model%lw_file_gas
+         print *, ' lw_file_clouds     : ', Model%lw_file_clouds
+         print *, ' rrtmgp_nBandsLW    : ', Model%rrtmgp_nBandsLW
+         print *, ' rrtmgp_nGptsLW     : ', Model%rrtmgp_nGptsLW
+         print *, ' sw_file_gas        : ', Model%sw_file_gas
+         print *, ' sw_file_clouds     : ', Model%sw_file_clouds
+         print *, ' rrtmgp_nBandsSW    : ', Model%rrtmgp_nBandsSW
+         print *, ' rrtmgp_nGptsSW     : ', Model%rrtmgp_nGptsSW
+         print *, ' rrtmgp_cld_optics  : ', Model%rrtmgp_cld_optics
+      endif
 #endif
       print *, ' '
       print *, 'microphysical switch'
@@ -6073,51 +6078,53 @@ module GFS_typedefs
     allocate (Interstitial%zorl_ocean      (IM))
     allocate (Interstitial%zt1d            (IM))
    ! RRTMGP
-    allocate (Interstitial%tracer            (IM, Model%levs,Model%ntrac))
-    allocate (Interstitial%tv_lay            (IM, Model%levs))
-    allocate (Interstitial%relhum            (IM, Model%levs))
-    allocate (Interstitial%p_lev             (IM, Model%levs+1))
-    allocate (Interstitial%p_lay             (IM, Model%levs))
-    allocate (Interstitial%t_lev             (IM, Model%levs+1))
-    allocate (Interstitial%t_lay             (IM, Model%levs))
-    allocate (Interstitial%fluxlwUP_allsky   (IM, Model%levs+1))
-    allocate (Interstitial%fluxlwDOWN_allsky (IM, Model%levs+1))
-    allocate (Interstitial%fluxlwUP_clrsky   (IM, Model%levs+1))
-    allocate (Interstitial%fluxlwDOWN_clrsky (IM, Model%levs+1))
-    allocate (Interstitial%fluxswUP_allsky   (IM, Model%levs+1))
-    allocate (Interstitial%fluxswDOWN_allsky (IM, Model%levs+1))
-    allocate (Interstitial%fluxswUP_clrsky   (IM, Model%levs+1))
-    allocate (Interstitial%fluxswDOWN_clrsky (IM, Model%levs+1))
-    allocate (Interstitial%aerosolslw        (IM, Model%levs, Model%rrtmgp_nBandsLW, NF_AELW))
-    allocate (Interstitial%aerosolssw        (IM, Model%levs, Model%rrtmgp_nBandsSW, NF_AESW))
-    allocate (Interstitial%cld_frac          (IM, Model%levs))
-    allocate (Interstitial%cld_lwp           (IM, Model%levs))
-    allocate (Interstitial%cld_reliq         (IM, Model%levs))
-    allocate (Interstitial%cld_iwp           (IM, Model%levs))
-    allocate (Interstitial%cld_reice         (IM, Model%levs))
-    allocate (Interstitial%cld_swp           (IM, Model%levs))
-    allocate (Interstitial%cld_resnow        (IM, Model%levs))
-    allocate (Interstitial%cld_rwp           (IM, Model%levs))
-    allocate (Interstitial%cld_rerain        (IM, Model%levs))
-    allocate (Interstitial%hsw0              (IM, Model%levs))
-    allocate (Interstitial%hswc              (IM, Model%levs))
-    allocate (Interstitial%hswb              (IM, Model%levs, Model%rrtmgp_nGptsSW))
-    allocate (Interstitial%hlw0              (IM, Model%levs))
-    allocate (Interstitial%hlwc              (IM, Model%levs))
-    allocate (Interstitial%hlwb              (IM, Model%levs, Model%rrtmgp_nGptsLW))
-    allocate (Interstitial%icseed_lw         (IM))
-    allocate (Interstitial%icseed_sw         (IM))
-    allocate (Interstitial%flxprf_lw         (IM, Model%levs+1))
-    allocate (Interstitial%flxprf_sw         (IM, Model%levs+1))    
-    allocate (Interstitial%sfc_emiss_byband  (Model%rrtmgp_nBandsLW,IM))
-    allocate (Interstitial%sec_diff_byband   (Model%rrtmgp_nBandsLW,IM))
-    allocate (Interstitial%sfc_alb_nir_dir   (Model%rrtmgp_nBandsSW,IM))
-    allocate (Interstitial%sfc_alb_nir_dif   (Model%rrtmgp_nBandsSW,IM))
-    allocate (Interstitial%sfc_alb_uvvis_dir (Model%rrtmgp_nBandsSW,IM))
-    allocate (Interstitial%sfc_alb_uvvis_dif (Model%rrtmgp_nBandsSW,IM))
-    allocate (Interstitial%toa_src_sw        (IM,Model%rrtmgp_nGptsSW))
-    allocate (Interstitial%toa_src_lw        (IM,Model%rrtmgp_nGptsLW))
-    allocate (Interstitial%active_gases_array(Model%nGases))
+    if (Model%doRRTMGP) then
+       allocate (Interstitial%tracer            (IM, Model%levs,Model%ntrac))
+       allocate (Interstitial%tv_lay            (IM, Model%levs))
+       allocate (Interstitial%relhum            (IM, Model%levs))
+       allocate (Interstitial%p_lev             (IM, Model%levs+1))
+       allocate (Interstitial%p_lay             (IM, Model%levs))
+       allocate (Interstitial%t_lev             (IM, Model%levs+1))
+       allocate (Interstitial%t_lay             (IM, Model%levs))
+       allocate (Interstitial%fluxlwUP_allsky   (IM, Model%levs+1))
+       allocate (Interstitial%fluxlwDOWN_allsky (IM, Model%levs+1))
+       allocate (Interstitial%fluxlwUP_clrsky   (IM, Model%levs+1))
+       allocate (Interstitial%fluxlwDOWN_clrsky (IM, Model%levs+1))
+       allocate (Interstitial%fluxswUP_allsky   (IM, Model%levs+1))
+       allocate (Interstitial%fluxswDOWN_allsky (IM, Model%levs+1))
+       allocate (Interstitial%fluxswUP_clrsky   (IM, Model%levs+1))
+       allocate (Interstitial%fluxswDOWN_clrsky (IM, Model%levs+1))
+       allocate (Interstitial%aerosolslw        (IM, Model%levs, Model%rrtmgp_nBandsLW, NF_AELW))
+       allocate (Interstitial%aerosolssw        (IM, Model%levs, Model%rrtmgp_nBandsSW, NF_AESW))
+       allocate (Interstitial%cld_frac          (IM, Model%levs))
+       allocate (Interstitial%cld_lwp           (IM, Model%levs))
+       allocate (Interstitial%cld_reliq         (IM, Model%levs))
+       allocate (Interstitial%cld_iwp           (IM, Model%levs))
+       allocate (Interstitial%cld_reice         (IM, Model%levs))
+       allocate (Interstitial%cld_swp           (IM, Model%levs))
+       allocate (Interstitial%cld_resnow        (IM, Model%levs))
+       allocate (Interstitial%cld_rwp           (IM, Model%levs))
+       allocate (Interstitial%cld_rerain        (IM, Model%levs))
+       allocate (Interstitial%hsw0              (IM, Model%levs))
+       allocate (Interstitial%hswc              (IM, Model%levs))
+       allocate (Interstitial%hswb              (IM, Model%levs, Model%rrtmgp_nGptsSW))
+       allocate (Interstitial%hlw0              (IM, Model%levs))
+       allocate (Interstitial%hlwc              (IM, Model%levs))
+       allocate (Interstitial%hlwb              (IM, Model%levs, Model%rrtmgp_nGptsLW))
+       allocate (Interstitial%icseed_lw         (IM))
+       allocate (Interstitial%icseed_sw         (IM))
+       allocate (Interstitial%flxprf_lw         (IM, Model%levs+1))
+       allocate (Interstitial%flxprf_sw         (IM, Model%levs+1))    
+       allocate (Interstitial%sfc_emiss_byband  (Model%rrtmgp_nBandsLW,IM))
+       allocate (Interstitial%sec_diff_byband   (Model%rrtmgp_nBandsLW,IM))
+       allocate (Interstitial%sfc_alb_nir_dir   (Model%rrtmgp_nBandsSW,IM))
+       allocate (Interstitial%sfc_alb_nir_dif   (Model%rrtmgp_nBandsSW,IM))
+       allocate (Interstitial%sfc_alb_uvvis_dir (Model%rrtmgp_nBandsSW,IM))
+       allocate (Interstitial%sfc_alb_uvvis_dif (Model%rrtmgp_nBandsSW,IM))
+       allocate (Interstitial%toa_src_sw        (IM,Model%rrtmgp_nGptsSW))
+       allocate (Interstitial%toa_src_lw        (IM,Model%rrtmgp_nGptsLW))
+       allocate (Interstitial%active_gases_array(Model%nGases))
+    end if
 ! CIRES UGWP v0
     allocate (Interstitial%gw_dudt         (IM,Model%levs))
     allocate (Interstitial%gw_dvdt         (IM,Model%levs))
