@@ -6439,7 +6439,50 @@ module GFS_typedefs
          Interstitial%cwm       = clear_val
        end if
     end if
-
+    if (Model%doRRTMGP) then
+       Interstitial%tracer            = clear_val
+       Interstitial%tv_lay            = clear_val
+       Interstitial%relhum            = clear_val
+       Interstitial%p_lev             = clear_val
+       Interstitial%p_lay             = clear_val
+       Interstitial%t_lev             = clear_val
+       Interstitial%t_lay             = clear_val
+       Interstitial%fluxlwUP_allsky   = clear_val
+       Interstitial%fluxlwDOWN_allsky = clear_val
+       Interstitial%fluxlwUP_clrsky   = clear_val
+       Interstitial%fluxlwDOWN_clrsky = clear_val
+       Interstitial%fluxswUP_allsky   = clear_val
+       Interstitial%fluxswDOWN_allsky = clear_val
+       Interstitial%fluxswUP_clrsky   = clear_val
+       Interstitial%fluxswDOWN_clrsky = clear_val
+       Interstitial%aerosolslw        = clear_val
+       Interstitial%aerosolssw        = clear_val
+       Interstitial%cld_frac          = clear_val
+       Interstitial%cld_lwp           = clear_val
+       Interstitial%cld_reliq         = clear_val
+       Interstitial%cld_iwp           = clear_val
+       Interstitial%cld_reice         = clear_val
+       Interstitial%cld_swp           = clear_val
+       Interstitial%cld_resnow        = clear_val
+       Interstitial%cld_rwp           = clear_val
+       Interstitial%cld_rerain        = clear_val
+       Interstitial%hsw0              = clear_val
+       Interstitial%hswc              = clear_val
+       Interstitial%hswb              = clear_val
+       Interstitial%hlw0              = clear_val
+       Interstitial%hlwc              = clear_val
+       Interstitial%hlwb              = clear_val
+       Interstitial%icseed_lw         = clear_val
+       Interstitial%icseed_sw         = clear_val
+       Interstitial%sfc_emiss_byband  = clear_val
+       Interstitial%sec_diff_byband   = clear_val
+       Interstitial%sfc_alb_nir_dir   = clear_val
+       Interstitial%sfc_alb_nir_dif   = clear_val
+       Interstitial%sfc_alb_uvvis_dir = clear_val
+       Interstitial%sfc_alb_uvvis_dif = clear_val
+       Interstitial%toa_src_sw        = clear_val
+       Interstitial%toa_src_lw        = clear_val
+    end if
     !
   end subroutine interstitial_rad_reset
 
