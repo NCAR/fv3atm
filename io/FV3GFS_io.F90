@@ -2414,8 +2414,8 @@ module FV3GFS_io_mod
     integer :: i, j, k, idx, nblks, nb, ix, ii, jj
     integer :: is_in, js_in, isc, jsc
     character(len=2) :: xtra
-    real(kind=kind_phys), dimension(nx*ny)      :: var2p
-    real(kind=kind_phys), dimension(nx*ny,levs) :: var3p
+    !real(kind=kind_phys), dimension(nx*ny)      :: var2p
+    !real(kind=kind_phys), dimension(nx*ny,levs) :: var3p
     real(kind=kind_phys), dimension(nx,ny)      :: var2
     real(kind=kind_phys), dimension(nx,ny,levs) :: var3
     real(kind=kind_phys) :: rdt, rtime_int, rtime_intfull, lcnvfac
